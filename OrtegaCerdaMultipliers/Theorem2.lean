@@ -300,31 +300,35 @@ theorem isSubharmonicWeight_add_log {φ' : ℂ → ℝ} {ν : Measure ℂ} {ε c
         rw [integral_add_measure iν (iA.smul_measure ENNReal.ofReal_ne_top), integral_smul_measure,
           ENNReal.toReal_ofReal (by linarith), smul_eq_mul]
 
-theorem exists_aux_weight_disc (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
-    (hd : IsLocallyDoublingDisc μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
-    ∃ (ψ : ℂ → ℝ) (μψ : Measure ℂ) (c B : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ B ∧
-      IsSubharmonicWeight 𝔻 ψ μψ ∧ IsLocallyDoublingDisc μψ ∧
-      (∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μψ (hypBall z R)) ∧
-      ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B := sorry
-
 /-! ## The partition and the kernel -/
 
 theorem measurableSet_goodSet_disc (Z : Set ℂ) (ρ : ℂ → ℝ) (ε : ℝ) :
-    MeasurableSet {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} := sorry
+    MeasurableSet {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} := by
+  have hU : IsOpen (⋃ w ∈ Z ∩ 𝔻, 𝔻 ∩ pseudoHyp w ⁻¹' Iio (Real.tanh (ε * ρ w))) :=
+    isOpen_biUnion fun w hw ↦
+      (continuousOn_pseudoHyp hw.2).isOpen_inter_preimage isOpen_ball isOpen_Iio
+  have heq : {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} =
+      𝔻 \ ⋃ w ∈ Z ∩ 𝔻, 𝔻 ∩ pseudoHyp w ⁻¹' Iio (Real.tanh (ε * ρ w)) := by
+    ext z
+    simp only [mem_ofPred_eq, mem_sdiff, mem_iUnion, mem_inter_iff, mem_preimage, mem_Iio,
+      exists_prop, not_exists, not_and]
+    constructor
+    · rintro ⟨hz, h⟩
+      refine ⟨hz, fun w ⟨hwZ, hwD⟩ _ hlt ↦ ?_⟩
+      rw [pseudoHyp_comm, ← hypDist_lt_iff hz hwD] at hlt
+      exact absurd (h w hwZ hwD) (not_le.2 hlt)
+    · rintro ⟨hz, h⟩
+      refine ⟨hz, fun w hwZ hwD ↦ not_lt.1 fun hlt ↦ h w ⟨hwZ, hwD⟩ hz ?_⟩
+      rw [pseudoHyp_comm, ← hypDist_lt_iff hz hwD]
+      exact hlt
+  rw [heq]
+  exact measurableSet_ball.diff hU.measurableSet
 
 /-- The holomorphic factor of the kernel of Theorem 2:
 `H(z, ζ) = ∑ᵢ χ_{Ωᵢ}(ζ) hᵢ(z)/hᵢ(ζ) · (1 - |ζ|²)/(1 - ζ̄ z)`. -/
 def thm2H {n : ℕ} (h : Fin n → ℂ → ℂ) (Ω : Fin n → Set ℂ) (z ζ : ℂ) : ℂ :=
   (∑ i, (Ω i).indicator (fun ζ ↦ h i z / h i ζ) ζ) *
     (((1 - ‖ζ‖ ^ 2 : ℝ) : ℂ) / (1 - conj ζ * z))
-
-theorem exists_disc_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
-    (hφ : IsSubharmonicWeight 𝔻 φ μ) (hd : IsLocallyDoublingDisc μ)
-    (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
-    ∃ (H : ℂ → ℂ → ℂ) (c A : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ A ∧ Measurable (Function.uncurry H) ∧
-      (∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) ∧ (∀ ζ ∈ 𝔻, H ζ ζ = 1) ∧
-      ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
-        ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := sorry
 
 /-! ## Uniform forms (constants depending only on `(Cd, r)`) -/
 
@@ -335,7 +339,55 @@ theorem exists_aux_weight_disc_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
     ∃ (c B : ℝ) (Cd' : ℝ≥0) (R' : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ B ∧ 0 < R' ∧
       ∀ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight 𝔻 φ μ → MeasClassDisc μ Cd r →
         ∃ (ψ : ℂ → ℝ) (μψ : Measure ℂ), IsSubharmonicWeight 𝔻 ψ μψ ∧ MeasClassDisc μψ Cd' R' ∧
-          ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B := sorry
+          ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B := by
+  obtain ⟨ε, B, Cd₁, R₁, hε, hB, hR₁, hL⟩ := lemma6_disc_quant Cd r hr
+  set c := min (ε / 8) (1 / 2) with hc
+  have hc0 : 0 < c := lt_min (by positivity) (by norm_num)
+  have hc1 : c < 1 := (min_le_right _ _).trans_lt (by norm_num)
+  have hcε : 8 * c ≤ ε := by have := min_le_left (ε / 8) (1 / 2); linarith
+  refine ⟨c, B, 2 * Cd₁, (2 * ⌈1 / (1 / 2 : ℝ)⌉₊ + 1) * R₁, hc0, hc1, hB, by positivity,
+    fun φ μ hφ hμ ↦ ?_⟩
+  obtain ⟨φ', μ', hφ', hμ', hεμ', hφφ'⟩ := hL φ μ hφ hμ
+  have := hφ'.sigmaFinite isOpen_ball
+  obtain ⟨ν, hν⟩ := Measure.exists_add_eq_of_le hεμ'
+  rw [← hν] at hφ'
+  have hψ := isSubharmonicWeight_add_log hc0.le (by linarith) hφ'
+  set μψ := ν + ENNReal.ofReal (ε - 4 * c) • hypArea with hμψ
+  have hup : μψ ≤ μ' := by
+    rw [← hν]
+    intro s
+    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    gcongr
+    linarith
+  have hlow : μ' ≤ (2 : ℝ≥0∞) • μψ := by
+    rw [← hν]
+    intro s
+    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul, mul_add, ← mul_assoc]
+    gcongr
+    · exact le_mul_of_one_le_left' one_le_two
+    · rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num)]
+      exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hhalf : ∀ z ∈ 𝔻, ENNReal.ofReal (1 / 2) ≤ μψ (hypBall z R₁) := by
+    intro z hz
+    have h1 : 1 < 2 * μψ (hypBall z R₁) := (hμ'.mass z hz).trans_le (hlow _)
+    rw [one_div, ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat,
+      ENNReal.inv_le_iff_le_mul (by simp) (by simp)]
+    exact h1.le
+  refine ⟨fun z ↦ φ' z + c * Real.log (1 - ‖z‖ ^ 2), μψ, hψ, ⟨?_, ?_, ?_⟩, ?_⟩
+  · intro z hz s hs h2s
+    calc μψ (hypBall z (2 * s)) ≤ μ' (hypBall z (2 * s)) := hup _
+      _ ≤ Cd₁ * μ' (hypBall z s) := hμ'.doubling z hz s hs h2s
+      _ ≤ Cd₁ * (2 * μψ (hypBall z s)) := by gcongr; exact hlow _
+      _ = ((2 * Cd₁ : ℝ≥0) : ℝ≥0∞) * μψ (hypBall z s) := by
+          rw [ENNReal.coe_mul]; push_cast; ring
+  · intro z hz
+    have := ofReal_lt_measure_hypBall hR₁ (by norm_num) hhalf 1 hz
+    rwa [ENNReal.ofReal_one] at this
+  · exact fun K hK hKc ↦ (hup K).trans_lt (hμ'.finite K hK hKc)
+  · intro z hz
+    rw [show φ' z + c * Real.log (1 - ‖z‖ ^ 2) - (φ z + c * Real.log (1 - ‖z‖ ^ 2)) =
+      φ' z - φ z by ring, abs_sub_comm]
+    exact hφφ' z hz
 
 /-- The kernel of Theorem 2, uniformly in the class `(Cd, r)`: from
 `exists_aux_weight_disc_quant`, `prop2_disc_quant` (M09) applied to the auxiliary weight, and
@@ -347,6 +399,28 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
         (∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) ∧ (∀ ζ ∈ 𝔻, H ζ ζ = 1) ∧
         ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
           ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := sorry
+
+/-! ## Per-weight forms -/
+
+theorem exists_aux_weight_disc (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
+    (hd : IsLocallyDoublingDisc μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
+    ∃ (ψ : ℂ → ℝ) (μψ : Measure ℂ) (c B : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ B ∧
+      IsSubharmonicWeight 𝔻 ψ μψ ∧ IsLocallyDoublingDisc μψ ∧
+      (∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μψ (hypBall z R)) ∧
+      ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B := by
+  obtain ⟨r, hr, hmr⟩ := hm
+  obtain ⟨Cd, hCd⟩ := hd
+  obtain ⟨c, B, Cd', R', hc0, hc1, hB, hR', h⟩ := exists_aux_weight_disc_quant Cd r hr
+  obtain ⟨ψ, μψ, hψ, hcl, hb⟩ := h φ μ hφ (MeasClassDisc.of_weight hφ hCd hmr)
+  exact ⟨ψ, μψ, c, B, hc0, hc1, hB, hψ, ⟨Cd', hcl.doubling⟩, ⟨R', hR', hcl.mass⟩, hb⟩
+
+theorem exists_disc_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
+    (hφ : IsSubharmonicWeight 𝔻 φ μ) (hd : IsLocallyDoublingDisc μ)
+    (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
+    ∃ (H : ℂ → ℂ → ℂ) (c A : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ A ∧ Measurable (Function.uncurry H) ∧
+      (∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) ∧ (∀ ζ ∈ 𝔻, H ζ ζ = 1) ∧
+      ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
+        ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := sorry
 
 /-! ## Main statements -/
 
