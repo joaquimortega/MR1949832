@@ -30,6 +30,10 @@ The printed right-hand side stays below `0.6`. But after the gauge `e^{iz²/2}`,
 
 The failure does not use the [OCS99] theorem. The problem is invariant under `φ ↦ φ + Re H`, `u ↦ u e^{H}` (`H` entire), and the printed right-hand side is not.
 
+**Formal disproof.** The failure is proved in Lean: `OC.not_theorem3_printed` and the main statement `OC.theorem3_printed_false`. It uses no `TheoremOCS` and needs only the three standard axioms. The formal proof simplifies the counterexample:
+- it uses finitely many dyadic point masses `x₀ − i 2^{-(k+6)}` instead of a segment;
+- Bernstein's inequality, which is not in Mathlib, is replaced by Phragmén–Lindelöf on the two half-planes, the Cauchy estimate and the mean value theorem.
+
 **Correction.** Weight the integral: `∫_{|z−x|<1} e^{-φ(z)} d|μ|(z)/|x−z|`. The corrected statement is formalized (`theorem3`, conditional on `TheoremOCS` as in the paper). The printed form holds when `φ` is bounded below on `|Im z| < 1`, e.g. `φ = α|Im z|`, the case of [OCS99].
 
 ### N-02 (E, confirmed) — Theorem 4, p. 363 (and p. 372): inequalities reversed
@@ -193,3 +197,11 @@ The scaffold lemma `integral_bumpPot_mul_laplacian` had the right-hand side `∫
 
 ### I-05 (M04) — Lemma 6 constants
 Doubling of the regularized measure in the disc: squeezing between `ε·hypArea` and `K·hypArea` gives the constant `max(2C_d, 4cosh²(½)·K/ε)`. This makes the blueprint's `291600 K/ε` and its `artanh` monotonicity argument unnecessary.
+
+### I-06 (M08, M09, M12, M14) — notes from the multiplier and estimate proofs
+- **M08 plane far field.** It reuses the near-field dyadic summation instead of the Fubini step with `∫|z − w|^{-3}`.
+- **M08 continuity of the cell potentials.** It is proved by uniform approximation with truncated kernels `log max(·, t)`.
+- **M09.** The degree bound for the colouring counts disjoint cells of mass `N` near a cell, instead of using hyperbolic areas. One generic colouring proof covers plane and disc. Confirmed (p. 369): Besicovitch is not needed.
+- **M12 (N-23 made precise).** With the auxiliary weight `ψ = φ′ − c|z|²`, the plane kernel must carry `e^{2c(ζ̄z − |ζ|²)}`, and then the `±c|·|²` terms cancel exactly to `e^{-c|z−ζ|²}`. The paper's `ψ = φ − (ε/2)|z|²` corresponds to `c = ε/2`, i.e. the exponent `ε`, not `2ε`.
+- **M12 (N-03 made formal).** `thm1H_eq_zero_of_zero` proves that the kernel vanishes at the zeros of the multipliers.
+- **M14.** The constant of the corrected Theorem 3 is `C = 2 C_up C_O (1 + c⁻¹ e^α)`.
