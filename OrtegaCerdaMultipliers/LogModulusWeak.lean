@@ -8,8 +8,7 @@ import OrtegaCerdaMultipliers.Potential.Weyl
 See `blueprint/M07_LogModulus.md` §4.  `LogModulus.lean` (proved, unchanged) takes the two M02
 statements `WeylLaplacianStmt` and `LogKernelStmt` as hypotheses.  Here they are discharged from
 M02 (`Potential/Fundamental.lean`, `Potential/Weyl.lean`), and the weak entry point loses the
-two arguments.  The proofs in this file are complete term proofs; they inherit the `sorry`s of
-the M02 lemmas they apply.
+two arguments.  The proofs in this file are complete term proofs.
 -/
 
 open MeasureTheory Metric Set Complex InnerProductSpace

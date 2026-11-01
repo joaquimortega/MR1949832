@@ -4,7 +4,7 @@ import OrtegaCerdaMultipliers.Doubling.Export
 # M03 (Doubling) — Line forms requested by M13 (`IsLineMeasure`, L1–L8)
 
 See `blueprint/M13_Theorem5.md` §4.2 and `blueprint/M03_Doubling.md` §4.  Scaffold: statements,
-proofs `sorry` (a few are short term proofs from `Doubling/Export.lean`); the structure is real.
+all proofs complete.
 
 M13 bundles the standing hypotheses on the Riesz measure `μ` of a weight whose Laplacian is
 carried by `ℝ` (`IsLineMeasure`) and needs the line forms of Lemma 1, Claim 1, Claim 2,

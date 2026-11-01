@@ -4,7 +4,7 @@ import OrtegaCerdaMultipliers.Doubling.HypDisc
 /-!
 # M03 (Doubling) — The statements in `ℂ`-terms (plane, disc, line)
 
-See `blueprint/M03_Doubling.md` §2.4.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M03_Doubling.md` §2.4.  All proofs complete.
 
 These are the `ℂ`-level statements consumed downstream, obtained from `Doubling/Abstract.lean`
 through `ℂ`, `linePull` and `discPull`, and the finiteness bridge from `IsSubharmonicWeight`.

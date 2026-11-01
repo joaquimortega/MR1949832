@@ -5,7 +5,7 @@ import OrtegaCerdaMultipliers.Doubling.Uniform
 # M03 (Doubling) — Quantitative forms: constants depending only on `(C_d, R₀)`
 
 See `blueprint/M03_Doubling.md` §4 and `blueprint/M08_Multiplier.md` §1.1, §4.1.  Scaffold:
-statements, proofs `sorry`; definitions are real.
+statements and proofs complete.
 
 M08 and M09 prove Theorem 4 and Proposition 2 with constants depending only on the doubling
 constant `C_d` and the mass radius `R₀` (README §3a.6).  The classes `MeasClassPlane`,

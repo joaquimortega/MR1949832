@@ -12,50 +12,54 @@ instances; `sorry` counts the `sorry` tokens outside comments.
 | M01 | `Foundations/Basic.lean` | 8 | 0 | `Defs` |
 | M01 | `Foundations/DiscGeometry.lean` | 65 | 0 | `Foundations/Basic`, `Foundations/Wirtinger`, `Foundations/Polar`, `Foundations/Separated` |
 | M01 | `Foundations/Hyperbolic.lean` | 35 | 0 | `Foundations/DiscGeometry` |
-| M01 | `Foundations/HyperbolicExtra.lean` | 10 | 9 | `Foundations/Hyperbolic` |
+| M01 | `Foundations/HyperbolicExtra.lean` | 19 | 0 | `Foundations/Hyperbolic` |
 | M01 | `Foundations/LocalEstimates.lean` | 4 | 0 | `Foundations/Basic`, `Foundations/Polar` |
 | M01 | `Foundations/Polar.lean` | 23 | 0 | `Foundations/Basic` |
 | M01 | `Foundations/Pompeiu.lean` | 33 | 0 | `Foundations/Basic`, `Foundations/Wirtinger`, `Foundations/Polar` |
 | M01 | `Foundations/Separated.lean` | 18 | 0 | `Foundations/Basic`, `Foundations/Polar` |
 | M01 | `Foundations/Weyl.lean` | 12 | 0 | `Foundations/Basic`, `Foundations/Wirtinger`, `Foundations/Polar`, `Foundations/LocalEstimates`, `Foundations/Pompeiu` |
 | M01 | `Foundations/Wirtinger.lean` | 78 | 0 | `Foundations/Basic` |
-| M02 | `Potential/Fundamental.lean` | 6 | 6 | `Foundations/Wirtinger`, `Foundations/Polar`, `Foundations/Hyperbolic` |
-| M02 | `Potential/GlobalKernels.lean` | 5 | 3 | `Potential/Fundamental` |
-| M02 | `Potential/Local.lean` | 20 | 16 | `Potential/Weyl` |
+| M02 | `Potential/Fundamental.lean` | 29 | 0 | `Foundations/Wirtinger`, `Foundations/Polar`, `Foundations/Hyperbolic`, `Potential/Radial` |
+| M02 | `Potential/GlobalKernels.lean` | 6 | 0 | `Potential/Fundamental` |
+| M02 | `Potential/Local.lean` | 31 | 0 | `Potential/Weyl` |
 | M02 | `Potential/Radial.lean` | 82 | 0 | `Foundations/Basic`, `Foundations/Wirtinger`, `Foundations/Polar` |
-| M02 | `Potential/Weyl.lean` | 17 | 16 | `Potential/Radial`, `Potential/Fundamental` |
-| M03 | `Doubling/Abstract.lean` | 42 | 38 | `Defs` |
-| M03 | `Doubling/Export.lean` | 67 | 66 | `Doubling/Line`, `Doubling/HypDisc` |
-| M03 | `Doubling/HypDisc.lean` | 21 | 8 | `Doubling/Plane`, `Foundations/HyperbolicExtra` |
-| M03 | `Doubling/Line.lean` | 6 | 5 | `Doubling/Plane` |
-| M03 | `Doubling/LineMeasure.lean` | 14 | 10 | `Doubling/Export` |
-| M03 | `Doubling/Plane.lean` | 6 | 4 | `Doubling/Abstract` |
-| M03 | `Doubling/Quant.lean` | 42 | 29 | `Doubling/Export` |
-| M04 | `Regularization.lean` | 17 | 14 | `Potential/Local`, `Doubling/Quant`, `Foundations/HyperbolicExtra` |
-| M05 | `Partition/Cayley.lean` | 14 | 10 | `Partition/Rectangles` |
-| M05 | `Partition/Lemma4.lean` | 7 | 6 | `Partition/Cayley`, `Doubling/Quant` |
-| M05 | `Partition/Properties.lean` | 17 | 17 | `Partition/Lemma4` |
-| M05 | `Partition/Rectangles.lean` | 15 | 8 | `Doubling/Export` |
+| M02 | `Potential/Weyl.lean` | 37 | 0 | `Potential/Radial`, `Potential/Fundamental` |
+| M03 | `Doubling/Abstract.lean` | 58 | 0 | `Defs` |
+| M03 | `Doubling/Export.lean` | 87 | 0 | `Doubling/Line`, `Doubling/HypDisc` |
+| M03 | `Doubling/HypDisc.lean` | 23 | 0 | `Doubling/Plane`, `Foundations/HyperbolicExtra` |
+| M03 | `Doubling/Line.lean` | 7 | 0 | `Doubling/Plane` |
+| M03 | `Doubling/LineMeasure.lean` | 16 | 0 | `Doubling/Export` |
+| M03 | `Doubling/Plane.lean` | 6 | 0 | `Doubling/Abstract` |
+| M03 | `Doubling/Quant.lean` | 63 | 0 | `Doubling/Export`, `Doubling/Uniform` |
+| M03 | `Doubling/Uniform.lean` | 12 | 0 | `Doubling/Abstract` |
+| M04 | `Regularization.lean` | 72 | 0 | `Potential/Local`, `Doubling/Quant`, `Foundations/HyperbolicExtra` |
+| M05 | `Partition/Cayley.lean` | 39 | 0 | `Partition/Rectangles` |
+| M05 | `Partition/Lemma4.lean` | 23 | 0 | `Partition/Cayley`, `Doubling/Quant`, `Partition/LineCuts` |
+| M05 | `Partition/LineCuts.lean` | 12 | 0 | `Doubling/Quant`, `Partition/Rectangles` |
+| M05 | `Partition/Properties.lean` | 31 | 0 | `Partition/Lemma4` |
+| M05 | `Partition/Rectangles.lean` | 53 | 0 | `Doubling/Export` |
 | M06 | `Quadrature.lean` | 18 | 0 | `Defs` |
 | M07 | `LogModulus.lean` | 20 | 0 | `Defs` |
 | M07 | `LogModulusWeak.lean` | 4 | 0 | `LogModulus`, `Potential/Fundamental`, `Potential/Weyl` |
-| M08 | `Multiplier/Cells.lean` | 5 | 5 | `Multiplier/Defs`, `Partition/Lemma4` |
+| M08 | `Multiplier/Basic.lean` | 19 | 0 | `Multiplier/Defs` |
+| M08 | `Multiplier/CellBounds.lean` | 18 | 0 | `Multiplier/Kernel`, `Multiplier/Cells`, `Multiplier/NearField` |
+| M08 | `Multiplier/Cells.lean` | 18 | 0 | `Multiplier/Basic`, `Multiplier/Defs`, `Partition/Lemma4` |
 | M08 | `Multiplier/Defs.lean` | 14 | 0 | `Doubling/Quant`, `Foundations/HyperbolicExtra` |
-| M08 | `Multiplier/Estimates.lean` | 2 | 2 | `Multiplier/Kernel`, `Multiplier/Cells`, `Multiplier/NearField` |
-| M08 | `Multiplier/Kernel.lean` | 6 | 6 | `Multiplier/Defs` |
-| M08 | `Multiplier/NearField.lean` | 4 | 4 | `Multiplier/Defs`, `ModelKernels` |
-| M08 | `Multiplier/Nodes.lean` | 2 | 2 | `Multiplier/Defs`, `Quadrature` |
-| M08 | `Multiplier/Potential.lean` | 2 | 2 | `Multiplier/Cells`, `Potential/Fundamental`, `LogModulusWeak` |
-| M08 | `Multiplier/Theorem4.lean` | 6 | 4 | `Multiplier/Potential`, `Multiplier/Estimates`, `Multiplier/Nodes` |
-| M09 | `SeveralMultipliers.lean` | 17 | 12 | `Multiplier/Theorem4` |
-| M10 | `ModelKernels.lean` | 34 | 27 | `Foundations/Basic`, `Foundations/Pompeiu`, `Foundations/Polar` |
-| M11 | `Theorem2.lean` | 25 | 21 | `SeveralMultipliers`, `Regularization`, `ModelKernels` |
-| M12 | `Theorem1.lean` | 11 | 9 | `SeveralMultipliers`, `Regularization`, `ModelKernels` |
-| M13 | `Line/Basic.lean` | 2 | 2 | `Doubling/LineMeasure` |
-| M13 | `Line/Partition.lean` | 16 | 10 | `Line/Basic` |
-| M13 | `Line/Potential.lean` | 10 | 5 | `Line/Partition` |
-| M13 | `Theorem5.lean` | 5 | 4 | `Line/Potential`, `LogModulusWeak`, `Potential/Fundamental` |
-| M14 | `Theorem3.lean` | 16 | 12 | `Theorem5`, `Foundations/Weyl` |
+| M08 | `Multiplier/Estimates.lean` | 7 | 0 | `Multiplier/CellBounds`, `Multiplier/Kernel`, `Multiplier/Cells`, `Multiplier/NearField` |
+| M08 | `Multiplier/Kernel.lean` | 13 | 0 | `Multiplier/Basic`, `Multiplier/Defs` |
+| M08 | `Multiplier/NearField.lean` | 8 | 0 | `Multiplier/Basic`, `Multiplier/Cells`, `ModelKernels` |
+| M08 | `Multiplier/Nodes.lean` | 9 | 0 | `Multiplier/Basic`, `Multiplier/Cells`, `Quadrature` |
+| M08 | `Multiplier/Potential.lean` | 30 | 0 | `Multiplier/CellBounds`, `Potential/Fundamental`, `LogModulusWeak` |
+| M08 | `Multiplier/Theorem4.lean` | 13 | 0 | `Multiplier/Potential`, `Multiplier/Estimates`, `Multiplier/Nodes` |
+| M09 | `SeveralMultipliers.lean` | 40 | 0 | `Multiplier/Theorem4` |
+| M10 | `ModelKernels.lean` | 62 | 0 | `Foundations/Basic`, `Foundations/Pompeiu`, `Foundations/Polar`, `Foundations/DiscGeometry` |
+| M11 | `Theorem2.lean` | 41 | 0 | `SeveralMultipliers`, `Regularization`, `ModelKernels` |
+| M12 | `Theorem1.lean` | 11 | 0 | `SeveralMultipliers`, `Regularization`, `ModelKernels` |
+| M13 | `Line/Basic.lean` | 15 | 0 | `Doubling/LineMeasure` |
+| M13 | `Line/Partition.lean` | 52 | 0 | `Line/Basic` |
+| M13 | `Line/Potential.lean` | 38 | 0 | `Line/Partition` |
+| M13 | `Theorem5.lean` | 32 | 0 | `Line/Potential`, `LogModulusWeak`, `Potential/Fundamental` |
+| M14 | `Theorem3.lean` | 74 | 0 | `Theorem5`, `Foundations/Weyl` |
 | Main | `Main.lean` | 0 | 0 | `Multiplier/Theorem4`, `SeveralMultipliers`, `Theorem2`, `Theorem1`, `Theorem5`, `Theorem3` |
 
 ## Modules
@@ -63,23 +67,23 @@ instances; `sorry` counts the `sorry` tokens outside comments.
 | module | content | files | decls | sorry | direct module dependencies |
 |---|---|---:|---:|---:|---|
 | M00 | Definitions | 1 | 21 | 0 | Mathlib |
-| M01 | Foundations | 10 | 286 | 9 | M00 |
-| M02 | Potentials | 5 | 130 | 41 | M01 |
-| M03 | Doubling | 7 | 198 | 160 | M01 |
-| M04 | Regularization (Lemma 6) | 1 | 17 | 14 | M02, M03 |
-| M05 | Partition (Lemma 4) | 4 | 53 | 41 | M03 |
+| M01 | Foundations | 10 | 295 | 0 | M00 |
+| M02 | Potentials | 5 | 185 | 0 | M01 |
+| M03 | Doubling | 8 | 272 | 0 | M01 |
+| M04 | Regularization (Lemma 6) | 1 | 72 | 0 | M02, M03 |
+| M05 | Partition (Lemma 4) | 5 | 158 | 0 | M03 |
 | M06 | Quadrature (Lemma 5) | 1 | 18 | 0 | M00 |
 | M07 | LogModulus | 2 | 24 | 0 | M02 |
-| M08 | Multiplier (Theorem 4) | 8 | 41 | 25 | M05, M06, M07, M10 |
-| M09 | SeveralMultipliers (Prop. 2) | 1 | 17 | 12 | M08 |
-| M10 | ModelKernels (Lemmas 7, 8) | 1 | 34 | 27 | M01 |
-| M11 | Theorem 2 | 1 | 25 | 21 | M04, M09 |
-| M12 | Theorem 1, Prop. 1 | 1 | 11 | 9 | M04, M09 |
-| M13 | Theorem 5 | 4 | 33 | 21 | M03, M07 |
-| M14 | Theorem 3 | 1 | 16 | 12 | M13 |
+| M08 | Multiplier (Theorem 4) | 10 | 149 | 0 | M05, M06, M07, M10 |
+| M09 | SeveralMultipliers (Prop. 2) | 1 | 40 | 0 | M08 |
+| M10 | ModelKernels (Lemmas 7, 8) | 1 | 62 | 0 | M01 |
+| M11 | Theorem 2 | 1 | 41 | 0 | M04, M09 |
+| M12 | Theorem 1, Prop. 1 | 1 | 11 | 0 | M04, M09 |
+| M13 | Theorem 5 | 4 | 137 | 0 | M03, M07 |
+| M14 | Theorem 3 | 1 | 74 | 0 | M13 |
 | Main | re-export | 1 | 0 | 0 | M11, M12, M14 |
 
-Total: 49 files, 924 declarations, 392 `sorry`.
+Total: 53 files, 1559 declarations, 0 `sorry`.
 
 ## Dependency graph (transitive reduction)
 
