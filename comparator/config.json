@@ -1,6 +1,6 @@
 {
-  "challenge_module": "Challenge",
-  "solution_module": "Solution",
+  "challenge_module": "OCChallenge",
+  "solution_module": "OCSolution",
   "theorem_names": [
     "OC.theorem4_disc",
     "OC.theorem4_plane",

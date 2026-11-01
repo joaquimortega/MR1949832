@@ -17,7 +17,7 @@ name = "OrtegaCerdaMultipliers"
 
 # Self-contained statements file and its solution, checked by `comparator` (see comparator/).
 [[lean_lib]]
-name = "Challenge"
+name = "OCChallenge"
 
 [[lean_lib]]
-name = "Solution"
+name = "OCSolution"

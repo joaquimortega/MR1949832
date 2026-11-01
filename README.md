@@ -8,7 +8,7 @@ Page references ("p. 363") are to the journal pagination. The printed PDF used a
 
 ## Main results
 
-All thirteen main results are proved without `sorry`, depend only on `propext`, `Classical.choice` and `Quot.sound`, and are accepted by comparator against `Challenge.lean` (2026-11-01).
+All thirteen main results are proved without `sorry`, depend only on `propext`, `Classical.choice` and `Quot.sound`, and are accepted by comparator against `OCChallenge.lean` (2026-11-01).
 
 
 | Paper | Lean |
@@ -22,7 +22,7 @@ All thirteen main results are proved without `sorry`, depend only on `propext`, 
 | Theorem 3: corrected, assuming the quoted [OCS99] theorem | `OC.theorem3_weighted : TheoremOCS → …` |
 | Theorem 3 as printed is false | `OC.theorem3_printed_false` (a Lean proof; it does not use `TheoremOCS`) |
 
-The statements are in `comparator/statements.lean` and the definitions they use in `OrtegaCerdaMultipliers/Defs.lean`. `Challenge.lean` combines both into a self-contained file for [comparator](https://github.com/leanprover/comparator); see `comparator/README.md`.
+The statements are in `comparator/statements.lean` and the definitions they use in `OrtegaCerdaMultipliers/Defs.lean`. `OCChallenge.lean` combines both into a self-contained file for [comparator](https://github.com/leanprover/comparator); see `comparator/README.md`.
 
 **Weights.** A weight is a pair `(φ, μ)`: `φ` is continuous and `Δφ = μ` in the sense of distributions. Mathlib has no Riesz-measure theory. For the paper's weights (subharmonic, with locally doubling Laplacian) this class coincides with the paper's.
 

@@ -20,7 +20,7 @@ This follows the same workflow as the companion BOC project (`../1995ReineAngewM
 2. Scaffold: all statements compiled, proofs `sorry`.
 3. Independent agent review of the blueprint and of every statement.
 4. Implementation in git worktrees (`scripts/new_worktree.sh`).
-5. `comparator` check of the main results against the self-contained `Challenge.lean`.
+5. `comparator` check of the main results against the self-contained `OCChallenge.lean`.
 6. `formalization.yaml` and `NOTEBOOK.md`.
 
 **Purpose beyond the paper.** Theorem 2 (sup-norm part) supplies, without boundary regularity, the ∂̄-estimate that BOC Theorem 6 needs (BOC NOTEBOOK N-30, I-20). This project must therefore **not** depend on BOC; BOC will `require` this one (BOC module M23). Foundation files are copied from BOC into module M01, each with a provenance line.

@@ -1,22 +1,22 @@
-Building Challenge
-⚠ [9047/9048] Replayed Challenge
-warning: Challenge.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
-warning: Challenge.lean:171:8: declaration uses `sorry`
-warning: Challenge.lean:181:8: declaration uses `sorry`
-warning: Challenge.lean:194:8: declaration uses `sorry`
-warning: Challenge.lean:208:8: declaration uses `sorry`
-warning: Challenge.lean:224:8: declaration uses `sorry`
-warning: Challenge.lean:236:8: declaration uses `sorry`
-warning: Challenge.lean:250:8: declaration uses `sorry`
-warning: Challenge.lean:263:8: declaration uses `sorry`
-warning: Challenge.lean:272:8: declaration uses `sorry`
-warning: Challenge.lean:283:8: declaration uses `sorry`
-warning: Challenge.lean:295:8: declaration uses `sorry`
-warning: Challenge.lean:306:8: declaration uses `sorry`
-warning: Challenge.lean:325:8: declaration uses `sorry`
+Building OCChallenge
+⚠ [9047/9048] Replayed OCChallenge
+warning: OCChallenge.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
+warning: OCChallenge.lean:171:8: declaration uses `sorry`
+warning: OCChallenge.lean:181:8: declaration uses `sorry`
+warning: OCChallenge.lean:194:8: declaration uses `sorry`
+warning: OCChallenge.lean:208:8: declaration uses `sorry`
+warning: OCChallenge.lean:224:8: declaration uses `sorry`
+warning: OCChallenge.lean:236:8: declaration uses `sorry`
+warning: OCChallenge.lean:250:8: declaration uses `sorry`
+warning: OCChallenge.lean:263:8: declaration uses `sorry`
+warning: OCChallenge.lean:272:8: declaration uses `sorry`
+warning: OCChallenge.lean:283:8: declaration uses `sorry`
+warning: OCChallenge.lean:295:8: declaration uses `sorry`
+warning: OCChallenge.lean:306:8: declaration uses `sorry`
+warning: OCChallenge.lean:325:8: declaration uses `sorry`
 Build completed successfully (9048 jobs).
-Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from Challenge
-Building Solution
+Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCChallenge
+Building OCSolution
 ⚠ [9047/9102] Replayed OrtegaCerdaMultipliers.Defs
 warning: OrtegaCerdaMultipliers/Defs.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
 ⚠ [9049/9102] Replayed OrtegaCerdaMultipliers.Foundations.Wirtinger
@@ -671,7 +671,7 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
 Build completed successfully (9102 jobs).
-Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from Solution
+Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCSolution
 Running Lean default kernel on solution.
 Lean default kernel accepts the solution
 Your solution is okay!

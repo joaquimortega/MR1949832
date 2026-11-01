@@ -1,7 +1,7 @@
 # Checking the main results with comparator
 
 [comparator](https://github.com/leanprover/comparator) is a trustworthy judge for Lean proofs. It checks that every theorem in `config.json`:
-1. is stated in `Solution` exactly as in `Challenge` (all declarations used in the statements must coincide);
+1. is stated in `OCSolution` exactly as in `OCChallenge` (all declarations used in the statements must coincide);
 2. uses no axioms beyond `propext`, `Quot.sound` and `Classical.choice`;
 3. is accepted by the Lean kernel.
 
@@ -9,10 +9,10 @@
 
 | File | Role |
 |---|---|
-| `../Challenge.lean` | **The self-contained file with the main results.** It imports only `Mathlib`, contains every definition used in the statements (a verbatim copy of `OrtegaCerdaMultipliers/Defs.lean`), and states the thirteen main theorems with `sorry`. |
+| `../OCChallenge.lean` | **The self-contained file with the main results.** It imports only `Mathlib`, contains every definition used in the statements (a verbatim copy of `OrtegaCerdaMultipliers/Defs.lean`), and states the thirteen main theorems with `sorry`. |
 | `statements.lean` | The main-theorem statements, copied verbatim from the project. |
-| `../scripts/make_challenge.py` | Regenerates `Challenge.lean` and `config.json` from `Defs.lean` and `statements.lean`. |
-| `../Solution.lean` | `import OrtegaCerdaMultipliers`. The project proves the theorems with the same names (namespace `OC`). |
+| `../scripts/make_challenge.py` | Regenerates `OCChallenge.lean` and `config.json` from `Defs.lean` and `statements.lean`. |
+| `../OCSolution.lean` | `import OrtegaCerdaMultipliers`. The project proves the theorems with the same names (namespace `OC`). |
 | `config.json` | The comparator configuration (13 theorems). |
 
 ## The thirteen theorems
@@ -40,7 +40,7 @@ From the repository root:
 
 ```sh
 lake exe cache get                     # prebuilt Mathlib
-python3 scripts/make_challenge.py      # (re)generate Challenge.lean and comparator/config.json
+python3 scripts/make_challenge.py      # (re)generate OCChallenge.lean and comparator/config.json
 export COMPARATOR_LANDRUN=/path/to/landrun
 export COMPARATOR_LEAN4EXPORT=/path/to/lean4export
 systemd-run --property=RestrictAddressFamilies=~AF_UNIX --user --pipe --wait -E PATH="$PATH" \
