@@ -1,5 +1,6 @@
 import OrtegaCerdaMultipliers.Partition.Cayley
 import OrtegaCerdaMultipliers.Doubling.Quant
+import OrtegaCerdaMultipliers.Partition.LineCuts
 
 /-!
 # M05 (Partition) — Lemma 4: partitions into pieces of mass `N`
@@ -53,7 +54,11 @@ theorem lemma4_line {μ : Measure ℂ} (hd : IsLocallyDoublingLine μ)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (N : ℕ) (hN : 1 ≤ N) :
     ∃ (a A : ℝ) (R : ℕ → Set ℂ), 0 < a ∧ 0 < A ∧
       IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A R ∧
-      ∀ i, ∃ s t : ℝ, s < t ∧ R i = (fun u : ℝ ↦ (u : ℂ)) '' Ico s t := sorry
+      ∀ i, ∃ s t : ℝ, s < t ∧ R i = (fun u : ℝ ↦ (u : ℂ)) '' Ico s t := by
+  obtain ⟨Cd, R₀, hC⟩ := lineCut_measClassLine_of hd hfin hm
+  obtain ⟨a, A, ha, hA, h⟩ := lineCut_partition_quant Cd R₀ N hN
+  obtain ⟨R, h1, h2, h3, h4, h5, h6, h7⟩ := h μ hC
+  exact ⟨a, A, R, ha, hA, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
 
 /-! ### Claim 2 and the consequences used by M08/M09 (plane; disc and line analogous) -/
 
@@ -69,6 +74,10 @@ theorem lemma4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
 theorem lemma4_line_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) : ∃ a A : ℝ, 0 < a ∧ 0 < A ∧
     ∀ ν : Measure ℂ, MeasClassLine ν Cd R₀ →
       ∃ R : ℕ → Set ℂ, IsMassPartition ν (range fun t : ℝ ↦ (t : ℂ)) dist
-        (fun z ↦ massRadiusLine ν z.re) N a A R := sorry
+        (fun z ↦ massRadiusLine ν z.re) N a A R := by
+  obtain ⟨a, A, ha, hA, h⟩ := lineCut_partition_quant Cd R₀ N hN
+  refine ⟨a, A, ha, hA, fun ν hν ↦ ?_⟩
+  obtain ⟨R, h1, h2, h3, h4, h5, h6, -⟩ := h ν hν
+  exact ⟨R, ⟨h1, h2, h3, h4, h5, h6⟩⟩
 
 end OC

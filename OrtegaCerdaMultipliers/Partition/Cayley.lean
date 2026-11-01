@@ -52,4 +52,29 @@ theorem euclid_doubling_cayley {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ
       (μ.restrict 𝔻).map cayley (ball w (4 * r)) ≤
         ENNReal.ofReal C_E * (μ.restrict 𝔻).map cayley (ball w (r / 2)) := sorry
 
+/-! ### Helpers consumed by `Lemma4.lean` (M05 §3.7–3.8) -/
+
+/-- Masses of the push-forward `cayley_* (μ|𝔻)` are masses of `cayleyPre`. -/
+theorem map_restrict_cayley_apply (μ : Measure ℂ) {S : Set ℂ} (hS : MeasurableSet S) :
+    (μ.restrict 𝔻).map cayley S = μ (cayleyPre S) := sorry
+
+/-- Uniform form of `euclid_doubling_cayley`: `C_E` depends only on the doubling constant `Cd`
+(the hypothesis is `IsLocallyDoublingDiscWith μ Cd`, unfolded). -/
+theorem euclid_doubling_cayley_quant (Cd : ℝ≥0) :
+    ∃ C_E : ℝ, 0 < C_E ∧ ∀ μ : Measure ℂ,
+      (∀ z ∈ 𝔻, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (hypBall z (2 * r)) ≤ Cd * μ (hypBall z r)) →
+      ∀ w : ℂ, 0 < w.im → ∀ r : ℝ, 0 < r → r ≤ w.im / 16 →
+        (μ.restrict 𝔻).map cayley (ball w (4 * r)) ≤
+          ENNReal.ofReal C_E * (μ.restrict 𝔻).map cayley (ball w (r / 2)) := sorry
+
+/-- Coarse rows (M05 §3.7): with `Λc = 64 e^{4R}`, every box
+`[a, a + (Λc - 1) y₁) × [y₁, Λc y₁)` contains a hyperbolic ball of radius `R`. -/
+theorem exists_hypBall_subset_discBox_row {R : ℝ} (hR : 0 < R) {y₁ : ℝ} (hy : 0 < y₁) (a : ℝ) :
+    ∃ p ∈ 𝔻, hypBall p R ⊆
+      discBox a (a + (64 * Real.exp (4 * R) - 1) * y₁) y₁ (64 * Real.exp (4 * R) * y₁) := sorry
+
+/-- A horocyclic box with `0 < y₁` lies in a compact subset of `𝔻`. -/
+theorem exists_isCompact_discBox_subset (x₁ x₂ : ℝ) {y₁ : ℝ} (hy : 0 < y₁) (y₂ : ℝ) :
+    ∃ K : Set ℂ, IsCompact K ∧ K ⊆ 𝔻 ∧ discBox x₁ x₂ y₁ y₂ ⊆ K := sorry
+
 end OC
