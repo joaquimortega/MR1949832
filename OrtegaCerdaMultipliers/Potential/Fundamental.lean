@@ -446,13 +446,94 @@ theorem integral_log_pseudoHyp_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff 
 theorem integrableOn_log_norm_sub_uniform {K K' : Set ℂ} (hK : IsCompact K)
     (hK' : IsCompact K') :
     ∃ M : ℝ, ∀ a ∈ K', IntegrableOn (fun z ↦ Real.log ‖z - a‖) K ∧
-      ∫ z in K, |Real.log ‖z - a‖| ≤ M := sorry
+      ∫ z in K, |Real.log ‖z - a‖| ≤ M := by
+  obtain ⟨R₁, hR₁⟩ := hK.isBounded.subset_closedBall 0
+  obtain ⟨R₂, hR₂⟩ := hK'.isBounded.subset_closedBall 0
+  set R := max R₁ 0 + max R₂ 0
+  have hR : 0 ≤ R := by positivity
+  refine ⟨∫ z in closedBall (0 : ℂ) R, |Real.log ‖z‖|, fun a ha ↦ ?_⟩
+  have hKa : K ⊆ closedBall a R := by
+    intro z hz
+    have h1 := hR₁ hz
+    have h2 := hR₂ ha
+    rw [mem_closedBall, dist_zero_right] at h1 h2
+    rw [mem_closedBall, dist_eq_norm]
+    calc ‖z - a‖ ≤ ‖z‖ + ‖a‖ := norm_sub_le _ _
+      _ ≤ R := add_le_add (h1.trans (le_max_left _ _)) (h2.trans (le_max_left _ _))
+  have hint := integrableOn_log_norm_sub_closedBall a hR
+  refine ⟨hint.mono_set hKa, ?_⟩
+  calc ∫ z in K, |Real.log ‖z - a‖| ≤ ∫ z in closedBall a R, |Real.log ‖z - a‖| :=
+        setIntegral_mono_set hint.abs (Eventually.of_forall fun z ↦ abs_nonneg _)
+          (Eventually.of_forall hKa)
+    _ = ∫ z in closedBall (0 : ℂ) R, |Real.log ‖z‖| := by
+        rw [← integral_indicator measurableSet_closedBall,
+          ← integral_indicator measurableSet_closedBall]
+        have : (closedBall a R).indicator (fun z ↦ |Real.log ‖z - a‖|) =
+            fun z ↦ (closedBall (0 : ℂ) R).indicator (fun w ↦ |Real.log ‖w‖|) (z - a) := by
+          ext z
+          by_cases hz : z ∈ closedBall a R
+          · have hz' : z - a ∈ closedBall (0 : ℂ) R := by
+              rwa [mem_closedBall, dist_zero_right, ← dist_eq_norm]
+            rw [indicator_of_mem hz, indicator_of_mem hz']
+          · have hz' : z - a ∉ closedBall (0 : ℂ) R := by
+              rwa [mem_closedBall, dist_zero_right, ← dist_eq_norm]
+            rw [indicator_of_notMem hz, indicator_of_notMem hz']
+        rw [this, integral_sub_right_eq_self
+          (fun z ↦ (closedBall (0 : ℂ) R).indicator (fun w ↦ |Real.log ‖w‖|) z) a]
 
 /-- `Δ (∫ log|z − ζ| dν(ζ)) = 2π ν` weakly, for a finite measure with compact support. -/
 theorem integral_logPotential_mul_laplacian (ν : Measure ℂ) [IsFiniteMeasure ν] {L : Set ℂ}
     (hL : IsCompact L) (hνL : ν Lᶜ = 0) (χ : ℂ → ℝ) (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
     (hc : HasCompactSupport χ) :
-    ∫ z, (∫ ζ, Real.log ‖z - ζ‖ ∂ν) * Laplacian.laplacian χ z = 2 * Real.pi * ∫ ζ, χ ζ ∂ν :=
-  sorry
+    ∫ z, (∫ ζ, Real.log ‖z - ζ‖ ∂ν) * Laplacian.laplacian χ z = 2 * Real.pi * ∫ ζ, χ ζ ∂ν := by
+  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (WithTop.coe_le_coe.2 le_top)
+  have hΔc := continuous_laplacian hχ2
+  have hΔs := hasCompactSupport_laplacian hc
+  obtain ⟨B, hB⟩ := hΔc.bounded_above_of_compact_support hΔs
+  obtain ⟨M, hM⟩ := integrableOn_log_norm_sub_uniform hc hL
+  set F : ℂ → ℂ → ℝ := fun z ζ ↦ Real.log ‖z - ζ‖ * Laplacian.laplacian χ z
+  have hFm : StronglyMeasurable (Function.uncurry F) := by
+    refine Measurable.stronglyMeasurable ?_
+    exact (Real.measurable_log.comp (measurable_fst.sub measurable_snd).norm).mul
+      (hΔc.measurable.comp measurable_fst)
+  have hinner : ∀ ζ, Integrable (fun z ↦ F z ζ) := fun ζ ↦ by
+    simpa [F, smul_eq_mul] using
+      (locallyIntegrable_log_norm_sub ζ).integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have hnorm_le : ∀ ζ ∈ L, ∫ z, ‖F z ζ‖ ≤ B * M := by
+    intro ζ hζ
+    have hsub : ∫ z, ‖F z ζ‖ = ∫ z in tsupport χ, ‖F z ζ‖ := by
+      rw [← integral_indicator (isClosed_tsupport χ).measurableSet]
+      congr 1; ext z
+      by_cases hz : z ∈ tsupport χ
+      · rw [indicator_of_mem hz]
+      · rw [indicator_of_notMem hz]
+        simp [F, laplacian_eq_zero_of_notMem_tsupport hz]
+    rw [hsub]
+    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+    calc ∫ z in tsupport χ, ‖F z ζ‖ ≤ ∫ z in tsupport χ, B * |Real.log ‖z - ζ‖| := by
+          refine setIntegral_mono_on (hinner ζ).norm.integrableOn
+            ((hM ζ hζ).1.abs.const_mul B) (isClosed_tsupport χ).measurableSet fun z _ ↦ ?_
+          rw [norm_mul, Real.norm_eq_abs, mul_comm]
+          exact mul_le_mul_of_nonneg_right (hB z) (abs_nonneg _)
+      _ = B * ∫ z in tsupport χ, |Real.log ‖z - ζ‖| := integral_const_mul _ _
+      _ ≤ B * M := mul_le_mul_of_nonneg_left (hM ζ hζ).2 hB0
+  have hint : Integrable (Function.uncurry F) (volume.prod ν) := by
+    rw [integrable_prod_iff' hFm.aestronglyMeasurable]
+    refine ⟨Eventually.of_forall fun ζ ↦ hinner ζ, ?_⟩
+    have hmeas : AEStronglyMeasurable (fun ζ ↦ ∫ z, ‖F z ζ‖) ν :=
+      (hFm.norm.integral_prod_left' (μ := volume)).aestronglyMeasurable
+    refine Integrable.mono' (integrable_const (B * M)) hmeas ?_
+    have hL' : ∀ᵐ ζ ∂ν, ζ ∈ L := by
+      rw [ae_iff]
+      exact hνL
+    filter_upwards [hL'] with ζ hζ
+    rw [Real.norm_eq_abs, abs_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
+    exact hnorm_le ζ hζ
+  calc ∫ z, (∫ ζ, Real.log ‖z - ζ‖ ∂ν) * Laplacian.laplacian χ z = ∫ z, ∫ ζ, F z ζ ∂ν := by
+        congr 1; ext z; rw [← integral_mul_const]
+    _ = ∫ ζ, (∫ z, F z ζ) ∂ν := integral_integral_swap hint
+    _ = ∫ ζ, 2 * Real.pi * χ ζ ∂ν := by
+        congr 1; ext ζ; exact integral_log_norm_sub_mul_laplacian hχ2 hc ζ
+    _ = 2 * Real.pi * ∫ ζ, χ ζ ∂ν := integral_const_mul _ _
 
 end OC
