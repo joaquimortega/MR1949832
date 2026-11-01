@@ -1,4 +1,4 @@
-import OrtegaCerdaMultipliers.Multiplier.Cells
+import OrtegaCerdaMultipliers.Multiplier.CellBounds
 import OrtegaCerdaMultipliers.Potential.Fundamental
 import OrtegaCerdaMultipliers.LogModulusWeak
 
