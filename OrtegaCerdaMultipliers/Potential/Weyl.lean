@@ -79,6 +79,140 @@ theorem bumpKernel_sub_comm (s : ℝ) (w y : ℂ) : bumpKernel s (w - y) = bumpK
 
 /-! ### Weyl's lemma -/
 
+/-! #### The two-radii test function -/
+
+/-- `Δ (S_s(‖· − y‖²)) = −4π k_s(· − y)`. -/
+theorem laplacian_sFun_normSq_sub {s : ℝ} (hs : 0 < s) (y w : ℂ) :
+    Laplacian.laplacian (fun w : ℂ ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖w - y‖ ^ 2)) w =
+      -(4 * Real.pi) * bumpKernel s (w - y) := by
+  rw [laplacian_eq_four_mul_lap,
+    lap_comp_sub (fun w : ℂ ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖w‖ ^ 2)) y w,
+    lap_sFun_normSq (bump_pos hs) (bump_lt hs)]
+  simp only [bumpKernel]
+  ring
+
+theorem contDiff_sFun_normSq_sub {s : ℝ} (hs : 0 < s) (y : ℂ) :
+    ContDiff ℝ (⊤ : ℕ∞) (fun w : ℂ ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖w - y‖ ^ 2)) :=
+  (contDiff_sFun (bump_pos hs) (bump_lt hs)).comp
+    ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const))
+
+/-- The test function `S_{s₂}(‖w − y‖²) − S_{s₁}(‖w − y‖²)`, smooth, supported in
+`closedBall y s₂`, with Laplacian `4π (k_{s₁} − k_{s₂})(· − y)`. -/
+def twoRadiiTest (s₁ s₂ : ℝ) (y w : ℂ) : ℝ :=
+  sFun (s₂ ^ 2 / 4) (s₂ ^ 2) (‖w - y‖ ^ 2) - sFun (s₁ ^ 2 / 4) (s₁ ^ 2) (‖w - y‖ ^ 2)
+
+section twoRadii
+
+variable {s₁ s₂ : ℝ} {y : ℂ}
+
+theorem contDiff_twoRadiiTest (hs₁ : 0 < s₁) (hs₂ : 0 < s₂) :
+    ContDiff ℝ (⊤ : ℕ∞) (twoRadiiTest s₁ s₂ y) :=
+  (contDiff_sFun_normSq_sub hs₂ y).sub (contDiff_sFun_normSq_sub hs₁ y)
+
+theorem twoRadiiTest_eq_zero (hs₁ : 0 < s₁) (h12 : s₁ ≤ s₂) {w : ℂ} (hw : s₂ ≤ ‖w - y‖) :
+    twoRadiiTest s₁ s₂ y w = 0 := by
+  have hs₂ : 0 < s₂ := hs₁.trans_le h12
+  have h2 : s₂ ^ 2 ≤ ‖w - y‖ ^ 2 := pow_le_pow_left₀ hs₂.le hw 2
+  have h1 : s₁ ^ 2 ≤ ‖w - y‖ ^ 2 := (pow_le_pow_left₀ hs₁.le h12 2).trans h2
+  unfold twoRadiiTest
+  rw [sFun_of_ge (bump_pos hs₂) (bump_lt hs₂) h2, sFun_of_ge (bump_pos hs₁) (bump_lt hs₁) h1,
+    sub_self]
+
+theorem tsupport_twoRadiiTest_subset (hs₁ : 0 < s₁) (h12 : s₁ ≤ s₂) :
+    tsupport (twoRadiiTest s₁ s₂ y) ⊆ closedBall y s₂ := by
+  refine closure_minimal (fun w hw ↦ ?_) isClosed_closedBall
+  by_contra hcon
+  rw [mem_closedBall, dist_eq_norm, not_le] at hcon
+  exact hw (twoRadiiTest_eq_zero hs₁ h12 hcon.le)
+
+theorem hasCompactSupport_twoRadiiTest (hs₁ : 0 < s₁) (h12 : s₁ ≤ s₂) :
+    HasCompactSupport (twoRadiiTest s₁ s₂ y) :=
+  (isCompact_closedBall y s₂).of_isClosed_subset (isClosed_tsupport _)
+    (tsupport_twoRadiiTest_subset hs₁ h12)
+
+theorem laplacian_twoRadiiTest (hs₁ : 0 < s₁) (hs₂ : 0 < s₂) (w : ℂ) :
+    Laplacian.laplacian (twoRadiiTest s₁ s₂ y) w =
+      4 * Real.pi * (bumpKernel s₁ (w - y) - bumpKernel s₂ (w - y)) := by
+  have e : twoRadiiTest s₁ s₂ y = (fun w : ℂ ↦ sFun (s₂ ^ 2 / 4) (s₂ ^ 2) (‖w - y‖ ^ 2)) -
+      (fun w : ℂ ↦ sFun (s₁ ^ 2 / 4) (s₁ ^ 2) (‖w - y‖ ^ 2)) := rfl
+  rw [e, ((contDiff_sFun_normSq_sub hs₂ y).of_le (WithTop.coe_le_coe.2 le_top)).contDiffAt.laplacian_sub
+    ((contDiff_sFun_normSq_sub hs₁ y).of_le (WithTop.coe_le_coe.2 le_top)).contDiffAt,
+    laplacian_sFun_normSq_sub hs₂, laplacian_sFun_normSq_sub hs₁]
+  ring
+
+end twoRadii
+
+/-- **Two radii give the same average** (Weyl, Step 1), for a locally integrable weakly
+harmonic function. -/
+theorem integral_bumpKernel_mul_eq_of_weakHarmonic {U : Set ℂ} {f : ℂ → ℝ}
+    (hf : LocallyIntegrableOn f U)
+    (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ U →
+      ∫ z, f z * Laplacian.laplacian χ z = 0)
+    {y : ℂ} {s₁ s₂ : ℝ} (hs₁ : 0 < s₁) (h12 : s₁ < s₂) (hsub : closedBall y s₂ ⊆ U) :
+    ∫ w, bumpKernel s₁ (w - y) * f w = ∫ w, bumpKernel s₂ (w - y) * f w := by
+  have hs₂ : 0 < s₂ := hs₁.trans h12
+  have hfi : IntegrableOn f (closedBall y s₂) :=
+    hf.integrableOn_compact_subset hsub (isCompact_closedBall y s₂)
+  have i1 : Integrable (fun w ↦ bumpKernel s₁ (w - y) * f w) :=
+    integrable_kernel_bump_mul hs₁ h12.le hfi
+  have i2 : Integrable (fun w ↦ bumpKernel s₂ (w - y) * f w) :=
+    integrable_kernel_bump_mul hs₂ le_rfl hfi
+  have hχ := h (twoRadiiTest s₁ s₂ y) (contDiff_twoRadiiTest hs₁ hs₂)
+    (hasCompactSupport_twoRadiiTest hs₁ h12.le)
+    ((tsupport_twoRadiiTest_subset hs₁ h12.le).trans hsub)
+  simp_rw [laplacian_twoRadiiTest hs₁ hs₂] at hχ
+  have e : ∫ z, f z * (4 * Real.pi * (bumpKernel s₁ (z - y) - bumpKernel s₂ (z - y))) =
+      4 * Real.pi * ((∫ w, bumpKernel s₁ (w - y) * f w) - ∫ w, bumpKernel s₂ (w - y) * f w) := by
+    rw [← integral_sub i1 i2, ← integral_const_mul]
+    congr 1; ext z; ring
+  rw [e] at hχ
+  have hπ : 4 * Real.pi ≠ 0 := by positivity
+  have := (mul_eq_zero.1 hχ).resolve_left hπ
+  linarith
+
+/-- Two admissible radii (in any order) give the same average. -/
+theorem integral_bumpKernel_mul_eq_of_weakHarmonic' {U : Set ℂ} {f : ℂ → ℝ}
+    (hf : LocallyIntegrableOn f U)
+    (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ U →
+      ∫ z, f z * Laplacian.laplacian χ z = 0)
+    {y : ℂ} {s₁ s₂ : ℝ} (hs₁ : 0 < s₁) (hs₂ : 0 < s₂) (h1 : closedBall y s₁ ⊆ U)
+    (h2 : closedBall y s₂ ⊆ U) :
+    ∫ w, bumpKernel s₁ (w - y) * f w = ∫ w, bumpKernel s₂ (w - y) * f w := by
+  rcases lt_trichotomy s₁ s₂ with h12 | rfl | h12
+  · exact integral_bumpKernel_mul_eq_of_weakHarmonic hf h hs₁ h12 h2
+  · rfl
+  · exact (integral_bumpKernel_mul_eq_of_weakHarmonic hf h hs₂ h12 h1).symm
+
+/-- **Lebesgue points.** For a locally integrable `g`, `∫ k_s(w − x) g(w) dw → g(x)` for a.e. `x`. -/
+theorem ae_tendsto_integral_bumpKernel_mul {g : ℂ → ℝ} (hg : LocallyIntegrable g) :
+    ∀ᵐ x₀, Tendsto (fun s ↦ ∫ w, bumpKernel s (w - x₀) * g w) (𝓝[>] 0) (𝓝 (g x₀)) := by
+  filter_upwards [(Besicovitch.vitaliFamily (volume : Measure ℂ)).ae_tendsto_average_norm_sub hg]
+    with x₀ h₀
+  have hlim := h₀.comp (Besicovitch.tendsto_filterAt volume x₀)
+  have := tendsto_integral_smul_of_tendsto_average_norm_sub (μ := volume)
+    (a := fun s ↦ closedBall x₀ s) (g := fun s w ↦ bumpKernel s (w - x₀)) (f := g) 4 hlim
+    (Eventually.of_forall fun s ↦ hg.integrableOn_isCompact (isCompact_closedBall _ _)) ?_ ?_ ?_
+  · simpa [smul_eq_mul] using this
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with s hs
+    exact (integral_kernel_bump_sub hs x₀).symm
+  · filter_upwards [self_mem_nhdsWithin] with s hs
+    intro w hw
+    by_contra hcon
+    rw [mem_closedBall, dist_eq_norm, not_le] at hcon
+    exact hw (bumpKernel_eq_zero hs hcon.le)
+  · filter_upwards [self_mem_nhdsWithin] with s hs w
+    have hs' : (0 : ℝ) < s := hs
+    rw [abs_of_nonneg (bumpKernel_nonneg hs' _), Measure.real, Complex.volume_closedBall,
+      ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hs'.le, ENNReal.coe_toReal,
+      NNReal.coe_real_pi]
+    refine (bumpKernel_le hs' (w - x₀)).trans ?_
+    have hind : (ball (0 : ℂ) s).indicator (1 : ℂ → ℝ) (w - x₀) ≤ 1 :=
+      indicator_le_self' (fun _ _ ↦ zero_le_one) _ |>.trans (le_refl _)
+    calc 4 / (Real.pi * s ^ 2) * (ball (0 : ℂ) s).indicator 1 (w - x₀)
+        ≤ 4 / (Real.pi * s ^ 2) * 1 := by gcongr
+      _ = 4 / (s ^ 2 * Real.pi) := by ring
+
 /-- **Mean-value form of Weyl.** A continuous weakly harmonic function equals its
 `bumpKernel`-averages. -/
 theorem eq_integral_bumpKernel_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
@@ -86,7 +220,17 @@ theorem eq_integral_bumpKernel_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) 
     (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ Ω →
       ∫ z, φ z * Laplacian.laplacian χ z = 0)
     {z : ℂ} {s : ℝ} (hs : 0 < s) (hzs : closedBall z s ⊆ Ω) :
-    φ z = ∫ w, bumpKernel s (w - z) * φ w := sorry
+    φ z = ∫ w, bumpKernel s (w - z) * φ w := by
+  have hz : z ∈ Ω := hzs (mem_closedBall_self hs.le)
+  have hfi : LocallyIntegrableOn φ Ω := hφ.locallyIntegrableOn hΩ.measurableSet
+  have hlim := tendsto_integral_kernel_bump_mul hs
+    ((hφ.mono hzs).integrableOn_compact (isCompact_closedBall z s))
+    (hφ.continuousAt (hΩ.mem_nhds hz))
+  have hev : (fun s₁ ↦ ∫ w, kernel (s₁ ^ 2 / 4) (s₁ ^ 2) (w - z) * φ w) =ᶠ[𝓝[>] 0]
+      fun _ ↦ ∫ w, bumpKernel s (w - z) * φ w := by
+    filter_upwards [Ioo_mem_nhdsGT hs] with s₁ hs₁
+    exact integral_bumpKernel_mul_eq_of_weakHarmonic hfi h hs₁.1 hs₁.2 hzs
+  exact tendsto_nhds_unique hlim (tendsto_const_nhds.congr' hev.symm)
 
 /-- **Weyl's lemma for `Δ`.** A continuous weakly harmonic function is harmonic. -/
 theorem harmonicOnNhd_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
