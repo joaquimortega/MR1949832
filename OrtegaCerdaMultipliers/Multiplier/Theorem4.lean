@@ -122,7 +122,91 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
       IsCells univ dist (massRadius (lapNorm μ)) (lapNorm μ) N η A R c →
       IsNodes univ dist (massRadius (lapNorm μ)) (lapNorm μ) N B R c m Λ → (∀ i, 3 ≤ m i) →
       ∃ h : ℂ → ℂ, Differentiable ℂ h ∧ (∀ w, h w = 0 ↔ w ∈ nodeSet Λ) ∧
-        (∀ w, analyticOrderAt h w = (nodeCount Λ w : ℕ∞)) ∧ Thm4BoundsPlane ψ μ h M C := sorry
+        (∀ w, analyticOrderAt h w = (nodeCount Λ w : ℕ∞)) ∧ Thm4BoundsPlane ψ μ h M C := by
+  obtain ⟨M, C₁, hM, hC₁, hbd⟩ := multPot_bounds_plane Cd R₀ η A B N hη hA hB hN
+  obtain ⟨Cρ, hCρ, hρcomp⟩ := massRadius_lapNorm_quant Cd R₀
+  obtain ⟨C0, -, hcl⟩ := claim1_plane_quant Cd R₀ 0
+  set Cr : ℝ := max (max (Real.exp C₁ * Cρ ^ M) (Real.exp C₁)) (max (C₁ * Cρ) 1) with hCr
+  have hCr1 : 1 ≤ Cr := le_max_of_le_right (le_max_right _ _)
+  set C : ℝ≥0 := ⟨Cr, by linarith⟩ with hCdef
+  have hCC : (C : ℝ) = Cr := rfl
+  refine ⟨M, C, hM, by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1,
+    fun ψ μ hw R c m Λ hC hNd hm ↦ ?_⟩
+  have hν := hw.meas.lapNorm
+  obtain ⟨hfs, -, hli, hcont, hlap⟩ := multPot_props_plane hw hη hC hNd hm
+  have hwk : IsWeakLogModulus univ (nodeCount Λ)
+      (fun z ↦ ψ z + multPot kerPlane (lapNorm μ) R Λ z) :=
+    ⟨fun K _ hKc ↦ hfs K hKc, hli.locallyIntegrableOn _, hcont, fun χ hχ hc _ ↦ hlap χ hχ hc⟩
+  have hΩ : ∀ z ∈ (univ : Set ℂ), ∃ r, dist z 0 < r ∧ closedBall (0 : ℂ) r ⊆ univ :=
+    fun z _ ↦ ⟨‖z‖ + 1, by rw [dist_zero_right]; linarith, subset_univ _⟩
+  obtain ⟨h, han, hnorm, hord⟩ := exists_analytic_norm_eq_exp_of_isWeakLogModulus hΩ hwk
+  have hfinI : ∀ w, {i | w ∈ Λ i}.Finite := fun w ↦
+    (finite_nodeIdx_plane hν hη hC hNd (K := {w}) Bornology.isBounded_singleton).subset
+      fun i hi ↦ ⟨w, hi, rfl⟩
+  have hnc : ∀ w, nodeCount Λ w ≠ 0 ↔ w ∈ nodeSet Λ := fun w ↦ nodeCount_ne_zero_iff (hfinI w)
+  have hzero : ∀ w, h w = 0 ↔ w ∈ nodeSet Λ := by
+    intro w
+    have e := (han w (mem_univ w)).analyticOrderAt_eq_zero
+    rw [hord w (mem_univ w)] at e
+    rw [← hnc w]
+    constructor
+    · intro h0 hn0; exact e.1 (by simp [hn0]) h0
+    · intro hne; by_contra hh; exact hne (by exact_mod_cast e.2 hh)
+  have hfinZ : ∀ K : Set ℂ, IsCompact K → (K ∩ nodeSet Λ).Finite := by
+    intro K hKc
+    refine (hfs K hKc).subset fun w ⟨hwK, hwN⟩ ↦ ⟨hwK, ?_⟩
+    exact (hnc w).2 hwN
+  refine ⟨h, fun z ↦ (han z (mem_univ z)).differentiableAt, hzero,
+    fun w ↦ hord w (mem_univ w), fun z ↦ ?_⟩
+  have hZ : {w | h w = 0} = nodeSet Λ := by ext w; exact hzero w
+  rw [hZ]
+  obtain ⟨hrem, hest⟩ := hbd μ R c m Λ hw.meas hC hNd hm
+  have hρpos : 0 < massRadius μ z := (hcl μ hw.meas z z).1
+  obtain ⟨hρρ', hρ'ρ⟩ := hρcomp μ hw.meas z
+  obtain ⟨w₀, hw₀, hw₀d⟩ := hrem z
+  obtain ⟨d, hdle, hdex⟩ := exists_min_dist hfinZ z hw₀
+  rw [edistSet_eq_ofReal hdle hdex]
+  have hd0 : 0 ≤ d := by
+    obtain ⟨w, hw, hwd⟩ := hdex; exact dist_nonneg.trans hwd
+  have hdC : d ≤ C * massRadius μ z := by
+    rw [hCC]
+    calc d ≤ dist z w₀ := hdle w₀ hw₀
+      _ ≤ C₁ * massRadius (lapNorm μ) z := hw₀d
+      _ ≤ C₁ * (Cρ * massRadius μ z) := mul_le_mul_of_nonneg_left hρ'ρ hC₁.le
+      _ = (C₁ * Cρ) * massRadius μ z := by ring
+      _ ≤ Cr * massRadius μ z :=
+          mul_le_mul_of_nonneg_right (le_max_of_le_right (le_max_left _ _)) hρpos.le
+  by_cases hzN : z ∈ nodeSet Λ
+  · have hd : d = 0 := le_antisymm (by simpa using hdle z hzN) hd0
+    have hh0 : h z = 0 := (hzero z).2 hzN
+    subst hd
+    refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
+      le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) (by positivity) ?_ ?_ hdC
+    · rw [hh0, norm_zero, zero_mul, zero_div, zero_pow (by omega), mul_zero]
+    · rw [hh0, norm_zero, zero_mul, zero_div, mul_zero]
+  · have hn0 : nodeCount Λ z = 0 := by
+      by_contra h0; exact hzN ((hnc z).1 h0)
+    have hhz := hnorm z (mem_univ z) hn0
+    have hx : ‖h z‖ * Real.exp (-ψ z) = Real.exp (multPot kerPlane (lapNorm μ) R Λ z) := by
+      rw [hhz, ← Real.exp_add]; ring_nf
+    obtain ⟨hlo, hhi⟩ := hest z hzN d hdle hdex
+    have hdpos : 0 < d := by
+      obtain ⟨w, hw, hwd⟩ := hdex
+      have hwz : w ≠ z := fun e ↦ hzN (e ▸ hw)
+      have : 0 < dist z w := dist_pos.2 (Ne.symm hwz)
+      linarith [hdle w hw]
+    obtain ⟨e1, e2⟩ := exp_bounds_of_log hdpos hρpos hρρ' hρ'ρ hlo hhi
+    have hCpos : 0 < Real.exp C₁ * Cρ ^ M := by positivity
+    refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
+      hd0 hρpos (by positivity) ?_ ?_ hdC
+    · rw [hx, hCC]
+      refine le_trans ?_ e1
+      gcongr
+      exact le_max_of_le_left (le_max_left _ _)
+    · rw [hx, hCC]
+      refine e2.trans ?_
+      gcongr
+      exact le_max_of_le_left (le_max_right _ _)
 
 /-- Core: multiplier from an arbitrary admissible node configuration (disc). -/
 theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hR₀ : 0 < R₀)
@@ -227,11 +311,6 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
       gcongr
       exact le_max_of_le_left (le_max_right _ _)
 
-theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
-    ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
-      WeightClassPlane ψ μ Cd R₀ →
-        ∃ h : ℂ → ℂ, Differentiable ℂ h ∧ (∃ z₀, h z₀ ≠ 0) ∧ Thm4BoundsPlane ψ μ h M C := sorry
-
 /-- The node set is countable. -/
 theorem countable_nodeSet (Λ : ℕ → Multiset ℂ) : (nodeSet Λ).Countable := by
   have : nodeSet Λ = ⋃ i, {w | w ∈ Λ i} := by ext; simp [nodeSet]
@@ -263,6 +342,27 @@ theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
     exact (measure_ball_pos volume 0 one_pos).ne'
   obtain ⟨z₀, hz₀, hz₀N⟩ := nonempty_of_measure_ne_zero hvol
   exact ⟨z₀, hz₀, fun h0 ↦ hz₀N ((hzero z₀ hz₀).1 h0)⟩
+
+theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+    ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
+      WeightClassPlane ψ μ Cd R₀ →
+        ∃ h : ℂ → ℂ, Differentiable ℂ h ∧ (∃ z₀, h z₀ ≠ 0) ∧ Thm4BoundsPlane ψ μ h M C := by
+  obtain ⟨a, A, ha, hA, hpart⟩ := lemma4_plane_quant Cd (15 * R₀) 12 (by norm_num)
+  obtain ⟨M, C, hM, hC, hmult⟩ :=
+    multiplier_of_nodes_plane Cd R₀ a A ((0 + 12) * A) 12 hR₀ ha hA (by positivity)
+      (by norm_num)
+  refine ⟨M, C, hM, hC, fun ψ μ hw ↦ ?_⟩
+  have hν := hw.meas.lapNorm
+  obtain ⟨R, hP⟩ := hpart (lapNorm μ) hν
+  obtain ⟨c, hcells⟩ := hP.exists_cells
+  obtain ⟨Λ, hN, -, -⟩ := exists_nodes_plane hcells hA.le 0 le_rfl (fun _ ↦ false)
+  obtain ⟨h, hh, hzero, -, hb⟩ := hmult ψ μ hw R c (fun _ ↦ 3) Λ hcells hN (fun _ ↦ le_rfl)
+  refine ⟨h, hh, ?_, hb⟩
+  have hvol : volume (nodeSet Λ)ᶜ ≠ 0 := by
+    rw [compl_eq_univ_diff, measure_diff_null ((countable_nodeSet Λ).measure_zero volume)]
+    simp
+  obtain ⟨z₀, hz₀N⟩ := nonempty_of_measure_ne_zero hvol
+  exact ⟨z₀, fun h0 ↦ hz₀N ((hzero z₀).1 h0)⟩
 
 /-- The fixed statement (comparator), from `theorem4_disc_quant`. -/
 theorem theorem4_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
