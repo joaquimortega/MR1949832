@@ -320,11 +320,62 @@ theorem integral_log_norm_sub_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff �
   rw [integral_const_mul, h]
   ring
 
+theorem tsupport_dbar_subset (f : ℂ → ℂ) : tsupport (dbar f) ⊆ tsupport f := by
+  have h : dbar f = (fun L : ℂ →L[ℝ] ℂ ↦ (1 / 2 : ℂ) * (L 1 + I * L I)) ∘ fderiv ℝ f := rfl
+  rw [h]
+  exact (tsupport_comp_subset (by simp) _).trans (tsupport_fderiv_subset ℝ)
+
+theorem contDiffOn_dz_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → ℂ}
+    (hu : ContDiffOn ℝ 2 u Ω) : ContDiffOn ℝ 1 (dz u) Ω := by
+  have hf : ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ u z) Ω := hu.fderiv_of_isOpen hΩ (by norm_num)
+  have h1 : ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ u z 1) Ω := hf.clm_apply contDiffOn_const
+  have hI : ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ u z I) Ω := hf.clm_apply contDiffOn_const
+  exact contDiffOn_const.mul (h1.sub (contDiffOn_const.mul hI))
+
+/-- Local version of `integral_mul_lap`: `U` is only `C²` on an open set containing the support
+of the test function. -/
+theorem integral_mul_lap_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {g U : ℂ → ℝ}
+    (hg : ContDiff ℝ 2 g) (hgc : HasCompactSupport g) (hs : tsupport g ⊆ Ω)
+    (hU : ContDiffOn ℝ 2 U Ω) : ∫ z, g z * lap U z = ∫ z, lap g z * U z := by
+  apply Complex.ofReal_injective
+  rw [← integral_complex_ofReal, ← integral_complex_ofReal]
+  push_cast
+  have hUC : ContDiffOn ℝ 2 (cplx U) Ω := ofRealCLM.contDiff.comp_contDiffOn hU
+  have hgC : ContDiff ℝ 2 (cplx g) := contDiff_cplx hg
+  have hgcC : HasCompactSupport (cplx g) := hasCompactSupport_cplx hgc
+  have hsC : tsupport (cplx g) ⊆ Ω := (tsupport_comp_subset (by simp) g).trans hs
+  have hU2 : ∀ z ∈ Ω, (lap U z : ℂ) = dbar (dz (cplx U)) z := fun z hz ↦
+    (dbar_dz_cplx (hU.contDiffAt (hΩ.mem_nhds hz))).symm
+  have hg2 : ∀ z, (lap g z : ℂ) = dz (dbar (cplx g)) z := fun z ↦
+    (dz_dbar_cplx hg.contDiffAt).symm
+  have h1 := integral_mul_dbar hΩ (u := dz (cplx U)) (α := cplx g)
+    (contDiffOn_dz_of_contDiffOn hΩ hUC) (hgC.of_le (by norm_num)) hgcC hsC
+  have h2 := integral_mul_dz' hΩ (u := cplx U) (α := dbar (cplx g))
+    (hUC.of_le (by norm_num)) (contDiff_dbar hgC) (hasCompactSupport_dbar hgcC)
+    ((tsupport_dbar_subset _).trans hsC)
+  calc ∫ z, (g z : ℂ) * (lap U z : ℂ) = ∫ z, dbar (dz (cplx U)) z * cplx g z := by
+        congr 1; ext z
+        by_cases hz : z ∈ Ω
+        · rw [hU2 z hz]; simp only [cplx]; ring
+        · have : g z = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hz (hs h)
+          simp [cplx, this]
+    _ = -∫ z, dz (cplx U) z * dbar (cplx g) z := by rw [h1, neg_neg]
+    _ = ∫ z, cplx U z * dz (dbar (cplx g)) z := h2.symm
+    _ = ∫ z, (lap g z : ℂ) * (U z : ℂ) := by
+        congr 1; ext z; rw [hg2]; simp only [cplx]; ring
+
 /-- Integration by parts against a test function, for `U ∈ C²(Ω)`. -/
 theorem integral_mul_laplacian_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {U χ : ℂ → ℝ}
     (hU : ContDiffOn ℝ 2 U Ω) (hχ : ContDiff ℝ 2 χ) (hc : HasCompactSupport χ)
     (hs : tsupport χ ⊆ Ω) :
-    ∫ z, U z * Laplacian.laplacian χ z = ∫ z, Laplacian.laplacian U z * χ z := sorry
+    ∫ z, U z * Laplacian.laplacian χ z = ∫ z, Laplacian.laplacian U z * χ z := by
+  have h := integral_mul_lap_of_contDiffOn hΩ hχ hc hs hU
+  simp_rw [laplacian_eq_four_mul_lap]
+  calc ∫ z, U z * (4 * lap χ z) = 4 * ∫ z, lap χ z * U z := by
+        rw [← integral_const_mul]; congr 1; ext z; ring
+    _ = 4 * ∫ z, χ z * lap U z := by rw [h]
+    _ = ∫ z, 4 * lap U z * χ z := by
+        rw [← integral_const_mul]; congr 1; ext z; ring
 
 /-- **Green kernel of the disc.** `∫ log ρ(ζ, z) Δχ(z) dm(z) = 2π χ(ζ)` for `χ` supported in `𝔻`. -/
 theorem integral_log_pseudoHyp_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
