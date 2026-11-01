@@ -19,6 +19,14 @@ noncomputable section
 
 namespace OC
 
+/-! ### Small real-analysis helpers -/
+
+theorem le_rpow_one_div_of_rpow_le {q M δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) (h : q ^ δ ≤ M) :
+    q ≤ M ^ (1 / δ) := by
+  have h1 : (q ^ δ) ^ (1 / δ) ≤ M ^ (1 / δ) :=
+    Real.rpow_le_rpow (Real.rpow_nonneg hq _) h (by positivity)
+  rwa [one_div, Real.rpow_rpow_inv hq hδ.ne', ← one_div] at h1
+
 /-! ### Finiteness from `IsSubharmonicWeight` -/
 
 theorem dist_ofReal_ofReal (x y : ℝ) : dist (x : ℂ) (y : ℂ) = |x - y| := by
@@ -370,7 +378,7 @@ theorem abs_massRadiusDisc_sub_le (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1
 
 theorem continuousOn_massRadiusDisc (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
     ContinuousOn (massRadiusDisc μ) 𝔻 := by
-  rw [continuousOn_iff_continuous_restrict]
+  rw [continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (massRadiusM (discPull μ)) :=
     (lipschitzWith_massRadiusM (discPull_hne hm)).continuous
   exact hc.congr fun a ↦ (massRadiusDisc_eq μ a).symm
@@ -653,7 +661,7 @@ theorem encard_le_of_disjoint_disc (a b D : ℝ) (ha : 0 < a) :
       exact this)
   refine le_of_eq_of_le (congrArg _ ?_) key
   ext i
-  simp only [mem_setOf_eq]
+  simp only [mem_ofPred_eq]
   constructor
   · rintro ⟨w, hwE, hwB⟩
     refine ⟨HDisc.mk w hwB.1, hwE, ?_⟩
