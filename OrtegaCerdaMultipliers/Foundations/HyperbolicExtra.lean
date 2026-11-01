@@ -5,9 +5,8 @@ import OrtegaCerdaMultipliers.Foundations.Hyperbolic
 
 See `blueprint/M01_Foundations.md`.
 
-**Scaffold.** These are the M01-type statements that the later module docs assume but that
-`Foundations/Hyperbolic.lean` does not (yet) contain.  Proofs are `sorry`; the definition
-`hypArea` is real.
+These are the M01-type statements that the later module docs assume but that
+`Foundations/Hyperbolic.lean` does not contain.  All statements are proved.
 
 * `hypArea`, the hyperbolic area measure `dm / (1 - |z|²)²` on `𝔻` (the one shared definition,
   with M11's name and formula; used by M08, M09, M11) and `hypArea_hypBall` (M08 §4.1);

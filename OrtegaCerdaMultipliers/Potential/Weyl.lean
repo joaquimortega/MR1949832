@@ -4,7 +4,7 @@ import OrtegaCerdaMultipliers.Potential.Fundamental
 /-!
 # M02 (Potentials) §2–§3 — Weyl's lemma for `Δ`; weights up to harmonic functions
 
-See `blueprint/M02_Potentials.md` §2–§3.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M02_Potentials.md` §2–§3.  All statements are proved.
 
 The `bumpKernel` API (stated in the doc's §4.1) is placed here, next to the definition, because
 the proof of Weyl's lemma uses it.  The a.e. (`L¹_loc`) form of Weyl's lemma,

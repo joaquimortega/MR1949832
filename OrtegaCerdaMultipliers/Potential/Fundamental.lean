@@ -6,7 +6,7 @@ import OrtegaCerdaMultipliers.Potential.Radial
 /-!
 # M02 (Potentials) §1 — The logarithmic kernel
 
-See `blueprint/M02_Potentials.md` §1.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M02_Potentials.md` §1.  All statements are proved.
 
 * `∫ log|z − ζ| Δχ(z) dm(z) = 2π χ(ζ)` (fundamental solution of the standard Laplacian);
 * integration by parts against test functions for `C²` functions;

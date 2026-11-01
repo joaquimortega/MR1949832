@@ -3,8 +3,8 @@ import OrtegaCerdaMultipliers.Potential.Weyl
 /-!
 # M02 (Potentials) §4 — Smoothed point masses and local potentials
 
-See `blueprint/M02_Potentials.md` §4.  Scaffold: statements, proofs `sorry`; the definitions are
-real.  These replace the paper's global kernels `K[ν]` (doc §0).
+See `blueprint/M02_Potentials.md` §4.  All statements are proved except `integral_bumpPot_mul_laplacian`, which is false
+as parsed (see the comment there); the corrected form is `integral_bumpPot_mul_laplacian'`.  These replace the paper's global kernels `K[ν]` (doc §0).
 -/
 
 open MeasureTheory Metric Set Complex Filter Topology

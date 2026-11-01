@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Potential.Fundamental
 /-!
 # M02 (Potentials) Appendix A — The paper's global kernels (documentation; not used)
 
-See `blueprint/M02_Potentials.md`, Appendix A.  Scaffold: statements, proofs `sorry`.  These
+See `blueprint/M02_Potentials.md`, Appendix A.  All statements are proved.  These
 kernels are not used by the formal proof of Lemma 6 (which uses local potentials, §4); they
 document the paper's construction (p. 371) and its sign error in the plane.
 -/
