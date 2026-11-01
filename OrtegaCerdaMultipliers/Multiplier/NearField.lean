@@ -353,6 +353,122 @@ theorem farField_sum_le_disc (Cd : ℝ≥0) (R₀ η A M₀ : ℝ) (hη : 0 < η
       MeasClassDisc ν Cd R₀ → IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c → ∀ z ∈ 𝔻,
       ∀ F : Finset ℕ, (∀ i ∈ F, M₀ ≤ hypDist z (c i)) →
         ∑ i ∈ F, (1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
-          ‖1 - conj z * c i‖ ^ 3 ≤ C := sorry
+          ‖1 - conj z * c i‖ ^ 3 ≤ C := by
+  obtain ⟨CFR, hFR⟩ := integral_one_sub_conj_mul_rpow_neg_three_le
+  obtain ⟨C₁, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
+  set S := η * max R₀ 0 + 1 with hS
+  have hS0 : 0 < S := by positivity
+  set ct := min (1 / 5) (Real.tanh 1 / S) with hct
+  have hct0 : 0 < ct := lt_min (by norm_num) (div_pos (tanh_pos' one_pos) hS0)
+  set K := 4 * Real.exp (6 * S) / (Real.pi * ct ^ 2 * η ^ 2) with hK
+  refine ⟨K * max CFR 0, ?_⟩
+  intro ν N R c hν hC z hz F _
+  have hci := hC.center_mem'
+  have hρ : ∀ i, 0 < massRadiusDisc ν (c i) := fun i ↦ (hcl ν hν (c i) (hci i) (c i) (hci i)).1
+  have hρR : ∀ i, massRadiusDisc ν (c i) ≤ R₀ := fun i ↦
+    (hcl ν hν (c i) (hci i) (c i) (hci i)).2.1
+  have hzpos := one_sub_normSq_pos hz
+  set r : ℕ → ℝ := fun i ↦ Real.tanh (η * massRadiusDisc ν (c i)) * (1 - ‖c i‖ ^ 2) / 2 with hr
+  set E : ℕ → Set ℂ := fun i ↦ ball (c i) (r i) with hE
+  have hsη : ∀ i, η * massRadiusDisc ν (c i) ≤ S := fun i ↦ by
+    have : η * massRadiusDisc ν (c i) ≤ η * max R₀ 0 :=
+      mul_le_mul_of_nonneg_left ((hρR i).trans (le_max_left _ _)) hη.le
+    linarith
+  have hEhyp : ∀ i, E i ⊆ hypBall (c i) (η * massRadiusDisc ν (c i)) := fun i ↦
+    ball_subset_hypBall_tanh (hci i) (mul_pos hη (hρ i))
+  have hER : ∀ i, E i ⊆ R i := fun i w hw ↦ hC.inner i (hEhyp i hw)
+  have hdisj : (F : Set ℕ).PairwiseDisjoint E := by
+    intro i _ j _ hij
+    exact (hC.pairwise_disjoint hij).mono (hER i) (hER j)
+  set f : ℂ → ℝ≥0∞ := fun w ↦ ENNReal.ofReal (1 / ‖1 - conj z * w‖ ^ 3) with hf
+  have hD : ∀ i, 0 < ‖1 - conj z * c i‖ := fun i ↦ norm_one_sub_conj_mul_pos hz (hci i)
+  have hterm : ∀ i ∈ F, ENNReal.ofReal ((1 - ‖z‖ ^ 2) *
+      ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / ‖1 - conj z * c i‖ ^ 3) ≤
+      ENNReal.ofReal (K * (1 - ‖z‖ ^ 2)) * ∫⁻ w in E i, f w := by
+    intro i _
+    set g := Real.exp (-(6 * S)) / ‖1 - conj z * c i‖ ^ 3 with hg
+    have hri : 0 ≤ r i := by
+      have := one_sub_normSq_pos (hci i)
+      have := tanh_nonneg_of_nonneg (mul_pos hη (hρ i)).le
+      simp only [hr]; positivity
+    have hlow : ENNReal.ofReal g * ENNReal.ofReal (Real.pi * r i ^ 2) ≤ ∫⁻ w in E i, f w := by
+      have hvol : volume (E i) = ENNReal.ofReal (Real.pi * r i ^ 2) := by
+        simp only [hE]
+        rw [Complex.volume_ball, ← ENNReal.ofReal_pow hri, ← ENNReal.ofReal_coe_nnreal,
+          ← ENNReal.ofReal_mul (by positivity)]
+        simp [mul_comm]
+      rw [← hvol, ← setLIntegral_const]
+      refine setLIntegral_mono' isOpen_ball.measurableSet fun w hw ↦ ?_
+      have hw' := hEhyp i hw
+      have hcomp := (norm_one_sub_conj_mul_comparable hz (hci i) hw'.1 hw'.2.le).1
+      have hDw := norm_one_sub_conj_mul_pos hz hw'.1
+      apply ENNReal.ofReal_le_ofReal
+      have he : Real.exp (2 * (η * massRadiusDisc ν (c i))) ≤ Real.exp (2 * S) :=
+        Real.exp_le_exp.2 (by linarith [hsη i])
+      have h1 : ‖1 - conj z * w‖ ≤ Real.exp (2 * S) * ‖1 - conj z * c i‖ :=
+        hcomp.trans (by gcongr)
+      have h3 : ‖1 - conj z * w‖ ^ 3 ≤ Real.exp (6 * S) * ‖1 - conj z * c i‖ ^ 3 := by
+        have : Real.exp (6 * S) = Real.exp (2 * S) ^ 3 := by
+          rw [← Real.exp_nat_mul]; ring_nf
+        rw [this, ← mul_pow]; gcongr
+      rw [hg, Real.exp_neg, div_le_div_iff₀ (pow_pos (hD i) 3) (pow_pos hDw 3)]
+      have := Real.exp_pos (6 * S)
+      field_simp
+      nlinarith
+    have hct_le : ct * (η * massRadiusDisc ν (c i)) ≤ Real.tanh (η * massRadiusDisc ν (c i)) :=
+      mul_le_tanh hS0 (mul_pos hη (hρ i)).le (hsη i)
+    have hreal : (1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+        ‖1 - conj z * c i‖ ^ 3 ≤ K * (1 - ‖z‖ ^ 2) * (g * (Real.pi * r i ^ 2)) := by
+      have hc := one_sub_normSq_pos (hci i)
+      have hr2 : (ct * η * massRadiusDisc ν (c i) * (1 - ‖c i‖ ^ 2) / 2) ^ 2 ≤ r i ^ 2 := by
+        gcongr
+        · have := hρ i; positivity
+        · simp only [hr]
+          have := mul_le_mul_of_nonneg_right hct_le hc.le
+          linarith
+      have hexp : Real.exp (6 * S) * Real.exp (-(6 * S)) = 1 := by
+        rw [← Real.exp_add]; simp
+      have hKg : K * g * Real.pi = 4 / (ct ^ 2 * η ^ 2 * ‖1 - conj z * c i‖ ^ 3) := by
+        rw [hK, hg, Real.exp_neg]
+        field_simp
+      calc (1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+            ‖1 - conj z * c i‖ ^ 3
+          = (1 - ‖z‖ ^ 2) * (4 / (ct ^ 2 * η ^ 2 * ‖1 - conj z * c i‖ ^ 3)) *
+              (ct * η * massRadiusDisc ν (c i) * (1 - ‖c i‖ ^ 2) / 2) ^ 2 := by
+            field_simp
+            ring
+        _ ≤ (1 - ‖z‖ ^ 2) * (4 / (ct ^ 2 * η ^ 2 * ‖1 - conj z * c i‖ ^ 3)) * r i ^ 2 := by
+            gcongr
+        _ = K * (1 - ‖z‖ ^ 2) * (g * (Real.pi * r i ^ 2)) := by
+            rw [← hKg]; ring
+    calc ENNReal.ofReal ((1 - ‖z‖ ^ 2) *
+          ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / ‖1 - conj z * c i‖ ^ 3)
+        ≤ ENNReal.ofReal (K * (1 - ‖z‖ ^ 2) * (g * (Real.pi * r i ^ 2))) :=
+          ENNReal.ofReal_le_ofReal hreal
+      _ = ENNReal.ofReal (K * (1 - ‖z‖ ^ 2)) *
+            (ENNReal.ofReal g * ENNReal.ofReal (Real.pi * r i ^ 2)) := by
+          rw [ENNReal.ofReal_mul (show 0 ≤ K * (1 - ‖z‖ ^ 2) by positivity),
+            ENNReal.ofReal_mul (show 0 ≤ g by positivity)]
+      _ ≤ ENNReal.ofReal (K * (1 - ‖z‖ ^ 2)) * ∫⁻ w in E i, f w := by gcongr
+  have hsumE : ∑ i ∈ F, ∫⁻ w in E i, f w ≤ ENNReal.ofReal (max CFR 0 / (1 - ‖z‖ ^ 2)) := by
+    rw [← lintegral_biUnion_finset hdisj (fun i _ ↦ isOpen_ball.measurableSet)]
+    refine (lintegral_mono_set ?_).trans ((hFR z hz).trans (ENNReal.ofReal_le_ofReal ?_))
+    · exact iUnion₂_subset fun i _ ↦ (hER i).trans (hC.subset_univ i)
+    · gcongr; exact le_max_left _ _
+  have hnn : ∀ i ∈ F, 0 ≤ (1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+      ‖1 - conj z * c i‖ ^ 3 := fun i _ ↦ by positivity
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_sum_of_nonneg hnn]
+  calc ∑ i ∈ F, ENNReal.ofReal ((1 - ‖z‖ ^ 2) *
+        ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / ‖1 - conj z * c i‖ ^ 3)
+      ≤ ∑ i ∈ F, ENNReal.ofReal (K * (1 - ‖z‖ ^ 2)) * ∫⁻ w in E i, f w :=
+        Finset.sum_le_sum hterm
+    _ = ENNReal.ofReal (K * (1 - ‖z‖ ^ 2)) * ∑ i ∈ F, ∫⁻ w in E i, f w := by
+        rw [Finset.mul_sum]
+    _ ≤ ENNReal.ofReal (K * (1 - ‖z‖ ^ 2)) * ENNReal.ofReal (max CFR 0 / (1 - ‖z‖ ^ 2)) := by
+        gcongr
+    _ = ENNReal.ofReal (K * max CFR 0) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        field_simp
 
 end OC
