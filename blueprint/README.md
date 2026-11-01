@@ -86,6 +86,32 @@ M00 ─┬─ M01 ── M02 ─┬─ M04 ────────────�
 
 Priority: the disc path M01–M11 comes first, since it is what BOC needs. Then the plane (M08/M09 plane, M12), then M13–M14.
 
+## 3a. Design decisions taken while writing the blueprint (2026-11-01)
+
+1. **Moment order.**
+   - The proof of Theorem 4 matches the moments of order 0–2 in 2D (`m = 3`) and of order 0–1 on ℝ (`m = 2`). It does not use the paper's `m` with `mγ > 1`.
+   - Rectangles are counted by Euclidean or hyperbolic *area* (length on ℝ), not by μ-mass. Together with the decay estimate inside the proof of Lemma 3, this makes any `γ > 0` suffice (M03 §decay, M08).
+   - The paper's Lemma 3 is still formalized as printed (M03).
+2. **Lemma 5 nodes.**
+   - "Inside `R`" is false for general measures (M06 counterexample). M06 proves a construction with nodes near `R`, at distance at most `2m · radius`.
+   - In 𝔻 we use two regimes (M08), so that all nodes lie in 𝔻:
+     - hyperbolically small cells use M06;
+     - large cells use `N` copies of the μ-barycentre (moments 0 and 1).
+   - On ℝ, barycentres give real zeros (M13), and no Chebyshev quadrature is needed.
+3. **Normalisation.** `ν = Δψ / 2π`, so a zero of `h` carries `ν`-mass 1. In the 2D proofs the cells have `ν`-mass `N = 12`.
+4. **Disc partition.** Horocyclic boxes, i.e. Cayley preimages of rectangles in the upper half-plane (M05). This replaces the paper's polar rectangles, which degenerate near the origin and at large scales.
+5. **Lemma 6.** Done with compactly supported local radial potentials (M04). The paper's global kernels on p. 371 have a sign error, and its commutation step fails (M02 appendix). Only Theorems 1 and 2 and Proposition 1 use Lemma 6.
+6. **Quantitative core.**
+   - Theorem 4, Proposition 2 and Theorem 2 are proved in a quantitative form (`*_quant`). Their constants depend only on the doubling constant and the mass radius.
+   - The per-weight main statements follow from these, as does `theorem2_uniform`, which BOC uses.
+   - Consequence: M03 and M05 must export uniform versions, with constants chosen after `(C_d, R₀)` and before the measure.
+7. **Proposition 2 (statement).** Includes the Theorem-4 bounds for each multiplier, as the paper says, and the disjoint exceptional sets.
+8. **Theorem 3.**
+   - **Suspected false as printed.** The M14 writer gives a counterexample (to be checked in review). The integral needs the weight: `∫ e^{-φ(z)} d|μ|(z) / |x − z|`. A corrected statement `theorem3_weighted` is proposed.
+   - **`TheoremOCS`.** It is the version quoted on p. 375, with `limsup = 0`. The published [OCS99] lemma states `limsup < ∞`; `= 0` follows from its proof. This is to be recorded in the yaml.
+   - **Multipliers.** Theorem 3 needs multipliers for the signed measure `μ − 2α dx`. M13 builds them; Theorem 5 is the case `α = 0`.
+9. **Shared definitions.** `hypArea = dm/(1 − |z|²)²` on 𝔻 is defined once, in M01, and used by M04, M08, M10 and M11.
+
 ## 4. Known issues in the source (seeds for `NOTEBOOK.md`)
 
 - p. 356, Example: "`∫_D f dm = 0`" should be `≠ 0`; the arXiv version has `≠`.
