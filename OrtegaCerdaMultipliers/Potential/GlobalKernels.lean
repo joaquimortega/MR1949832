@@ -64,7 +64,100 @@ theorem kDisc_eq {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) :
 /-- **Andersson–Pascuas estimate** with explicit constant `4/π`. -/
 theorem abs_kDisc_le {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) (hne : z ≠ ζ) :
     |kDisc z ζ| ≤ 4 / Real.pi * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) ^ 2 *
-      (1 + Real.log (1 / pseudoHyp ζ z)) := sorry
+      (1 + Real.log (1 / pseudoHyp ζ z)) := by
+  rw [kDisc_eq hz hζ]
+  set ρ := pseudoHyp ζ z with hρdef
+  set D := ‖1 - conj ζ * z‖ with hDdef
+  set A := (1 - ‖ζ‖ ^ 2) / D with hAdef
+  set L := Real.log (1 / ρ) with hLdef
+  have hD : 0 < D := norm_one_sub_conj_mul_pos hζ hz
+  have hz1 := norm_lt_one_of_mem_disc hz
+  have hζ1 := norm_lt_one_of_mem_disc hζ
+  have hz0 := norm_nonneg z
+  have hζ0 := norm_nonneg ζ
+  have hρ0 : 0 < ρ := lt_of_le_of_ne (pseudoHyp_nonneg _ _)
+    (fun h ↦ hne ((pseudoHyp_eq_zero_iff hζ hz).1 h.symm).symm)
+  have hρ1 : ρ < 1 := pseudoHyp_lt_one hζ hz
+  have hL : 0 ≤ L := Real.log_nonneg (by rw [le_div_iff₀ hρ0, one_mul]; exact hρ1.le)
+  have hlog : Real.log (ρ ^ 2) = -2 * L := by
+    rw [hLdef, one_div, Real.log_inv, Real.log_pow]; push_cast; ring
+  have hA0 : 0 ≤ A := div_nonneg (by nlinarith) hD.le
+  -- `1 - ρ² = A (1 - |z|²) / D ≤ 2A`
+  have key := norm_one_sub_conj_mul_sq_sub ζ z
+  have hρ2 : ρ ^ 2 = ‖ζ - z‖ ^ 2 / D ^ 2 := by rw [hρdef, pseudoHyp, div_pow]
+  have hu : 1 - ρ ^ 2 = A * ((1 - ‖z‖ ^ 2) / D) := by
+    rw [hρ2, hAdef]
+    field_simp
+    linear_combination key
+  have hDz : 1 - ‖z‖ ≤ D := by
+    have h1 := one_sub_mul_le_norm_one_sub_conj_mul ζ z
+    have h2 : ‖ζ‖ * ‖z‖ ≤ ‖z‖ := mul_le_of_le_one_left hz0 hζ1.le
+    linarith
+  have hB : (1 - ‖z‖ ^ 2) / D ≤ 2 := by
+    rw [div_le_iff₀ hD]
+    have : 1 - ‖z‖ ^ 2 ≤ 2 * (1 - ‖z‖) := by nlinarith
+    linarith
+  have hu2A : 1 - ρ ^ 2 ≤ 2 * A := by
+    rw [hu]; exact mul_le_mul_of_nonneg_left hB hA0 |>.trans_eq (mul_comm _ _)
+  have hρsq1 : ρ ^ 2 < 1 := pow_lt_one₀ hρ0.le hρ1 two_ne_zero
+  have hρsq0 : 0 < ρ ^ 2 := by positivity
+  have hu0 : 0 ≤ 1 - ρ ^ 2 := by linarith
+  have hR : ‖z‖ ^ 2 * (1 - ‖ζ‖ ^ 2) ^ 2 / D ^ 2 = ‖z‖ ^ 2 * A ^ 2 := by
+    rw [hAdef, div_pow, mul_div_assoc]
+  have hRle : ‖z‖ ^ 2 * A ^ 2 ≤ A ^ 2 :=
+    mul_le_of_le_one_left (sq_nonneg A) (pow_le_one₀ hz0 hz1.le)
+  have hR0 : 0 ≤ ‖z‖ ^ 2 * A ^ 2 := by positivity
+  -- the main estimate `|E| ≤ 16 A² (1 + L)`
+  have hE : |Real.log (ρ ^ 2) + (1 - ρ ^ 2) + ‖z‖ ^ 2 * (1 - ‖ζ‖ ^ 2) ^ 2 / D ^ 2| ≤
+      16 * A ^ 2 * (1 + L) := by
+    rw [hR]
+    rcases le_or_gt (7 / 25) (ρ ^ 2) with hρ7 | hρ7
+    · -- `ρ` not small: `|log(1 - u) + u| ≤ u² / (1 - u)`
+      set u := 1 - ρ ^ 2 with hudef
+      have hu1 : |u| < 1 := by rw [abs_of_nonneg hu0]; linarith
+      have hser := Real.abs_log_sub_add_sum_range_le hu1 1
+      simp only [Finset.range_one, Finset.sum_singleton, zero_add, pow_one, Nat.cast_zero,
+        div_one] at hser
+      rw [abs_of_nonneg hu0, show 1 - u = ρ ^ 2 by rw [hudef]; ring] at hser
+      have hser' : |Real.log (ρ ^ 2) + u| ≤ u ^ 2 / ρ ^ 2 := by
+        rw [add_comm]; exact hser
+      have hu2 : u ^ 2 ≤ 4 * A ^ 2 := by
+        have := pow_le_pow_left₀ hu0 hu2A 2
+        rw [mul_pow] at this; norm_num at this; linarith
+      have hdiv : u ^ 2 / ρ ^ 2 ≤ 100 / 7 * A ^ 2 := by
+        rw [div_le_iff₀ hρsq0]
+        have := mul_le_mul_of_nonneg_left hρ7 (by positivity : (0 : ℝ) ≤ 100 / 7 * A ^ 2)
+        linarith
+      calc |Real.log (ρ ^ 2) + u + ‖z‖ ^ 2 * A ^ 2|
+          ≤ |Real.log (ρ ^ 2) + u| + |‖z‖ ^ 2 * A ^ 2| := abs_add_le _ _
+        _ ≤ 100 / 7 * A ^ 2 + A ^ 2 := by
+            rw [abs_of_nonneg hR0]; linarith
+        _ ≤ 16 * A ^ 2 * (1 + L) := by
+            have e : 16 * A ^ 2 * (1 + L) = 16 * A ^ 2 + 16 * (A ^ 2 * L) := by ring
+            rw [e]
+            linarith [sq_nonneg A, mul_nonneg (sq_nonneg A) hL]
+    · -- `ρ` small: then `A` is bounded below
+      have hA : 9 / 25 < A := by linarith
+      have hA2 : 81 / 625 < A ^ 2 := by
+        have := pow_lt_pow_left₀ hA (by norm_num) two_ne_zero
+        norm_num at this; linarith
+      calc |Real.log (ρ ^ 2) + (1 - ρ ^ 2) + ‖z‖ ^ 2 * A ^ 2|
+          ≤ |Real.log (ρ ^ 2)| + |1 - ρ ^ 2| + |‖z‖ ^ 2 * A ^ 2| := abs_add_three _ _ _
+        _ ≤ 2 * L + 1 + A ^ 2 := by
+            rw [hlog, abs_of_nonneg hu0, abs_of_nonneg hR0,
+              abs_of_nonpos (by linarith)]
+            linarith
+        _ ≤ 16 * A ^ 2 * (1 + L) := by
+            have h1 : 2 * L ≤ 16 * A ^ 2 * L := mul_le_mul_of_nonneg_right (by linarith) hL
+            have e : 16 * A ^ 2 * (1 + L) = 16 * A ^ 2 + 16 * A ^ 2 * L := by ring
+            rw [e]
+            linarith
+  have hπ : 0 < Real.pi := Real.pi_pos
+  rw [abs_mul, abs_of_pos (by positivity)]
+  calc (4 * Real.pi)⁻¹ * |Real.log (ρ ^ 2) + (1 - ρ ^ 2) +
+        ‖z‖ ^ 2 * (1 - ‖ζ‖ ^ 2) ^ 2 / D ^ 2|
+      ≤ (4 * Real.pi)⁻¹ * (16 * A ^ 2 * (1 + L)) := by gcongr
+    _ = 4 / Real.pi * A ^ 2 * (1 + L) := by field_simp; ring
 
 /-- Sharp tail of the logarithmic series: `|log(1 − w) + w + w²/2| ≤ |w|³ / (3 (1 − |w|))`. -/
 theorem norm_log_one_sub_add_le {w : ℂ} (hw : ‖w‖ < 1) :
