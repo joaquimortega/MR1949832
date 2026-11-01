@@ -398,7 +398,106 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
       ∃ H : ℂ → ℂ → ℂ, Measurable (Function.uncurry H) ∧
         (∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) ∧ (∀ ζ ∈ 𝔻, H ζ ζ = 1) ∧
         ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
-          ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := sorry
+          ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
+  classical
+  obtain ⟨c, B, Cd', R', hc0, hc1, hB, hR', haux⟩ := exists_aux_weight_disc_quant Cd r hr
+  obtain ⟨n, M, C, εP, -, hC, -, hP⟩ := prop2_disc_quant Cd' R' hR'
+  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
+  refine ⟨c, (C : ℝ) ^ 2 * Real.exp (2 * B), hc0, hc1, by positivity, fun φ μ hφ hμ ↦ ?_⟩
+  obtain ⟨ψ, μψ, hψ, hμψ, hψφ⟩ := haux φ μ hφ hμ
+  obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hP ψ μψ ⟨hψ, hμψ⟩
+  -- measurable versions of the multipliers (equal to `h i` on `𝔻`)
+  let h' : Fin n → ℂ → ℂ := fun i ↦ 𝔻.piecewise (h i) 0
+  have hh'm : ∀ i, Measurable (h' i) := fun i ↦
+    (hh i).continuousOn.measurable_piecewise continuousOn_const measurableSet_ball
+  have hh'eq : ∀ i, ∀ z ∈ 𝔻, h' i z = h i z := fun i z hz ↦ piecewise_eq_of_mem _ _ _ hz
+  -- the good sets and the partition
+  let G : Fin n → Set ℂ := fun i ↦
+    {z | z ∈ 𝔻 ∧ ∀ w ∈ {w | h i w = 0}, w ∈ 𝔻 → εP * massRadiusDisc μψ w ≤ hypDist z w}
+  obtain ⟨Ω, hΩm, hΩG, hΩu⟩ := exists_measurable_partition measurableSet_ball G
+    (fun i ↦ measurableSet_goodSet_disc _ _ _) (fun z hz ↦ by
+      obtain ⟨i, hi⟩ := hcov z hz
+      exact ⟨i, hz, fun w hw0 hwD ↦ hi w hwD hw0⟩)
+  have hform : ∀ ζ ∈ 𝔻, ∃ i, ζ ∈ Ω i ∧ ∀ z, thm2H h' Ω z ζ =
+      h' i z / h' i ζ * (((1 - ‖ζ‖ ^ 2 : ℝ) : ℂ) / (1 - conj ζ * z)) := by
+    intro ζ hζ
+    obtain ⟨i, hi, huniq⟩ := hΩu ζ hζ
+    refine ⟨i, hi, fun z ↦ ?_⟩
+    unfold thm2H
+    rw [Finset.sum_eq_single i (fun j _ hji ↦ indicator_of_notMem (fun hj ↦ hji (huniq j hj)) _)
+      (by simp), indicator_of_mem hi]
+  have hne : ∀ i, ∀ ζ ∈ Ω i, h i ζ ≠ 0 ∧ (C : ℝ)⁻¹ * Real.exp (ψ ζ) ≤ ‖h i ζ‖ := by
+    intro i ζ hζ
+    obtain ⟨hζD, hζG⟩ := (hΩG i hζ).1
+    have hl := (hgood i ζ hζD (fun w hwD hw0 ↦ hζG w hw0 hwD)).1
+    refine ⟨fun h0 ↦ ?_, hl⟩
+    rw [h0, norm_zero] at hl
+    have : 0 < (C : ℝ)⁻¹ * Real.exp (ψ ζ) := by positivity
+    linarith
+  refine ⟨thm2H h' Ω, ?_, ?_, ?_, ?_⟩
+  · -- measurability
+    have hfun : Function.uncurry (thm2H h' Ω) = fun p : ℂ × ℂ ↦
+        (∑ i, (Prod.snd ⁻¹' Ω i).indicator (fun q : ℂ × ℂ ↦ h' i q.1 / h' i q.2) p) *
+          (((1 - ‖p.2‖ ^ 2 : ℝ) : ℂ) / (1 - conj p.2 * p.1)) := by
+      ext p
+      simp only [Function.uncurry, thm2H, indicator, mem_preimage]
+    rw [hfun]
+    refine Measurable.mul (Finset.measurable_sum _ fun i _ ↦ ?_) ?_
+    · exact (((hh'm i).comp measurable_fst).div ((hh'm i).comp measurable_snd)).indicator
+        (measurable_snd (hΩm i))
+    · exact (Complex.measurable_ofReal.comp (measurable_const.sub
+        (measurable_snd.norm.pow_const 2))).div (measurable_const.sub
+        ((Complex.continuous_conj.measurable.comp measurable_snd).mul measurable_fst))
+  · -- holomorphy in `z`
+    intro ζ hζ
+    obtain ⟨i, -, hfor⟩ := hform ζ hζ
+    have hd : DifferentiableOn ℂ (fun z ↦ h i z / h i ζ *
+        (((1 - ‖ζ‖ ^ 2 : ℝ) : ℂ) / (1 - conj ζ * z))) 𝔻 :=
+      ((hh i).div_const _).mul ((differentiableOn_const _).div
+        ((differentiableOn_const _).sub ((differentiableOn_const _).mul differentiableOn_id))
+        fun z hz ↦ one_sub_conj_mul_ne_zero_of_mem hζ hz)
+    refine hd.congr fun z hz ↦ ?_
+    rw [hfor, hh'eq i z hz, hh'eq i ζ hζ]
+  · -- diagonal
+    intro ζ hζ
+    obtain ⟨i, hi, hfor⟩ := hform ζ hζ
+    rw [hfor, hh'eq i ζ hζ, div_self (hne i ζ hi).1, one_mul, one_sub_conj_mul_self, div_self]
+    exact_mod_cast (one_sub_normSq_pos hζ).ne'
+  · -- the bound
+    intro z hz ζ hζ
+    obtain ⟨i, hi, hfor⟩ := hform ζ hζ
+    have hlow := (hne i ζ hi).2
+    have hupz := hup i z hz
+    have hz0 := one_sub_normSq_pos hz
+    have hζ0 := one_sub_normSq_pos hζ
+    rw [hfor, hh'eq i z hz, hh'eq i ζ hζ, norm_mul, norm_div, norm_div, Complex.norm_real,
+      Real.norm_of_nonneg hζ0.le]
+    have hratio : ‖h i z‖ / ‖h i ζ‖ ≤ (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) := by
+      have hpos : 0 < (C : ℝ)⁻¹ * Real.exp (ψ ζ) := by positivity
+      calc ‖h i z‖ / ‖h i ζ‖ ≤ (C * Real.exp (ψ z)) / ((C : ℝ)⁻¹ * Real.exp (ψ ζ)) := by
+            gcongr
+        _ = (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) := by
+            rw [Real.exp_sub]; field_simp
+    have hψ' : Real.exp (ψ z - ψ ζ) ≤ Real.exp (2 * B) * Real.exp (φ z - φ ζ) *
+        ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c := by
+      have e1 : ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c =
+          Real.exp (c * (Real.log (1 - ‖z‖ ^ 2) - Real.log (1 - ‖ζ‖ ^ 2))) := by
+        rw [Real.rpow_def_of_pos (div_pos hz0 hζ0), Real.log_div hz0.ne' hζ0.ne', mul_comm]
+      rw [e1, ← Real.exp_add, ← Real.exp_add]
+      apply Real.exp_le_exp.2
+      have h1 := abs_le.1 (hψφ z hz)
+      have h2 := abs_le.1 (hψφ ζ hζ)
+      nlinarith
+    have hK : 0 ≤ (1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖ := by positivity
+    calc ‖h i z‖ / ‖h i ζ‖ * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖)
+        ≤ (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
+          gcongr
+      _ ≤ (C : ℝ) ^ 2 * (Real.exp (2 * B) * Real.exp (φ z - φ ζ) *
+            ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c) * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
+          gcongr
+      _ = (C : ℝ) ^ 2 * Real.exp (2 * B) * Real.exp (φ z - φ ζ) *
+            ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
+          ring
 
 /-! ## Per-weight forms -/
 
@@ -420,7 +519,12 @@ theorem exists_disc_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
     ∃ (H : ℂ → ℂ → ℂ) (c A : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ A ∧ Measurable (Function.uncurry H) ∧
       (∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) ∧ (∀ ζ ∈ 𝔻, H ζ ζ = 1) ∧
       ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
-        ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := sorry
+        ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
+  obtain ⟨r, hr, hmr⟩ := hm
+  obtain ⟨Cd, hCd⟩ := hd
+  obtain ⟨c, A, hc0, hc1, hA, h⟩ := exists_disc_solution_kernel_quant Cd r hr
+  obtain ⟨H, hHm, hHd, hH1, hHb⟩ := h φ μ hφ (MeasClassDisc.of_weight hφ hCd hmr)
+  exact ⟨H, c, A, hc0, hc1, hA, hHm, hHd, hH1, hHb⟩
 
 /-! ## Main statements -/
 
