@@ -595,28 +595,102 @@ theorem theorem2_printed (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmo
 def bridgeMeasure (ψ₀ : ℂ → ℝ) : Measure ℂ :=
   (volume.restrict 𝔻).withDensity fun z ↦ ENNReal.ofReal (2 * lap ψ₀ z)
 
+theorem laplacian_half_eq {ψ₀ : ℂ → ℝ} (hψ : ContDiffOn ℝ 2 ψ₀ 𝔻) {z : ℂ} (hz : z ∈ 𝔻) :
+    Laplacian.laplacian (fun z ↦ ψ₀ z / 2) z = 2 * lap ψ₀ z := by
+  have hc : ContDiffAt ℝ 2 ψ₀ z := hψ.contDiffAt (isOpen_ball.mem_nhds hz)
+  rw [laplacian_eq_four_mul_lap,
+    show (fun z ↦ ψ₀ z / 2) = fun z ↦ (1 / 2 : ℝ) * ψ₀ z by ext; ring, lap_const_mul _ hc]
+  ring
+
 theorem bridge_isSubharmonicWeight {ψ₀ : ℂ → ℝ} (hψ : ContDiffOn ℝ 2 ψ₀ 𝔻)
     (hpos : ∀ z ∈ 𝔻, 0 ≤ lap ψ₀ z) :
-    IsSubharmonicWeight 𝔻 (fun z ↦ ψ₀ z / 2) (bridgeMeasure ψ₀) := sorry
+    IsSubharmonicWeight 𝔻 (fun z ↦ ψ₀ z / 2) (bridgeMeasure ψ₀) := by
+  have hw := isSubharmonicWeight_of_contDiffOn isOpen_ball (hψ.div_const 2)
+    (fun z hz ↦ by rw [laplacian_half_eq hψ hz]; linarith [hpos z hz])
+  have hmeas : volume.withDensity
+      (𝔻.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian (fun z ↦ ψ₀ z / 2) z)) =
+      bridgeMeasure ψ₀ := by
+    rw [withDensity_indicator measurableSet_ball, bridgeMeasure]
+    refine withDensity_congr_ae (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ ?_)
+    dsimp only
+    rw [laplacian_half_eq hψ hz]
+  rw [hmeas] at hw
+  exact hw
+
+/-- Lower half of `bridge_le_le` (only the lower bound on `invLap` is needed). -/
+theorem bridge_ge {ψ₀ : ℂ → ℝ} {δ : ℝ} (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z) :
+    ENNReal.ofReal (2 * δ) • hypArea ≤ bridgeMeasure ψ₀ := by
+  rw [hypArea, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top, bridgeMeasure]
+  refine withDensity_mono (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ ?_)
+  simp only [Pi.smul_apply, smul_eq_mul]
+  rw [← ENNReal.ofReal_mul' (by positivity)]
+  apply ENNReal.ofReal_le_ofReal
+  have ht : 0 < (1 - ‖z‖ ^ 2) ^ 2 := pow_pos (one_sub_normSq_pos hz) 2
+  have h := hlow z hz
+  unfold invLap at h
+  have : δ * ((1 - ‖z‖ ^ 2) ^ 2)⁻¹ ≤ lap ψ₀ z := by
+    rw [← div_eq_mul_inv, div_le_iff₀ ht]; linarith
+  rw [inv_pow]
+  linarith
+
+/-- Upper half of `bridge_le_le`. -/
+theorem bridge_le {ψ₀ : ℂ → ℝ} {M : ℝ} (hup : ∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) :
+    bridgeMeasure ψ₀ ≤ ENNReal.ofReal (2 * M) • hypArea := by
+  rw [hypArea, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top, bridgeMeasure]
+  refine withDensity_mono (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ ?_)
+  simp only [Pi.smul_apply, smul_eq_mul]
+  rw [← ENNReal.ofReal_mul' (by positivity)]
+  apply ENNReal.ofReal_le_ofReal
+  have ht : 0 < (1 - ‖z‖ ^ 2) ^ 2 := pow_pos (one_sub_normSq_pos hz) 2
+  have h := hup z hz
+  unfold invLap at h
+  have : lap ψ₀ z ≤ M * ((1 - ‖z‖ ^ 2) ^ 2)⁻¹ := by
+    rw [← div_eq_mul_inv, le_div_iff₀ ht]; linarith
+  rw [inv_pow]
+  linarith
 
 theorem bridge_le_le {ψ₀ : ℂ → ℝ} {δ M : ℝ} (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z)
     (hup : ∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) :
     ENNReal.ofReal (2 * δ) • hypArea ≤ bridgeMeasure ψ₀ ∧
-      bridgeMeasure ψ₀ ≤ ENNReal.ofReal (2 * M) • hypArea := sorry
+      bridgeMeasure ψ₀ ≤ ENNReal.ofReal (2 * M) • hypArea :=
+  ⟨bridge_ge hlow, bridge_le hup⟩
+
+/-- Mass of hyperbolic balls for a measure dominating `a · hypArea`, with an explicit radius
+depending only on `a`. -/
+theorem one_lt_measure_hypBall_of_le {a : ℝ} (ha : 0 < a) {μ : Measure ℂ}
+    (h₁ : ENNReal.ofReal a • hypArea ≤ μ) {z : ℂ} (hz : z ∈ 𝔻) :
+    1 < μ (hypBall z ((2 * ⌈1 / (a * Real.pi)⌉₊ + 1) * 1)) := by
+  have hm : ∀ z ∈ 𝔻, ENNReal.ofReal (a * Real.pi) ≤ μ (hypBall z 1) := fun z hz ↦ by
+    calc ENNReal.ofReal (a * Real.pi) ≤ ENNReal.ofReal a * hypArea (hypBall z 1) := by
+          rw [hypArea_hypBall hz zero_le_one, ← ENNReal.ofReal_mul ha.le]
+          apply ENNReal.ofReal_le_ofReal
+          have h1 : (1 : ℝ) ≤ Real.sinh 1 := Real.self_le_sinh_iff.2 zero_le_one
+          have h2 : (1 : ℝ) ≤ Real.sinh 1 ^ 2 := by nlinarith
+          have := Real.pi_pos
+          have : Real.pi ≤ Real.pi * Real.sinh 1 ^ 2 := by nlinarith
+          nlinarith
+      _ ≤ μ (hypBall z 1) := h₁ _
+  have := ofReal_lt_measure_hypBall one_pos (by positivity) hm 1 hz
+  rwa [ENNReal.ofReal_one] at this
+
+/-- The class `(Cd, R₀)` of a measure comparable to `hypArea`, with explicit constants depending
+only on the comparison constants. -/
+theorem measClassDisc_of_le_hypArea {a b : ℝ} (ha : 0 < a) {μ : Measure ℂ}
+    (h₁ : ENNReal.ofReal a • hypArea ≤ μ) (h₂ : μ ≤ ENNReal.ofReal b • hypArea) :
+    MeasClassDisc μ (b.toNNReal * 16 / a.toNNReal) ((2 * ⌈1 / (a * Real.pi)⌉₊ + 1) * 1) := by
+  refine ⟨isLocallyDoublingDiscWith_hypArea.of_le_of_le (by simpa using ha) h₁ h₂,
+    fun z hz ↦ one_lt_measure_hypBall_of_le ha h₁ hz, fun K hK hKc ↦ (h₂ K).trans_lt ?_⟩
+  rw [Measure.smul_apply, smul_eq_mul]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hypArea_lt_top_of_isCompact hK hKc)
 
 theorem bridge_isLocallyDoublingDisc {ψ₀ : ℂ → ℝ} {δ M : ℝ} (hδ : 0 < δ)
     (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z) (hup : ∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) :
-    IsLocallyDoublingDisc (bridgeMeasure ψ₀) := sorry
+    IsLocallyDoublingDisc (bridgeMeasure ψ₀) :=
+  ⟨_, (measClassDisc_of_le_hypArea (by linarith) (bridge_ge hlow) (bridge_le hup)).doubling⟩
 
 theorem bridge_mass {ψ₀ : ℂ → ℝ} {δ : ℝ} (hδ : 0 < δ) (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z) :
-    ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < bridgeMeasure ψ₀ (hypBall z R) := sorry
-
-theorem dbar_sup_estimate_C2 {ψ₀ : ℂ → ℝ} (hψ : ContDiffOn ℝ 2 ψ₀ 𝔻) {δ M : ℝ} (hδ : 0 < δ)
-    (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z) (hup : ∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ g : ℂ → ℂ, ContDiff ℝ (⊤ : ℕ∞) g → HasCompactSupport g →
-      tsupport g ⊆ 𝔻 → ∃ W : ℂ → ℂ, IsWeakDbarSol 𝔻 W g ∧ ∀ B : ℝ,
-        (∀ ζ ∈ 𝔻, ‖g ζ‖ * (1 - ‖ζ‖) * Real.exp (-ψ₀ ζ / 2) ≤ B) →
-        ∀ᵐ z ∂(volume.restrict 𝔻), ‖W z‖ * Real.exp (-ψ₀ z / 2) ≤ C * B := sorry
+    ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < bridgeMeasure ψ₀ (hypBall z R) :=
+  ⟨_, by positivity, fun _ hz ↦ one_lt_measure_hypBall_of_le (by linarith) (bridge_ge hlow) hz⟩
 
 /-- The bridge with a constant uniform in `ψ₀` (needed by BOC, M11 §8.3).  Not derivable from
 the per-weight `theorem2`; it follows from `theorem2_uniform` (now among the comparator
@@ -626,6 +700,85 @@ theorem dbar_sup_estimate_C2_uniform {δ M : ℝ} (hδ : 0 < δ) :
       (∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) → ∀ g : ℂ → ℂ, ContDiff ℝ (⊤ : ℕ∞) g →
       HasCompactSupport g → tsupport g ⊆ 𝔻 → ∃ W : ℂ → ℂ, IsWeakDbarSol 𝔻 W g ∧ ∀ B : ℝ,
         (∀ ζ ∈ 𝔻, ‖g ζ‖ * (1 - ‖ζ‖) * Real.exp (-ψ₀ ζ / 2) ≤ B) →
-        ∀ᵐ z ∂(volume.restrict 𝔻), ‖W z‖ * Real.exp (-ψ₀ z / 2) ≤ C * B := sorry
+        ∀ᵐ z ∂(volume.restrict 𝔻), ‖W z‖ * Real.exp (-ψ₀ z / 2) ≤ C * B := by
+  have h2δ : 0 < 2 * δ := by linarith
+  obtain ⟨C₂, hC₂⟩ := theorem2_uniform ((2 * M).toNNReal * 16 / (2 * δ).toNNReal)
+    ((2 * ⌈1 / (2 * δ * Real.pi)⌉₊ + 1) * 1) (by positivity)
+  refine ⟨2 * C₂, by positivity, fun ψ₀ hψ hlow hup g hg hgc hgs ↦ ?_⟩
+  have hpos : ∀ z ∈ 𝔻, 0 ≤ lap ψ₀ z := fun z hz ↦ by
+    have ht : 0 < (1 - ‖z‖ ^ 2) ^ 2 := pow_pos (one_sub_normSq_pos hz) 2
+    have h := hlow z hz
+    unfold invLap at h
+    by_contra hneg
+    push Not at hneg
+    nlinarith
+  have hw := bridge_isSubharmonicWeight hψ hpos
+  have hcl := measClassDisc_of_le_hypArea h2δ (bridge_ge hlow) (bridge_le hup)
+  -- the admissible right-hand side
+  set F : ℂ → ℂ := fun z ↦ g z * ((1 - ‖z‖ ^ 2) * Real.exp (-(ψ₀ z / 2)) : ℝ) with hFdef
+  have hFc : Continuous F := by
+    have hcont : ContinuousOn (fun z : ℂ ↦ (((1 - ‖z‖ ^ 2) * Real.exp (-(ψ₀ z / 2)) : ℝ) : ℂ)) 𝔻 :=
+      Complex.continuous_ofReal.comp_continuousOn ((continuousOn_const.sub
+        (continuous_norm.pow 2).continuousOn).mul
+        (Real.continuous_exp.comp_continuousOn (hψ.continuousOn.div_const 2).neg))
+    have := continuous_mul_of_tsupport_subset isOpen_ball hcont hg.continuous hgs
+    simpa only [hFdef, mul_comm] using this
+  have hFcs : HasCompactSupport F := hgc.mul_right
+  obtain ⟨K, hK⟩ := hFc.bounded_above_of_compact_support hFcs
+  have hFfin : eLpNorm F ∞ discMeasure < ∞ := by
+    rw [eLpNorm_exponent_top hFc.aestronglyMeasurable]
+    exact (eLpNormEssSup_le_of_ae_bound (Filter.Eventually.of_forall hK)).trans_lt
+      ENNReal.ofReal_lt_top
+  obtain ⟨W, hW, hest⟩ := hC₂ (fun z ↦ ψ₀ z / 2) (bridgeMeasure ψ₀) hw hcl.doubling hcl.mass g
+    hg.continuous.aestronglyMeasurable ⟨∞, le_top, hFfin⟩
+  refine ⟨W, hW, fun B hB ↦ ?_⟩
+  have hB0 : 0 ≤ B := by
+    have := hB 0 (by simp)
+    have : 0 ≤ ‖g 0‖ * (1 - ‖(0 : ℂ)‖) * Real.exp (-ψ₀ 0 / 2) := by simp; positivity
+    linarith
+  -- the right-hand side is at most `2B`
+  have hac : discMeasure ≪ volume.restrict 𝔻 := withDensity_absolutelyContinuous _ _
+  have hF2B : eLpNorm F ∞ discMeasure ≤ ENNReal.ofReal (2 * B) := by
+    rw [eLpNorm_exponent_top hFc.aestronglyMeasurable]
+    refine eLpNormEssSup_le_of_ae_bound (hac.ae_le
+      (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ ?_))
+    have hz0 := norm_nonneg z
+    have hz1 : ‖z‖ < 1 := by simpa using hz
+    have hexp := Real.exp_pos (-(ψ₀ z / 2))
+    rw [hFdef, norm_mul, Complex.norm_real, Real.norm_of_nonneg
+      (mul_nonneg (one_sub_normSq_pos hz).le hexp.le)]
+    have h1 := hB z hz
+    rw [neg_div] at h1
+    have h2 : 1 - ‖z‖ ^ 2 ≤ 2 * (1 - ‖z‖) := by nlinarith
+    have h3 : ‖g z‖ * ((1 - ‖z‖ ^ 2) * Real.exp (-(ψ₀ z / 2))) ≤
+        ‖g z‖ * (2 * (1 - ‖z‖) * Real.exp (-(ψ₀ z / 2))) := by gcongr
+    linarith
+  have hest' : eLpNorm (fun z ↦ W z * (Real.exp (-(ψ₀ z / 2)) : ℂ)) ∞ discMeasure ≤
+      C₂ * ENNReal.ofReal (2 * B) := by
+    refine (hest ∞ le_top).trans ?_
+    gcongr
+  have hae := ae_le_eLpNormEssSup (μ := discMeasure)
+    (f := fun z ↦ W z * (Real.exp (-(fun z ↦ ψ₀ z / 2) z) : ℂ))
+  have hdens : volume.restrict 𝔻 ≪ discMeasure := by
+    refine withDensity_absolutelyContinuous' (by fun_prop)
+      (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ ?_)
+    have := one_sub_normSq_pos hz
+    exact (ENNReal.ofReal_pos.2 (by positivity)).ne'
+  filter_upwards [hdens.ae_le hae] with z hz
+  have hz' := (hz.trans eLpNormEssSup_le_eLpNorm_top).trans hest'
+  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity),
+    ENNReal.ofReal_le_ofReal_iff (by positivity), norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (Real.exp_pos _).le] at hz'
+  rw [neg_div]
+  linarith
+
+theorem dbar_sup_estimate_C2 {ψ₀ : ℂ → ℝ} (hψ : ContDiffOn ℝ 2 ψ₀ 𝔻) {δ M : ℝ} (hδ : 0 < δ)
+    (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z) (hup : ∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ g : ℂ → ℂ, ContDiff ℝ (⊤ : ℕ∞) g → HasCompactSupport g →
+      tsupport g ⊆ 𝔻 → ∃ W : ℂ → ℂ, IsWeakDbarSol 𝔻 W g ∧ ∀ B : ℝ,
+        (∀ ζ ∈ 𝔻, ‖g ζ‖ * (1 - ‖ζ‖) * Real.exp (-ψ₀ ζ / 2) ≤ B) →
+        ∀ᵐ z ∂(volume.restrict 𝔻), ‖W z‖ * Real.exp (-ψ₀ z / 2) ≤ C * B := by
+  obtain ⟨C, hC0, hC⟩ := dbar_sup_estimate_C2_uniform (M := M) hδ
+  exact ⟨C, hC0, hC ψ₀ hψ hlow hup⟩
 
 end OC
