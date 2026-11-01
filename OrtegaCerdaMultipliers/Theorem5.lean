@@ -31,6 +31,180 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
     (a b : ℝ) :
     Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ := sorry
 
+/-! ### Helpers for 13.9 -/
+
+theorem continuous_logPotential_volume (a b : ℝ) :
+    Continuous fun z : ℂ ↦ ∫ t in a..b, Real.log ‖z - t‖ := by
+  rcases le_total a b with hab | hab
+  · have := isLineMeasure_lebLine.continuous_logPotential_Ioc a b
+    rw [linePull_lebLine] at this
+    refine this.congr fun z ↦ ?_
+    rw [intervalIntegral.integral_of_le hab]
+  · have := isLineMeasure_lebLine.continuous_logPotential_Ioc b a
+    rw [linePull_lebLine] at this
+    refine this.neg.congr fun z ↦ ?_
+    rw [intervalIntegral.integral_of_ge hab]
+    rfl
+
+theorem continuousAt_log_norm_sub {a z₀ : ℂ} (h : z₀ ≠ a) :
+    ContinuousAt (fun z : ℂ ↦ Real.log ‖z - a‖) z₀ :=
+  ((continuous_id.sub continuous_const).norm.continuousAt).log
+    (norm_ne_zero_iff.2 (sub_ne_zero.2 h))
+
+theorem IsLineMeasure.continuousAt_lineTerm {μ : Measure ℂ} (hμ : IsLineMeasure μ) {α s : ℝ}
+    {k : ℤ} {z₀ : ℂ} (hz : ∀ b : Bool, z₀ ≠ lineNode μ α s k b) :
+    ContinuousAt (lineTerm μ α s k) z₀ := by
+  unfold lineTerm
+  refine ((continuousAt_log_norm_sub (hz true)).add (continuousAt_log_norm_sub (hz false))).sub
+    (continuousAt_const.mul ((hμ.continuous_logPotential_Ioc _ _).continuousAt.sub
+      (continuousAt_const.mul (continuous_logPotential_volume _ _).continuousAt)))
+
+theorem IsLineMeasure.locallyIntegrable_lineTerm {μ : Measure ℂ} (hμ : IsLineMeasure μ)
+    (α s : ℝ) (k : ℤ) : LocallyIntegrable (lineTerm μ α s k) := by
+  have h1 := (logKernel (lineNode μ α s k true : ℂ)).1
+  have h2 := (logKernel (lineNode μ α s k false : ℂ)).1
+  have hc1 : Continuous fun z : ℂ ↦
+      ∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), Real.log ‖z - t‖ ∂linePull μ :=
+    hμ.continuous_logPotential_Ioc _ _
+  have hc2 : Continuous fun z : ℂ ↦
+      ∫ t in lineKnot μ α k..lineKnot μ α (k + 1), Real.log ‖z - t‖ :=
+    continuous_logPotential_volume _ _
+  have h3 : LocallyIntegrable (fun z : ℂ ↦ (1 / (2 * Real.pi)) *
+      ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), Real.log ‖z - t‖ ∂linePull μ) -
+        2 * α * ∫ t in lineKnot μ α k..lineKnot μ α (k + 1), Real.log ‖z - t‖)) :=
+    (continuous_const.mul (hc1.sub (continuous_const.mul hc2))).locallyIntegrable
+  exact ((h1.add h2).sub h3).congr (Eventually.of_forall fun z ↦ rfl)
+
+namespace LineConsts
+
+variable {μ : Measure ℂ} {r C₂ c₀ α₁ : ℝ} (hc : LineConsts μ r C₂ c₀ α₁)
+include hc
+
+theorem node_mem_Ioc {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs : 0 ≤ s)
+    (hs' : s ≤ c₀ / 2) (k : ℤ) (b : Bool) :
+    lineNode μ α s k b ∈ Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)) := by
+  have hl := hc.hyp hα hα'
+  obtain ⟨o, ho, he⟩ := lineNode_eq μ α s k b
+  have hob : |o| ≤ c₀ / 2 := by
+    rcases ho with rfl | rfl
+    · rw [abs_of_nonneg hs]; exact hs'
+    · rw [abs_neg, abs_of_nonneg hs]; exact hs'
+  obtain ⟨m1, m2⟩ := hc.offset_mem hα hα' k hob
+  have hk0 : 0 < c₀ / 2 * lineLength μ α k := by
+    have := hl.lineLength_pos k; have := hc.hc₀; positivity
+  rw [he]; constructor <;> linarith
+
+theorem node_injective {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs : 0 ≤ s)
+    (hs' : s ≤ c₀ / 2) (b : Bool) :
+    Function.Injective fun k : ℤ ↦ ((lineNode μ α s k b : ℝ) : ℂ) := by
+  intro k j hkj
+  simp only [ofReal_inj] at hkj
+  by_contra hne
+  exact Set.disjoint_left.1 ((hc.hyp hα hα').cells_disjoint hne)
+    (hc.node_mem_Ioc hα hα' hs hs' k b) (hkj ▸ hc.node_mem_Ioc hα hα' hs hs' j b)
+
+/-- Uniform control of the tail of the series on a ball (§3.7). -/
+theorem uniform_tail {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs : 0 ≤ s)
+    (hs' : s ≤ 1 / 2) {R : ℝ} (hR : 0 ≤ R) : ∃ (F : Finset ℤ) (u : ℤ → ℝ), Summable u ∧
+      (∀ k, 0 ≤ u k) ∧ ∀ k ∉ F, (∀ z ∈ closedBall (0 : ℂ) R, |lineTerm μ α s k z| ≤ u k) ∧
+        ∀ b : Bool, R + 1 < |lineNode μ α s k b| := by
+  have hl := hc.hyp hα hα'
+  obtain ⟨Cf, -, hCf⟩ := hc.far_sum
+  obtain ⟨hf, -, hf0⟩ := far_summable hCf hα hα' 0
+  set A := 52 * r
+  have hr := hc.hr
+  set M := 2 * R + 4 * A + 2
+  obtain ⟨K₀, K₁, hK⟩ := hl.cells_meeting_subset (-M - 1) (M + 1)
+  refine ⟨Finset.Icc K₀ K₁, fun k ↦ 32 * (if 2 * lineLength μ α k ≤ ‖(0 : ℂ) - lineCentre μ α k‖
+    then (lineLength μ α k / ‖(0 : ℂ) - lineCentre μ α k‖) ^ 2 else 0), hf.mul_left 32,
+    fun k ↦ by have := hf0 k; simp only [Pi.zero_apply] at this; positivity, fun k hk ↦ ?_⟩
+  have hlamI := hc.centre_mem_Icc hα hα' k
+  have hle := hl.lineLength_le k
+  have hp := hl.lineLength_pos k
+  have hlam : M < |lineCentre μ α k| := by
+    by_contra hcon
+    push Not at hcon
+    rw [abs_le] at hcon
+    exact hk (Finset.mem_Icc.2 (hK k (by linarith [hlamI.2]) (by linarith [hlamI.1])))
+  have h0 : ‖(0 : ℂ) - lineCentre μ α k‖ = |lineCentre μ α k| := by
+    rw [zero_sub, norm_neg, norm_real, Real.norm_eq_abs]
+  have hfar0 : 2 * lineLength μ α k ≤ ‖(0 : ℂ) - lineCentre μ α k‖ := by rw [h0]; linarith
+  refine ⟨fun z hz ↦ ?_, fun b ↦ ?_⟩
+  · rw [mem_closedBall, dist_zero_right] at hz
+    have hd : |lineCentre μ α k| / 2 ≤ ‖z - lineCentre μ α k‖ := by
+      have := norm_sub_norm_le ((lineCentre μ α k : ℝ) : ℂ) z
+      rw [norm_real, Real.norm_eq_abs, norm_sub_rev] at this
+      linarith
+    have hfar : 2 * lineLength μ α k ≤ ‖z - lineCentre μ α k‖ := by linarith
+    refine (hc.far_field hα hα' hs hs' k z hfar).trans ?_
+    have hfar0' : 2 * lineLength μ α k ≤ |lineCentre μ α k| := h0 ▸ hfar0
+    simp only [h0, hfar0', if_true]
+    have hlpos : 0 < |lineCentre μ α k| := by linarith
+    have : lineLength μ α k / ‖z - lineCentre μ α k‖ ≤ 2 * (lineLength μ α k / |lineCentre μ α k|) := by
+      calc lineLength μ α k / ‖z - lineCentre μ α k‖ ≤ lineLength μ α k / (|lineCentre μ α k| / 2) :=
+            div_le_div_of_nonneg_left hp.le (by positivity) hd
+        _ = 2 * (lineLength μ α k / |lineCentre μ α k|) := by field_simp
+    have h2 : (lineLength μ α k / ‖z - lineCentre μ α k‖) ^ 2 ≤
+        (2 * (lineLength μ α k / |lineCentre μ α k|)) ^ 2 :=
+      pow_le_pow_left₀ (by positivity) this 2
+    have h3 : (2 * (lineLength μ α k / |lineCentre μ α k|)) ^ 2 =
+        4 * (lineLength μ α k / |lineCentre μ α k|) ^ 2 := by ring
+    linarith
+  · obtain ⟨o, ho, he⟩ := lineNode_eq μ α s k b
+    have : |o * lineLength μ α k| ≤ A := by
+      rw [abs_mul, abs_of_pos hp]
+      have : |o| ≤ 1 / 2 := by
+        rcases ho with rfl | rfl
+        · rw [abs_of_nonneg hs]; exact hs'
+        · rw [abs_neg, abs_of_nonneg hs]; exact hs'
+      nlinarith [abs_nonneg o]
+    rw [he]
+    have := abs_sub_abs_le_abs_sub (lineCentre μ α k) (-(o * lineLength μ α k))
+    rw [sub_neg_eq_add, abs_neg] at this
+    linarith
+
+/-- The series is a finite sum plus a tail which is continuous on a ball. -/
+theorem decomp {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs : 0 ≤ s) (hs' : s ≤ 1 / 2)
+    {R : ℝ} (hR : 0 ≤ R) : ∃ F : Finset ℤ, (∀ k ∉ F, ∀ b : Bool,
+      R + 1 < |lineNode μ α s k b|) ∧
+      ContinuousOn (fun z ↦ ∑' k, if k ∈ F then 0 else lineTerm μ α s k z) (closedBall 0 R) ∧
+      (∃ B : ℝ, ∀ k ∉ F, ∀ z ∈ closedBall (0 : ℂ) R, |lineTerm μ α s k z| ≤ B) ∧
+      ∀ z, linePotential μ α s z = ∑ k ∈ F, lineTerm μ α s k z +
+        ∑' k, if k ∈ F then 0 else lineTerm μ α s k z := by
+  classical
+  obtain ⟨F, u, hu, hu0, hFu⟩ := hc.uniform_tail hα hα' hs hs' hR
+  obtain ⟨Cf, -, hCf⟩ := hc.far_sum
+  refine ⟨F, fun k hk ↦ (hFu k hk).2, ?_, ⟨∑' k, u k, fun k hk z hz ↦
+    ((hFu k hk).1 z hz).trans (hu.le_tsum k (fun j _ ↦ hu0 j))⟩, fun z ↦ ?_⟩
+  · refine continuousOn_tsum (u := u) (fun k ↦ ?_) hu (fun k z hz ↦ ?_)
+    · by_cases hk : k ∈ F
+      · simp only [hk, if_true]; exact continuousOn_const
+      · simp only [hk, if_false]
+        intro z hz
+        refine (hc.hμ.continuousAt_lineTerm fun b hb ↦ ?_).continuousWithinAt
+        have h1 := (hFu k hk).2 b
+        rw [mem_closedBall, dist_zero_right, hb, norm_real, Real.norm_eq_abs] at hz
+        linarith
+    · by_cases hk : k ∈ F
+      · simp only [hk, if_true, norm_zero]; exact hu0 k
+      · simp only [hk, if_false, Real.norm_eq_abs]; exact (hFu k hk).1 z hz
+  · have hT := (hc.lineTerm_split hCf hα hα' hs hs' z).1
+    have hg : Summable fun k ↦ if k ∈ F then 0 else lineTerm μ α s k z := by
+      refine hT.congr_cofinite ?_
+      filter_upwards [F.finite_toSet.compl_mem_cofinite] with k hk
+      simp only [mem_compl_iff, Finset.mem_coe] at hk
+      simp [hk]
+    have hf : Summable fun k ↦ if k ∈ F then lineTerm μ α s k z else 0 :=
+      summable_of_ne_finset_zero (s := F) (fun k hk ↦ by simp [hk])
+    unfold linePotential
+    rw [show (fun k ↦ lineTerm μ α s k z) = fun k ↦ (if k ∈ F then lineTerm μ α s k z else 0) +
+      (if k ∈ F then 0 else lineTerm μ α s k z) from funext fun k ↦ by split_ifs <;> simp,
+      hf.tsum_add hg, tsum_eq_sum (s := F) (fun k hk ↦ by simp [hk])]
+    congr 1
+    exact Finset.sum_congr rfl fun k hk ↦ by simp [hk]
+
+end LineConsts
+
 /-! 13.9 `φ − α|Im z| + S` is the log-modulus of an entire function (M07 weak entry) -/
 theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
     (hφ : IsSubharmonicWeight univ φ μ) (hμ : IsLineMeasure μ) :
