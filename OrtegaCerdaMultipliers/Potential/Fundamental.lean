@@ -377,10 +377,68 @@ theorem integral_mul_laplacian_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {U
     _ = ∫ z, 4 * lap U z * χ z := by
         rw [← integral_const_mul]; congr 1; ext z; ring
 
+/-- A function continuous on an open set `Ω`, times a continuous function with compact support
+in `Ω`, is integrable (real version of `integrable_mul_of_tsupport_subset`). -/
+theorem integrable_mul_of_tsupport_subset_real {Ω : Set ℂ} (hΩ : IsOpen Ω) {h β : ℂ → ℝ}
+    (hh : ContinuousOn h Ω) (hβ : Continuous β) (hc : HasCompactSupport β)
+    (hs : tsupport β ⊆ Ω) : Integrable (fun x ↦ h x * β x) := by
+  have hcont : Continuous (fun x ↦ h x * β x) := by
+    rw [continuous_iff_continuousAt]
+    intro x
+    by_cases hx : x ∈ Ω
+    · exact (hh.continuousAt (hΩ.mem_nhds hx)).mul hβ.continuousAt
+    · have hx' : x ∉ tsupport β := fun h' ↦ hx (hs h')
+      rw [notMem_tsupport_iff_eventuallyEq] at hx'
+      have : (fun _ ↦ (0 : ℝ)) =ᶠ[𝓝 x] fun x ↦ h x * β x := by
+        filter_upwards [hx'] with y hy
+        simp [hy]
+      exact continuousAt_const.congr this
+  exact hcont.integrable_of_hasCompactSupport (hc.mul_left (f := h))
+
+/-- `∫ U Δχ = 0` for `U` harmonic on an open set containing the support of `χ`. -/
+theorem integral_mul_laplacian_eq_zero_of_harmonicOnNhd {Ω : Set ℂ} (hΩ : IsOpen Ω)
+    {U χ : ℂ → ℝ} (hU : InnerProductSpace.HarmonicOnNhd U Ω) (hχ : ContDiff ℝ 2 χ)
+    (hc : HasCompactSupport χ) (hs : tsupport χ ⊆ Ω) :
+    ∫ z, U z * Laplacian.laplacian χ z = 0 := by
+  rw [integral_mul_laplacian_of_contDiffOn hΩ hU.contDiffOn hχ hc hs]
+  refine integral_eq_zero_of_ae (Eventually.of_forall fun z ↦ ?_)
+  by_cases hz : z ∈ Ω
+  · simp [(hU z hz).2.self_of_nhds]
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hz (hs h)]
+
 /-- **Green kernel of the disc.** `∫ log ρ(ζ, z) Δχ(z) dm(z) = 2π χ(ζ)` for `χ` supported in `𝔻`. -/
 theorem integral_log_pseudoHyp_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
     (hc : HasCompactSupport χ) (hs : tsupport χ ⊆ 𝔻) {ζ : ℂ} (hζ : ζ ∈ 𝔻) :
-    ∫ z, Real.log (pseudoHyp ζ z) * Laplacian.laplacian χ z = 2 * Real.pi * χ ζ := sorry
+    ∫ z, Real.log (pseudoHyp ζ z) * Laplacian.laplacian χ z = 2 * Real.pi * χ ζ := by
+  set Ω' : Set ℂ := {z | 1 - conj ζ * z ≠ 0}
+  have hΩ' : IsOpen Ω' := isOpen_ne_fun (by fun_prop) continuous_const
+  have h𝔻 : 𝔻 ⊆ Ω' := fun z hz ↦ one_sub_conj_mul_ne_zero_of_mem hζ hz
+  set h : ℂ → ℝ := fun z ↦ Real.log ‖1 - conj ζ * z‖
+  have hharm : InnerProductSpace.HarmonicOnNhd h Ω' := fun z hz ↦
+    (analyticAt_const.sub (analyticAt_const.mul analyticAt_id)).harmonicAt_log_norm hz
+  have hΔc := continuous_laplacian hχ
+  have hΔs := hasCompactSupport_laplacian hc
+  have hlogint : Integrable (fun z ↦ Real.log ‖z - ζ‖ * Laplacian.laplacian χ z) := by
+    simpa [smul_eq_mul] using
+      (locallyIntegrable_log_norm_sub ζ).integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have hhint : Integrable (fun z ↦ h z * Laplacian.laplacian χ z) :=
+    integrable_mul_of_tsupport_subset_real hΩ' (hharm.contDiffOn.continuousOn) hΔc hΔs
+      ((tsupport_laplacian_subset χ).trans (hs.trans h𝔻))
+  have hae : (fun z ↦ Real.log (pseudoHyp ζ z) * Laplacian.laplacian χ z) =ᵐ[volume]
+      fun z ↦ Real.log ‖z - ζ‖ * Laplacian.laplacian χ z - h z * Laplacian.laplacian χ z := by
+    filter_upwards [Measure.ae_ne volume ζ] with z hz
+    by_cases hz𝔻 : z ∈ 𝔻
+    · have h1 : ‖ζ - z‖ ≠ 0 := norm_ne_zero_iff.2 (sub_ne_zero.2 (Ne.symm hz))
+      have h2 : ‖1 - conj ζ * z‖ ≠ 0 :=
+        norm_ne_zero_iff.2 (one_sub_conj_mul_ne_zero_of_mem hζ hz𝔻)
+      rw [pseudoHyp, Real.log_div h1 h2, norm_sub_rev]
+      ring
+    · have : Laplacian.laplacian χ z = 0 :=
+        laplacian_eq_zero_of_notMem_tsupport fun h' ↦ hz𝔻 (hs h')
+      simp [this]
+  rw [integral_congr_ae hae, integral_sub hlogint hhint,
+    integral_mul_laplacian_eq_zero_of_harmonicOnNhd hΩ' hharm hχ hc (hs.trans h𝔻), sub_zero,
+    integral_log_norm_sub_mul_laplacian hχ hc ζ]
 
 /-! ### Requested by M13 (§4.2) -/
 
