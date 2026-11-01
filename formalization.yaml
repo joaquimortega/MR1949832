@@ -1,0 +1,341 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+# formalization.yaml (v0.4): repo-root metadata for this formalization project.
+
+version: "v0.4"
+
+project:
+  name: "Multipliers and weighted ∂̄-estimates (Ortega-Cerdà 2002)"
+  description: >-
+    A Lean 4 / Mathlib formalization of J. Ortega-Cerdà, "Multipliers and weighted ∂̄-estimates",
+    Rev. Mat. Iberoamericana 18 (2002), 355–377.
+
+    Multipliers (Theorem 4, Proposition 2). Let ψ be a subharmonic function in the plane or in
+    the unit disc whose Laplacian is a locally doubling measure that gives mass > 1 to every disc
+    of some fixed radius (Euclidean, resp. hyperbolic). Then there is a holomorphic h whose
+    modulus is comparable to e^ψ away from small discs around its zeros. There are also finitely
+    many such multipliers whose exceptional sets have empty intersection.
+
+    ∂̄-estimates (Theorems 1 and 2, Proposition 1). For such weights the equation ∂̄u = f has an
+    explicit solution, built from the multipliers and a model kernel, with weighted L^p and sup
+    estimates:
+      - Theorem 1: in ℂ, Christ's theorem extended to locally doubling Laplacians;
+      - Theorem 2: in 𝔻, with the norms ‖u e^{-φ}‖_{L^p(dm/(1−|z|²))}.
+
+    The real line (Theorems 5 and 3). Multipliers with real zeros for Laplacians carried by ℝ.
+    Theorem 3, a weighted estimate for ∂̄u = μ, is conditional on the Ortega-Cerdà–Seip theorem
+    the paper quotes. As printed it is false; the corrected statement is formalized.
+
+    Weights are pairs (φ, μ): φ continuous and Δφ = μ in the sense of distributions. Mathlib has
+    no Riesz-measure theory, and for the paper's weights this class is equivalent to the
+    paper's.
+
+    The formalization was directed by the author of the paper. It also serves the companion
+    formalization of Berndtsson–Ortega-Cerdà (1995): Theorem 2 replaces the external Theorem G
+    used there.
+  authors:
+    - "Claude Opus 5.5 (Anthropic), multi-agent run in Claude Code"
+    - "Joaquim Ortega-Cerdà (direction)"
+  responsible_maintainers:
+    - "Joaquim Ortega-Cerdà"
+  license: "Apache-2.0"
+
+sources:
+  - title: "Multipliers and weighted ∂̄-estimates"
+    authors:
+      - "Joaquim Ortega-Cerdà"
+    id: "Rev. Mat. Iberoamericana 18 (2002), no. 2, 355–377; doi:10.4171/RMI/322; arXiv:math/9912139"
+    type: "article"
+    location: "Theorems 1–5, Propositions 1–2, Lemmas 1–8 (Sections 2–4)"
+    relationship: "formalizes"
+    note: >-
+      Statements of the published version (the printed PDF, doi:10.4171/rmi/322). Errata, gaps
+      and simplifications found in the source are recorded in NOTEBOOK.md. Among them, Theorem 3
+      as printed is false and is replaced by a corrected form (NOTEBOOK N-01).
+    author_endorsement: "participated"
+  - title: "Multipliers for entire functions and an interpolation problem of Beurling"
+    authors:
+      - "Joaquim Ortega-Cerdà"
+      - "Kristian Seip"
+    id: "J. Funct. Anal. 162 (1999), 400–415 (cited as [OCS99] in the article)"
+    type: "article"
+    location: "The theorem quoted on p. 375 of the article (Lemma 4 of [OCS99])"
+    relationship: "background"
+    note: >-
+      Not proved. Used as the explicit hypothesis OC.TheoremOCS of OC.theorem3_weighted, in the
+      form quoted on p. 375, which has limsup |u|e^{-α|Im z|} = 0. The published lemma states only
+      limsup < ∞; the "= 0" version follows from its proof (checked by a referee agent). See
+      NOTEBOOK N-07.
+    author_endorsement: "participated"
+  - title: "On the ∂̄ equation in weighted L² norms in C¹"
+    authors:
+      - "Michael Christ"
+    id: "J. Geom. Anal. 1 (1991), 193–230 (cited as [Chr91])"
+    type: "article"
+    location: "Lemmas 2.1 and 2.3, used in Section 2 of the article"
+    relationship: "background"
+    note: "Not assumed: the two lemmas used are proved (blueprint M03)."
+    author_endorsement: "n/a"
+
+related_formalizations:
+  - name: "Berndtsson–Ortega-Cerdà (1995), Lean formalization"
+    id: "https://github.com/joaquimortega/MR1340337"
+    url: "https://github.com/joaquimortega/MR1340337"
+    relationship: "other"
+    note: >-
+      The companion project uses OC.theorem2_uniform to prove its Theorem 6 without the
+      external Theorem G (its blueprint M23).
+
+classification:
+  arxiv: ["math.CV"]
+  msc2020: ["32W05", "35W15", "30H20"]
+
+status:
+  scope: >-
+    The whole article.
+      - Proved: Theorems 1, 2, 4, 5 and Propositions 1, 2 (with Lemmas 1–8, Claims 1–2).
+      - Proved conditionally: Theorem 3, in corrected form, on the quoted Ortega-Cerdà–Seip
+        theorem (OC.TheoremOCS), as in the article.
+      - Not formalized: Berndtsson's Example (p. 356), whose weight takes the value −∞, and the
+        background theorems the article only quotes (Hörmander, Donnelly–Fefferman,
+        Lyubarskiĭ–Sodin, Seip).
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: ["propext", "Classical.choice", "Quot.sound"]
+  main_results:
+    - declaration: "OC.theorem4_disc"
+      file: "OrtegaCerdaMultipliers/Multiplier/Theorem4.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem4_plane"
+      file: "OrtegaCerdaMultipliers/Multiplier/Theorem4.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.prop2_disc"
+      file: "OrtegaCerdaMultipliers/SeveralMultipliers.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.prop2_plane"
+      file: "OrtegaCerdaMultipliers/SeveralMultipliers.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem2"
+      file: "OrtegaCerdaMultipliers/Theorem2.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem2_uniform"
+      file: "OrtegaCerdaMultipliers/Theorem2.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem2_printed"
+      file: "OrtegaCerdaMultipliers/Theorem2.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem1"
+      file: "OrtegaCerdaMultipliers/Theorem1.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem1_christ"
+      file: "OrtegaCerdaMultipliers/Theorem1.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.prop1"
+      file: "OrtegaCerdaMultipliers/Theorem1.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem5"
+      file: "OrtegaCerdaMultipliers/Theorem5.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
+    - declaration: "OC.theorem3_weighted"
+      file: "OrtegaCerdaMultipliers/Theorem3.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies:
+        - statement: "The Ortega-Cerdà–Seip ∂̄-estimate for compactly supported measures with e^{-α|Im z|}d|μ| two-sided Carleson, as quoted on p. 375 (limsup = 0 version); formalized as the hypothesis OC.TheoremOCS"
+          source: "Multipliers for entire functions and an interpolation problem of Beurling"
+
+automation:
+  methods:
+    - method: "agent"
+      models: ["claude-opus-5-5"]
+      framework: "Claude Code"
+      tool_setup: >-
+        A coordinating Claude Code session delegated work to background subagents. In total
+        there were about 30, at most 7–8 at a time, each with full shell access to Lean/Lake and
+        the Mathlib sources.
+
+        Isolation. Each implementation subagent worked on its own git branch, in a separate git
+        worktree sharing the prebuilt Mathlib packages through a symlink. The coordinator merged
+        the branches into main after building and running scripts/check_statements.py, which
+        verifies that no statement changed since the reviewed scaffold.
+
+        Foundation files were copied (not imported) from the companion BOC project, which itself
+        will depend on this project. Verification: comparator, run under systemd-run.
+      cost:
+        wall_time: "2026-11-01, 12:40 CET onwards (interrupted once by a usage limit)"
+        hardware: "API-only models; local workstation (16 cores, 31 GB RAM) for Lean builds"
+      prompting_notes: >-
+        The user asked for "a full formalization as the previous project", with its own git
+        repository. The workflow was the same:
+          1. Defs, main statements and the blueprint index by the coordinator.
+          2. Module blueprints by 8 agents.
+          3. A compiling scaffold by one agent.
+          4. Independent review by three referee agents:
+             - a statement auditor;
+             - two mathematical referees reading the page images.
+          5. Implementation agents per module, told "never change a statement; if false, mark it
+             FALSE? and report".
+          6. Coordinator merges with a statement freeze-check.
+  spend_usd: "not tracked (subscription usage)"
+  notes: >-
+    Statement problems caught by the process:
+      - The printed Theorem 3 is false. M14's blueprint writer found a counterexample, and both
+        the statement auditor and the M08–M14 referee confirmed it. Before implementation it was
+        replaced by the weighted form (NOTEBOOK N-01).
+      - Proposition 2 as first drafted lacked the Theorem-4 bounds for each multiplier, which the
+        article includes and Theorem 2's proof needs. It was strengthened before implementation.
+      - A uniform version of Theorem 2 (theorem2_uniform) was added for the BOC application.
+      - Implementation found two false helper statements in the scaffold, not in the article:
+        - a Forelli–Rudin bound missing s ≤ 1;
+        - a lemma whose `∫ z, a - b` parsed as `∫ z, (a - b)`.
+        Both were unused and were removed, with corrected versions proved (NOTEBOOK I-01,
+        I-03); the freeze-check lists them as approved removals.
+
+fidelity:
+  divergences: >-
+    1. Weights are pairs (φ, μ) with φ continuous and Δφ = μ weakly (IsSubharmonicWeight).
+       - The article's weights are subharmonic with locally doubling Riesz measure; these are
+         automatically continuous ([Chr91, Lemma 2.3]).
+       - So the classes coincide, but the implication "subharmonic ⇒ continuous" is not
+         formalized: Mathlib has no Riesz decomposition.
+    2. Hyperbolic distance β = artanh ρ. The article fixes no normalisation; any choice only
+       rescales radii.
+    3. Theorem 1 is formalized in the locally doubling form the article's proof gives (as its
+       remark on p. 357 says); Christ's doubling form is a corollary.
+    4. Theorem 2.
+       - theorem2 states, for one solution u and all p ∈ [1, ∞] at once, bounds on
+         ‖u e^{-φ}‖_{L^p(dm/(1−|z|²))}. This is what the proof gives, and p = ∞ is the printed
+         sup estimate.
+       - The printed L^p estimate with weight e^{-φ} for every p is proved only for p = 1 by
+         the article's argument. theorem2_printed proves it with u depending on p.
+       - theorem2_uniform makes the constant depend only on the doubling constant and the mass
+         radius.
+    5. Proposition 1: only the upper bound. The printed two-sided ≃ is false (NOTEBOOK N-03).
+    6. Theorem 3: corrected statement with the weighted integral ∫ e^{-φ(z)} d|μ|(z)/|x−z|. The
+       printed one is false (NOTEBOOK N-01). The solution is required to be holomorphic off the
+       compact support of μ, so that its pointwise values on ℝ are meaningful.
+    7. Theorem 4: the inequalities are printed in reversed order; the formal statement uses the
+       correct order (NOTEBOOK N-02). h ≢ 0 is added to exclude a vacuous h ≡ 0.
+    8. Proof-level changes:
+       - moment matching of order 3 in 2D (2 on ℝ) by area counting, instead of the article's
+         order m with mγ > 1;
+       - disc cells: moment-matched nodes for small cells and barycentres for large ones, since
+         "nodes inside R" is false;
+       - real zeros in Theorem 5 by barycentres instead of Chebyshev quadrature;
+       - horocyclic boxes instead of polar rectangles in the disc;
+       - local radial potentials instead of the article's global kernels in Lemma 6;
+       - the auxiliary weight in Theorem 2 with the corrected sign.
+
+review:
+  status: "agent-reviewed"
+  reviewers:
+    - "Independent Claude agent (statement auditor: fidelity, falsity, vacuity of the main statements)"
+    - "Independent Claude agent (mathematical referee, modules M02–M07, against the page images)"
+    - "Independent Claude agent (mathematical referee, modules M08–M14, against the page images)"
+  notes: >-
+    Full referee reports are in reviews/. They confirmed most claimed errata against the printed
+    pages, refuted one (an OCR artefact), and identified the false printed Theorem 3, which two
+    agents verified independently. Their interface findings (uniform constants, the L¹_loc Weyl
+    lemma) were applied in the scaffold before implementation.
+
+alignment:
+  namespace: "OC"
+  statements:
+    - source: "Definitions: subharmonic weight, locally doubling (p. 359), ρ(z) (p. 361), hyperbolic discs, two-sided Carleson (p. 358)"
+      lean: "OC.IsSubharmonicWeight, OC.IsLocallyDoubling, OC.IsLocallyDoublingDisc, OC.IsLocallyDoublingLine, OC.massRadius, OC.hypBall, OC.IsTwoSidedCarleson"
+      module: "OrtegaCerdaMultipliers/Defs.lean"
+      status: "proved"
+      note: "definitions"
+    - source: "Lemmas 1–3, Claim 1 (Section 2); [Chr91, Lemmas 2.1, 2.3]"
+      lean: "OC.lemma1_*, OC.lemma2_*, OC.lemma3_*, OC.claim1_*, OC.christ_*"
+      module: "OrtegaCerdaMultipliers/Doubling/"
+      status: "proved"
+    - source: "Lemma 4, Claim 2 (Section 3)"
+      lean: "OC.lemma4_plane, OC.lemma4_disc, OC.lemma4_*_quant"
+      module: "OrtegaCerdaMultipliers/Partition/"
+      status: "proved"
+    - source: "Lemma 5 (Section 3)"
+      lean: "OC.lemma5, OC.lemma5_moments"
+      module: "OrtegaCerdaMultipliers/Quadrature.lean"
+      status: "proved"
+      note: "nodes near R (inside R is false, NOTEBOOK N-13)"
+    - source: "Theorem 4"
+      lean: "OC.theorem4_disc, OC.theorem4_plane"
+      module: "OrtegaCerdaMultipliers/Multiplier/Theorem4.lean"
+      status: "proved"
+    - source: "Proposition 2"
+      lean: "OC.prop2_disc, OC.prop2_plane"
+      module: "OrtegaCerdaMultipliers/SeveralMultipliers.lean"
+      status: "proved"
+    - source: "Lemma 6 (Section 4.1)"
+      lean: "OC.lemma6_disc, OC.lemma6_disc_quant, OC.lemma6_plane"
+      module: "OrtegaCerdaMultipliers/Regularization.lean"
+      status: "proved"
+    - source: "Lemmas 7, 8 (Section 4.2)"
+      lean: "OC.lemma7, OC.lemma8"
+      module: "OrtegaCerdaMultipliers/ModelKernels.lean"
+      status: "proved"
+    - source: "Theorem 2"
+      lean: "OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed"
+      module: "OrtegaCerdaMultipliers/Theorem2.lean"
+      status: "proved"
+    - source: "Theorem 1, Proposition 1"
+      lean: "OC.theorem1, OC.theorem1_christ, OC.prop1"
+      module: "OrtegaCerdaMultipliers/Theorem1.lean"
+      status: "proved"
+    - source: "Theorem 5"
+      lean: "OC.theorem5"
+      module: "OrtegaCerdaMultipliers/Theorem5.lean"
+      status: "proved"
+    - source: "Theorem 3 (corrected)"
+      lean: "OC.theorem3_weighted"
+      module: "OrtegaCerdaMultipliers/Theorem3.lean"
+      status: "literature-dependency"
+      note: "conditional on OC.TheoremOCS, the [OCS99] theorem as quoted on p. 375; the printed statement is false (NOTEBOOK N-01)"
+    - source: "Holomorphic functions with prescribed log-modulus (p. 366, implicit)"
+      lean: "OC.exists_analytic_norm_eq_exp"
+      module: "OrtegaCerdaMultipliers/LogModulus.lean"
+      status: "proved"
+
+acknowledgements: >-
+  Built on Mathlib. Particularly useful were:
+    - Kebekus et al.'s harmonic-function API (harmonic functions as real parts on balls);
+    - Newton's identities and Vieta's formulas for polynomials;
+    - Besicovitch–Vitali covering and Lebesgue differentiation;
+    - the polar-coordinate and Möbius changes of variables.
+  Foundation files (∂̄ calculus, Cauchy transform, Weyl's lemma for ∂̄, disc geometry) come from
+  the companion BOC formalization. Verification used leanprover/comparator, landrun and
+  lean4export.
