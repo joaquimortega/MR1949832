@@ -98,7 +98,116 @@ theorem nearField_sum_le_plane (Cd : ℝ≥0) (R₀ η A δ : ℝ) (hη : 0 < η
       MeasClassPlane ν Cd R₀ → IsCells univ dist (massRadius ν) ν N η A R c → ∀ z : ℂ,
       ∀ F : Finset ℕ, (∀ i ∈ F, δ * massRadius ν z ≤ dist z (c i) ∧ dist z (c i) ≤ 1 / 4 ∧
           A * massRadius ν (c i) ≤ dist z (c i)) →
-        ∑ i ∈ F, (massRadius ν (c i) / dist z (c i)) ^ 3 ≤ C := sorry
+        ∑ i ∈ F, (massRadius ν (c i) / dist z (c i)) ^ 3 ≤ C := by
+  obtain ⟨Cdec, α, hCdec, hα, hdec⟩ := decay_plane_quant Cd R₀
+  obtain ⟨C₁, hC₁, hcl⟩ := claim1_plane_quant Cd R₀ 1
+  set Q := 36 / η ^ 2 with hQ
+  set C' := max Cdec (C₁ / δ) * δ ^ (-α) with hC'
+  refine ⟨C' * Q / (1 - (2 : ℝ) ^ (-α)), ?_⟩
+  intro ν N R c hν hC z F hF
+  have hρ : ∀ w, 0 < massRadius ν w := fun w ↦ (hcl ν hν w w).1
+  have hρz := hρ z
+  have hA : η / 2 ≤ A := hC.half_le_A_plane (i := 0) (hρ _) hη
+  set t := δ * massRadius ν z with ht
+  have ht0 : 0 < t := by positivity
+  refine dyadic_sum_le (r := fun i ↦ massRadius ν (c i)) (β := fun i ↦ dist z (c i))
+    ht0 hα (by positivity) (by positivity) (fun i hi ↦ (hF i hi).1)
+    (fun i _ ↦ (hρ _).le) ?_ ?_
+  · intro n
+    set Fn := F.filter (fun i ↦ 2 ^ n * t ≤ dist z (c i) ∧ dist z (c i) < 2 ^ (n + 1) * t)
+    set b := 6 * (2 ^ n * t) with hb
+    have hb0 : 0 < b := by positivity
+    have hsub : ∀ i ∈ Fn, ball (c i) (η * massRadius ν (c i)) ⊆ R i :=
+      fun i _ w hw ↦ hC.inner i ⟨mem_univ _, by rw [dist_comm]; exact hw⟩
+    have hball : ∀ i ∈ Fn, ball (c i) (η * massRadius ν (c i)) ⊆ ball z b := by
+      intro i hi w hw
+      have hi' := Finset.mem_filter.1 hi
+      rw [mem_ball] at hw ⊢
+      have htri := dist_triangle w (c i) z
+      have h3 := (hF i hi'.1).2.2
+      have hηA : η * massRadius ν (c i) ≤ 2 * (A * massRadius ν (c i)) := by
+        nlinarith [hρ (c i)]
+      have : dist z (c i) < 2 ^ (n + 1) * t := hi'.2.2
+      rw [pow_succ] at this
+      rw [dist_comm (c i) z] at htri
+      linarith
+    have hdisj : (Fn : Set ℕ).PairwiseDisjoint
+        fun i ↦ ball (c i) (η * massRadius ν (c i)) := by
+      intro i hi j hj hij
+      exact (hC.pairwise_disjoint hij).mono (hsub i hi) (hsub j hj)
+    have hvol : ∀ (x : ℂ) (r : ℝ), 0 ≤ r → volume (ball x r) = ENNReal.ofReal (Real.pi * r ^ 2) := by
+      intro x r hr
+      rw [Complex.volume_ball, ← ENNReal.ofReal_pow hr, ← ENNReal.ofReal_coe_nnreal,
+        ← ENNReal.ofReal_mul (by positivity)]
+      simp [mul_comm]
+    have hcount := sum_le_of_pairwiseDisjoint (μ := volume)
+      (E := fun i ↦ ball (c i) (η * massRadius ν (c i))) (U := ball z b)
+      (f := fun i ↦ Real.pi * (η * massRadius ν (c i)) ^ 2)
+      (V := Real.pi * b ^ 2) (fun i _ ↦ isOpen_ball.measurableSet) hdisj
+      hball (fun i _ ↦ by positivity)
+      (fun i _ ↦ (hvol _ _ (by have := hρ (c i); positivity)).ge)
+      (by positivity) (hvol _ _ hb0.le).le
+    rw [← Finset.mul_sum] at hcount
+    have hsum : ∑ i ∈ Fn, (massRadius ν (c i)) ^ 2 ≤ b ^ 2 / η ^ 2 := by
+      have h1 : ∑ i ∈ Fn, (η * massRadius ν (c i)) ^ 2 ≤ b ^ 2 := by
+        have := Real.pi_pos; nlinarith
+      simp_rw [mul_pow] at h1
+      rw [← Finset.mul_sum] at h1
+      rw [le_div_iff₀ (by positivity), mul_comm]
+      linarith
+    calc ∑ i ∈ Fn, (massRadius ν (c i) / dist z (c i)) ^ 2
+        ≤ ∑ i ∈ Fn, (massRadius ν (c i)) ^ 2 / (2 ^ n * t) ^ 2 :=
+          Finset.sum_le_sum fun i hi ↦ by
+            have hi' := Finset.mem_filter.1 hi
+            rw [div_pow]
+            gcongr
+            exact hi'.2.1
+      _ = (∑ i ∈ Fn, (massRadius ν (c i)) ^ 2) / (2 ^ n * t) ^ 2 := by
+          rw [Finset.sum_div]
+      _ ≤ b ^ 2 / η ^ 2 / (2 ^ n * t) ^ 2 := by gcongr
+      _ = Q := by rw [hb, hQ]; field_simp; ring
+  · intro n i hi hlo hhi
+    have hβ := hF i hi
+    have hβpos : 0 < dist z (c i) := ht0.trans_le hβ.1
+    have hθ : (1 / (2 ^ n * δ)) ^ α = ((2 : ℝ) ^ (-α)) ^ n * δ ^ (-α) :=
+      one_div_two_pow_mul_rpow hδ n
+    by_cases hcase : massRadius ν z ≤ dist z (c i)
+    · have h1 := hdec ν hν z (c i) hcase hβ.2.1
+      have h2 : massRadius ν z / dist z (c i) ≤ 1 / (2 ^ n * δ) := by
+        rw [div_le_div_iff₀ hβpos (by positivity)]
+        have : 2 ^ n * t ≤ dist z (c i) := hlo
+        rw [ht] at this; nlinarith
+      have h3 : (massRadius ν z / dist z (c i)) ^ α ≤ (1 / (2 ^ n * δ)) ^ α :=
+        Real.rpow_le_rpow (by positivity) h2 hα.le
+      rw [hθ] at h3
+      calc massRadius ν (c i) / dist z (c i)
+          ≤ Cdec * (massRadius ν z / dist z (c i)) ^ α := h1
+        _ ≤ Cdec * (((2 : ℝ) ^ (-α)) ^ n * δ ^ (-α)) := by gcongr
+        _ ≤ max Cdec (C₁ / δ) * δ ^ (-α) * ((2 : ℝ) ^ (-α)) ^ n := by
+            have : Cdec ≤ max Cdec (C₁ / δ) := le_max_left _ _
+            have h0 : 0 ≤ ((2 : ℝ) ^ (-α)) ^ n * δ ^ (-α) := by positivity
+            nlinarith
+    · push Not at hcase
+      have hle : dist (c i) z ≤ 1 * max (massRadius ν (c i)) (massRadius ν z) := by
+        rw [dist_comm, one_mul]; exact hcase.le.trans (le_max_right _ _)
+      have h1 := (hcl ν hν (c i) z).2.2 hle
+      have h2 : massRadius ν (c i) / dist z (c i) ≤ C₁ / δ := by
+        rw [div_le_div_iff₀ hβpos hδ]
+        have := hβ.1; rw [ht] at this; nlinarith
+      have h3 : 1 ≤ ((2 : ℝ) ^ (-α)) ^ n * δ ^ (-α) := by
+        rw [← hθ]
+        apply Real.one_le_rpow _ hα.le
+        rw [le_div_iff₀ (by positivity), one_mul]
+        have : 2 ^ n * t ≤ dist z (c i) := hlo
+        rw [ht] at this
+        have : 2 ^ n * δ * massRadius ν z < massRadius ν z := by nlinarith
+        nlinarith
+      calc massRadius ν (c i) / dist z (c i) ≤ C₁ / δ := h2
+        _ ≤ C₁ / δ * (((2 : ℝ) ^ (-α)) ^ n * δ ^ (-α)) := le_mul_of_one_le_right (by positivity) h3
+        _ ≤ max Cdec (C₁ / δ) * δ ^ (-α) * ((2 : ℝ) ^ (-α)) ^ n := by
+            have : C₁ / δ ≤ max Cdec (C₁ / δ) := le_max_right _ _
+            have h0 : 0 ≤ ((2 : ℝ) ^ (-α)) ^ n * δ ^ (-α) := by positivity
+            nlinarith
 
 /-- **Area-counting near-field lemma (disc)**. -/
 theorem nearField_sum_le_disc (Cd : ℝ≥0) (R₀ η A δ : ℝ) (hη : 0 < η) (hδ : 0 < δ) :
