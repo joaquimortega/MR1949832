@@ -24,6 +24,7 @@ import OrtegaCerdaMultipliers.Doubling.LineMeasure
 import OrtegaCerdaMultipliers.Regularization
 import OrtegaCerdaMultipliers.Partition.Rectangles
 import OrtegaCerdaMultipliers.Partition.Cayley
+import OrtegaCerdaMultipliers.Partition.LineCuts
 import OrtegaCerdaMultipliers.Partition.Lemma4
 import OrtegaCerdaMultipliers.Partition.Properties
 import OrtegaCerdaMultipliers.Quadrature
