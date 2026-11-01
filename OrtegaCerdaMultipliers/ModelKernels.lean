@@ -1093,9 +1093,122 @@ def discKernel (z ζ : ℂ) : ℂ :=
 def lemma7Op (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   ∫ ζ in 𝔻, discKernel z ζ * f ζ
 
+/-- The numerator `H(z, ζ) = (1 - |ζ|²)/(1 - ζ̄ z)` of the kernel of Lemma 7. -/
+def lemma7H (z ζ : ℂ) : ℂ := ((1 - ‖ζ‖ ^ 2 : ℝ) : ℂ) / (1 - conj ζ * z)
+
+theorem measurable_lemma7H : Measurable (Function.uncurry lemma7H) := by
+  unfold lemma7H Function.uncurry
+  fun_prop
+
+theorem differentiableOn_lemma7H {ζ : ℂ} (hζ : ζ ∈ 𝔻) :
+    DifferentiableOn ℂ (fun z ↦ lemma7H z ζ) 𝔻 := by
+  unfold lemma7H
+  exact (differentiableOn_const _).div ((differentiableOn_const _).sub
+    ((differentiableOn_const _).mul differentiableOn_id))
+    fun z hz ↦ one_sub_conj_mul_ne_zero_of_mem hζ hz
+
+theorem lemma7H_self {ζ : ℂ} (hζ : ζ ∈ 𝔻) : lemma7H ζ ζ = 1 := by
+  rw [lemma7H, one_sub_conj_mul_self]
+  exact div_self (by exact_mod_cast (one_sub_normSq_pos hζ).ne')
+
+theorem norm_lemma7H {z ζ : ℂ} (hζ : ζ ∈ 𝔻) :
+    ‖lemma7H z ζ‖ = (1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖ := by
+  rw [lemma7H, norm_div, Complex.norm_real, Real.norm_of_nonneg (one_sub_normSq_pos hζ).le]
+
+theorem lemma7Op_eq (f : ℂ → ℂ) :
+    lemma7Op f = fun z ↦ ∫ ζ in 𝔻, lemma7H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ := rfl
+
 theorem lemma7_isWeakDbarSol {f : ℂ → ℂ} (hf : AEStronglyMeasurable f (volume.restrict 𝔻))
     (hfi : ∫⁻ ζ in 𝔻, ‖f ζ‖ₑ * ENNReal.ofReal (1 - ‖ζ‖ ^ 2) < ∞) :
-    IsWeakDbarSol 𝔻 (lemma7Op f) f := sorry
+    IsWeakDbarSol 𝔻 (lemma7Op f) f := by
+  rw [lemma7Op_eq]
+  have hpi := Real.pi_pos
+  refine isWeakDbarSol_kernel isOpen_ball measurable_lemma7H
+    (fun ζ hζ ↦ differentiableOn_lemma7H hζ) (fun ζ hζ ↦ lemma7H_self hζ) hf ?_ ?_
+  · -- local integrability of `f`
+    rw [locallyIntegrableOn_iff isOpen_ball.isLocallyClosed]
+    intro K hKD hK
+    refine ⟨hf.mono_measure (Measure.restrict_mono hKD le_rfl), ?_⟩
+    rw [hasFiniteIntegral_iff_enorm]
+    obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuousOn_discDensity.mono hKD)
+    calc ∫⁻ z in K, ‖f z‖ₑ
+        ≤ ∫⁻ z in K, ENNReal.ofReal B * (‖f z‖ₑ * ENNReal.ofReal (1 - ‖z‖ ^ 2)) := by
+          refine setLIntegral_mono' hK.measurableSet fun z hzK ↦ ?_
+          have hz0 := one_sub_normSq_pos (hKD hzK)
+          have hB' : 1 / (1 - ‖z‖ ^ 2) ≤ B := (le_abs_self _).trans (hB z hzK)
+          have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB z hzK)
+          rw [mul_comm (‖f z‖ₑ), ← mul_assoc, ← ENNReal.ofReal_mul hB0]
+          calc ‖f z‖ₑ = 1 * ‖f z‖ₑ := (one_mul _).symm
+            _ ≤ ENNReal.ofReal (B * (1 - ‖z‖ ^ 2)) * ‖f z‖ₑ := by
+                gcongr
+                rw [ENNReal.one_le_ofReal, ← div_le_iff₀ hz0]
+                exact hB'
+      _ = ENNReal.ofReal B * ∫⁻ z in K, ‖f z‖ₑ * ENNReal.ofReal (1 - ‖z‖ ^ 2) :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ ≤ ENNReal.ofReal B * ∫⁻ z in 𝔻, ‖f z‖ₑ * ENNReal.ofReal (1 - ‖z‖ ^ 2) := by
+          gcongr
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top hfi
+  · -- the local Fubini condition
+    intro K hKD hK
+    obtain ⟨r, hr1, hKr⟩ := exists_lt_subset_ball hK.isClosed hKD
+    set C0 : ℝ := 1 / (Real.pi * (1 - r)) with hC0
+    have hC0p : 0 ≤ C0 := by
+      have : 0 < 1 - r := by linarith
+      positivity
+    set g : ℂ → ℝ≥0∞ := fun ζ ↦ ‖f ζ‖ₑ * ENNReal.ofReal (1 - ‖ζ‖ ^ 2) with hg
+    have hgm : AEMeasurable g (volume.restrict 𝔻) := hf.enorm.mul (by fun_prop)
+    calc ∫⁻ z in K, ∫⁻ ζ in 𝔻, ‖lemma7H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ
+        ≤ ∫⁻ z in K, ∫⁻ ζ in 𝔻, ENNReal.ofReal (C0 * ‖z - ζ‖⁻¹) * g ζ := by
+          refine setLIntegral_mono' hK.measurableSet fun z hzK ↦ ?_
+          refine setLIntegral_mono' measurableSet_ball fun ζ hζ ↦ ?_
+          have hz := hKD hzK
+          have hzr : ‖z‖ < r := by simpa using hKr hzK
+          have hζ0 := one_sub_normSq_pos hζ
+          have hY : 1 - r ≤ ‖1 - conj ζ * z‖ := by
+            have := one_sub_mul_le_norm_one_sub_conj_mul ζ z
+            have hζ1 := norm_lt_one_of_mem_disc hζ
+            nlinarith [norm_nonneg ζ, norm_nonneg z]
+          have hr0 : 0 < 1 - r := by linarith
+          rw [hg, ← mul_assoc, ← ofReal_norm, ← ofReal_norm (f ζ),
+            ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity),
+            ← ENNReal.ofReal_mul (by positivity)]
+          apply ENNReal.ofReal_le_ofReal
+          rw [norm_div, norm_lemma7H hζ, norm_mul, Complex.norm_real,
+            Real.norm_of_nonneg hpi.le]
+          rcases eq_or_ne z ζ with rfl | hne
+          · simp
+          have hZ : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
+          rw [hC0]
+          have hYp : 0 < ‖1 - conj ζ * z‖ := lt_of_lt_of_le hr0 hY
+          have hN : 0 ≤ (1 - ‖ζ‖ ^ 2) * ‖f ζ‖ := mul_nonneg hζ0.le (norm_nonneg _)
+          calc _ = (1 - ‖ζ‖ ^ 2) * ‖f ζ‖ / (‖1 - conj ζ * z‖ * (Real.pi * ‖z - ζ‖)) := by
+                field_simp
+            _ ≤ (1 - ‖ζ‖ ^ 2) * ‖f ζ‖ / ((1 - r) * (Real.pi * ‖z - ζ‖)) := by
+                gcongr
+            _ = _ := by field_simp
+      _ = ∫⁻ ζ in 𝔻, ∫⁻ z in K, ENNReal.ofReal (C0 * ‖z - ζ‖⁻¹) * g ζ := by
+          refine lintegral_lintegral_swap ?_
+          exact ((by fun_prop : Measurable fun q : ℂ × ℂ ↦
+            ENNReal.ofReal (C0 * ‖q.1 - q.2‖⁻¹)).aemeasurable).mul hgm.comp_snd
+      _ = ∫⁻ ζ in 𝔻, g ζ * (ENNReal.ofReal C0 * ∫⁻ z in K, ENNReal.ofReal ‖z - ζ‖⁻¹) := by
+          refine lintegral_congr fun ζ ↦ ?_
+          rw [lintegral_mul_const _ (by fun_prop), mul_comm]
+          congr 1
+          rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+          refine lintegral_congr fun z ↦ ?_
+          rw [← ENNReal.ofReal_mul hC0p]
+      _ ≤ ∫⁻ ζ in 𝔻, g ζ * (ENNReal.ofReal C0 * (ENNReal.ofReal (2 * Real.pi) + volume K)) := by
+          gcongr with ζ
+          exact lintegral_inv_norm_sub_le_of_set K ζ
+      _ = (∫⁻ ζ in 𝔻, g ζ) * (ENNReal.ofReal C0 * (ENNReal.ofReal (2 * Real.pi) + volume K)) :=
+          lintegral_mul_const' _ _ (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+            (ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, hK.measure_lt_top.ne⟩))
+      _ < ∞ := ENNReal.mul_lt_top hfi (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+            (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, hK.measure_lt_top⟩))
+
+theorem exp_mul_log_eq_rpow {P : ℝ} (hP : 0 < P) (α : ℝ) :
+    Real.exp (α * Real.log P) = P ^ α := by
+  rw [Real.rpow_def_of_pos hP, mul_comm]
 
 theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
     (hf : AEStronglyMeasurable f (volume.restrict 𝔻))
@@ -1104,7 +1217,71 @@ theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
     IsWeakDbarSol 𝔻 (lemma7Op f) f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
       eLpNorm (fun z ↦ lemma7Op f z * ((1 - ‖z‖ ^ 2) ^ α : ℝ)) p discMeasure ≤
         ENNReal.ofReal (24 / (α * (1 - α))) *
-          eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) ^ (1 + α) : ℝ)) p discMeasure := sorry
+          eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) ^ (1 + α) : ℝ)) p discMeasure := by
+  set φ : ℂ → ℝ := fun z ↦ -α * Real.log (1 - ‖z‖ ^ 2) with hφ
+  have hφc : ContinuousOn φ 𝔻 :=
+    continuousOn_const.mul ((by fun_prop : Continuous fun z : ℂ ↦ 1 - ‖z‖ ^ 2).continuousOn.log
+      fun z hz ↦ (one_sub_normSq_pos hz).ne')
+  have hexp : ∀ z ∈ 𝔻, Real.exp (-φ z) = (1 - ‖z‖ ^ 2) ^ α := by
+    intro z hz
+    simp only [hφ, neg_mul, neg_neg]
+    exact exp_mul_log_eq_rpow (one_sub_normSq_pos hz) α
+  have hW : ∀ z ∈ 𝔻, (1 - ‖z‖ ^ 2) * Real.exp (-φ z) = (1 - ‖z‖ ^ 2) ^ (1 + α) := by
+    intro z hz
+    rw [hexp z hz, Real.rpow_add (one_sub_normSq_pos hz), Real.rpow_one]
+  have hRHS : ∀ p, eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure =
+      eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) ^ (1 + α) : ℝ)) p discMeasure := by
+    intro p
+    refine eLpNorm_congr_ae (ae_discMeasure_mem.mono fun z hz ↦ ?_)
+    simp only [hW z hz]
+  have hHb : ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖lemma7H z ζ‖ ≤ 1 * Real.exp (φ z - φ ζ) *
+      ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ α * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
+    intro z hz ζ hζ
+    have hz0 := one_sub_normSq_pos hz
+    have hζ0 := one_sub_normSq_pos hζ
+    rw [norm_lemma7H hζ, Real.exp_sub]
+    simp only [hφ]
+    rw [exp_mul_log_eq_rpow hz0, exp_mul_log_eq_rpow hζ0, Real.div_rpow hz0.le hζ0.le,
+      Real.rpow_neg hz0.le, Real.rpow_neg hζ0.le]
+    have := Real.rpow_pos_of_pos hz0 α
+    have := Real.rpow_pos_of_pos hζ0 α
+    apply le_of_eq
+    field_simp
+  obtain ⟨hsol, hest⟩ := disc_kernel_operator hφc hα0 hα1 measurable_lemma7H
+    (fun ζ hζ ↦ differentiableOn_lemma7H hζ) (fun ζ hζ ↦ lemma7H_self hζ) hHb f hf
+    (by obtain ⟨p, hp, h⟩ := hadm; exact ⟨p, hp, by rwa [hRHS]⟩)
+  refine ⟨hsol, fun p hp ↦ ?_⟩
+  have := hest p hp
+  rw [hRHS, mul_one] at this
+  calc eLpNorm (fun z ↦ lemma7Op f z * ((1 - ‖z‖ ^ 2) ^ α : ℝ)) p discMeasure
+      = eLpNorm (fun z ↦ (∫ ζ in 𝔻, lemma7H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ) *
+          (Real.exp (-φ z) : ℝ)) p discMeasure := by
+        refine eLpNorm_congr_ae (ae_discMeasure_mem.mono fun z hz ↦ ?_)
+        simp only [hexp z hz]
+        rfl
+    _ ≤ _ := this
+
+/-- `‖G (1-|z|²)^b‖_{L^p(ν)}^p = ∫_𝔻 |G|^p (1-|z|²)^{bp-1} dm`. -/
+theorem eLpNorm_rpow_discMeasure {G : ℂ → ℂ} (hG : AEStronglyMeasurable G discMeasure)
+    {b p : ℝ} (hp : 0 < p) :
+    eLpNorm (fun z ↦ G z * ((1 - ‖z‖ ^ 2) ^ b : ℝ)) (ENNReal.ofReal p) discMeasure ^ p =
+      ∫⁻ z in 𝔻, ENNReal.ofReal (‖G z‖ ^ p * (1 - ‖z‖ ^ 2) ^ (b * p - 1)) := by
+  have hm : AEStronglyMeasurable (fun z ↦ G z * ((1 - ‖z‖ ^ 2) ^ b : ℝ)) discMeasure :=
+    hG.mul (by fun_prop : Measurable fun z : ℂ ↦ (((1 - ‖z‖ ^ 2) ^ b : ℝ) : ℂ)).aestronglyMeasurable
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simpa using hp) ENNReal.ofReal_ne_top hm,
+    ENNReal.toReal_ofReal hp.le, ← ENNReal.rpow_mul, one_div_mul_cancel hp.ne', ENNReal.rpow_one,
+    discMeasure, lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      measurable_discDensity (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  refine setLIntegral_congr_fun measurableSet_ball fun z hz ↦ ?_
+  have hz0 := one_sub_normSq_pos hz
+  simp only [Pi.mul_apply]
+  rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp.le,
+    ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.rpow_nonneg hz0.le _),
+    Real.mul_rpow (norm_nonneg _) (Real.rpow_nonneg hz0.le _), ← Real.rpow_mul hz0.le,
+    Real.rpow_sub_one hz0.ne']
+  field_simp
 
 theorem lemma7_Lp_printed {α p : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (hp : 1 ≤ p) (f : ℂ → ℂ)
     (hf : AEStronglyMeasurable f (volume.restrict 𝔻))
@@ -1112,14 +1289,144 @@ theorem lemma7_Lp_printed {α p : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (hp : 1 �
     IsWeakDbarSol 𝔻 (lemma7Op f) f ∧
       ∫⁻ z in 𝔻, ENNReal.ofReal (‖lemma7Op f z‖ ^ p * (1 - ‖z‖ ^ 2) ^ (α - 1)) ≤
         ENNReal.ofReal ((24 * p ^ 2 / (α * (p - α))) ^ p) *
-          ∫⁻ z in 𝔻, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * (1 - ‖z‖ ^ 2) ^ (α - 1)) :=
-  sorry
+          ∫⁻ z in 𝔻, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * (1 - ‖z‖ ^ 2) ^ (α - 1)) := by
+  have hp0 : 0 < p := by linarith
+  have ha0 : 0 < α / p := div_pos hα0 hp0
+  have ha1 : α / p < 1 := (div_lt_one hp0).2 (by linarith)
+  have hνac : discMeasure ≪ volume.restrict 𝔻 := withDensity_absolutelyContinuous _ _
+  have hfν : AEStronglyMeasurable f discMeasure := hf.mono_ac hνac
+  have huν : AEStronglyMeasurable (lemma7Op f) discMeasure :=
+    (weak_aestronglyMeasurable_kernelOp measurable_lemma7H hf).restrict.mono_ac hνac
+  have hF : eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) ^ (1 + α / p) : ℝ)) (ENNReal.ofReal p)
+      discMeasure ^ p =
+      ∫⁻ z in 𝔻, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * (1 - ‖z‖ ^ 2) ^ (α - 1)) := by
+    rw [eLpNorm_rpow_discMeasure hfν hp0]
+    refine setLIntegral_congr_fun measurableSet_ball fun z hz ↦ ?_
+    have hz0 := one_sub_normSq_pos hz
+    congr 1
+    have e : (1 - (‖z‖ : ℂ) ^ 2) = ((1 - ‖z‖ ^ 2 : ℝ) : ℂ) := by push_cast; ring
+    rw [e, norm_mul, Complex.norm_real, Real.norm_of_nonneg hz0.le,
+      Real.mul_rpow (norm_nonneg _) hz0.le, mul_assoc, ← Real.rpow_add hz0]
+    congr 2
+    field_simp
+    ring
+  have hU : eLpNorm (fun z ↦ lemma7Op f z * ((1 - ‖z‖ ^ 2) ^ (α / p) : ℝ)) (ENNReal.ofReal p)
+      discMeasure ^ p =
+      ∫⁻ z in 𝔻, ENNReal.ofReal (‖lemma7Op f z‖ ^ p * (1 - ‖z‖ ^ 2) ^ (α - 1)) := by
+    rw [eLpNorm_rpow_discMeasure huν hp0]
+    refine setLIntegral_congr_fun measurableSet_ball fun z hz ↦ ?_
+    congr 3
+    field_simp
+  have hadm : eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) ^ (1 + α / p) : ℝ)) (ENNReal.ofReal p)
+      discMeasure < ∞ := by
+    rw [← ENNReal.rpow_lt_top_iff_of_pos hp0, hF]
+    exact hfin
+  obtain ⟨hsol, hest⟩ := lemma7 ha0 ha1 f hf
+    ⟨ENNReal.ofReal p, ENNReal.one_le_ofReal.2 hp, hadm⟩
+  refine ⟨hsol, ?_⟩
+  have h := ENNReal.rpow_le_rpow (hest (ENNReal.ofReal p) (ENNReal.one_le_ofReal.2 hp)) hp0.le
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hp0.le, hU, hF,
+    ENNReal.ofReal_rpow_of_nonneg (by
+      have : 0 < α / p * (1 - α / p) := mul_pos ha0 (by linarith)
+      positivity) hp0.le] at h
+  convert h using 4
+  have hpa : 0 < p - α := by linarith
+  field_simp
 
 theorem lemma7_sup {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
     (hf : AEStronglyMeasurable f (volume.restrict 𝔻)) {M : ℝ}
     (hM : ∀ᵐ ζ ∂(volume.restrict 𝔻), ‖f ζ‖ * (1 - ‖ζ‖ ^ 2) ^ (1 + α) ≤ M) :
     IsWeakDbarSol 𝔻 (lemma7Op f) f ∧
-      ∀ z ∈ 𝔻, ‖lemma7Op f z‖ * (1 - ‖z‖ ^ 2) ^ α ≤ 24 / (α * (1 - α)) * M := sorry
+      ∀ z ∈ 𝔻, ‖lemma7Op f z‖ * (1 - ‖z‖ ^ 2) ^ α ≤ 24 / (α * (1 - α)) * M := by
+  have hpi := Real.pi_pos
+  have h0 : (0 : ℂ) ∈ 𝔻 := mem_ball_self one_pos
+  have hvol : volume.restrict 𝔻 ≠ 0 := by
+    rw [Ne, Measure.restrict_eq_zero]
+    exact (measure_ball_pos volume (0 : ℂ) one_pos).ne'
+  have : (ae (volume.restrict 𝔻)).NeBot := ae_neBot.2 hvol
+  have hM0 : 0 ≤ M := by
+    obtain ⟨ζ, hζ⟩ := (hM.and (ae_restrict_mem measurableSet_ball)).exists
+    exact le_trans (mul_nonneg (norm_nonneg _)
+      (Real.rpow_nonneg (one_sub_normSq_pos hζ.2).le _)) hζ.1
+  have hM' : ∀ᵐ ζ ∂(volume.restrict 𝔻),
+      ‖f ζ‖ * (1 - ‖ζ‖ ^ 2) ≤ M * (1 - ‖ζ‖ ^ 2) ^ (-α) := by
+    filter_upwards [hM, ae_restrict_mem measurableSet_ball] with ζ h hζ
+    have hζ0 := one_sub_normSq_pos hζ
+    rw [Real.rpow_add hζ0, Real.rpow_one] at h
+    rw [Real.rpow_neg hζ0.le]
+    have := Real.rpow_pos_of_pos hζ0 α
+    rw [le_mul_inv_iff₀ this]
+    linarith [h]
+  have hfi : ∫⁻ ζ in 𝔻, ‖f ζ‖ₑ * ENNReal.ofReal (1 - ‖ζ‖ ^ 2) < ∞ := by
+    calc ∫⁻ ζ in 𝔻, ‖f ζ‖ₑ * ENNReal.ofReal (1 - ‖ζ‖ ^ 2)
+        ≤ ∫⁻ ζ in 𝔻, ENNReal.ofReal M *
+            ENNReal.ofReal ((1 - ‖ζ‖) ^ (-α) / ‖1 - conj 0 * ζ‖ ^ 2) := by
+          refine lintegral_mono_ae ?_
+          filter_upwards [hM', ae_restrict_mem measurableSet_ball] with ζ h hζ
+          have hζ1 := norm_lt_one_of_mem_disc hζ
+          rw [← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul hM0]
+          apply ENNReal.ofReal_le_ofReal
+          simp only [map_zero, zero_mul, sub_zero, norm_one, one_pow, div_one]
+          refine h.trans (mul_le_mul_of_nonneg_left ?_ hM0)
+          exact Real.rpow_le_rpow_of_nonpos (by linarith)
+            (by nlinarith [norm_nonneg ζ]) (by linarith)
+      _ = ENNReal.ofReal M * ∫⁻ ζ in 𝔻,
+            ENNReal.ofReal ((1 - ‖ζ‖) ^ (-α) / ‖1 - conj 0 * ζ‖ ^ 2) :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ ≤ ENNReal.ofReal M * ENNReal.ofReal
+            (2 * Real.pi / (α * (1 - α)) * (1 - ‖(0 : ℂ)‖) ^ (-α)) := by
+          gcongr
+          exact lintegral_disc_rpow_div_normSq hα0 hα1 h0
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top ENNReal.ofReal_lt_top
+  refine ⟨lemma7_isWeakDbarSol hf hfi, fun z hz ↦ ?_⟩
+  have hz0 := one_sub_normSq_pos hz
+  have hint : ∫⁻ ζ in 𝔻, ENNReal.ofReal ‖discKernel z ζ * f ζ‖ ≤
+      ENNReal.ofReal (M / Real.pi * (24 * Real.pi / (α * (1 - α)) * (1 - ‖z‖ ^ 2) ^ (-α))) := by
+    calc ∫⁻ ζ in 𝔻, ENNReal.ofReal ‖discKernel z ζ * f ζ‖
+        ≤ ∫⁻ ζ in 𝔻, ENNReal.ofReal (M / Real.pi) *
+            ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (-α) / (‖1 - conj z * ζ‖ * ‖z - ζ‖)) := by
+          refine lintegral_mono_ae ?_
+          filter_upwards [hM', ae_restrict_mem measurableSet_ball] with ζ h hζ
+          rw [← ENNReal.ofReal_mul (div_nonneg hM0 hpi.le)]
+          apply ENNReal.ofReal_le_ofReal
+          rw [norm_mul, discKernel, norm_div, norm_div, norm_mul, Complex.norm_real,
+            Complex.norm_real, Real.norm_of_nonneg (one_sub_normSq_pos hζ).le,
+            Real.norm_of_nonneg hpi.le, norm_one_sub_conj_mul_comm ζ z]
+          rcases eq_or_ne z ζ with rfl | hne
+          · simp
+          have hZ : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
+          have hY := norm_one_sub_conj_mul_pos hz hζ
+          calc (1 - ‖ζ‖ ^ 2) / ‖1 - conj z * ζ‖ / (Real.pi * ‖z - ζ‖) * ‖f ζ‖
+              = (‖f ζ‖ * (1 - ‖ζ‖ ^ 2)) / (Real.pi * (‖1 - conj z * ζ‖ * ‖z - ζ‖)) := by
+                field_simp
+            _ ≤ (M * (1 - ‖ζ‖ ^ 2) ^ (-α)) / (Real.pi * (‖1 - conj z * ζ‖ * ‖z - ζ‖)) := by
+                gcongr
+            _ = M / Real.pi * ((1 - ‖ζ‖ ^ 2) ^ (-α) / (‖1 - conj z * ζ‖ * ‖z - ζ‖)) := by
+                field_simp
+      _ = ENNReal.ofReal (M / Real.pi) * ∫⁻ ζ in 𝔻,
+            ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (-α) / (‖1 - conj z * ζ‖ * ‖z - ζ‖)) :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ ≤ ENNReal.ofReal (M / Real.pi) *
+            ENNReal.ofReal (24 * Real.pi / (α * (1 - α)) * (1 - ‖z‖ ^ 2) ^ (-α)) := by
+          gcongr
+          exact lintegral_FR hα0 hα1 hz
+      _ = _ := (ENNReal.ofReal_mul (div_nonneg hM0 hpi.le)).symm
+  have hP := Real.rpow_pos_of_pos hz0 α
+  have h1 : ‖lemma7Op f z‖ ≤
+      M / Real.pi * (24 * Real.pi / (α * (1 - α)) * (1 - ‖z‖ ^ 2) ^ (-α)) := by
+    unfold lemma7Op
+    exact (norm_integral_le_lintegral_norm _).trans
+      (ENNReal.toReal_le_of_le_ofReal (by
+        have : 0 < α * (1 - α) := mul_pos hα0 (by linarith)
+        have := Real.rpow_nonneg hz0.le (-α)
+        positivity) hint)
+  calc ‖lemma7Op f z‖ * (1 - ‖z‖ ^ 2) ^ α
+      ≤ (M / Real.pi * (24 * Real.pi / (α * (1 - α)) * (1 - ‖z‖ ^ 2) ^ (-α))) *
+          (1 - ‖z‖ ^ 2) ^ α := mul_le_mul_of_nonneg_right h1 hP.le
+    _ = 24 / (α * (1 - α)) * M := by
+        rw [Real.rpow_neg hz0.le]
+        have : α * (1 - α) ≠ 0 := (mul_pos hα0 (by linarith)).ne'
+        field_simp
 
 /-! ## §7 Lemma 8 -/
 
