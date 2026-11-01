@@ -558,13 +558,82 @@ def discModel (c : ℝ) (z ζ : ℂ) : ℝ≥0∞ :=
   ENNReal.ofReal ((1 - ‖z‖ ^ 2) ^ c * (1 - ‖ζ‖ ^ 2) ^ (1 - c) /
     (‖1 - conj ζ * z‖ * ‖z - ζ‖))
 
-theorem measurable_discModel (c : ℝ) : Measurable (Function.uncurry (discModel c)) := sorry
+theorem measurable_discModel (c : ℝ) : Measurable (Function.uncurry (discModel c)) := by
+  unfold discModel Function.uncurry
+  fun_prop
+
+theorem norm_one_sub_conj_mul_comm (a b : ℂ) : ‖1 - conj a * b‖ = ‖1 - conj b * a‖ := by
+  rw [← Complex.norm_conj (1 - conj b * a)]
+  congr 1
+  simp [map_sub, mul_comm]
+
+theorem measurable_discDensity :
+    Measurable fun z : ℂ ↦ ENNReal.ofReal (1 / (1 - ‖z‖ ^ 2)) := by fun_prop
+
+theorem lintegral_discMeasure_eq (g : ℂ → ℝ≥0∞) (hg : Measurable g) :
+    ∫⁻ z, g z ∂discMeasure = ∫⁻ z in 𝔻, ENNReal.ofReal (1 / (1 - ‖z‖ ^ 2)) * g z := by
+  rw [discMeasure, lintegral_withDensity_eq_lintegral_mul _ measurable_discDensity hg]
+  rfl
+
+theorem ae_discMeasure_mem : ∀ᵐ z ∂discMeasure, z ∈ 𝔻 :=
+  (withDensity_absolutelyContinuous _ _).ae_le (ae_restrict_mem measurableSet_ball)
 
 theorem lintegral_discModel_left {c : ℝ} (hc0 : 0 < c) (hc1 : c < 1) {z : ℂ} (hz : z ∈ 𝔻) :
-    ∫⁻ ζ, discModel c z ζ ∂discMeasure ≤ ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) := sorry
+    ∫⁻ ζ, discModel c z ζ ∂discMeasure ≤ ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) := by
+  have hz0 : 0 < 1 - ‖z‖ ^ 2 := one_sub_normSq_pos hz
+  rw [lintegral_discMeasure_eq _ ((measurable_discModel c).of_uncurry_left)]
+  calc ∫⁻ ζ in 𝔻, ENNReal.ofReal (1 / (1 - ‖ζ‖ ^ 2)) * discModel c z ζ
+      = ∫⁻ ζ in 𝔻, ENNReal.ofReal ((1 - ‖z‖ ^ 2) ^ c) *
+          ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (-c) / (‖1 - conj z * ζ‖ * ‖z - ζ‖)) := by
+        refine setLIntegral_congr_fun measurableSet_ball fun ζ hζ => ?_
+        have hζ0 : 0 < 1 - ‖ζ‖ ^ 2 := one_sub_normSq_pos hζ
+        rw [discModel, ← ENNReal.ofReal_mul (by positivity),
+          ← ENNReal.ofReal_mul (by positivity), norm_one_sub_conj_mul_comm ζ z]
+        congr 1
+        rw [show 1 - c = 1 + -c by ring, Real.rpow_add hζ0, Real.rpow_one]
+        field_simp
+    _ = ENNReal.ofReal ((1 - ‖z‖ ^ 2) ^ c) * ∫⁻ ζ in 𝔻,
+          ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (-c) / (‖1 - conj z * ζ‖ * ‖z - ζ‖)) :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal ((1 - ‖z‖ ^ 2) ^ c) *
+          ENNReal.ofReal (24 * Real.pi / (c * (1 - c)) * (1 - ‖z‖ ^ 2) ^ (-c)) := by
+        gcongr
+        exact lintegral_FR hc0 hc1 hz
+    _ = ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        rw [Real.rpow_neg hz0.le]
+        have : (1 - ‖z‖ ^ 2) ^ c ≠ 0 := (Real.rpow_pos_of_pos hz0 _).ne'
+        field_simp
 
 theorem lintegral_discModel_right {c : ℝ} (hc0 : 0 < c) (hc1 : c < 1) {ζ : ℂ} (hζ : ζ ∈ 𝔻) :
-    ∫⁻ z, discModel c z ζ ∂discMeasure ≤ ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) := sorry
+    ∫⁻ z, discModel c z ζ ∂discMeasure ≤ ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) := by
+  have hζ0 : 0 < 1 - ‖ζ‖ ^ 2 := one_sub_normSq_pos hζ
+  rw [lintegral_discMeasure_eq _ ((measurable_discModel c).of_uncurry_right)]
+  calc ∫⁻ z in 𝔻, ENNReal.ofReal (1 / (1 - ‖z‖ ^ 2)) * discModel c z ζ
+      = ∫⁻ z in 𝔻, ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (1 - c)) *
+          ENNReal.ofReal ((1 - ‖z‖ ^ 2) ^ (-(1 - c)) / (‖1 - conj ζ * z‖ * ‖ζ - z‖)) := by
+        refine setLIntegral_congr_fun measurableSet_ball fun z hz => ?_
+        have hz0 : 0 < 1 - ‖z‖ ^ 2 := one_sub_normSq_pos hz
+        rw [discModel, ← ENNReal.ofReal_mul (by positivity),
+          ← ENNReal.ofReal_mul (by positivity), norm_sub_rev ζ z]
+        congr 1
+        rw [show c = 1 + -(1 - c) by ring, Real.rpow_add hz0, Real.rpow_one,
+          show 1 - (1 + -(1 - c)) = 1 - c by ring]
+        field_simp
+    _ = ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (1 - c)) * ∫⁻ z in 𝔻,
+          ENNReal.ofReal ((1 - ‖z‖ ^ 2) ^ (-(1 - c)) / (‖1 - conj ζ * z‖ * ‖ζ - z‖)) :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal ((1 - ‖ζ‖ ^ 2) ^ (1 - c)) * ENNReal.ofReal
+          (24 * Real.pi / ((1 - c) * (1 - (1 - c))) * (1 - ‖ζ‖ ^ 2) ^ (-(1 - c))) := by
+        gcongr
+        exact lintegral_FR (by linarith) (by linarith) hζ
+    _ = ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        rw [Real.rpow_neg hζ0.le, show 1 - (1 - c) = c by ring]
+        have : (1 - ‖ζ‖ ^ 2) ^ (1 - c) ≠ 0 := (Real.rpow_pos_of_pos hζ0 _).ne'
+        field_simp
 
 instance sigmaFinite_discMeasure : SigmaFinite discMeasure := by
   unfold discMeasure; infer_instance
@@ -572,24 +641,49 @@ instance sigmaFinite_discMeasure : SigmaFinite discMeasure := by
 theorem eLpNorm_discModel_le {c : ℝ} (hc0 : 0 < c) (hc1 : c < 1) {F : ℂ → ℝ≥0∞}
     (hF : AEMeasurable F discMeasure) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fun z ↦ ∫⁻ ζ, discModel c z ζ * F ζ ∂discMeasure) p discMeasure ≤
-      ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) * eLpNorm F p discMeasure := sorry
+      ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) * eLpNorm F p discMeasure :=
+  schur_test_le_max (measurable_discModel c)
+    (ae_discMeasure_mem.mono fun _ hz => lintegral_discModel_left hc0 hc1 hz)
+    (ae_discMeasure_mem.mono fun _ hζ => lintegral_discModel_right hc0 hc1 hζ) hF hp
 
 /-- The Gaussian model kernel of the plane, `e^{-c|z-ζ|²} / |z-ζ|`. -/
 def planeModel (c : ℝ) (z ζ : ℂ) : ℝ≥0∞ :=
   ENNReal.ofReal (Real.exp (-c * ‖z - ζ‖ ^ 2) / ‖z - ζ‖)
 
-theorem measurable_planeModel (c : ℝ) : Measurable (Function.uncurry (planeModel c)) := sorry
+theorem measurable_planeModel (c : ℝ) : Measurable (Function.uncurry (planeModel c)) := by
+  unfold planeModel Function.uncurry
+  fun_prop
+
+theorem lintegral_planeModel_aux {c : ℝ} (hc : 0 < c) (z : ℂ) :
+    ∫⁻ ζ, ENNReal.ofReal (Real.exp (-c * ‖ζ - z‖ ^ 2) / ‖ζ - z‖) =
+      ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) := by
+  rw [lintegral_comp_norm_sub z (F := fun s ↦ ENNReal.ofReal (Real.exp (-c * s ^ 2) / s))
+    (by fun_prop)]
+  rw [setLIntegral_congr_fun measurableSet_Ioi (g := fun s ↦ ENNReal.ofReal (Real.exp (-c * s ^ 2)))
+    (fun s (hs : 0 < s) ↦ by
+      rw [← ENNReal.ofReal_mul hs.le]; congr 1; field_simp)]
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_exp_neg_mul_sq hc).integrableOn
+    (Filter.Eventually.of_forall fun s ↦ (Real.exp_pos _).le), integral_gaussian_Ioi,
+    ← ENNReal.ofReal_mul Real.two_pi_pos.le]
+  congr 1
+  ring
 
 theorem lintegral_planeModel_left {c : ℝ} (hc : 0 < c) (z : ℂ) :
-    ∫⁻ ζ, planeModel c z ζ = ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) := sorry
+    ∫⁻ ζ, planeModel c z ζ = ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) := by
+  simp_rw [planeModel, norm_sub_rev z]
+  exact lintegral_planeModel_aux hc z
 
 theorem lintegral_planeModel_right {c : ℝ} (hc : 0 < c) (ζ : ℂ) :
-    ∫⁻ z, planeModel c z ζ = ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) := sorry
+    ∫⁻ z, planeModel c z ζ = ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) :=
+  lintegral_planeModel_aux hc ζ
 
 theorem eLpNorm_planeModel_le {c : ℝ} (hc : 0 < c) {F : ℂ → ℝ≥0∞} (hF : AEMeasurable F)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fun z ↦ ∫⁻ ζ, planeModel c z ζ * F ζ) p volume ≤
-      ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) * eLpNorm F p volume := sorry
+      ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) * eLpNorm F p volume :=
+  schur_test_le_max (measurable_planeModel c)
+    (Filter.Eventually.of_forall fun z => (lintegral_planeModel_left hc z).le)
+    (Filter.Eventually.of_forall fun ζ => (lintegral_planeModel_right hc ζ).le) hF hp
 
 /-! ## §4 The weak equation for holomorphic perturbations of the Cauchy kernel -/
 
