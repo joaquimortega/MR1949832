@@ -123,8 +123,12 @@ It also uses Taylor's formula with remainder along segments instead of power ser
 - **Wrong theorem number:** "the subharmonic function in the statement of Theorem 3" should read Theorem 4.
 - **Laplacian conventions:** the paper mixes `∂∂̄` and the standard Laplacian.
 
-### N-16 (S) — Theorem 5: real zeros without quadrature
-With moment order 2 (N-11), each interval's zeros are its barycentre, with multiplicity. The paper appeals to Lemma 5. A referee notes that Bernstein's negative result does not cover the paper's regime `N = mk`, `k ≫ m`, so the literal route is not disproved, only unnecessary.
+### N-16 (S, formalized) — Theorem 5: real zeros without quadrature
+- **What we do.** With moment order 2 (N-11), each interval's zeros are its barycentre, with multiplicity, so the zeros are real.
+- **The paper's route.** It appeals to Lemma 5 (quadrature) "inside R", i.e. real nodes for real intervals.
+- **Why that route is not usable.** Lemma 5 as proved here (M06) gives complex nodes, so it does not establish real zeros. The Chebyshev-type real quadrature for doubling measures that the paper would need is not proved anywhere in the paper.
+- **Bernstein.** A referee notes that Bernstein's negative result does not cover the regime `N = mk`, `k ≫ m`. So the literal route is not disproved, only unestablished and unnecessary.
+- **Formalization.** The line multipliers are built for the signed measures `μ − 2α dx` needed by Theorem 3 (N-18) and are fully proved (`OC.lineMultipliers`, `OC.theorem5`).
 
 ### N-17 (S, confirmed) — p. 369, Proposition 2
 "Besicovitch" can be replaced by a greedy colouring of a bounded-degree graph.
