@@ -12,11 +12,14 @@ See `blueprint/M11_Theorem2.md`.  All proofs complete (modulo upstream lemmas).
 `theorem2_uniform`.  The uniform kernel comes from `exists_aux_weight_disc_quant` (built on M04's
 `lemma6_disc_quant` and M03's explicit-radius growth lemma) and M09's `prop2_disc_quant`.
 
-Reconciliation (consumed from upstream): `hypArea` (M01), `lemma6_disc_hypArea` (M04, corollary
-of `lemma6_disc`), `exists_hypBall_measure_gt` (M03), `prop2_disc_full`,
-`exists_measurable_partition`, `prop2_disc_unif` (M09), `Measure.exists_add_eq_of_le` (M04),
-`IsSubharmonicWeight.sigmaFinite`, `integral_mul_laplacian_of_contDiffOn` (M02),
-`disc_kernel_operator` (M10).
+Upstream lemmas consumed: `hypArea_hypBall` (M01); `integral_mul_laplacian_of_contDiffOn`,
+`IsSubharmonicWeight.sigmaFinite`, `isSubharmonicWeight_of_contDiffOn` (M02);
+`ofReal_lt_measure_hypBall`, `exists_hypBall_measure_gt` (M03); `lemma6_disc_quant`,
+`Measure.exists_add_eq_of_le` (M04); `laplacian_testFunction` (M07); `prop2_disc_quant`,
+`exists_measurable_partition` (M09); `disc_kernel_operator` (M10).  The per-weight forms
+(`exists_aux_weight_disc`, `exists_disc_solution_kernel`) are corollaries of the uniform ones, and
+the BOC bridge `dbar_sup_estimate_C2_uniform` follows from `theorem2_uniform` with explicit class
+constants (`measClassDisc_of_le_hypArea`).  Generic helpers live in the namespace `OC.Thm2`.
 -/
 
 open MeasureTheory Metric Set Complex
@@ -27,6 +30,8 @@ noncomputable section
 namespace OC
 
 /-! ## Measure-theoretic helpers -/
+
+namespace Thm2
 
 theorem measurable_hypAreaDensity :
     Measurable fun z : ℂ ↦ ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2) := by
@@ -102,6 +107,9 @@ theorem integral_eq_integral_hypArea {χ : ℂ → ℝ} (hs : tsupport χ ⊆ �
     have : χ z = 0 := image_eq_zero_of_notMem_tsupport (fun h ↦ hz (hs h))
     simp [this]
 
+end Thm2
+
+open Thm2
 
 theorem integral_log_one_sub_normSq_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
     (hχc : HasCompactSupport χ) (hχs : tsupport χ ⊆ 𝔻) :
@@ -168,6 +176,8 @@ theorem one_sub_normSq_le_of_mem_hypBall {z w : ℂ} (hz : z ∈ 𝔻) {r : ℝ}
     nlinarith
   linarith
 
+namespace Thm2
+
 theorem sinh_le_two_mul_of_le_one {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) : Real.sinh r ≤ 2 * r := by
   have h1 := Real.abs_exp_sub_one_sub_id_le (x := r) (by rw [abs_of_nonneg hr0]; exact hr1)
   have h2 := Real.add_one_le_exp (-r)
@@ -199,6 +209,7 @@ theorem isLocallyDoublingDiscWith_hypArea : IsLocallyDoublingDiscWith hypArea 16
     _ = ((16 : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (Real.pi * Real.sinh s ^ 2) := by
         rw [ENNReal.ofReal_mul (by norm_num)]; simp
 
+end Thm2
 
 set_option linter.unusedVariables false in
 theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (hr1 : r ≤ 1) :
@@ -675,12 +686,16 @@ theorem theorem2_printed (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmo
 def bridgeMeasure (ψ₀ : ℂ → ℝ) : Measure ℂ :=
   (volume.restrict 𝔻).withDensity fun z ↦ ENNReal.ofReal (2 * lap ψ₀ z)
 
+namespace Thm2
+
 theorem laplacian_half_eq {ψ₀ : ℂ → ℝ} (hψ : ContDiffOn ℝ 2 ψ₀ 𝔻) {z : ℂ} (hz : z ∈ 𝔻) :
     Laplacian.laplacian (fun z ↦ ψ₀ z / 2) z = 2 * lap ψ₀ z := by
   have hc : ContDiffAt ℝ 2 ψ₀ z := hψ.contDiffAt (isOpen_ball.mem_nhds hz)
   rw [laplacian_eq_four_mul_lap,
     show (fun z ↦ ψ₀ z / 2) = fun z ↦ (1 / 2 : ℝ) * ψ₀ z by ext; ring, lap_const_mul _ hc]
   ring
+
+end Thm2
 
 theorem bridge_isSubharmonicWeight {ψ₀ : ℂ → ℝ} (hψ : ContDiffOn ℝ 2 ψ₀ 𝔻)
     (hpos : ∀ z ∈ 𝔻, 0 ≤ lap ψ₀ z) :
