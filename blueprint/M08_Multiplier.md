@@ -802,10 +802,12 @@ The constants come from steps 2–4 and depend only on `(Cd, R₀)`.
 ### 4.1 Consumed (assumed lemmas, exact forms)
 
 ```lean
+-- (reconciled) defined once, in M01 (`Foundations/HyperbolicExtra.lean`), with M11's formula:
 /-- (M11/M01, shared name) hyperbolic area measure. -/
 def hypArea : Measure ℂ :=
-  (volume.restrict 𝔻).withDensity fun z ↦ ENNReal.ofReal (1 / (1 - ‖z‖ ^ 2) ^ 2)
+  (volume.restrict 𝔻).withDensity fun z ↦ ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2)
 
+-- (reconciled) defined in M05 (`Partition/Lemma4.lean`); the stub is not in the build.
 /-- (M05) copied verbatim from `M05_Partition.md` §2.3. -/
 structure IsMassPartition (μ : Measure ℂ) (Ω : Set ℂ) (d : ℂ → ℂ → ℝ) (ρ : ℂ → ℝ) (N : ℕ)
     (a A : ℝ) (R : ℕ → Set ℂ) : Prop where
@@ -816,6 +818,8 @@ structure IsMassPartition (μ : Measure ℂ) (Ω : Set ℂ) (d : ℂ → ℂ →
   dist_le : ∀ i, ∀ z ∈ R i, ∀ w ∈ R i, d z w ≤ A * ρ z
   inner : ∀ i, ∃ c ∈ R i, {w | w ∈ Ω ∧ d c w < a * ρ c} ⊆ R i
 
+-- (reconciled) all the M03 lemmas below are stated in M03 (`Doubling/Quant.lean`) with exactly
+-- these signatures; `lemma4_*_quant` in M05 (`Partition/Lemma4.lean`).
 /-- (M03, growth + scaling) `lapNorm` stays in a class; `ρ` and `ρ̃` are comparable. -/
 theorem MeasClassPlane.lapNorm {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} (h : MeasClassPlane μ Cd R₀) :
     MeasClassPlane (lapNorm μ) Cd (15 * R₀) := sorry
