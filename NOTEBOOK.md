@@ -178,3 +178,18 @@ The scaffold lemma `lintegral_FR_near` (the near-diagonal Forelli–Rudin bound)
 - **Lemmas 7 and 8** are plain Schur tests (N-24). The printed `L^p` form of Lemma 7 follows by conjugating with `(1−|z|²)^{α/p}`.
 - **The corrected auxiliary weight** of N-22, `ψ = φ′ + c log(1−|z|²)` with `c = min(ε/8, 1/2)`, is the one used in the formal proof of Theorem 2.
 - **The doubling constant** of `hypArea` in hyperbolic balls is 16, from `hypArea(D(z,r)) = π sinh² r`.
+
+### I-03 (M02) — a false helper statement caused by Lean parsing
+The scaffold lemma `integral_bumpPot_mul_laplacian` had the right-hand side `∫ z, k(z − ζ) χ z - χ ζ`.
+- **The problem.** Lean parses this as `∫ z, (k χ − χ ζ)`, which is not integrable when `χ ζ ≠ 0`. The Bochner integral is then `0`, so the statement is false.
+- **The fix.** It was removed. The intended statement, `integral_bumpPot_mul_laplacian'` (with the parentheses), is proved and used. This is a blueprint/scaffold erratum.
+
+### I-04 (M03) — blueprint gaps and simplifications in the doubling lemmas
+- **§3.11 (`massRadiusM_inv_smul`).** The blueprint's argument is circular: the scale depends on constants that themselves depend on the scale. It is repaired by fixing the scale first, with an explicit growth radius `(2N+1)R₀`.
+- **§3.12 (Claim 1).** The case `ρ(y) ≥ ρ(x)` is trivial; only `ρ(x) > 2ρ(y)` needs Lemma 1.
+- **[Chr91, Lemma 2.3].** Proved from the pointwise bound `log(R/d) ≤ Σ_k log 2 · 1_{B(x, R/2^k)}` plus reverse doubling. This is simpler than dyadic annuli.
+- **Lemma 2.** Proved with Vitali's covering instead of Zorn.
+- **Uniform constants.** None of the qualitative lemmas, whose constants are chosen after `μ`, could be reused for the uniform versions. They were re-proved with explicit constants (`Doubling/Uniform.lean`, `Doubling/Quant.lean`).
+
+### I-05 (M04) — Lemma 6 constants
+Doubling of the regularized measure in the disc: squeezing between `ε·hypArea` and `K·hypArea` gives the constant `max(2C_d, 4cosh²(½)·K/ε)`. This makes the blueprint's `291600 K/ε` and its `artanh` monotonicity argument unnecessary.
