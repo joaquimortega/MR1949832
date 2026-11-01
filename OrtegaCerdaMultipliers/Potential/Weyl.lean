@@ -12,7 +12,7 @@ the proof of Weyl's lemma uses it.  The a.e. (`L¹_loc`) form of Weyl's lemma,
 (consumed by M08 and M13 through `LogModulusWeak.lean`).
 -/
 
-open MeasureTheory Metric Set Complex
+open MeasureTheory Metric Set Complex Filter Topology
 open scoped ENNReal NNReal ComplexConjugate
 
 noncomputable section
@@ -25,16 +25,57 @@ def bumpKernel (s : ℝ) (x : ℂ) : ℝ := kernel (s ^ 2 / 4) (s ^ 2) x
 
 /-! ### `bumpKernel` API (doc §4.1) -/
 
-theorem contDiff_bumpKernel {s : ℝ} (hs : 0 < s) : ContDiff ℝ (⊤ : ℕ∞) (bumpKernel s) := sorry
-theorem bumpKernel_nonneg {s : ℝ} (hs : 0 < s) (x : ℂ) : 0 ≤ bumpKernel s x := sorry
+theorem contDiff_bumpKernel {s : ℝ} (hs : 0 < s) : ContDiff ℝ (⊤ : ℕ∞) (bumpKernel s) :=
+  contDiff_kernel (bump_pos hs) (bump_lt hs)
+
+theorem bumpKernel_nonneg {s : ℝ} (hs : 0 < s) (x : ℂ) : 0 ≤ bumpKernel s x :=
+  kernel_nonneg (bump_pos hs) (bump_lt hs) x
+
 theorem bumpKernel_eq_zero {s : ℝ} (hs : 0 < s) {x : ℂ} (hx : s ≤ ‖x‖) :
-    bumpKernel s x = 0 := sorry
-theorem integral_bumpKernel {s : ℝ} (hs : 0 < s) : ∫ x, bumpKernel s x = 1 := sorry
+    bumpKernel s x = 0 :=
+  kernel_bump_eq_zero hs hx
+
+theorem integral_bumpKernel {s : ℝ} (hs : 0 < s) : ∫ x, bumpKernel s x = 1 :=
+  integral_kernel (bump_pos hs) (bump_lt hs)
+
 theorem bumpKernel_le {s : ℝ} (hs : 0 < s) (x : ℂ) :
-    bumpKernel s x ≤ 4 / (Real.pi * s ^ 2) * (ball (0 : ℂ) s).indicator 1 x := sorry
+    bumpKernel s x ≤ 4 / (Real.pi * s ^ 2) * (ball (0 : ℂ) s).indicator 1 x := by
+  have h := kernel_le_indicator (bump_pos hs) (bump_lt hs) x
+  rw [Real.sqrt_sq hs.le] at h
+  have e : (Real.pi * (s ^ 2 / 4))⁻¹ = 4 / (Real.pi * s ^ 2) := by field_simp
+  rw [e] at h
+  exact h
+
 theorem le_bumpKernel {s : ℝ} (hs : 0 < s) (x : ℂ) :
-    1 / (Real.pi * s ^ 2) * (ball (0 : ℂ) (s / 2)).indicator 1 x ≤ bumpKernel s x := sorry
-theorem measurable_bumpKernel : Measurable (Function.uncurry bumpKernel) := sorry
+    1 / (Real.pi * s ^ 2) * (ball (0 : ℂ) (s / 2)).indicator 1 x ≤ bumpKernel s x := by
+  have h := indicator_le_kernel (bump_pos hs) (bump_lt hs) x
+  have e : Real.sqrt (s ^ 2 / 4) = s / 2 := by
+    rw [show s ^ 2 / 4 = (s / 2) ^ 2 by ring, Real.sqrt_sq (by positivity)]
+  rw [e, ← one_div] at h
+  exact h
+
+/-- `profMass (s²/4) s² = s² · profMass (1/4) 1` for every `s` (both sides vanish at `0`). -/
+theorem profMass_bump (s : ℝ) :
+    profMass (s ^ 2 / 4) (s ^ 2) = s ^ 2 * profMass (1 / 4) 1 := by
+  rcases eq_or_ne s 0 with rfl | hs
+  · simp [profMass]
+  · have h := profMass_scale (a := 1 / 4) (b := 1) (by norm_num) (abs_pos.2 hs)
+    rw [sq_abs] at h
+    rw [show s ^ 2 / 4 = s ^ 2 * (1 / 4) by ring, ← h, mul_one]
+
+theorem measurable_bumpKernel : Measurable (Function.uncurry bumpKernel) := by
+  have h : Function.uncurry bumpKernel = fun p : ℝ × ℂ ↦
+      (1 - Real.smoothTransition ((‖p.2‖ ^ 2 - p.1 ^ 2 / 4) / (p.1 ^ 2 - p.1 ^ 2 / 4))) /
+        (p.1 ^ 2 * profMass (1 / 4) 1) / Real.pi := by
+    ext p
+    simp only [Function.uncurry, bumpKernel, kernel_eq, cutProfile, profMass_bump]
+  rw [h]
+  have hst : Measurable Real.smoothTransition := Real.smoothTransition.continuous.measurable
+  fun_prop
+
+/-- Radial symmetry: `bumpKernel s (w - y) = bumpKernel s (y - w)`. -/
+theorem bumpKernel_sub_comm (s : ℝ) (w y : ℂ) : bumpKernel s (w - y) = bumpKernel s (y - w) := by
+  simp only [bumpKernel, kernel_eq, norm_sub_rev]
 
 /-! ### Weyl's lemma -/
 
