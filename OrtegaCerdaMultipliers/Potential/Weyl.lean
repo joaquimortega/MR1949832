@@ -412,19 +412,67 @@ theorem exists_harmonicOnNhd_ae_eq_of_weakHarmonic {U : Set ℂ} (hU : IsOpen U)
 theorem IsSubharmonicWeight.integrable_mul {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
     {μ : Measure ℂ} (h : IsSubharmonicWeight Ω φ μ) {f : ℂ → ℝ} (hf : Continuous f)
     (hc : HasCompactSupport f) (hs : tsupport f ⊆ Ω) :
-    Integrable (fun z ↦ φ z * f z) := sorry
+    Integrable (fun z ↦ φ z * f z) :=
+  integrable_mul_of_tsupport_subset_real hΩ h.continuousOn hf hc hs
 
 theorem IsSubharmonicWeight.sigmaFinite {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
-    {μ : Measure ℂ} (h : IsSubharmonicWeight Ω φ μ) : SigmaFinite μ := sorry
+    {μ : Measure ℂ} (h : IsSubharmonicWeight Ω φ μ) : SigmaFinite μ := by
+  have hrad : ∀ z ∈ Ω, ∃ r : ℝ, 0 < r ∧ closedBall z r ⊆ Ω := fun z hz ↦ by
+    obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hΩ z hz
+    exact ⟨ε / 2, half_pos hε, (closedBall_subset_ball (half_lt_self hε)).trans hεU⟩
+  choose! r hr hrU using hrad
+  obtain ⟨T, hTc, hTU⟩ :=
+    TopologicalSpace.isOpen_iUnion_countable (fun z : Ω ↦ ball (z : ℂ) (r z)) fun _ ↦ isOpen_ball
+  refine Measure.sigmaFinite_of_countable
+    (S := insert Ωᶜ ((fun z : Ω ↦ ball (z : ℂ) (r z)) '' T)) ((hTc.image _).insert _) ?_ ?_
+  · rintro s (rfl | ⟨z, -, rfl⟩)
+    · rw [h.carried]; exact ENNReal.zero_lt_top
+    · exact (measure_mono ball_subset_closedBall).trans_lt
+        (h.finite_of_compact _ (hrU z z.2) (isCompact_closedBall _ _))
+  · rw [sUnion_insert, sUnion_image, hTU, eq_univ_iff_forall]
+    intro x
+    by_cases hx : x ∈ Ω
+    · exact Or.inr (mem_iUnion.2 ⟨⟨x, hx⟩, mem_ball_self (hr x hx)⟩)
+    · exact Or.inl hx
+
+/-- A continuous function with compact support is integrable for a measure that is finite on its
+support. -/
+theorem integrable_of_measure_tsupport_lt_top {ν : Measure ℂ} {χ : ℂ → ℝ} (hχ : Continuous χ)
+    (hc : HasCompactSupport χ) (hν : ν (tsupport χ) < ∞) : Integrable χ ν := by
+  obtain ⟨C, hC⟩ := hχ.bounded_above_of_compact_support hc
+  have hon : IntegrableOn χ (tsupport χ) ν :=
+    Measure.integrableOn_of_bounded hν.ne hχ.aestronglyMeasurable
+      (Eventually.of_forall fun z ↦ hC z)
+  exact (integrableOn_iff_integrable_of_support_subset (subset_tsupport χ)).1 hon
 
 /-- **Uniqueness.** Two weights with the same Laplacian differ by a harmonic function. -/
 theorem IsSubharmonicWeight.harmonicOnNhd_sub {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ₁ φ₂ : ℂ → ℝ}
     {μ : Measure ℂ} (h₁ : IsSubharmonicWeight Ω φ₁ μ) (h₂ : IsSubharmonicWeight Ω φ₂ μ) :
-    InnerProductSpace.HarmonicOnNhd (fun z ↦ φ₁ z - φ₂ z) Ω := sorry
+    InnerProductSpace.HarmonicOnNhd (fun z ↦ φ₁ z - φ₂ z) Ω := by
+  refine harmonicOnNhd_of_weakHarmonic hΩ (h₁.continuousOn.sub h₂.continuousOn)
+    fun χ hχ hc hs ↦ ?_
+  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (WithTop.coe_le_coe.2 le_top)
+  have hΔc := continuous_laplacian hχ2
+  have hΔs := hasCompactSupport_laplacian hc
+  have hΔsub := (tsupport_laplacian_subset χ).trans hs
+  simp_rw [sub_mul]
+  rw [integral_sub (h₁.integrable_mul hΩ hΔc hΔs hΔsub) (h₂.integrable_mul hΩ hΔc hΔs hΔsub),
+    h₁.laplacian_eq χ hχ hc hs, h₂.laplacian_eq χ hχ hc hs, sub_self]
 
 theorem IsSubharmonicWeight.add_harmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ H : ℂ → ℝ}
     {μ : Measure ℂ} (h : IsSubharmonicWeight Ω φ μ) (hH : InnerProductSpace.HarmonicOnNhd H Ω) :
-    IsSubharmonicWeight Ω (fun z ↦ φ z + H z) μ := sorry
+    IsSubharmonicWeight Ω (fun z ↦ φ z + H z) μ := by
+  refine ⟨h.continuousOn.add hH.contDiffOn.continuousOn, h.finite_of_compact, h.carried,
+    fun χ hχ hc hs ↦ ?_⟩
+  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (WithTop.coe_le_coe.2 le_top)
+  have hΔc := continuous_laplacian hχ2
+  have hΔs := hasCompactSupport_laplacian hc
+  have hΔsub := (tsupport_laplacian_subset χ).trans hs
+  simp_rw [add_mul]
+  rw [integral_add (h.integrable_mul hΩ hΔc hΔs hΔsub)
+    (integrable_mul_of_tsupport_subset_real hΩ hH.contDiffOn.continuousOn hΔc hΔs hΔsub),
+    h.laplacian_eq χ hχ hc hs, integral_mul_laplacian_eq_zero_of_harmonicOnNhd hΩ hH hχ2 hc hs,
+    add_zero]
 
 /-- A `C²` function with `Δu ≥ 0` is a weight, with Laplacian `Δu dm` on `Ω`. -/
 theorem isSubharmonicWeight_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → ℝ}
