@@ -56,6 +56,7 @@ def files_at_ref():
 # Coordinator-approved removals/changes of non-main helper statements found false during
 # implementation (each recorded in NOTEBOOK.md, implementation log).
 APPROVED = {
+    "integral_bumpPot_mul_laplacian": "false as parsed (∫ z, a - b), unused; intended statement is the primed lemma (NOTEBOOK I-03)",
     "lintegral_FR_near": "false for s > 1, unused; replaced by lintegral_FR_near_of_le_one (NOTEBOOK I-01)",
 }
 
