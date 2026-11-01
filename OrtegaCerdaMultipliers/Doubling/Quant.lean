@@ -91,41 +91,41 @@ section ClassHelpers
 
 variable {μ : Measure X} {Cd : ℝ≥0} {R₀ : ℝ}
 
-theorem MeasClassM.R₀_pos (h : MeasClassM μ Cd R₀) (x : X) : 0 < R₀ := by
+theorem MeasClassM.R₀_pos_m03b (h : MeasClassM μ Cd R₀) (x : X) : 0 < R₀ := by
   by_contra hR
   have h1 := h.mass x
   rw [ball_eq_empty.2 (not_lt.1 hR), measure_empty] at h1
   exact absurd h1 (by norm_num)
 
-theorem MeasClassM.hne (h : MeasClassM μ Cd R₀) (x : X) : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r) :=
-  ⟨R₀, h.R₀_pos x, h.mass x⟩
+theorem MeasClassM.hne_m03b (h : MeasClassM μ Cd R₀) (x : X) : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r) :=
+  ⟨R₀, h.R₀_pos_m03b x, h.mass x⟩
 
-theorem MeasClassM.hm (h : MeasClassM μ Cd R₀) : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R) :=
+theorem MeasClassM.hm_m03b (h : MeasClassM μ Cd R₀) : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R) :=
   ⟨max R₀ 1, lt_max_of_lt_right one_pos,
     fun x ↦ (h.mass x).trans (measure_mono (ball_subset_ball (le_max_left _ _)))⟩
 
-theorem MeasClassM.massRadiusM_pos [BallGeometry X] (h : MeasClassM μ Cd R₀) (x : X) :
+theorem MeasClassM.massRadiusM_pos_m03b [BallGeometry X] (h : MeasClassM μ Cd R₀) (x : X) :
     0 < massRadiusM μ x :=
-  IsLocDoublingM.massRadiusM_pos h.doubling.isLocDoublingM h.finite (h.hne x)
+  IsLocDoublingM.massRadiusM_pos h.doubling.isLocDoublingM h.finite (h.hne_m03b x)
 
-theorem MeasClassM.massRadiusM_le (h : MeasClassM μ Cd R₀) (x : X) : massRadiusM μ x ≤ R₀ :=
-  OC.massRadiusM_le (h.R₀_pos x) (h.mass x)
+theorem MeasClassM.massRadiusM_le_m03b (h : MeasClassM μ Cd R₀) (x : X) : massRadiusM μ x ≤ R₀ :=
+  OC.massRadiusM_le (h.R₀_pos_m03b x) (h.mass x)
 
-theorem MeasClassM.one_le_two [BallGeometry X] (h : MeasClassM μ Cd R₀) (x : X) :
+theorem MeasClassM.one_le_two_m03b [BallGeometry X] (h : MeasClassM μ Cd R₀) (x : X) :
     1 ≤ μ (ball x (2 * massRadiusM μ x)) :=
-  (one_le_measure_closedBall_massRadiusM (h.finite x) (h.hne x)).trans
-    (measure_mono (closedBall_subset_ball (by linarith [h.massRadiusM_pos x])))
+  (one_le_measure_closedBall_massRadiusM (h.finite x) (h.hne_m03b x)).trans
+    (measure_mono (closedBall_subset_ball (by linarith [h.massRadiusM_pos_m03b x])))
 
-theorem MeasClassM.le_add_dist (h : MeasClassM μ Cd R₀) (x y : X) :
+theorem MeasClassM.le_add_dist_m03b (h : MeasClassM μ Cd R₀) (x y : X) :
     massRadiusM μ y ≤ massRadiusM μ x + dist x y := by
-  have := (lipschitzWith_massRadiusM (μ := μ) h.hne).dist_le_mul x y
+  have := (lipschitzWith_massRadiusM (μ := μ) h.hne_m03b).dist_le_mul x y
   rw [NNReal.coe_one, one_mul, Real.dist_eq] at this
   linarith [(abs_sub_le_iff.1 this).2]
 
 end ClassHelpers
 
 /-- The real algebra of the decay estimate (§3.13). -/
-theorem decay_algebra {c CU δ s a b : ℝ} (hc : 0 < c) (hCU : 0 < CU) (hδ : 0 < δ) (hs : 0 < s)
+theorem M03b.decay_algebra {c CU δ s a b : ℝ} (hc : 0 < c) (hCU : 0 < CU) (hδ : 0 < δ) (hs : 0 < s)
     (ha : 0 < a) (hb : 0 < b) (hb1 : b ≤ 1) (h : c * (3 / (2 * b)) ^ δ ≤ CU * (3 / a) ^ s) :
     a ≤ (CU * 3 ^ s / c) ^ (1 / s) * b ^ (min 1 (δ / s)) := by
   have h1 : (1 / b) ^ δ ≤ (3 / (2 * b)) ^ δ :=
@@ -145,7 +145,7 @@ theorem decay_algebra {c CU δ s a b : ℝ} (hc : 0 < c) (hCU : 0 < CU) (hδ : 0
     rw [e1, e2] at this
     rw [div_mul_eq_mul_div, le_div_iff₀ hc]
     linarith
-  have h4 := le_rpow_one_div_of_rpow_le ha.le hs h3
+  have h4 := M03b.le_rpow_one_div_of_rpow_le ha.le hs h3
   rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hb.le] at h4
   refine h4.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
   rw [mul_one_div]
@@ -154,14 +154,14 @@ theorem decay_algebra {c CU δ s a b : ℝ} (hc : 0 < c) (hCU : 0 < CU) (hδ : 0
 theorem doubling_upTo_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ x : X, ∀ r : ℝ, 0 < r →
       r ≤ R₁ → μ (ball x (2 * r)) ≤ C * μ (ball x r) := by
-  obtain ⟨C, hC, h⟩ := exists_doublingUpTo (X := X) Cd R₁
+  obtain ⟨C, hC, h⟩ := M03b.exists_doublingUpTo (X := X) Cd R₁
   exact ⟨C, hC, fun μ hμ ↦ h μ hμ⟩
 
 theorem measure_ball_le_rpow_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd →
       ∀ (x x' : X) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → dist x x' ≤ r →
         μ (ball x r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (ball x' r') := by
-  obtain ⟨C₁, hC₁, hup⟩ := exists_doublingUpTo (X := X) Cd R₁
+  obtain ⟨C₁, hC₁, hup⟩ := M03b.exists_doublingUpTo (X := X) Cd R₁
   obtain ⟨C', hC'1, hC'2⟩ : ∃ C' : ℝ≥0, C₁ ≤ C' ∧ 2 ≤ C' := ⟨max C₁ 2, le_max_left _ _,
     le_max_right _ _⟩
   have hC2 : (2 : ℝ) ≤ C' := by exact_mod_cast hC'2
@@ -174,7 +174,7 @@ theorem rpow_le_measure_ball_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) 
     ∃ c δ : ℝ, 0 < c ∧ 0 < δ ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd →
       ∀ (x x' : X) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → dist x x' ≤ r →
         ENNReal.ofReal (c * (r / r') ^ δ) * μ (ball x' r') ≤ μ (ball x r) := by
-  obtain ⟨C₁, hC₁, hup⟩ := exists_doublingUpTo (X := X) Cd (2 * R₁)
+  obtain ⟨C₁, hC₁, hup⟩ := M03b.exists_doublingUpTo (X := X) Cd (2 * R₁)
   have hC0 : (0 : ℝ) < C₁ := by
     have : (1 : ℝ) ≤ C₁ := by exact_mod_cast hC₁
     linarith
@@ -246,7 +246,7 @@ theorem lemma1_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
               _ = q := Real.rpow_one _
       _ ≤ A * q := by gcongr; exact le_max_left _ _
   · have h1 : q ^ δ ≤ a / b / c := by rw [le_div_iff₀ hc]; linarith
-    have h2 : q ≤ (a / b / c) ^ (1 / δ) := le_rpow_one_div_of_rpow_le (by positivity) hδ h1
+    have h2 : q ≤ (a / b / c) ^ (1 / δ) := M03b.le_rpow_one_div_of_rpow_le (by positivity) hδ h1
     calc q ≤ (a / b / c) ^ (1 / δ) := h2
       _ = (1 / c) ^ (1 / δ) * (a / b) ^ (1 / δ) := by
           rw [div_eq_mul_one_div (a / b) c, Real.mul_rpow (by positivity) (by positivity),
@@ -264,9 +264,9 @@ theorem measure_ball_massRadiusM_bounds_quant [BallGeometry X]
   obtain ⟨CU, s, hCU, hs, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd R₁
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_ball_quant (X := X) Cd R₁
   refine ⟨c, CU, δ, s, hc, hCU, hδ, hs, fun μ h x r h1 h2 ↦ ?_⟩
-  have hρ := h.massRadiusM_pos x
+  have hρ := h.massRadiusM_pos_m03b x
   have h1' : μ (ball x (massRadiusM μ x)) = 1 :=
-    IsLocDoublingM.measure_ball_massRadiusM h.doubling.isLocDoublingM h.finite (h.hne x)
+    IsLocDoublingM.measure_ball_massRadiusM h.doubling.isLocDoublingM h.finite (h.hne_m03b x)
   have hxx : dist x x ≤ r := by rw [dist_self]; linarith
   constructor
   · have := hlow μ h.doubling x x r (massRadiusM μ x) hρ h1 h2 hxx
@@ -279,8 +279,8 @@ theorem measure_ball_massRadiusM_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K :
       μ (ball x (K * massRadiusM μ x)) ≤ C := by
   obtain ⟨CU, s, hCU, hs, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd (max K 1 * R₀)
   refine ⟨Real.toNNReal (CU * (max K 1) ^ s), fun μ h x ↦ ?_⟩
-  have hρ := h.massRadiusM_pos x
-  have hρR := h.massRadiusM_le x
+  have hρ := h.massRadiusM_pos_m03b x
+  have hρR := h.massRadiusM_le_m03b x
   have hK' : (1 : ℝ) ≤ max K 1 := le_max_right _ _
   calc μ (ball x (K * massRadiusM μ x)) ≤ μ (ball x (max K 1 * massRadiusM μ x)) :=
         measure_mono (ball_subset_ball (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ.le))
@@ -306,11 +306,11 @@ theorem claim1_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K : ℝ) :
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_ball_quant (X := X) Cd ((K' + 2) * R₀)
   set B := (CU * (K' + 1) ^ s / c) ^ (1 / δ) with hB
   refine ⟨max 2 (2 * B), le_trans (by norm_num) (le_max_left _ _),
-    fun μ h x y ↦ ⟨h.massRadiusM_pos x, h.massRadiusM_le x, fun hxy ↦ ?_⟩⟩
-  have hρx := h.massRadiusM_pos x
-  have hρy := h.massRadiusM_pos y
-  have hR₀ := h.R₀_pos x
-  have hρxR := h.massRadiusM_le x
+    fun μ h x y ↦ ⟨h.massRadiusM_pos_m03b x, h.massRadiusM_le_m03b x, fun hxy ↦ ?_⟩⟩
+  have hρx := h.massRadiusM_pos_m03b x
+  have hρy := h.massRadiusM_pos_m03b y
+  have hR₀ := h.R₀_pos_m03b x
+  have hρxR := h.massRadiusM_le_m03b x
   by_cases hcase : massRadiusM μ x ≤ 2 * massRadiusM μ y
   · exact hcase.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρy.le)
   replace hcase := not_le.1 hcase
@@ -335,7 +335,7 @@ theorem claim1_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K : ℝ) :
         = ENNReal.ofReal (c * (massRadiusM μ x / (2 * massRadiusM μ y)) ^ δ) * 1 :=
           (mul_one _).symm
       _ ≤ ENNReal.ofReal (c * (massRadiusM μ x / (2 * massRadiusM μ y)) ^ δ) *
-            μ (ball y (2 * massRadiusM μ y)) := by gcongr; exact h.one_le_two y
+            μ (ball y (2 * massRadiusM μ y)) := by gcongr; exact h.one_le_two_m03b y
       _ ≤ μ (ball y (massRadiusM μ x)) := h1
       _ ≤ μ (ball x ((K' + 1) * massRadiusM μ x)) := measure_mono h2
       _ ≤ ENNReal.ofReal (CU * (K' + 1) ^ s) * μ (ball x (massRadiusM μ x)) := h3
@@ -345,7 +345,7 @@ theorem claim1_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K : ℝ) :
   rw [ENNReal.ofReal_le_ofReal_iff (by positivity)] at hchain
   have hq : (massRadiusM μ x / (2 * massRadiusM μ y)) ^ δ ≤ CU * (K' + 1) ^ s / c := by
     rw [le_div_iff₀ hc]; linarith
-  have hq' := le_rpow_one_div_of_rpow_le (by positivity) hδ hq
+  have hq' := M03b.le_rpow_one_div_of_rpow_le (by positivity) hδ hq
   rw [← hB, div_le_iff₀ (by positivity)] at hq'
   calc massRadiusM μ x ≤ B * (2 * massRadiusM μ y) := hq'
     _ = 2 * B * massRadiusM μ y := by ring
@@ -362,10 +362,10 @@ theorem massRadiusM_div_dist_le_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀
   refine ⟨(CU * 3 ^ s / c) ^ (1 / s), min 1 (δ / s), by positivity,
     lt_min one_pos (by positivity), min_le_left _ _, fun μ h z ζ h1 h2 ↦ ?_⟩
   set d := dist z ζ with hd
-  have hρz := h.massRadiusM_pos z
-  have hρζ := h.massRadiusM_pos ζ
+  have hρz := h.massRadiusM_pos_m03b z
+  have hρζ := h.massRadiusM_pos_m03b ζ
   have hd0 : 0 < d := hρz.trans_le h1
-  have hlip : massRadiusM μ ζ ≤ massRadiusM μ z + d := h.le_add_dist z ζ
+  have hlip : massRadiusM μ ζ ≤ massRadiusM μ z + d := h.le_add_dist_m03b z ζ
   have hU := hup μ h.doubling z ζ (3 * d) (massRadiusM μ ζ) hρζ (by linarith) (by linarith)
     (by linarith)
   have hL := hlow μ h.doubling z z (3 * d) (2 * massRadiusM μ z) (by linarith) (by linarith)
@@ -375,7 +375,7 @@ theorem massRadiusM_div_dist_le_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀
     calc ENNReal.ofReal (c * (3 * d / (2 * massRadiusM μ z)) ^ δ)
         = ENNReal.ofReal (c * (3 * d / (2 * massRadiusM μ z)) ^ δ) * 1 := (mul_one _).symm
       _ ≤ ENNReal.ofReal (c * (3 * d / (2 * massRadiusM μ z)) ^ δ) *
-            μ (ball z (2 * massRadiusM μ z)) := by gcongr; exact h.one_le_two z
+            μ (ball z (2 * massRadiusM μ z)) := by gcongr; exact h.one_le_two_m03b z
       _ ≤ μ (ball z (3 * d)) := hL
       _ ≤ ENNReal.ofReal (CU * (3 * d / massRadiusM μ ζ) ^ s) * μ (ball ζ (massRadiusM μ ζ)) :=
           hU
@@ -387,7 +387,7 @@ theorem massRadiusM_div_dist_le_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀
     field_simp
   have e2 : 3 * d / massRadiusM μ ζ = 3 / (massRadiusM μ ζ / d) := by field_simp
   rw [e1, e2] at hchain
-  exact decay_algebra hc hCU hδ hs (by positivity) (by positivity)
+  exact M03b.decay_algebra hc hCU hδ hs (by positivity) (by positivity)
     ((div_le_one hd0).2 h1) hchain
 
 /-- **Decay**, geometric form, uniform. -/
@@ -398,7 +398,7 @@ theorem decay_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀ : ℝ) :
   obtain ⟨C, α, hC, hα, hα1, h⟩ := massRadiusM_div_dist_le_quant (X := X) Cd R₀ M₀
   refine ⟨C, (1 / 2) ^ α, hC, by positivity, Real.rpow_lt_one (by norm_num) (by norm_num) hα,
     fun μ hμ z ζ n h1 h2 ↦ ?_⟩
-  have hρz := hμ.massRadiusM_pos z
+  have hρz := hμ.massRadiusM_pos_m03b z
   have h2n : (1 : ℝ) ≤ 2 ^ n := one_le_pow₀ (by norm_num)
   have hρd : massRadiusM μ z ≤ dist z ζ := by nlinarith
   have hd : 0 < dist z ζ := hρz.trans_le hρd
@@ -417,7 +417,7 @@ theorem decay_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀ : ℝ) :
 /-! #### Lemma 3, uniform (§3.14): real algebra, fine part, coarse part -/
 
 /-- Pointwise bound on an annulus (§3.14 (F), steps 1–2). -/
-theorem lemma3_pt {ρz t D V CU s : ℝ} {m : ℕ} (hρz : 0 < ρz) (ht : 0 < t) (htD : t ≤ D)
+theorem M03b.lemma3_pt {ρz t D V CU s : ℝ} {m : ℕ} (hρz : 0 < ρz) (ht : 0 < t) (htD : t ≤ D)
     (hV : 0 < V) (hCU : 0 < CU) (hs : 0 < s) (hup : V ≤ CU * (5 * t / ρz) ^ s) :
     (ρz / D) ^ m ≤ 5 ^ m * (CU / V) ^ ((m : ℝ) / s) := by
   have hpos : 0 < (ρz / (5 * t)) ^ s := by positivity
@@ -428,7 +428,7 @@ theorem lemma3_pt {ρz t D V CU s : ℝ} {m : ℕ} (hρz : 0 < ρz) (ht : 0 < t)
     rw [le_div_iff₀ hV]
     linarith [mul_comm V ((ρz / (5 * t)) ^ s)]
   have h2 : ρz / (5 * t) ≤ (CU / V) ^ (1 / s) :=
-    le_rpow_one_div_of_rpow_le (by positivity) hs h1
+    M03b.le_rpow_one_div_of_rpow_le (by positivity) hs h1
   have h3 : ρz / D ≤ 5 * (CU / V) ^ (1 / s) := by
     calc ρz / D ≤ ρz / t := div_le_div_of_nonneg_left hρz.le ht htD
       _ = 5 * (ρz / (5 * t)) := by field_simp
@@ -441,7 +441,7 @@ theorem lemma3_pt {ρz t D V CU s : ℝ} {m : ℕ} (hρz : 0 < ρz) (ht : 0 < t)
         ring
 
 /-- Summation bound on an annulus (§3.14 (F), steps 3–5). -/
-theorem lemma3_sum {V CU c s δr : ℝ} {m n : ℕ} (hs : 0 < s) (hms : s < m) (hc : 0 < c)
+theorem M03b.lemma3_sum {V CU c s δr : ℝ} {m n : ℕ} (hs : 0 < s) (hms : s < m) (hc : 0 < c)
     (hCU : 0 < CU) (hL : c * ((2 : ℝ) ^ n) ^ δr ≤ V) :
     5 ^ m * (CU / V) ^ ((m : ℝ) / s) * V ≤
       5 ^ m * CU ^ ((m : ℝ) / s) * c ^ (1 - (m : ℝ) / s) *
@@ -467,7 +467,7 @@ theorem lemma3_sum {V CU c s δr : ℝ} {m n : ℕ} (hs : 0 < s) (hms : s < m) (
   gcongr
 
 /-- **Lemma 3, fine part** (§3.14 (F)), uniform: the integral over `B(w, 1/40)`. -/
-theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
+theorem M03b.lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
     (hm : Real.logb 2 ((max Cd 2 : ℝ≥0) : ℝ) < m) {δ : ℝ} (hδ : 0 < δ) :
     ∃ B : ℝ≥0∞, B ≠ ∞ ∧ ∀ μ : Measure X, MeasClassM μ Cd R₀ → ∀ w : X,
       ∫⁻ z in ball w (1 / 40),
@@ -501,12 +501,12 @@ theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
   refine ⟨ENNReal.ofReal ((2 / δ) ^ m) + ENNReal.ofReal K₁ * (1 - ENNReal.ofReal q)⁻¹,
     ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
       (ENNReal.inv_ne_top.2 (tsub_pos_iff_lt.2 hq1').ne')⟩, fun μ h w ↦ ?_⟩
-  have hD : DoublingUpTo μ C₀ (1 / 4) := by
+  have hD : M03b.DoublingUpTo μ C₀ (1 / 4) := by
     rw [hC₀def]
-    exact (doublingUpTo_of_local h.doubling (by norm_num)).mono
+    exact (M03b.doublingUpTo_of_local h.doubling (by norm_num)).mono
       (max_le_max le_rfl one_le_two) le_rfl
-  have hD' : DoublingUpTo μ C₀ (2 * (1 / 8)) := hD.mono le_rfl (by norm_num)
-  have hρw := h.massRadiusM_pos w
+  have hD' : M03b.DoublingUpTo μ C₀ (2 * (1 / 8)) := hD.mono le_rfl (by norm_num)
+  have hρw := h.massRadiusM_pos_m03b w
   -- inner part
   have hinner : ∫⁻ z in ball w (massRadiusM μ w),
       ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
@@ -516,8 +516,8 @@ theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
           ENNReal.ofReal ((2 / δ) ^ m) := by
       intro z hz
       rw [mem_ball] at hz
-      have hρz := h.massRadiusM_pos z
-      have hlip := h.le_add_dist w z
+      have hρz := h.massRadiusM_pos_m03b z
+      have hlip := h.le_add_dist_m03b w z
       rw [dist_comm] at hlip
       have hδρ : 0 < δ * massRadiusM μ w := mul_pos hδ hρw
       apply ENNReal.ofReal_le_ofReal
@@ -590,7 +590,7 @@ theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
         le_trans (by
           calc ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr)
               = ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) * 1 := (mul_one _).symm
-            _ ≤ _ := by gcongr; exact h.one_le_two w) key
+            _ ≤ _ := by gcongr; exact h.one_le_two_m03b w) key
       have h2 := (ENNReal.ofReal_le_iff_le_toReal hVfin.ne).1 h1
       have h3 : ((2 : ℝ) ^ n) ^ δr ≤ (5 * t / (2 * massRadiusM μ w)) ^ δr := by
         apply Real.rpow_le_rpow (by positivity) _ hδr.le
@@ -606,8 +606,8 @@ theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
       have hz1 : dist z w < 2 * t := by
         have := hz.1.1; rw [mem_ball, pow_succ] at this; rw [htdef]; linarith
       have hz2 : t ≤ dist z w := not_lt.1 fun h' ↦ hz.2 (mem_ball.2 h')
-      have hρz := h.massRadiusM_pos z
-      have hlip := h.le_add_dist w z
+      have hρz := h.massRadiusM_pos_m03b z
+      have hlip := h.le_add_dist_m03b w z
       rw [dist_comm] at hlip
       have hρwt : massRadiusM μ w ≤ t := by rw [htdef]; nlinarith
       have hup := hD.measure_ball_le_rpow hC₀1 w z (r := 5 * t) (r' := massRadiusM μ z) hρz
@@ -622,7 +622,7 @@ theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
       have hup3 : V ≤ CU * (5 * t / massRadiusM μ z) ^ s :=
         ENNReal.toReal_le_of_le_ofReal (by positivity) hup2
       exact ENNReal.ofReal_le_ofReal
-        (lemma3_pt hρz ht0 (le_max_of_le_left hz2) hV0 hCU hs hup3)
+        (M03b.lemma3_pt hρz ht0 (le_max_of_le_left hz2) hV0 hCU hs hup3)
     have hμA : μ (A n) ≤ ENNReal.ofReal V := by
       rw [hVdef, ENNReal.ofReal_toReal hVfin.ne]
       refine measure_mono fun z hz ↦ ?_
@@ -643,7 +643,7 @@ theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
       _ ≤ ENNReal.ofReal (K₁ * q ^ n) := by
           apply ENNReal.ofReal_le_ofReal
           rw [hK₁def, hqdef, hedef]
-          exact lemma3_sum hs hm hc hCU hVlow
+          exact M03b.lemma3_sum hs hm hc hCU hVlow
   calc ∫⁻ z in ball w (1 / 40),
         ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
       ≤ ∫⁻ z in ball w (massRadiusM μ w) ∪ ⋃ n, A n,
@@ -671,8 +671,7 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0,
       ∀ μ : Measure X, MeasClassM μ Cd R₀ → ∀ w : X,
         ∫⁻ z in ball w R₁,
-          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤ C :=
-  by
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤ C := by
   obtain ⟨L, hL⟩ : ∃ L : ℝ, L = Real.logb 2 ((max Cd 2 : ℝ≥0) : ℝ) := ⟨_, rfl⟩
   refine ⟨⌊L⌋₊ + 1, fun m hm δ R₁ hδ ↦ ?_⟩
   have hms : L < m := by
@@ -685,15 +684,15 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
   set δ' : ℝ := r₀ / max R₀ 1 with hδ'
   have hR1 : (0 : ℝ) < max R₀ 1 := lt_max_of_lt_right one_pos
   have hδ'0 : 0 < δ' := by positivity
-  obtain ⟨B₁, hB₁, hfine₁⟩ := lemma3_fine (X := X) Cd R₀ hms hδ
-  obtain ⟨B₂, hB₂, hfine₂⟩ := lemma3_fine (X := X) Cd R₀ hms hδ'0
+  obtain ⟨B₁, hB₁, hfine₁⟩ := M03b.lemma3_fine (X := X) Cd R₀ hms hδ
+  obtain ⟨B₂, hB₂, hfine₂⟩ := M03b.lemma3_fine (X := X) Cd R₀ hms hδ'0
   obtain ⟨K, hK⟩ := BallGeometry.covering (X := X) R₁ r₀ (by norm_num)
   have hfin : B₁ + K * B₂ ≠ ∞ :=
     ENNReal.add_ne_top.2 ⟨hB₁, ENNReal.mul_ne_top (ENNReal.natCast_ne_top K) hB₂⟩
   refine ⟨(B₁ + K * B₂).toNNReal, fun μ h w ↦ ?_⟩
   rw [ENNReal.coe_toNNReal hfin]
   obtain ⟨s, hs, hcov⟩ := hK w
-  have hρw := h.massRadiusM_pos w
+  have hρw := h.massRadiusM_pos_m03b w
   have hcover : ball w R₁ ⊆ ball w r₀ ∪ ⋃ y : s, (ball (y : X) r₀ \ ball w r₀) := by
     intro z hz
     by_cases hzw : z ∈ ball w r₀
@@ -704,15 +703,15 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
   have hcoarse : ∀ y : s, ∫⁻ z in ball (y : X) r₀ \ ball w r₀,
       ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤ B₂ := by
     intro y
-    have hρy := h.massRadiusM_pos (y : X)
-    have hρyR := h.massRadiusM_le (y : X)
+    have hρy := h.massRadiusM_pos_m03b (y : X)
+    have hρyR := h.massRadiusM_le_m03b (y : X)
     have hpt : ∀ z ∈ ball (y : X) r₀ \ ball w r₀,
         ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
           ENNReal.ofReal ((massRadiusM μ z / max (dist z y) (δ' * massRadiusM μ y)) ^ m) := by
       intro z hz
       have hz1 : dist z y < r₀ := hz.1
       have hz2 : r₀ ≤ dist z w := not_lt.1 fun h' ↦ hz.2 (mem_ball.2 h')
-      have hρz := h.massRadiusM_pos z
+      have hρz := h.massRadiusM_pos_m03b z
       have hδρ : 0 < δ' * massRadiusM μ y := mul_pos hδ'0 hρy
       have hmax : max (dist z y) (δ' * massRadiusM μ y) ≤ r₀ := by
         refine max_le hz1.le ?_
@@ -757,7 +756,7 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
 theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ (x : X) (R : ℝ), 0 < R → R ≤ R₁ →
       ∫⁻ y in ball x R, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤ C * μ (ball x R) := by
-  obtain ⟨C₁, hC₁, hup⟩ := exists_doublingUpTo (X := X) Cd (2 * R₁)
+  obtain ⟨C₁, hC₁, hup⟩ := M03b.exists_doublingUpTo (X := X) Cd (2 * R₁)
   have hC0 : (0 : ℝ≥0) < C₁ := zero_lt_one.trans_le hC₁
   have hη : (0 : ℝ) < (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ) :=
     NNReal.coe_pos.2 (inv_pos.2 (pow_pos hC0 3))
@@ -845,8 +844,8 @@ theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
         ≤ ∫⁻ _y in A k, ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) ∂μ :=
           setLIntegral_mono' hmeas hpt
       _ = ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) * μ (A k) := setLIntegral_const _ _
-      _ ≤ ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) * (ENNReal.ofReal (q ^ k) * μ (ball x R)) := by
-          gcongr
+      _ ≤ ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) *
+            (ENNReal.ofReal (q ^ k) * μ (ball x R)) := by gcongr
       _ = ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) := by
           rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
           congr 2
@@ -877,14 +876,14 @@ theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) 
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_ball_quant (X := X) Cd ((2 * N + 1) * R₀)
   refine ⟨max 4 (4 * ((N : ℝ) / c) ^ (1 / δ)), le_trans (by norm_num) (le_max_left _ _),
     fun μ h x ↦ ?_⟩
-  have hR₀ := h.R₀_pos x
+  have hR₀ := h.R₀_pos_m03b x
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (by omega : N ≠ 0)
   have hNt : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
   have hsmul : ∀ s, ((N : ℝ≥0∞)⁻¹ • μ) s = (N : ℝ≥0∞)⁻¹ * μ s := fun s ↦ by
     rw [Measure.smul_apply, smul_eq_mul]
   have hRN : 0 < (2 * (N : ℝ) + 1) * R₀ := by positivity
   have hgrow : (N : ℝ≥0∞) ≤ μ (ball x ((2 * N + 1) * R₀)) := by
-    refine le_trans ?_ (sum_le_measure_ball_of_le hR₀ h.mass x N)
+    refine le_trans ?_ (M03b.sum_le_measure_ball_of_le hR₀ h.mass x N)
     rw [mul_one]
     exact le_self_add
   have hneN : 1 ≤ ((N : ℝ≥0∞)⁻¹ • μ) (ball x ((2 * N + 1) * R₀)) := by
@@ -903,7 +902,7 @@ theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) 
       _ = μ (ball x r) := by rw [← mul_assoc, ENNReal.mul_inv_cancel hN0 hNt, one_mul]
   · set ρ := massRadiusM μ x with hρdef
     set ρN := massRadiusM ((N : ℝ≥0∞)⁻¹ • μ) x with hρNdef
-    have hρ : 0 < ρ := h.massRadiusM_pos x
+    have hρ : 0 < ρ := h.massRadiusM_pos_m03b x
     have hρN : ρN ≤ (2 * N + 1) * R₀ := massRadiusM_le hRN hneN
     by_cases hcase : ρN ≤ 4 * ρ
     · exact hcase.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ.le)
@@ -924,13 +923,13 @@ theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) 
       calc ENNReal.ofReal (c * (ρN / 2 / (2 * ρ)) ^ δ)
           = ENNReal.ofReal (c * (ρN / 2 / (2 * ρ)) ^ δ) * 1 := (mul_one _).symm
         _ ≤ ENNReal.ofReal (c * (ρN / 2 / (2 * ρ)) ^ δ) * μ (ball x (2 * ρ)) := by
-            gcongr; exact h.one_le_two x
+            gcongr; exact h.one_le_two_m03b x
         _ ≤ μ (ball x (ρN / 2)) := key
         _ < N := hlt
         _ = ENNReal.ofReal N := (ENNReal.ofReal_natCast N).symm
     rw [ENNReal.ofReal_lt_ofReal_iff (by positivity)] at hchain
     have hq : (ρN / 2 / (2 * ρ)) ^ δ ≤ N / c := by rw [le_div_iff₀ hc]; linarith
-    have hq' := le_rpow_one_div_of_rpow_le (div_nonneg (by linarith) (by linarith)) hδ hq
+    have hq' := M03b.le_rpow_one_div_of_rpow_le (div_nonneg (by linarith) (by linarith)) hδ hq
     rw [div_le_iff₀ (by linarith)] at hq'
     calc ρN ≤ 4 * ((N : ℝ) / c) ^ (1 / δ) * ρ := by linarith
       _ ≤ max 4 (4 * ((N : ℝ) / c) ^ (1 / δ)) * ρ :=
@@ -951,7 +950,7 @@ theorem MeasClassDisc.measClassM_discPull {μ : Measure ℂ} {Cd : ℝ≥0} {R�
   · rw [discPull_ball, discPull_ball]; exact h.doubling _ a.2 r hr h2r
   · rw [discPull_ball]; exact (h.mass _ a.2).le
   · rw [discPull_ball]
-    exact (measure_mono (hypBall_subset_closedBall_tanh a.2 r)).trans_lt
+    exact (measure_mono (M03b.hypBall_subset_closedBall_tanh a.2 r)).trans_lt
       (h.finite _ (closedBall_subset_ball (Real.tanh_lt_one _)) (isCompact_closedBall _ _))
 
 theorem MeasClassLine.measClassM_linePull {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
@@ -975,60 +974,60 @@ theorem MeasClassDisc.of_weight {φ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ�
 
 /-! #### Helpers for `lapNorm` and the growth of balls (M03b) -/
 
-theorem massRadiusM_le_of_le {X : Type*} [MetricSpace X] [MeasurableSpace X] {μ ν : Measure X}
+theorem M03b.massRadiusM_le_of_le {X : Type*} [MetricSpace X] [MeasurableSpace X] {μ ν : Measure X}
     {x : X} (hle : ∀ r, μ (ball x r) ≤ ν (ball x r)) (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) :
     massRadiusM ν x ≤ massRadiusM μ x :=
   csInf_le_csInf ⟨0, fun _ hr ↦ hr.1.le⟩ hne fun r hr ↦ ⟨hr.1, hr.2.trans (hle r)⟩
 
-theorem eight_le_measure_ball_of_mass {X : Type*} [MetricSpace X] [MeasurableSpace X]
+theorem M03b.eight_le_measure_ball_of_mass {X : Type*} [MetricSpace X] [MeasurableSpace X]
     [OpensMeasurableSpace X] [BallGeometry X] {μ : Measure X} {R₀ : ℝ} (hR₀ : 0 < R₀)
     (h : ∀ y, 1 ≤ μ (ball y R₀)) (x : X) : 8 ≤ μ (ball x (15 * R₀)) := by
-  have := sum_le_measure_ball_of_le hR₀ h x 7
+  have := M03b.sum_le_measure_ball_of_le hR₀ h x 7
   norm_num at this
   exact this
 
-theorem lapNorm_apply (μ : Measure ℂ) (s : Set ℂ) :
+theorem M03b.lapNorm_apply (μ : Measure ℂ) (s : Set ℂ) :
     lapNorm μ s = (ENNReal.ofReal (2 * Real.pi))⁻¹ * μ s := by
   rw [lapNorm, Measure.smul_apply, smul_eq_mul]
 
-theorem ofReal_two_pi_ne_zero : ENNReal.ofReal (2 * Real.pi) ≠ 0 :=
+theorem M03b.ofReal_two_pi_ne_zero : ENNReal.ofReal (2 * Real.pi) ≠ 0 :=
   (ENNReal.ofReal_pos.2 (by positivity)).ne'
 
-theorem inv_two_pi_ne_top : (ENNReal.ofReal (2 * Real.pi))⁻¹ ≠ ∞ :=
-  ENNReal.inv_ne_top.2 ofReal_two_pi_ne_zero
+theorem M03b.inv_two_pi_ne_top : (ENNReal.ofReal (2 * Real.pi))⁻¹ ≠ ∞ :=
+  ENNReal.inv_ne_top.2 M03b.ofReal_two_pi_ne_zero
 
-theorem inv_two_pi_ne_zero : (ENNReal.ofReal (2 * Real.pi))⁻¹ ≠ 0 :=
+theorem M03b.inv_two_pi_ne_zero : (ENNReal.ofReal (2 * Real.pi))⁻¹ ≠ 0 :=
   ENNReal.inv_ne_zero.2 ENNReal.ofReal_ne_top
 
-theorem one_lt_inv_two_pi_mul {a : ℝ≥0∞} (ha : 8 ≤ a) :
+theorem M03b.one_lt_inv_two_pi_mul {a : ℝ≥0∞} (ha : 8 ≤ a) :
     1 < (ENNReal.ofReal (2 * Real.pi))⁻¹ * a := by
   have h8 : ENNReal.ofReal (2 * Real.pi) < 8 := by
     rw [show (8 : ℝ≥0∞) = ENNReal.ofReal 8 by norm_num]
     exact (ENNReal.ofReal_lt_ofReal_iff (by norm_num)).2 (by linarith [Real.pi_lt_four])
   calc (1 : ℝ≥0∞) = (ENNReal.ofReal (2 * Real.pi))⁻¹ * ENNReal.ofReal (2 * Real.pi) :=
-        (ENNReal.inv_mul_cancel ofReal_two_pi_ne_zero ENNReal.ofReal_ne_top).symm
+        (ENNReal.inv_mul_cancel M03b.ofReal_two_pi_ne_zero ENNReal.ofReal_ne_top).symm
     _ < (ENNReal.ofReal (2 * Real.pi))⁻¹ * 8 := by
         gcongr
-        · exact inv_two_pi_ne_zero
-        · exact inv_two_pi_ne_top
+        · exact M03b.inv_two_pi_ne_zero
+        · exact M03b.inv_two_pi_ne_top
     _ ≤ _ := by gcongr
 
-theorem lapNorm_le_self (μ : Measure ℂ) (s : Set ℂ) : lapNorm μ s ≤ μ s := by
-  rw [lapNorm_apply]
+theorem M03b.lapNorm_le_self (μ : Measure ℂ) (s : Set ℂ) : lapNorm μ s ≤ μ s := by
+  rw [M03b.lapNorm_apply]
   have : (ENNReal.ofReal (2 * Real.pi))⁻¹ ≤ 1 := by
     rw [ENNReal.inv_le_one, ← ENNReal.ofReal_one]
     exact ENNReal.ofReal_le_ofReal (by linarith [Real.pi_gt_three])
   calc _ ≤ 1 * μ s := by gcongr
     _ = μ s := one_mul _
 
-theorem inv_seven_mul_le_lapNorm (μ : Measure ℂ) (s : Set ℂ) :
+theorem M03b.inv_seven_mul_le_lapNorm (μ : Measure ℂ) (s : Set ℂ) :
     ((7 : ℕ) : ℝ≥0∞)⁻¹ * μ s ≤ lapNorm μ s := by
-  rw [lapNorm_apply]
+  rw [M03b.lapNorm_apply]
   refine mul_le_mul_left (ENNReal.inv_le_inv.2 ?_) _
   rw [show ((7 : ℕ) : ℝ≥0∞) = ENNReal.ofReal 7 by norm_num]
   exact ENNReal.ofReal_le_ofReal (by linarith [Real.pi_lt_d2])
 
-theorem one_le_inv_seven_mul {a : ℝ≥0∞} (ha : 8 ≤ a) : 1 ≤ ((7 : ℕ) : ℝ≥0∞)⁻¹ * a := by
+theorem M03b.one_le_inv_seven_mul {a : ℝ≥0∞} (ha : 8 ≤ a) : 1 ≤ ((7 : ℕ) : ℝ≥0∞)⁻¹ * a := by
   calc (1 : ℝ≥0∞) = ((7 : ℕ) : ℝ≥0∞)⁻¹ * ((7 : ℕ) : ℝ≥0∞) :=
         (ENNReal.inv_mul_cancel (by norm_num) (by simp)).symm
     _ ≤ ((7 : ℕ) : ℝ≥0∞)⁻¹ * a := by gcongr; exact le_trans (by norm_num) ha
@@ -1038,33 +1037,34 @@ theorem one_le_inv_seven_mul {a : ℝ≥0∞} (ha : 8 ≤ a) : 1 ≤ ((7 : ℕ) 
 /-- (M03, growth + scaling) `lapNorm` stays in a class; `ρ` and `ρ̃` are comparable. -/
 theorem MeasClassPlane.lapNorm {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} (h : MeasClassPlane μ Cd R₀) :
     MeasClassPlane (lapNorm μ) Cd (15 * R₀) := by
-  have hR₀ : 0 < R₀ := h.measClassM.R₀_pos 0
+  have hR₀ : 0 < R₀ := h.measClassM.R₀_pos_m03b 0
   refine ⟨fun z r hr h2r ↦ ?_, fun z ↦ ?_, fun K hK ↦ ?_⟩
-  · rw [lapNorm_apply, lapNorm_apply]
+  · rw [M03b.lapNorm_apply, M03b.lapNorm_apply]
     calc (ENNReal.ofReal (2 * Real.pi))⁻¹ * μ (ball z (2 * r))
         ≤ (ENNReal.ofReal (2 * Real.pi))⁻¹ * (Cd * μ (ball z r)) := by
           gcongr; exact h.doubling z r hr h2r
       _ = Cd * ((ENNReal.ofReal (2 * Real.pi))⁻¹ * μ (ball z r)) := by ring
-  · rw [lapNorm_apply]
-    exact one_lt_inv_two_pi_mul (eight_le_measure_ball_of_mass hR₀ (fun y ↦ (h.mass y).le) z)
-  · rw [lapNorm_apply]
-    exact ENNReal.mul_lt_top inv_two_pi_ne_top.lt_top (h.finite K hK)
+  · rw [M03b.lapNorm_apply]
+    exact M03b.one_lt_inv_two_pi_mul (M03b.eight_le_measure_ball_of_mass hR₀ (fun y ↦ (h.mass
+        y).le) z)
+  · rw [M03b.lapNorm_apply]
+    exact ENNReal.mul_lt_top M03b.inv_two_pi_ne_top.lt_top (h.finite K hK)
 theorem MeasClassDisc.lapNorm {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} (h : MeasClassDisc μ Cd R₀) :
     MeasClassDisc (lapNorm μ) Cd (15 * R₀) := by
-  have hR₀ : 0 < R₀ := h.measClassM_discPull.R₀_pos (HDisc.mk 0 (mem_ball_self one_pos))
+  have hR₀ : 0 < R₀ := h.measClassM_discPull.R₀_pos_m03b (HDisc.mk 0 (mem_ball_self one_pos))
   refine ⟨fun z hz r hr h2r ↦ ?_, fun z hz ↦ ?_, fun K hK𝔻 hK ↦ ?_⟩
-  · rw [lapNorm_apply, lapNorm_apply]
+  · rw [M03b.lapNorm_apply, M03b.lapNorm_apply]
     calc (ENNReal.ofReal (2 * Real.pi))⁻¹ * μ (hypBall z (2 * r))
         ≤ (ENNReal.ofReal (2 * Real.pi))⁻¹ * (Cd * μ (hypBall z r)) := by
           gcongr; exact h.doubling z hz r hr h2r
       _ = Cd * ((ENNReal.ofReal (2 * Real.pi))⁻¹ * μ (hypBall z r)) := by ring
-  · rw [lapNorm_apply]
-    have := eight_le_measure_ball_of_mass (μ := discPull μ) hR₀
+  · rw [M03b.lapNorm_apply]
+    have := M03b.eight_le_measure_ball_of_mass (μ := discPull μ) hR₀
       (fun y ↦ h.measClassM_discPull.mass y) (HDisc.mk z hz)
-    rw [discPull_ball, HDisc.val_mk] at this
-    exact one_lt_inv_two_pi_mul this
-  · rw [lapNorm_apply]
-    exact ENNReal.mul_lt_top inv_two_pi_ne_top.lt_top (h.finite K hK𝔻 hK)
+    rw [discPull_ball, M03b.hdisc_val_mk] at this
+    exact M03b.one_lt_inv_two_pi_mul this
+  · rw [M03b.lapNorm_apply]
+    exact ENNReal.mul_lt_top M03b.inv_two_pi_ne_top.lt_top (h.finite K hK𝔻 hK)
 theorem massRadius_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
     ∀ μ : Measure ℂ, MeasClassPlane μ Cd R₀ → ∀ z,
       massRadius μ z ≤ massRadius (lapNorm μ) z ∧ massRadius (lapNorm μ) z ≤ C * massRadius μ z :=
@@ -1073,17 +1073,17 @@ theorem massRadius_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 �
   refine ⟨C, hC, fun μ h z ↦ ?_⟩
   simp only [massRadius_eq]
   have hM := h.measClassM
-  have hR₀ : 0 < R₀ := hM.R₀_pos z
+  have hR₀ : 0 < R₀ := hM.R₀_pos_m03b z
   have hL := h.lapNorm
   have h7 := hall μ hM z
   refine ⟨?_, ?_⟩
-  · exact massRadiusM_le_of_le (fun r ↦ lapNorm_le_self μ _)
+  · exact M03b.massRadiusM_le_of_le (fun r ↦ M03b.lapNorm_le_self μ _)
       ⟨15 * R₀, by positivity, (hL.mass z).le⟩
-  · refine le_trans (massRadiusM_le_of_le (fun r ↦ by
-      rw [Measure.smul_apply, smul_eq_mul]; exact inv_seven_mul_le_lapNorm μ _) ?_) h7.2
+  · refine le_trans (M03b.massRadiusM_le_of_le (fun r ↦ by
+      rw [Measure.smul_apply, smul_eq_mul]; exact M03b.inv_seven_mul_le_lapNorm μ _) ?_) h7.2
     refine ⟨15 * R₀, by positivity, ?_⟩
     rw [Measure.smul_apply, smul_eq_mul]
-    exact one_le_inv_seven_mul (eight_le_measure_ball_of_mass hR₀ (fun y ↦ hM.mass y) z)
+    exact M03b.one_le_inv_seven_mul (M03b.eight_le_measure_ball_of_mass hR₀ (fun y ↦ hM.mass y) z)
 theorem massRadiusDisc_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
     ∀ μ : Measure ℂ, MeasClassDisc μ Cd R₀ → ∀ z ∈ 𝔻,
       massRadiusDisc μ z ≤ massRadiusDisc (lapNorm μ) z ∧
@@ -1091,20 +1091,20 @@ theorem massRadiusDisc_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 
   obtain ⟨C, hC, hall⟩ := massRadiusM_inv_smul_quant (X := HDisc) Cd R₀ 7 (by norm_num)
   refine ⟨C, hC, fun μ h z hz ↦ ?_⟩
   have hM := h.measClassM_discPull
-  have hR₀ : 0 < R₀ := hM.R₀_pos (HDisc.mk z hz)
+  have hR₀ : 0 < R₀ := hM.R₀_pos_m03b (HDisc.mk z hz)
   have hLM := h.lapNorm.measClassM_discPull
   have h7 := hall (discPull μ) hM (HDisc.mk z hz)
-  rw [massRadiusDisc_eq' hz, massRadiusDisc_eq' hz]
+  rw [M03b.massRadiusDisc_eq' hz, M03b.massRadiusDisc_eq' hz]
   refine ⟨?_, ?_⟩
-  · refine massRadiusM_le_of_le (fun r ↦ ?_) ⟨15 * R₀, by positivity, hLM.mass _⟩
+  · refine M03b.massRadiusM_le_of_le (fun r ↦ ?_) ⟨15 * R₀, by positivity, hLM.mass _⟩
     rw [discPull_ball, discPull_ball]
-    exact lapNorm_le_self μ _
-  · refine le_trans (massRadiusM_le_of_le (fun r ↦ ?_) ?_) h7.2
+    exact M03b.lapNorm_le_self μ _
+  · refine le_trans (M03b.massRadiusM_le_of_le (fun r ↦ ?_) ?_) h7.2
     · rw [Measure.smul_apply, smul_eq_mul, discPull_ball, discPull_ball]
-      exact inv_seven_mul_le_lapNorm μ _
+      exact M03b.inv_seven_mul_le_lapNorm μ _
     · refine ⟨15 * R₀, by positivity, ?_⟩
       rw [Measure.smul_apply, smul_eq_mul]
-      exact one_le_inv_seven_mul (eight_le_measure_ball_of_mass hR₀ (fun y ↦ hM.mass y) _)
+      exact M03b.one_le_inv_seven_mul (M03b.eight_le_measure_ball_of_mass hR₀ (fun y ↦ hM.mass y) _)
 
 /-- (M03, quantitative Claim 1 + positivity/upper bound of `ρ`). -/
 theorem claim1_plane_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
@@ -1122,7 +1122,7 @@ theorem claim1_disc_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C : ℝ, 1 ≤ C �
   obtain ⟨C, hC, hall⟩ := claim1_quant (X := HDisc) Cd R₀ K
   refine ⟨C, hC, fun ν h z hz w hw ↦ ?_⟩
   have := hall (discPull ν) h.measClassM_discPull (HDisc.mk z hz) (HDisc.mk w hw)
-  rw [massRadiusDisc_eq' hz, massRadiusDisc_eq' hw]
+  rw [M03b.massRadiusDisc_eq' hz, M03b.massRadiusDisc_eq' hw]
   exact this
 
 /-- (M03, quantitative) mass of comparable balls. -/
@@ -1136,7 +1136,7 @@ theorem measure_hypBall_massRadius_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C :
   obtain ⟨C, hall⟩ := measure_ball_massRadiusM_quant (X := HDisc) Cd R₀ K
   refine ⟨C, fun ν h z hz ↦ ?_⟩
   have := hall (discPull ν) h.measClassM_discPull (HDisc.mk z hz)
-  rw [discPull_ball, HDisc.val_mk, ← massRadiusDisc_eq' hz] at this
+  rw [discPull_ball, M03b.hdisc_val_mk, ← M03b.massRadiusDisc_eq' hz] at this
   exact this
 
 /-- (M03, quantitative decay; `massRadiusM_div_dist_le` with `M₀ = 1/4`). -/
@@ -1152,8 +1152,8 @@ theorem decay_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C α : ℝ, 0 < C ∧
         massRadiusDisc ν ζ / hypDist z ζ ≤ C * (massRadiusDisc ν z / hypDist z ζ) ^ α := by
   obtain ⟨C, α, hC, hα, -, hall⟩ := massRadiusM_div_dist_le_quant (X := HDisc) Cd R₀ (1 / 4)
   refine ⟨C, α, hC, hα, fun ν h z hz ζ hζ h1 h2 ↦ ?_⟩
-  rw [massRadiusDisc_eq' hz] at h1 ⊢
-  rw [massRadiusDisc_eq' hζ]
+  rw [M03b.massRadiusDisc_eq' hz] at h1 ⊢
+  rw [M03b.massRadiusDisc_eq' hζ]
   exact hall (discPull ν) h.measClassM_discPull (HDisc.mk z hz) (HDisc.mk ζ hζ) h1 h2
 
 /-- (M03, quantitative [Chr91, Lemma 2.3]). -/
@@ -1169,10 +1169,10 @@ theorem christ_disc_quant (Cd : ℝ≥0) (R₀ S : ℝ) : ∃ C : ℝ≥0,
   obtain ⟨C, hall⟩ := christ_lemma23_quant (X := HDisc) Cd S
   refine ⟨C, fun ν h z hz s hs hsS ↦ ?_⟩
   have key := hall (discPull ν) h.measClassM_discPull.doubling (HDisc.mk z hz) s hs hsS
-  rw [discPull_ball, HDisc.val_mk] at key
-  rw [hypBall_eq_image_ball hz, ← lintegral_discPull, ← hypBall_eq_image_ball hz]
+  rw [discPull_ball, M03b.hdisc_val_mk] at key
+  rw [M03b.hypBall_eq_image_ball hz, ← M03b.lintegral_discPull, ← M03b.hypBall_eq_image_ball hz]
   convert key using 3 with b
-  rw [HDisc.dist_eq, HDisc.val_mk]
+  rw [HDisc.dist_eq, M03b.hdisc_val_mk]
 
 
 /-! ### Line forms (uniform) -/
@@ -1209,7 +1209,7 @@ theorem christ_line_quant (Cd : ℝ≥0) (R₀ S : ℝ) : ∃ C : ℝ≥0,
   refine ⟨C, fun ν h x s hs hsS ↦ ?_⟩
   have key := hall (linePull ν) h.measClassM_linePull.doubling x s hs hsS
   rw [linePull_ball] at key
-  rw [lineInterval_eq_image_ball, ← lintegral_linePull, ← lineInterval_eq_image_ball]
+  rw [M03b.lineInterval_eq_image_ball, ← M03b.lintegral_linePull, ← M03b.lineInterval_eq_image_ball]
   convert key using 3 with t
   rw [Complex.ofReal_re, Real.dist_eq, abs_sub_comm]
 

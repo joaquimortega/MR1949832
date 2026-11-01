@@ -21,7 +21,7 @@ namespace OC
 
 /-! ### Small real-analysis helpers -/
 
-theorem le_rpow_one_div_of_rpow_le {q M δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) (h : q ^ δ ≤ M) :
+theorem M03b.le_rpow_one_div_of_rpow_le {q M δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) (h : q ^ δ ≤ M) :
     q ≤ M ^ (1 / δ) := by
   have h1 : (q ^ δ) ^ (1 / δ) ≤ M ^ (1 / δ) :=
     Real.rpow_le_rpow (Real.rpow_nonneg hq _) h (by positivity)
@@ -29,12 +29,12 @@ theorem le_rpow_one_div_of_rpow_le {q M δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) 
 
 /-! ### Finiteness from `IsSubharmonicWeight` -/
 
-theorem dist_ofReal_ofReal (x y : ℝ) : dist (x : ℂ) (y : ℂ) = |x - y| := by
+theorem M03b.dist_ofReal_ofReal (x y : ℝ) : dist (x : ℂ) (y : ℂ) = |x - y| := by
   rw [Complex.isometry_ofReal.dist_eq, Real.dist_eq]
 
 /-- Hyperbolic balls lie in a Euclidean closed disc of radius `< 1` (hence in a compact subset
 of `𝔻`). -/
-theorem hypBall_subset_closedBall_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
+theorem M03b.hypBall_subset_closedBall_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
     hypBall z r ⊆ closedBall 0 (Real.tanh (Real.artanh ‖z‖ + r)) := by
   intro w hw
   have hw𝔻 : w ∈ 𝔻 := hw.1
@@ -55,7 +55,8 @@ theorem IsSubharmonicWeight.measure_ball_lt_top {φ : ℂ → ℝ} {μ : Measure
     (h.finite_of_compact _ (subset_univ _) (isCompact_closedBall z r))
 
 theorem IsSubharmonicWeight.measure_hypBall_lt_top {φ : ℂ → ℝ} {μ : Measure ℂ}
-    (h : IsSubharmonicWeight 𝔻 φ μ) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : μ (hypBall z r) < ∞ := (measure_mono (hypBall_subset_closedBall_tanh hz r)).trans_lt
+    (h : IsSubharmonicWeight 𝔻 φ μ) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : μ (hypBall z r) < ∞ :=
+  (measure_mono (M03b.hypBall_subset_closedBall_tanh hz r)).trans_lt
     (h.finite_of_compact _ (closedBall_subset_ball (Real.tanh_lt_one _))
       (isCompact_closedBall _ _))
 
@@ -64,7 +65,7 @@ theorem IsSubharmonicWeight.measure_lineInterval_lt_top {φ : ℂ → ℝ} {μ :
   refine (measure_mono ?_).trans_lt
     (h.finite_of_compact _ (subset_univ _) (isCompact_closedBall (x : ℂ) r))
   rintro _ ⟨t, ht, rfl⟩
-  rw [mem_closedBall, dist_ofReal_ofReal]
+  rw [mem_closedBall, M03b.dist_ofReal_ofReal]
   rw [Set.mem_Ioo] at ht
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
@@ -78,7 +79,8 @@ theorem lemma1_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
       ∀ (z z' : ℂ) (r r' : ℝ), 0 < r' → r ≤ R₁ → dist z z' + r' ≤ r →
         0 < μ (ball z' r') → μ (ball z r) < ∞ →
         ((μ (ball z r)).toReal / (μ (ball z' r')).toReal) ^ γ ≤ A * (r / r') ∧
-        r / r' ≤ A * ((μ (ball z r)).toReal / (μ (ball z' r')).toReal) ^ (1 / γ) := IsLocDoublingM.lemma1 (μ := μ) hd R₁
+        r / r' ≤ A * ((μ (ball z r)).toReal / (μ (ball z' r')).toReal) ^ (1 / γ) :=
+  IsLocDoublingM.lemma1 (μ := μ) hd R₁
 
 theorem doubling_upTo_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R₁ →
@@ -86,11 +88,13 @@ theorem doubling_upTo_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
 
 theorem measure_ball_le_rpow_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ (z z' : ℂ) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ →
-      dist z z' ≤ r → μ (ball z r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (ball z' r') := IsLocDoublingM.measure_ball_le_rpow (μ := μ) hd R₁
+      dist z z' ≤ r → μ (ball z r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (ball z' r') :=
+  IsLocDoublingM.measure_ball_le_rpow (μ := μ) hd R₁
 
 theorem rpow_le_measure_ball_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ c δ : ℝ, 0 < c ∧ 0 < δ ∧ ∀ (z z' : ℂ) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ →
-      dist z z' ≤ r → ENNReal.ofReal (c * (r / r') ^ δ) * μ (ball z' r') ≤ μ (ball z r) := IsLocDoublingM.rpow_le_measure_ball (μ := μ) hd R₁
+      dist z z' ≤ r → ENNReal.ofReal (c * (r / r') ^ δ) * μ (ball z' r') ≤ μ (ball z r) :=
+  IsLocDoublingM.rpow_le_measure_ball (μ := μ) hd R₁
 
 theorem measure_ball_le_of_dist_le_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ z w : ℂ, ∀ r : ℝ, 0 < r → r ≤ R₁ → dist z w ≤ r →
@@ -98,7 +102,8 @@ theorem measure_ball_le_of_dist_le_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ
 
 /-- **Lemma 2** (plane): porous sets, in particular lines, segments and circles, are null. -/
 theorem measure_eq_zero_of_isPorous_plane (hd : IsLocallyDoubling μ)
-    (hfin : ∀ z r, μ (ball z r) < ∞) {E : Set ℂ} (hE : IsPorous E) : μ E = 0 := IsLocDoublingM.measure_eq_zero_of_isPorous (μ := μ) hd hfin hE
+    (hfin : ∀ z r, μ (ball z r) < ∞) {E : Set ℂ} (hE : IsPorous E) : μ E = 0 :=
+  IsLocDoublingM.measure_eq_zero_of_isPorous (μ := μ) hd hfin hE
 
 theorem lemma2_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞) (a b : ℂ) :
     μ (segment ℝ a b) = 0 := measure_eq_zero_of_isPorous_plane hd hfin (isPorous_segment a b)
@@ -107,27 +112,32 @@ theorem measure_sphere_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ba
     (z : ℂ) (r : ℝ) : μ (sphere z r) = 0 := IsLocDoublingM.measure_sphere (μ := μ) hd hfin z r
 
 theorem continuous_measure_ball_plane (hd : IsLocallyDoubling μ)
-    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : Continuous fun r : ℝ ↦ μ (ball z r) := IsLocDoublingM.continuous_measure_ball (μ := μ) hd hfin z
+    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : Continuous fun r : ℝ ↦ μ (ball z r) :=
+  IsLocDoublingM.continuous_measure_ball (μ := μ) hd hfin z
 
 theorem massRadius_pos (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
-    (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) : 0 < massRadius μ z := IsLocDoublingM.massRadiusM_pos (μ := μ) hd hfin (let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩)
+    (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) : 0 < massRadius μ z :=
+  IsLocDoublingM.massRadiusM_pos (μ := μ) hd hfin (let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩)
 
 theorem massRadius_le {R : ℝ} (hR : 0 < R) (hm : ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) :
     massRadius μ z ≤ R := massRadiusM_le hR (hm z)
 
 theorem measure_ball_massRadius (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) :
-    μ (ball z (massRadius μ z)) = 1 := IsLocDoublingM.measure_ball_massRadiusM (μ := μ) hd hfin (let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩)
+    μ (ball z (massRadius μ z)) = 1 :=
+  IsLocDoublingM.measure_ball_massRadiusM (μ := μ) hd hfin (let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩)
 
 theorem lipschitzWith_massRadius (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) :
-    LipschitzWith 1 (massRadius μ) := lipschitzWith_massRadiusM (μ := μ) fun z ↦ let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩
+    LipschitzWith 1 (massRadius μ) :=
+  lipschitzWith_massRadiusM (μ := μ) fun z ↦ let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩
 
 theorem measure_ball_massRadius_bounds_plane (hd : IsLocallyDoubling μ)
     (hfin : ∀ z r, μ (ball z r) < ∞) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (R₁ : ℝ) :
     ∃ c C δ s : ℝ, 0 < c ∧ 0 < C ∧ 0 < δ ∧ 0 < s ∧ ∀ (z : ℂ) (r : ℝ),
       massRadius μ z ≤ r → r ≤ R₁ →
         ENNReal.ofReal (c * (r / massRadius μ z) ^ δ) ≤ μ (ball z r) ∧
-        μ (ball z r) ≤ ENNReal.ofReal (C * (r / massRadius μ z) ^ s) := IsLocDoublingM.measure_ball_massRadiusM_bounds (μ := μ) hd hfin hm R₁
+        μ (ball z r) ≤ ENNReal.ofReal (C * (r / massRadius μ z) ^ s) :=
+  IsLocDoublingM.measure_ball_massRadiusM_bounds (μ := μ) hd hfin hm R₁
 
 theorem claim1_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (K : ℝ) :
@@ -143,62 +153,60 @@ theorem lemma3_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) 
 
 theorem christ_lemma23_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ (z : ℂ) (R : ℝ), 0 < R → R ≤ R₁ →
-      ∫⁻ ζ in ball z R, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂μ ≤ C * μ (ball z R) := IsLocDoublingM.christ_lemma23 (μ := μ) hd R₁
+      ∫⁻ ζ in ball z R, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂μ ≤ C * μ (ball z R) :=
+  IsLocDoublingM.christ_lemma23 (μ := μ) hd R₁
 
 theorem exists_radius_lt_measure_ball_plane (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R))
-    (p : ℝ≥0) : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, (p : ℝ≥0∞) < μ (ball z r) := exists_radius_lt_measure_ball hm p
+    (p : ℝ≥0) : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, (p : ℝ≥0∞) < μ (ball z r) :=
+  exists_radius_lt_measure_ball hm p
 
 end Plane
 
 /-! ### Transfer helpers -/
 
 /-- Integrals against a pulled-back measure over a set, as integrals over the image. -/
-theorem lintegral_comap_image {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {e : α → β}
+theorem M03b.lintegral_comap_image {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {e : α → β}
     (he : MeasurableEmbedding e) (μ : Measure β) (g : β → ℝ≥0∞) (s : Set α) :
     ∫⁻ a in s, g (e a) ∂(μ.comap e) = ∫⁻ z in e '' s, g z ∂μ := by
   rw [he.restrict_comap, ← he.lintegral_map, he.map_comap,
     Measure.restrict_restrict he.measurableSet_range,
     inter_eq_self_of_subset_right (image_subset_range _ _)]
 
-namespace HDisc
+@[simp] theorem M03b.hdisc_val_mk (z : ℂ) (hz : z ∈ 𝔻) : (HDisc.mk z hz).val = z := rfl
 
-@[simp] theorem val_mk (z : ℂ) (hz : z ∈ 𝔻) : (mk z hz).val = z := rfl
+theorem M03b.hdisc_dist_mk (z : ℂ) (hz : z ∈ 𝔻) (w : ℂ) (hw : w ∈ 𝔻) :
+    dist (HDisc.mk z hz) (HDisc.mk w hw) = hypDist z w := rfl
 
-theorem dist_mk (z : ℂ) (hz : z ∈ 𝔻) (w : ℂ) (hw : w ∈ 𝔻) :
-    dist (mk z hz) (mk w hw) = hypDist z w := rfl
-
-end HDisc
-
-theorem lintegral_discPull (μ : Measure ℂ) (g : ℂ → ℝ≥0∞) (s : Set HDisc) :
+theorem M03b.lintegral_discPull (μ : Measure ℂ) (g : ℂ → ℝ≥0∞) (s : Set HDisc) :
     ∫⁻ a in s, g a.val ∂(discPull μ) = ∫⁻ z in HDisc.val '' s, g z ∂μ :=
-  lintegral_comap_image HDisc.measurableEmbedding_val μ g s
+  M03b.lintegral_comap_image HDisc.measurableEmbedding_val μ g s
 
-theorem isLocDoublingM_discPull {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ) :
+theorem M03b.isLocDoublingM_discPull {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ) :
     IsLocDoublingM (discPull μ) :=
   (isLocallyDoublingDisc_iff μ).1 hd
 
-theorem discPull_hfin {μ : Measure ℂ} (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) :
+theorem M03b.discPull_hfin {μ : Measure ℂ} (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) :
     ∀ (a : HDisc) (r : ℝ), discPull μ (ball a r) < ∞ := fun a r ↦ by
   rw [discPull_ball]; exact hfin _ a.2 r
 
-theorem discPull_hm {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
+theorem M03b.discPull_hm {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
     ∃ R : ℝ, 0 < R ∧ ∀ a : HDisc, 1 ≤ discPull μ (ball a R) := by
   obtain ⟨R, hR, h⟩ := hm
   exact ⟨R, hR, fun a ↦ by rw [discPull_ball]; exact h _ a.2⟩
 
-theorem discPull_hne {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R))
+theorem M03b.discPull_hne {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R))
     (a : HDisc) : ∃ r, 0 < r ∧ 1 ≤ discPull μ (ball a r) := by
-  obtain ⟨R, hR, h⟩ := discPull_hm hm
+  obtain ⟨R, hR, h⟩ := M03b.discPull_hm hm
   exact ⟨R, hR, h a⟩
 
-theorem massRadiusDisc_eq' {μ : Measure ℂ} {z : ℂ} (hz : z ∈ 𝔻) :
+theorem M03b.massRadiusDisc_eq' {μ : Measure ℂ} {z : ℂ} (hz : z ∈ 𝔻) :
     massRadiusDisc μ z = massRadiusM (discPull μ) (HDisc.mk z hz) := by
   have := massRadiusDisc_eq μ (HDisc.mk z hz)
-  rwa [HDisc.val_mk] at this
+  rwa [M03b.hdisc_val_mk] at this
 
-theorem hypBall_eq_image_ball {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
+theorem M03b.hypBall_eq_image_ball {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
     hypBall z r = HDisc.val '' ball (HDisc.mk z hz) r := by
-  rw [HDisc.image_ball, HDisc.val_mk]
+  rw [HDisc.image_ball, M03b.hdisc_val_mk]
 
 section Growth
 
@@ -206,7 +214,7 @@ variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X
 
 /-- **Growth, explicit radius** (no doubling): `k + 1` disjoint balls of radius `R` centred at
 distances `2iR` from `x` lie in `B(x, (2k+1)R)`. -/
-theorem sum_le_measure_ball_of_le [BallGeometry X] {μ : Measure X} {R : ℝ} (hR : 0 < R)
+theorem M03b.sum_le_measure_ball_of_le [BallGeometry X] {μ : Measure X} {R : ℝ} (hR : 0 < R)
     {m : ℝ≥0∞} (h : ∀ y : X, m ≤ μ (ball y R)) (x : X) (k : ℕ) :
     ((k : ℝ≥0∞) + 1) * m ≤ μ (ball x ((2 * k + 1) * R)) := by
   have hy : ∀ i : ℕ, ∃ y : X, dist x y = 2 * i * R := fun i ↦
@@ -264,51 +272,54 @@ theorem lemma1_disc (hd : IsLocallyDoublingDisc μ) (R₁ : ℝ) :
         0 < μ (hypBall z' r') → μ (hypBall z r) < ∞ →
         ((μ (hypBall z r)).toReal / (μ (hypBall z' r')).toReal) ^ γ ≤ A * (r / r') ∧
         r / r' ≤ A * ((μ (hypBall z r)).toReal / (μ (hypBall z' r')).toReal) ^ (1 / γ) := by
-  obtain ⟨γ, A, hγ, hγ1, hA, h⟩ := IsLocDoublingM.lemma1 (isLocDoublingM_discPull hd) R₁
+  obtain ⟨γ, A, hγ, hγ1, hA, h⟩ := IsLocDoublingM.lemma1 (M03b.isLocDoublingM_discPull hd) R₁
   refine ⟨γ, A, hγ, hγ1, hA, fun z z' r r' hz hz' hr' hr hdist h0 hfin => ?_⟩
   have := h (HDisc.mk z hz) (HDisc.mk z' hz') r r' hr' hr hdist
     (by rwa [discPull_ball]) (by rwa [discPull_ball])
-  simpa only [discPull_ball, HDisc.val_mk] using this
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using this
 
 theorem doubling_upTo_disc (hd : IsLocallyDoublingDisc μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ z ∈ 𝔻, ∀ r : ℝ, 0 < r → r ≤ R₁ →
       μ (hypBall z (2 * r)) ≤ C * μ (hypBall z r) := by
-  obtain ⟨C, hC, h⟩ := IsLocDoublingM.exists_const_of_le (isLocDoublingM_discPull hd) R₁
+  obtain ⟨C, hC, h⟩ := IsLocDoublingM.exists_const_of_le (M03b.isLocDoublingM_discPull hd) R₁
   refine ⟨C, hC, fun z hz r hr hr1 => ?_⟩
-  simpa only [discPull_ball, HDisc.val_mk] using h (HDisc.mk z hz) r hr hr1
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using h (HDisc.mk z hz) r hr hr1
 
 theorem measure_hypBall_le_rpow (hd : IsLocallyDoublingDisc μ) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ (z z' : ℂ) (r r' : ℝ), z ∈ 𝔻 → z' ∈ 𝔻 → 0 < r' → r' ≤ r →
       r ≤ R₁ → hypDist z z' ≤ r →
         μ (hypBall z r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (hypBall z' r') := by
-  obtain ⟨C, s, hC, hs, h⟩ := IsLocDoublingM.measure_ball_le_rpow (isLocDoublingM_discPull hd) R₁
+  obtain ⟨C, s, hC, hs, h⟩ :=
+      IsLocDoublingM.measure_ball_le_rpow (M03b.isLocDoublingM_discPull hd) R₁
   refine ⟨C, s, hC, hs, fun z z' r r' hz hz' hr' hrr hr hdist => ?_⟩
-  simpa only [discPull_ball, HDisc.val_mk] using
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using
     h (HDisc.mk z hz) (HDisc.mk z' hz') r r' hr' hrr hr hdist
 
 theorem rpow_le_measure_hypBall (hd : IsLocallyDoublingDisc μ) (R₁ : ℝ) :
     ∃ c δ : ℝ, 0 < c ∧ 0 < δ ∧ ∀ (z z' : ℂ) (r r' : ℝ), z ∈ 𝔻 → z' ∈ 𝔻 → 0 < r' → r' ≤ r →
       r ≤ R₁ → hypDist z z' ≤ r →
         ENNReal.ofReal (c * (r / r') ^ δ) * μ (hypBall z' r') ≤ μ (hypBall z r) := by
-  obtain ⟨c, δ, hc, hδ, h⟩ := IsLocDoublingM.rpow_le_measure_ball (isLocDoublingM_discPull hd) R₁
+  obtain ⟨c, δ, hc, hδ, h⟩ :=
+      IsLocDoublingM.rpow_le_measure_ball (M03b.isLocDoublingM_discPull hd) R₁
   refine ⟨c, δ, hc, hδ, fun z z' r r' hz hz' hr' hrr hr hdist => ?_⟩
-  simpa only [discPull_ball, HDisc.val_mk] using
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using
     h (HDisc.mk z hz) (HDisc.mk z' hz') r r' hr' hrr hr hdist
 
 theorem measure_hypBall_le_of_hypDist_le (hd : IsLocallyDoublingDisc μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ z ∈ 𝔻, ∀ w ∈ 𝔻, ∀ r : ℝ, 0 < r → r ≤ R₁ → hypDist z w ≤ r →
       μ (hypBall w r) ≤ C * μ (hypBall z r) := by
-  obtain ⟨C, h⟩ := IsLocDoublingM.measure_ball_le_of_dist_le (isLocDoublingM_discPull hd) R₁
+  obtain ⟨C, h⟩ := IsLocDoublingM.measure_ball_le_of_dist_le (M03b.isLocDoublingM_discPull hd) R₁
   refine ⟨C, fun z hz w hw r hr hr1 hdist => ?_⟩
-  simpa only [discPull_ball, HDisc.val_mk] using h (HDisc.mk z hz) (HDisc.mk w hw) r hr hr1 hdist
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using h (HDisc.mk z hz) (HDisc.mk w hw) r hr hr1
+      hdist
 
 /-- **Lemma 2** (disc): Euclidean-porous sets (segments, lines, circles, horocycles, geodesic
 arcs) meet `𝔻` in a null set. -/
 theorem measure_inter_disc_eq_zero_of_isPorous (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) {E : Set ℂ} (hE : IsPorous E) :
     μ (E ∩ 𝔻) = 0 := by
-  have h1 := IsLocDoublingM.measure_eq_zero_of_isPorous (isLocDoublingM_discPull hd)
-    (discPull_hfin hfin) hE.preimage_hDisc
+  have h1 := IsLocDoublingM.measure_eq_zero_of_isPorous (M03b.isLocDoublingM_discPull hd)
+    (M03b.discPull_hfin hfin) hE.preimage_hDisc
   rw [discPull_apply] at h1
   have e : HDisc.val '' (HDisc.val ⁻¹' E) = E ∩ 𝔻 := by
     ext z
@@ -320,12 +331,14 @@ theorem measure_inter_disc_eq_zero_of_isPorous (hd : IsLocallyDoublingDisc μ)
   rwa [e] at h1
 
 theorem lemma2_disc (hd : IsLocallyDoublingDisc μ) (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞)
-    (a b : ℂ) : μ (segment ℝ a b ∩ 𝔻) = 0 := measure_inter_disc_eq_zero_of_isPorous hd hfin (isPorous_segment a b)
+    (a b : ℂ) : μ (segment ℝ a b ∩ 𝔻) = 0 :=
+  measure_inter_disc_eq_zero_of_isPorous hd hfin (isPorous_segment a b)
 
 theorem measure_hypSphere (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
     μ {w | w ∈ 𝔻 ∧ hypDist z w = r} = 0 := by
-  have h1 := IsLocDoublingM.measure_sphere (isLocDoublingM_discPull hd) (discPull_hfin hfin)
+  have h1 :=
+      IsLocDoublingM.measure_sphere (M03b.isLocDoublingM_discPull hd) (M03b.discPull_hfin hfin)
     (HDisc.mk z hz) r
   rw [discPull_apply] at h1
   have e : HDisc.val '' sphere (HDisc.mk z hz) r = {w | w ∈ 𝔻 ∧ hypDist z w = r} := by
@@ -343,44 +356,45 @@ theorem measure_hypSphere (hd : IsLocallyDoublingDisc μ)
 theorem continuous_measure_hypBall (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) {z : ℂ} (hz : z ∈ 𝔻) :
     Continuous fun r : ℝ ↦ μ (hypBall z r) := by
-  have h1 := IsLocDoublingM.continuous_measure_ball (isLocDoublingM_discPull hd)
-    (discPull_hfin hfin) (HDisc.mk z hz)
-  simpa only [discPull_ball, HDisc.val_mk] using h1
+  have h1 := IsLocDoublingM.continuous_measure_ball (M03b.isLocDoublingM_discPull hd)
+    (M03b.discPull_hfin hfin) (HDisc.mk z hz)
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using h1
 
 theorem massRadiusDisc_pos (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) {z : ℂ} (hz : z ∈ 𝔻) :
     0 < massRadiusDisc μ z := by
-  rw [massRadiusDisc_eq' hz]
-  exact IsLocDoublingM.massRadiusM_pos (isLocDoublingM_discPull hd) (discPull_hfin hfin)
-    (discPull_hne hm _)
+  rw [M03b.massRadiusDisc_eq' hz]
+  exact IsLocDoublingM.massRadiusM_pos (M03b.isLocDoublingM_discPull hd) (M03b.discPull_hfin hfin)
+    (M03b.discPull_hne hm _)
 
 theorem massRadiusDisc_le {R : ℝ} (hR : 0 < R) (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) {z : ℂ}
     (hz : z ∈ 𝔻) : massRadiusDisc μ z ≤ R := by
-  rw [massRadiusDisc_eq' hz]
+  rw [M03b.massRadiusDisc_eq' hz]
   exact massRadiusM_le hR (by rw [discPull_ball]; exact hm z hz)
 
 theorem measure_hypBall_massRadiusDisc (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) {z : ℂ} (hz : z ∈ 𝔻) :
     μ (hypBall z (massRadiusDisc μ z)) = 1 := by
-  rw [massRadiusDisc_eq' hz]
-  have := IsLocDoublingM.measure_ball_massRadiusM (isLocDoublingM_discPull hd)
-    (discPull_hfin hfin) (discPull_hne hm (HDisc.mk z hz))
+  rw [M03b.massRadiusDisc_eq' hz]
+  have := IsLocDoublingM.measure_ball_massRadiusM (M03b.isLocDoublingM_discPull hd)
+    (M03b.discPull_hfin hfin) (M03b.discPull_hne hm (HDisc.mk z hz))
   rwa [discPull_ball] at this
 
 theorem abs_massRadiusDisc_sub_le (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R))
     {z w : ℂ} (hz : z ∈ 𝔻) (hw : w ∈ 𝔻) :
     |massRadiusDisc μ z - massRadiusDisc μ w| ≤ hypDist z w := by
-  rw [massRadiusDisc_eq' hz, massRadiusDisc_eq' hw]
-  have := (lipschitzWith_massRadiusM (discPull_hne hm)).dist_le_mul (HDisc.mk z hz) (HDisc.mk w hw)
-  rwa [Real.dist_eq, NNReal.coe_one, one_mul, HDisc.dist_mk] at this
+  rw [M03b.massRadiusDisc_eq' hz, M03b.massRadiusDisc_eq' hw]
+  have :=
+      (lipschitzWith_massRadiusM (M03b.discPull_hne hm)).dist_le_mul (HDisc.mk z hz) (HDisc.mk w hw)
+  rwa [Real.dist_eq, NNReal.coe_one, one_mul, M03b.hdisc_dist_mk] at this
 
 theorem continuousOn_massRadiusDisc (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
     ContinuousOn (massRadiusDisc μ) 𝔻 := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (massRadiusM (discPull μ)) :=
-    (lipschitzWith_massRadiusM (discPull_hne hm)).continuous
+    (lipschitzWith_massRadiusM (M03b.discPull_hne hm)).continuous
   exact hc.congr fun a ↦ (massRadiusDisc_eq μ a).symm
 
 theorem measure_hypBall_massRadiusDisc_bounds (hd : IsLocallyDoublingDisc μ)
@@ -391,20 +405,21 @@ theorem measure_hypBall_massRadiusDisc_bounds (hd : IsLocallyDoublingDisc μ)
         ENNReal.ofReal (c * (r / massRadiusDisc μ z) ^ δ) ≤ μ (hypBall z r) ∧
         μ (hypBall z r) ≤ ENNReal.ofReal (C * (r / massRadiusDisc μ z) ^ s) := by
   obtain ⟨c, C, δ, s, hc, hC, hδ, hs, h⟩ := IsLocDoublingM.measure_ball_massRadiusM_bounds
-    (isLocDoublingM_discPull hd) (discPull_hfin hfin) (discPull_hm hm) R₁
+    (M03b.isLocDoublingM_discPull hd) (M03b.discPull_hfin hfin) (M03b.discPull_hm hm) R₁
   refine ⟨c, C, δ, s, hc, hC, hδ, hs, fun z hz r h1 h2 => ?_⟩
-  rw [massRadiusDisc_eq' hz] at h1 ⊢
-  simpa only [discPull_ball, HDisc.val_mk] using h (HDisc.mk z hz) r h1 h2
+  rw [M03b.massRadiusDisc_eq' hz] at h1 ⊢
+  simpa only [discPull_ball, M03b.hdisc_val_mk] using h (HDisc.mk z hz) r h1 h2
 
 theorem claim1_disc (hd : IsLocallyDoublingDisc μ) (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ z ∈ 𝔻, ∀ w ∈ 𝔻,
       hypDist z w ≤ K * max (massRadiusDisc μ z) (massRadiusDisc μ w) →
         massRadiusDisc μ z ≤ C * massRadiusDisc μ w := by
-  obtain ⟨C, hC, h⟩ := IsLocDoublingM.claim1 (isLocDoublingM_discPull hd) (discPull_hfin hfin)
-    (discPull_hm hm) K
+  obtain ⟨C, hC, h⟩ :=
+      IsLocDoublingM.claim1 (M03b.isLocDoublingM_discPull hd) (M03b.discPull_hfin hfin)
+    (M03b.discPull_hm hm) K
   refine ⟨C, hC, fun z hz w hw hdist => ?_⟩
-  rw [massRadiusDisc_eq' hz, massRadiusDisc_eq' hw] at hdist ⊢
+  rw [M03b.massRadiusDisc_eq' hz, M03b.massRadiusDisc_eq' hw] at hdist ⊢
   exact h (HDisc.mk z hz) (HDisc.mk w hw) hdist
 
 theorem lemma3_disc (hd : IsLocallyDoublingDisc μ) (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞)
@@ -412,63 +427,63 @@ theorem lemma3_disc (hd : IsLocallyDoublingDisc μ) (hfin : ∀ z ∈ 𝔻, ∀ 
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0, ∀ w ∈ 𝔻,
       ∫⁻ z in hypBall w R₁,
         ENNReal.ofReal
-          ((massRadiusDisc μ z / max (hypDist z w) (δ * massRadiusDisc μ w)) ^ m) ∂μ ≤ C :=
-  by
-  obtain ⟨m₀, hm₀⟩ := IsLocDoublingM.lemma3 (isLocDoublingM_discPull hd) (discPull_hfin hfin)
-    (discPull_hm hm)
+          ((massRadiusDisc μ z / max (hypDist z w) (δ * massRadiusDisc μ w)) ^ m) ∂μ ≤ C := by
+  obtain ⟨m₀, hm₀⟩ := IsLocDoublingM.lemma3 (M03b.isLocDoublingM_discPull hd)
+    (M03b.discPull_hfin hfin) (M03b.discPull_hm hm)
   refine ⟨m₀, fun m hm δ R₁ hδ => ?_⟩
   obtain ⟨C, hC⟩ := hm₀ m hm δ R₁ hδ
   refine ⟨C, fun w hw => ?_⟩
   have key := hC (HDisc.mk w hw)
-  rw [hypBall_eq_image_ball hw, ← lintegral_discPull]
+  rw [M03b.hypBall_eq_image_ball hw, ← M03b.lintegral_discPull]
   convert key using 3 with b
-  rw [massRadiusDisc_eq, massRadiusDisc_eq' hw, HDisc.dist_eq, HDisc.val_mk]
+  rw [massRadiusDisc_eq, M03b.massRadiusDisc_eq' hw, HDisc.dist_eq, M03b.hdisc_val_mk]
 
 theorem christ_lemma23_disc (hd : IsLocallyDoublingDisc μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ z ∈ 𝔻, ∀ R : ℝ, 0 < R → R ≤ R₁ →
       ∫⁻ ζ in hypBall z R, ENNReal.ofReal (Real.log (R / hypDist z ζ)) ∂μ ≤
         C * μ (hypBall z R) := by
-  obtain ⟨C, hC⟩ := IsLocDoublingM.christ_lemma23 (isLocDoublingM_discPull hd) R₁
+  obtain ⟨C, hC⟩ := IsLocDoublingM.christ_lemma23 (M03b.isLocDoublingM_discPull hd) R₁
   refine ⟨C, fun z hz R hR hR1 => ?_⟩
   have key := hC (HDisc.mk z hz) R hR hR1
-  rw [discPull_ball, HDisc.val_mk] at key
-  rw [hypBall_eq_image_ball hz, ← lintegral_discPull, ← hypBall_eq_image_ball hz]
+  rw [discPull_ball, M03b.hdisc_val_mk] at key
+  rw [M03b.hypBall_eq_image_ball hz, ← M03b.lintegral_discPull, ← M03b.hypBall_eq_image_ball hz]
   convert key using 3 with b
-  rw [HDisc.dist_eq, HDisc.val_mk]
+  rw [HDisc.dist_eq, M03b.hdisc_val_mk]
 
 theorem exists_radius_lt_measure_hypBall
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) (p : ℝ≥0) :
     ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, (p : ℝ≥0∞) < μ (hypBall z r) := by
-  obtain ⟨r, hr, h⟩ := exists_radius_lt_measure_ball (discPull_hm hm) p
-  exact ⟨r, hr, fun z hz => by simpa only [discPull_ball, HDisc.val_mk] using h (HDisc.mk z hz)⟩
+  obtain ⟨r, hr, h⟩ := exists_radius_lt_measure_ball (M03b.discPull_hm hm) p
+  exact ⟨r, hr, fun z hz => by simpa only [discPull_ball, M03b.hdisc_val_mk] using h (HDisc.mk z
+      hz)⟩
 
 end Disc
 
 /-! ### Line (intervals) -/
 
-theorem measurableEmbedding_ofReal : MeasurableEmbedding (fun x : ℝ ↦ (x : ℂ)) :=
+theorem M03b.measurableEmbedding_ofReal : MeasurableEmbedding (fun x : ℝ ↦ (x : ℂ)) :=
   Complex.isometry_ofReal.isClosedEmbedding.measurableEmbedding
 
-theorem lineInterval_eq_image_ball (x r : ℝ) :
+theorem M03b.lineInterval_eq_image_ball (x r : ℝ) :
     lineInterval x r = (fun t : ℝ ↦ (t : ℂ)) '' ball x r := by
   rw [Real.ball_eq_Ioo]; rfl
 
-theorem lintegral_linePull (μ : Measure ℂ) (g : ℂ → ℝ≥0∞) (s : Set ℝ) :
+theorem M03b.lintegral_linePull (μ : Measure ℂ) (g : ℂ → ℝ≥0∞) (s : Set ℝ) :
     ∫⁻ t in s, g (t : ℂ) ∂(linePull μ) = ∫⁻ z in (fun t : ℝ ↦ (t : ℂ)) '' s, g z ∂μ :=
-  lintegral_comap_image measurableEmbedding_ofReal μ g s
+  M03b.lintegral_comap_image M03b.measurableEmbedding_ofReal μ g s
 
-theorem linePull_hfin {μ : Measure ℂ} (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) :
+theorem M03b.linePull_hfin {μ : Measure ℂ} (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) :
     ∀ (x : ℝ) (r : ℝ), linePull μ (ball x r) < ∞ := fun x r ↦ by
   rw [linePull_ball]; exact hfin x r
 
-theorem linePull_hm {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) :
+theorem M03b.linePull_hm {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) :
     ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ linePull μ (ball x R) := by
   obtain ⟨R, hR, h⟩ := hm
   exact ⟨R, hR, fun x ↦ by rw [linePull_ball]; exact h x⟩
 
-theorem linePull_hne {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R))
+theorem M03b.linePull_hne {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R))
     (x : ℝ) : ∃ r, 0 < r ∧ 1 ≤ linePull μ (ball x r) := by
-  obtain ⟨R, hR, h⟩ := linePull_hm hm
+  obtain ⟨R, hR, h⟩ := M03b.linePull_hm hm
   exact ⟨R, hR, h x⟩
 
 section Line
@@ -482,16 +497,14 @@ theorem doubling_upTo_line (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
 
 theorem measure_lineInterval_le_rpow (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ (x x' r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → |x - x'| ≤ r →
-      μ (lineInterval x r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (lineInterval x' r') :=
-  by
+      μ (lineInterval x r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (lineInterval x' r') := by
   obtain ⟨C, s, hC, hs, h⟩ := IsLocDoublingM.measure_ball_le_rpow hd.isLocDoublingM R₁
   refine ⟨C, s, hC, hs, fun x x' r r' hr' hrr hr hdist ↦ ?_⟩
   simpa only [linePull_ball] using h x x' r r' hr' hrr hr (by rwa [Real.dist_eq])
 
 theorem rpow_le_measure_lineInterval (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
     ∃ c δ : ℝ, 0 < c ∧ 0 < δ ∧ ∀ (x x' r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → |x - x'| ≤ r →
-      ENNReal.ofReal (c * (r / r') ^ δ) * μ (lineInterval x' r') ≤ μ (lineInterval x r) :=
-  by
+      ENNReal.ofReal (c * (r / r') ^ δ) * μ (lineInterval x' r') ≤ μ (lineInterval x r) := by
   obtain ⟨c, δ, hc, hδ, h⟩ := IsLocDoublingM.rpow_le_measure_ball hd.isLocDoublingM R₁
   refine ⟨c, δ, hc, hδ, fun x x' r r' hr' hrr hr hdist ↦ ?_⟩
   simpa only [linePull_ball] using h x x' r r' hr' hrr hr (by rwa [Real.dist_eq])
@@ -499,7 +512,7 @@ theorem rpow_le_measure_lineInterval (hd : IsLocallyDoublingLine μ) (R₁ : ℝ
 theorem measure_singleton_line (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) (z : ℂ) : μ {z} = 0 := by
   by_cases hz : z.im = 0
-  · have h1 := IsLocDoublingM.measure_singleton hd.isLocDoublingM (linePull_hfin hfin) z.re
+  · have h1 := IsLocDoublingM.measure_singleton hd.isLocDoublingM (M03b.linePull_hfin hfin) z.re
     rw [linePull_apply, Set.image_singleton] at h1
     have e : ((z.re : ℝ) : ℂ) = z := Complex.ext (by simp) (by simp [hz])
     rwa [e] at h1
@@ -512,14 +525,15 @@ theorem continuous_measure_lineInterval (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) (x : ℝ) :
     Continuous fun r : ℝ ↦ μ (lineInterval x r) := by
   simpa only [linePull_ball] using
-    IsLocDoublingM.continuous_measure_ball hd.isLocDoublingM (linePull_hfin hfin) x
+    IsLocDoublingM.continuous_measure_ball hd.isLocDoublingM (M03b.linePull_hfin hfin) x
 
 theorem massRadiusLine_pos (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (x : ℝ) :
     0 < massRadiusLine μ x := by
   rw [massRadiusLine_eq]
-  exact IsLocDoublingM.massRadiusM_pos hd.isLocDoublingM (linePull_hfin hfin) (linePull_hne hm x)
+  exact IsLocDoublingM.massRadiusM_pos hd.isLocDoublingM (M03b.linePull_hfin hfin)
+      (M03b.linePull_hne hm x)
 
 theorem massRadiusLine_le {R : ℝ} (hR : 0 < R) (hm : ∀ x : ℝ, 1 ≤ μ (lineInterval x R))
     (x : ℝ) : massRadiusLine μ x ≤ R := by
@@ -531,14 +545,14 @@ theorem measure_lineInterval_massRadiusLine (hd : IsLocallyDoublingLine μ)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (x : ℝ) :
     μ (lineInterval x (massRadiusLine μ x)) = 1 := by
   rw [massRadiusLine_eq, ← linePull_ball]
-  exact IsLocDoublingM.measure_ball_massRadiusM hd.isLocDoublingM (linePull_hfin hfin)
-    (linePull_hne hm x)
+  exact IsLocDoublingM.measure_ball_massRadiusM hd.isLocDoublingM (M03b.linePull_hfin hfin)
+    (M03b.linePull_hne hm x)
 
 theorem lipschitzWith_massRadiusLine (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) :
     LipschitzWith 1 (massRadiusLine μ) := by
   have e : massRadiusLine μ = massRadiusM (linePull μ) := funext (massRadiusLine_eq μ)
   rw [e]
-  exact lipschitzWith_massRadiusM (linePull_hne hm)
+  exact lipschitzWith_massRadiusM (M03b.linePull_hne hm)
 
 theorem measure_lineInterval_massRadiusLine_bounds (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
@@ -548,7 +562,7 @@ theorem measure_lineInterval_massRadiusLine_bounds (hd : IsLocallyDoublingLine �
         ENNReal.ofReal (c * (r / massRadiusLine μ x) ^ δ) ≤ μ (lineInterval x r) ∧
         μ (lineInterval x r) ≤ ENNReal.ofReal (C * (r / massRadiusLine μ x) ^ s) := by
   obtain ⟨c, C, δ, s, hc, hC, hδ, hs, h⟩ := IsLocDoublingM.measure_ball_massRadiusM_bounds
-    hd.isLocDoublingM (linePull_hfin hfin) (linePull_hm hm) R₁
+    hd.isLocDoublingM (M03b.linePull_hfin hfin) (M03b.linePull_hm hm) R₁
   refine ⟨c, C, δ, s, hc, hC, hδ, hs, fun x r h1 h2 ↦ ?_⟩
   rw [massRadiusLine_eq] at h1 ⊢
   simpa only [linePull_ball] using h x r h1 h2
@@ -557,8 +571,8 @@ theorem claim1_line (hd : IsLocallyDoublingLine μ) (hfin : ∀ x r : ℝ, μ (l
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ x y : ℝ, |x - y| ≤ K * max (massRadiusLine μ x) (massRadiusLine μ y) →
       massRadiusLine μ x ≤ C * massRadiusLine μ y := by
-  obtain ⟨C, hC, h⟩ := IsLocDoublingM.claim1 hd.isLocDoublingM (linePull_hfin hfin)
-    (linePull_hm hm) K
+  obtain ⟨C, hC, h⟩ := IsLocDoublingM.claim1 hd.isLocDoublingM (M03b.linePull_hfin hfin)
+    (M03b.linePull_hm hm) K
   refine ⟨C, hC, fun x y hxy ↦ ?_⟩
   rw [massRadiusLine_eq, massRadiusLine_eq] at hxy ⊢
   exact h x y (by rwa [Real.dist_eq])
@@ -569,15 +583,14 @@ theorem lemma3_line (hd : IsLocallyDoublingLine μ) (hfin : ∀ x r : ℝ, μ (l
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0, ∀ x : ℝ,
       ∫⁻ z in lineInterval x R₁,
         ENNReal.ofReal
-          ((massRadiusLine μ z.re / max |z.re - x| (δ * massRadiusLine μ x)) ^ m) ∂μ ≤ C :=
-  by
-  obtain ⟨m₀, hm₀⟩ := IsLocDoublingM.lemma3 hd.isLocDoublingM (linePull_hfin hfin)
-    (linePull_hm hm)
+          ((massRadiusLine μ z.re / max |z.re - x| (δ * massRadiusLine μ x)) ^ m) ∂μ ≤ C := by
+  obtain ⟨m₀, hm₀⟩ := IsLocDoublingM.lemma3 hd.isLocDoublingM (M03b.linePull_hfin hfin)
+    (M03b.linePull_hm hm)
   refine ⟨m₀, fun m hm δ R₁ hδ ↦ ?_⟩
   obtain ⟨C, hC⟩ := hm₀ m hm δ R₁ hδ
   refine ⟨C, fun x ↦ ?_⟩
   have key := hC x
-  rw [lineInterval_eq_image_ball, ← lintegral_linePull]
+  rw [M03b.lineInterval_eq_image_ball, ← M03b.lintegral_linePull]
   convert key using 3 with t
   rw [Complex.ofReal_re, massRadiusLine_eq, massRadiusLine_eq, Real.dist_eq]
 
@@ -589,14 +602,14 @@ theorem christ_lemma23_line (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
   refine ⟨C, fun x R hR hR1 ↦ ?_⟩
   have key := hC x R hR hR1
   rw [linePull_ball] at key
-  rw [lineInterval_eq_image_ball, ← lintegral_linePull, ← lineInterval_eq_image_ball]
+  rw [M03b.lineInterval_eq_image_ball, ← M03b.lintegral_linePull, ← M03b.lineInterval_eq_image_ball]
   convert key using 3 with t
   rw [Complex.ofReal_re, Real.dist_eq, abs_sub_comm]
 
 theorem exists_radius_lt_measure_lineInterval
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (p : ℝ≥0) :
     ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, (p : ℝ≥0∞) < μ (lineInterval x r) := by
-  obtain ⟨r, hr, h⟩ := exists_radius_lt_measure_ball (linePull_hm hm) p
+  obtain ⟨r, hr, h⟩ := exists_radius_lt_measure_ball (M03b.linePull_hm hm) p
   exact ⟨r, hr, fun x ↦ by simpa only [linePull_ball] using h x⟩
 
 end Line
@@ -616,11 +629,11 @@ theorem decay_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
     ∃ C θ : ℝ, 0 < C ∧ 0 < θ ∧ θ < 1 ∧ ∀ (z ζ : ℂ) (n : ℕ), z ∈ 𝔻 → ζ ∈ 𝔻 →
       2 ^ n * massRadiusDisc μ z ≤ hypDist z ζ → hypDist z ζ ≤ M₀ →
         massRadiusDisc μ ζ / hypDist z ζ ≤ C * θ ^ n := by
-  obtain ⟨C, θ, hC, hθ, hθ1, h⟩ := IsLocDoublingM.decay (isLocDoublingM_discPull hd)
-    (discPull_hfin hfin) (discPull_hm hm) M₀
+  obtain ⟨C, θ, hC, hθ, hθ1, h⟩ := IsLocDoublingM.decay (M03b.isLocDoublingM_discPull hd)
+    (M03b.discPull_hfin hfin) (M03b.discPull_hm hm) M₀
   refine ⟨C, θ, hC, hθ, hθ1, fun z ζ n hz hζ h1 h2 => ?_⟩
-  rw [massRadiusDisc_eq' hz] at h1
-  rw [massRadiusDisc_eq' hζ]
+  rw [M03b.massRadiusDisc_eq' hz] at h1
+  rw [M03b.massRadiusDisc_eq' hζ]
   exact h (HDisc.mk z hz) (HDisc.mk ζ hζ) n h1 h2
 
 theorem decay_line {μ : Measure ℂ} (hd : IsLocallyDoublingLine μ)
@@ -630,7 +643,7 @@ theorem decay_line {μ : Measure ℂ} (hd : IsLocallyDoublingLine μ)
       2 ^ n * massRadiusLine μ x ≤ |x - y| → |x - y| ≤ M₀ →
         massRadiusLine μ y / |x - y| ≤ C * θ ^ n := by
   obtain ⟨C, θ, hC, hθ, hθ1, h⟩ := IsLocDoublingM.decay hd.isLocDoublingM
-    (linePull_hfin hfin) (linePull_hm hm) M₀
+    (M03b.linePull_hfin hfin) (M03b.linePull_hm hm) M₀
   refine ⟨C, θ, hC, hθ, hθ1, fun x y n h1 h2 ↦ ?_⟩
   rw [massRadiusLine_eq] at h1
   rw [massRadiusLine_eq]
@@ -738,10 +751,10 @@ theorem encard_le_of_disjoint_disc (a b D : ℝ) (ha : 0 < a) :
   have key := hM (fun i ↦ HDisc.val ⁻¹' E i) (fun i ↦ HDisc.mk (c i) (hc i)) (HDisc.mk z hz)
     (fun i j hij ↦ (hdisj hij).preimage _)
     (fun i x hx ↦ hin i (by
-      rw [← HDisc.val_mk (c i) (hc i), ← HDisc.image_ball]; exact ⟨x, hx, rfl⟩))
+      rw [← M03b.hdisc_val_mk (c i) (hc i), ← HDisc.image_ball]; exact ⟨x, hx, rfl⟩))
     (fun i x hx ↦ by
       have := (hout i hx).2
-      rw [mem_ball, HDisc.dist_eq, HDisc.val_mk, hypDist_comm]
+      rw [mem_ball, HDisc.dist_eq, M03b.hdisc_val_mk, hypDist_comm]
       exact this)
   refine le_of_eq_of_le (congrArg _ ?_) key
   ext i
@@ -749,18 +762,19 @@ theorem encard_le_of_disjoint_disc (a b D : ℝ) (ha : 0 < a) :
   constructor
   · rintro ⟨w, hwE, hwB⟩
     refine ⟨HDisc.mk w hwB.1, hwE, ?_⟩
-    rw [mem_ball, HDisc.dist_eq, HDisc.val_mk, HDisc.val_mk, hypDist_comm]
+    rw [mem_ball, HDisc.dist_eq, M03b.hdisc_val_mk, M03b.hdisc_val_mk, hypDist_comm]
     exact hwB.2
   · rintro ⟨x, hxE, hxB⟩
     refine ⟨x.val, hxE, x.2, ?_⟩
-    rw [mem_ball, HDisc.dist_eq, HDisc.val_mk, hypDist_comm] at hxB
+    rw [mem_ball, HDisc.dist_eq, M03b.hdisc_val_mk, hypDist_comm] at hxB
     exact hxB
 
 /-- Bounded count in `ℂ` (Euclidean balls, bounded size). -/
 theorem encard_le_of_disjoint_plane (a b D : ℝ) (ha : 0 < a) :
     ∃ M : ℕ, ∀ {ι : Type*} (E : ι → Set ℂ) (c : ι → ℂ) (z : ℂ),
       Pairwise (Function.onFun Disjoint E) → (∀ i, ball (c i) a ⊆ E i) →
-      (∀ i, E i ⊆ ball (c i) D) → {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := BallGeometry.encard_le_of_disjoint a b D ha
+      (∀ i, E i ⊆ ball (c i) D) → {i | (E i ∩ ball z b).Nonempty}.encard ≤ M :=
+  BallGeometry.encard_le_of_disjoint a b D ha
 
 theorem lineInterval_eq (x r : ℝ) :
     lineInterval x r = ball (x : ℂ) r ∩ range fun t : ℝ ↦ (t : ℂ) := by
@@ -768,11 +782,11 @@ theorem lineInterval_eq (x r : ℝ) :
   constructor
   · rintro ⟨t, ht, rfl⟩
     refine ⟨?_, t, rfl⟩
-    rw [mem_ball, dist_ofReal_ofReal]
+    rw [mem_ball, M03b.dist_ofReal_ofReal]
     rw [mem_Ioo] at ht
     exact abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
   · rintro ⟨hz, t, rfl⟩
-    rw [mem_ball, dist_ofReal_ofReal] at hz
+    rw [mem_ball, M03b.dist_ofReal_ofReal] at hz
     obtain ⟨h1, h2⟩ := abs_sub_lt_iff.1 hz
     exact ⟨t, ⟨by linarith, by linarith⟩, rfl⟩
 
@@ -780,14 +794,16 @@ theorem lineInterval_eq (x r : ℝ) :
 
 /-- No atoms, plane (M04's (A4)). -/
 theorem measure_singleton_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
-    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : μ {z} = 0 := IsLocDoublingM.measure_singleton (μ := μ) hd hfin z
+    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : μ {z} = 0 :=
+  IsLocDoublingM.measure_singleton (μ := μ) hd hfin z
 
 /-- No atoms, disc (M04's (A4')). -/
 theorem measure_singleton_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) {z : ℂ} (hz : z ∈ 𝔻) : μ {z} = 0 := by
-  have h1 := IsLocDoublingM.measure_singleton (isLocDoublingM_discPull hd) (discPull_hfin hfin)
+  have h1 :=
+      IsLocDoublingM.measure_singleton (M03b.isLocDoublingM_discPull hd) (M03b.discPull_hfin hfin)
     (HDisc.mk z hz)
-  rw [discPull_apply, Set.image_singleton, HDisc.val_mk] at h1
+  rw [discPull_apply, Set.image_singleton, M03b.hdisc_val_mk] at h1
   exact h1
 
 /-- **Growth of hyperbolic balls, explicit radius**: if every hyperbolic ball of radius `r` has
@@ -797,9 +813,9 @@ doubling needed; the radius depends only on `r`, `m₀` and the target mass `M`,
 theorem ofReal_lt_measure_hypBall {μ : Measure ℂ} {r m₀ : ℝ} (hr : 0 < r) (hm₀ : 0 < m₀)
     (h : ∀ z ∈ 𝔻, ENNReal.ofReal m₀ ≤ μ (hypBall z r)) (M : ℝ) {z : ℂ} (hz : z ∈ 𝔻) :
     ENNReal.ofReal M < μ (hypBall z ((2 * ⌈M / m₀⌉₊ + 1) * r)) := by
-  have hgrow := sum_le_measure_ball_of_le (μ := discPull μ) hr
+  have hgrow := M03b.sum_le_measure_ball_of_le (μ := discPull μ) hr
     (fun y ↦ by rw [discPull_ball]; exact h _ y.2) (HDisc.mk z hz) ⌈M / m₀⌉₊
-  rw [discPull_ball, HDisc.val_mk] at hgrow
+  rw [discPull_ball, M03b.hdisc_val_mk] at hgrow
   refine lt_of_lt_of_le ?_ hgrow
   have hk : M < (⌈M / m₀⌉₊ + 1 : ℝ) * m₀ := by
     have h1 := Nat.le_ceil (M / m₀)
@@ -823,7 +839,7 @@ variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X
 
 /-- Uniform smallness of `∫_{B(z,δ)} (A + log(1/d(z,ζ))) dμ` over a compact set, abstract form
 (Christ's lemma at scale `1` plus the lower Lemma 1 bound `μ(B(z,δ)) ≲ δ^a μ(B(z,1))`). -/
-theorem IsLocDoublingM.logSmall_aux [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM μ)
+theorem M03b.logSmall_aux [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM μ)
     (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞) {K : Set X} (hK : IsCompact K) {A η : ℝ}
     (hA : 0 ≤ A) (hη : 0 < η) :
     ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
@@ -924,11 +940,10 @@ M04 (`Regularization.lean`), so that M08 can use it without depending on M04. -/
 theorem logSmall_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
     (hfin : ∀ K : Set ℂ, IsCompact K → μ K < ∞) {K : Set ℂ} (hK : IsCompact K) {η : ℝ}
     (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
-      ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η :=
-  by
+      ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η := by
   have hfin' : ∀ (z : ℂ) (r : ℝ), μ (ball z r) < ∞ := fun z r ↦
     (measure_mono ball_subset_closedBall).trans_lt (hfin _ (isCompact_closedBall z r))
-  obtain ⟨δ, hδ0, hδ1, h⟩ := IsLocDoublingM.logSmall_aux (μ := μ) hd hfin' hK zero_le_one hη
+  obtain ⟨δ, hδ0, hδ1, h⟩ := M03b.logSmall_aux (μ := μ) hd hfin' hK zero_le_one hη
   exact ⟨δ, hδ0, hδ1, fun z hz ↦ by simpa only [dist_eq_norm] using h z hz⟩
 
 /-- Uniform smallness of the logarithmic integral near a compact subset of `𝔻` (disc).  Moved
@@ -936,15 +951,14 @@ here from M04. -/
 theorem logSmall_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ K ⊆ 𝔻, IsCompact K → μ K < ∞) {K : Set ℂ} (hK𝔻 : K ⊆ 𝔻) (hK : IsCompact K)
     {η : ℝ} (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
-      ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η :=
-  by
+      ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η := by
   obtain ⟨t, ht0, ht1, hKt⟩ : ∃ t : ℝ, 0 ≤ t ∧ t < 1 ∧ ∀ z ∈ K, ‖z‖ ≤ t := by
     rcases K.eq_empty_or_nonempty with hKe | hne
     · exact ⟨0, le_rfl, one_pos, fun z hz ↦ by simp [hKe] at hz⟩
     obtain ⟨z₀, hz₀, hmax⟩ := hK.exists_isMaxOn hne continuous_norm.continuousOn
     exact ⟨‖z₀‖, norm_nonneg _, norm_lt_one_of_mem_disc (hK𝔻 hz₀), fun z hz ↦ hmax hz⟩
   have hfinD : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞ := fun z hz r ↦
-    (measure_mono (hypBall_subset_closedBall_tanh hz r)).trans_lt
+    (measure_mono (M03b.hypBall_subset_closedBall_tanh hz r)).trans_lt
       (hfin _ (closedBall_subset_ball (Real.tanh_lt_one _)) (isCompact_closedBall _ _))
   have h1t : 0 < 1 - t := by linarith
   have hB1 : 1 ≤ 10 / (1 - t) := by rw [le_div_iff₀ h1t]; linarith
@@ -952,8 +966,8 @@ theorem logSmall_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
   have hK' : IsCompact (HDisc.val ⁻¹' K) :=
     (Topology.IsInducing.subtypeVal (t := 𝔻)).isCompact_preimage' hK
       (by rw [Subtype.range_coe]; exact hK𝔻)
-  obtain ⟨r, hr0, hr1, hint⟩ := IsLocDoublingM.logSmall_aux (isLocDoublingM_discPull hd)
-    (discPull_hfin hfinD) hK' (A := 1 + Real.log (10 / (1 - t))) (by linarith) hη
+  obtain ⟨r, hr0, hr1, hint⟩ := M03b.logSmall_aux (M03b.isLocDoublingM_discPull hd)
+    (M03b.discPull_hfin hfinD) hK' (A := 1 + Real.log (10 / (1 - t))) (by linarith) hη
   refine ⟨r * (1 - t) / 10, by positivity, ?_, fun z hz ↦ ?_⟩
   · rw [div_le_one (by norm_num)]
     nlinarith
@@ -1019,10 +1033,10 @@ theorem logSmall_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
     _ = ∫⁻ b in ball (HDisc.mk z hz𝔻) r,
           ENNReal.ofReal (1 + Real.log (10 / (1 - t)) + Real.log (1 / hypDist z b.val))
             ∂(discPull μ) := by
-        rw [hypBall_eq_image_ball hz𝔻, ← lintegral_discPull]
+        rw [M03b.hypBall_eq_image_ball hz𝔻, ← M03b.lintegral_discPull]
     _ ≤ ENNReal.ofReal η := by
         have := hint (HDisc.mk z hz𝔻) hz
         convert this using 4 with b
-        rw [HDisc.dist_eq, HDisc.val_mk]
+        rw [HDisc.dist_eq, M03b.hdisc_val_mk]
 
 end OC

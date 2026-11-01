@@ -7,14 +7,15 @@ Helper file for `Doubling/Quant.lean` (M03b).  The statements of `Doubling/Abstr
 their constants after the measure; the uniform (`_quant`) versions need constants chosen after the
 doubling constant `Cd` only.  Here the basic estimates of `blueprint/M03_Doubling.md` §3.2–3.6 are
 proved with *explicit* constants, as functions of a doubling constant `C` valid up to a radius `R`
-(`DoublingUpTo μ C R`), so that uniformity is automatic.
+(`M03b.DoublingUpTo μ C R`), so that uniformity is automatic.
 
-* `doublingUpTo_of_local`: local doubling with constant `Cd` gives `DoublingUpTo μ (max Cd 1) R`
+* `M03b.doublingUpTo_of_local`: local doubling with constant `Cd` gives `M03b.DoublingUpTo μ (max
+  Cd 1) R`
   for `R < 1/2`;
-* `exists_doublingUpTo` (scale-up, §3.2): `∀ Cd R, ∃ C, ∀ μ` locally doubling with `Cd`,
-  `DoublingUpTo μ C R`;
-* `DoublingUpTo.measure_ball_le_pow`, `.measure_ball_le_rpow` (§3.4);
-* `DoublingUpTo.reverse` (§3.5), `.pow_le_measure_ball` and `.rpow_le_measure_ball` (§3.6).
+* `M03b.exists_doublingUpTo` (scale-up, §3.2): `∀ Cd R, ∃ C, ∀ μ` locally doubling with `Cd`,
+  `M03b.DoublingUpTo μ C R`;
+* `M03b.DoublingUpTo.measure_ball_le_pow`, `.measure_ball_le_rpow` (§3.4);
+* `M03b.DoublingUpTo.reverse` (§3.5), `.pow_le_measure_ball` and `.rpow_le_measure_ball` (§3.6).
 -/
 
 open MeasureTheory Metric Set
@@ -25,7 +26,7 @@ noncomputable section
 namespace OC
 
 /-- `a ^ (log_b q) = q ^ (log_b a)`. -/
-theorem rpow_logb_swap {b a q : ℝ} (hb : 0 < b) (hb1 : b ≠ 1) (ha : 0 < a) (hq : 0 < q) :
+theorem M03b.rpow_logb_swap {b a q : ℝ} (hb : 0 < b) (hb1 : b ≠ 1) (ha : 0 < a) (hq : 0 < q) :
     a ^ Real.logb b q = q ^ Real.logb b a := by
   conv_lhs => rw [← Real.rpow_logb hb hb1 ha]
   conv_rhs => rw [← Real.rpow_logb hb hb1 hq]
@@ -36,25 +37,25 @@ section Uniform
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
 
 /-- Doubling with constant `C` at every radius `0 < r ≤ R`. -/
-def DoublingUpTo (μ : Measure X) (C : ℝ≥0) (R : ℝ) : Prop :=
+def M03b.DoublingUpTo (μ : Measure X) (C : ℝ≥0) (R : ℝ) : Prop :=
   ∀ x : X, ∀ r : ℝ, 0 < r → r ≤ R → μ (ball x (2 * r)) ≤ C * μ (ball x r)
 
 omit [OpensMeasurableSpace X] in
-theorem DoublingUpTo.mono {μ : Measure X} {C C' : ℝ≥0} {R R' : ℝ} (h : DoublingUpTo μ C R)
-    (hC : C ≤ C') (hR : R' ≤ R) : DoublingUpTo μ C' R' := fun x r hr hrR ↦
+theorem M03b.DoublingUpTo.mono {μ : Measure X} {C C' : ℝ≥0} {R R' : ℝ} (h : M03b.DoublingUpTo μ C R)
+    (hC : C ≤ C') (hR : R' ≤ R) : M03b.DoublingUpTo μ C' R' := fun x r hr hrR ↦
   (h x r hr (hrR.trans hR)).trans (by gcongr)
 
 omit [OpensMeasurableSpace X] in
 /-- Local doubling with constant `Cd` gives doubling with `max Cd 1` up to any radius `< 1/2`. -/
-theorem doublingUpTo_of_local {μ : Measure X} {Cd : ℝ≥0}
+theorem M03b.doublingUpTo_of_local {μ : Measure X} {Cd : ℝ≥0}
     (hμ : ∀ x : X, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (ball x (2 * r)) ≤ Cd * μ (ball x r))
-    {R : ℝ} (hR : R < 1 / 2) : DoublingUpTo μ (max Cd 1) R := fun x r hr hrR ↦
+    {R : ℝ} (hR : R < 1 / 2) : M03b.DoublingUpTo μ (max Cd 1) R := fun x r hr hrR ↦
   (hμ x r hr (by linarith)).trans (by gcongr; exact le_max_left _ _)
 
 omit [OpensMeasurableSpace X] in
 /-- Chain lemma (§3.2): if `d(x,y) ≤ nδ` then `μ(B(y,δ)) ≤ Cⁿ μ(B(x,δ))`. -/
-theorem DoublingUpTo.chain [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {δ : ℝ}
-    (h : DoublingUpTo μ C δ) (hC : 1 ≤ C) (hδ : 0 < δ) :
+theorem M03b.DoublingUpTo.chain [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {δ : ℝ}
+    (h : M03b.DoublingUpTo μ C δ) (hC : 1 ≤ C) (hδ : 0 < δ) :
     ∀ n : ℕ, ∀ x y : X, dist x y ≤ n * δ → μ (ball y δ) ≤ C ^ n * μ (ball x δ) := by
   have step : ∀ x y : X, dist x y ≤ δ → μ (ball y δ) ≤ C * μ (ball x δ) := by
     intro x y hxy
@@ -85,10 +86,10 @@ theorem DoublingUpTo.chain [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {δ :
 
 omit [OpensMeasurableSpace X] in
 /-- **Scale-up** (§3.2), uniform: the constant depends only on `Cd` and `R`. -/
-theorem exists_doublingUpTo [BallGeometry X] (Cd : ℝ≥0) (R : ℝ) :
+theorem M03b.exists_doublingUpTo [BallGeometry X] (Cd : ℝ≥0) (R : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ μ : Measure X,
       (∀ x : X, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (ball x (2 * r)) ≤ Cd * μ (ball x r)) →
-      DoublingUpTo μ C R := by
+      M03b.DoublingUpTo μ C R := by
   obtain ⟨K, hK⟩ := BallGeometry.covering (X := X) (2 * R) (1 / 4) (by norm_num)
   set C₀ : ℝ≥0 := max Cd 1 with hC₀
   have hC₀1 : 1 ≤ C₀ := le_max_right _ _
@@ -97,7 +98,7 @@ theorem exists_doublingUpTo [BallGeometry X] (Cd : ℝ≥0) (R : ℝ) :
   by_cases h2r : 2 * r < 1
   · exact (hμ x r hr h2r).trans (by gcongr; exact (le_max_left _ _).trans (le_max_left _ _))
   have hr2 : 1 / 2 ≤ r := by linarith [not_lt.1 h2r]
-  have hloc : DoublingUpTo μ C₀ (1 / 4) := doublingUpTo_of_local hμ (by norm_num)
+  have hloc : M03b.DoublingUpTo μ C₀ (1 / 4) := M03b.doublingUpTo_of_local hμ (by norm_num)
   obtain ⟨s, hs, hcov⟩ := hK x
   have hsub : ball x (2 * r) ⊆ ⋃ y ∈ s, (ball y (1 / 4) ∩ ball x (2 * r)) := by
     intro w hw
@@ -130,7 +131,7 @@ theorem exists_doublingUpTo [BallGeometry X] (Cd : ℝ≥0) (R : ℝ) :
 
 omit [OpensMeasurableSpace X] in
 /-- Iterated doubling: `μ(B(x, 2ʲρ)) ≤ Cʲ μ(B(x,ρ))` if `2ʲρ ≤ 2R`. -/
-theorem DoublingUpTo.pow {μ : Measure X} {C : ℝ≥0} {R : ℝ} (h : DoublingUpTo μ C R)
+theorem M03b.DoublingUpTo.pow {μ : Measure X} {C : ℝ≥0} {R : ℝ} (h : M03b.DoublingUpTo μ C R)
     (x : X) {ρ : ℝ} (hρ : 0 < ρ) :
     ∀ j : ℕ, 2 ^ j * ρ ≤ 2 * R → μ (ball x (2 ^ j * ρ)) ≤ C ^ j * μ (ball x ρ) := by
   intro j
@@ -148,8 +149,8 @@ theorem DoublingUpTo.pow {μ : Measure X} {C : ℝ≥0} {R : ℝ} (h : DoublingU
 
 omit [OpensMeasurableSpace X] in
 /-- Lemma 1, upper inequality, `ℕ` form (§3.4). -/
-theorem DoublingUpTo.measure_ball_le_pow {μ : Measure X} {C : ℝ≥0} {R : ℝ}
-    (h : DoublingUpTo μ C R) (x x' : X) {r r' : ℝ} (k : ℕ) (hr' : 0 < r') (hrR : r ≤ R)
+theorem M03b.DoublingUpTo.measure_ball_le_pow {μ : Measure X} {C : ℝ≥0} {R : ℝ}
+    (h : M03b.DoublingUpTo μ C R) (x x' : X) {r r' : ℝ} (k : ℕ) (hr' : 0 < r') (hrR : r ≤ R)
     (hxx' : dist x x' ≤ r) (hrk : r ≤ 2 ^ k * r') :
     μ (ball x r) ≤ C ^ (k + 1) * μ (ball x' r') := by
   rcases le_or_gt r 0 with hr | hr
@@ -167,8 +168,8 @@ theorem DoublingUpTo.measure_ball_le_pow {μ : Measure X} {C : ℝ≥0} {R : ℝ
 
 omit [OpensMeasurableSpace X] in
 /-- Lemma 1, upper inequality, power form (§3.4): constant `C²`, exponent `log₂ C`. -/
-theorem DoublingUpTo.measure_ball_le_rpow {μ : Measure X} {C : ℝ≥0} {R : ℝ}
-    (h : DoublingUpTo μ C R) (hC : 1 ≤ C) (x x' : X) {r r' : ℝ} (hr' : 0 < r') (hrr : r' ≤ r)
+theorem M03b.DoublingUpTo.measure_ball_le_rpow {μ : Measure X} {C : ℝ≥0} {R : ℝ}
+    (h : M03b.DoublingUpTo μ C R) (hC : 1 ≤ C) (x x' : X) {r r' : ℝ} (hr' : 0 < r') (hrr : r' ≤ r)
     (hrR : r ≤ R) (hxx' : dist x x' ≤ r) :
     μ (ball x r) ≤ ENNReal.ofReal ((C : ℝ) ^ 2 * (r / r') ^ Real.logb 2 C) *
       μ (ball x' r') := by
@@ -196,7 +197,7 @@ theorem DoublingUpTo.measure_ball_le_rpow {μ : Measure X} {C : ℝ≥0} {R : �
           rw [← Real.rpow_natCast]; push_cast; ring_nf
       _ ≤ (C : ℝ) ^ (Real.logb 2 q + 2) := Real.rpow_le_rpow_of_exponent_le hC1 hkl
       _ = (C : ℝ) ^ 2 * q ^ Real.logb 2 C := by
-          rw [Real.rpow_add (by linarith), rpow_logb_swap (by norm_num) (by norm_num)
+          rw [Real.rpow_add (by linarith), M03b.rpow_logb_swap (by norm_num) (by norm_num)
             (by linarith) hq0, Real.rpow_two, mul_comm]
   refine key.trans ?_
   calc (C : ℝ≥0∞) ^ (k + 1) * μ (ball x' r')
@@ -205,8 +206,8 @@ theorem DoublingUpTo.measure_ball_le_rpow {μ : Measure X} {C : ℝ≥0} {R : �
     _ ≤ _ := by gcongr
 
 /-- Reverse doubling (§3.5), explicit: `η = C⁻³`. -/
-theorem DoublingUpTo.reverse [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R : ℝ}
-    (h : DoublingUpTo μ C (2 * R)) (hC : 1 ≤ C) (x : X) {t : ℝ} (ht : 0 < t) (htR : t ≤ R) :
+theorem M03b.DoublingUpTo.reverse [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R : ℝ}
+    (h : M03b.DoublingUpTo μ C (2 * R)) (hC : 1 ≤ C) (x : X) {t : ℝ} (ht : 0 < t) (htR : t ≤ R) :
     (1 + ((C ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞) * μ (ball x t) ≤ μ (ball x (2 * t)) := by
   obtain ⟨y, hy⟩ := exists_dist_eq x (r := 3 * t / 2) (by positivity)
   have hdisj : Disjoint (ball x t) (ball y (t / 2)) := by
@@ -245,8 +246,8 @@ theorem DoublingUpTo.reverse [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R 
     _ ≤ μ (ball x (2 * t)) := measure_mono hsub
 
 /-- Iterated reverse doubling: `(1+η)ᵏ μ(B(x,ρ)) ≤ μ(B(x,2ᵏρ))` if `2ᵏρ ≤ 2R`. -/
-theorem DoublingUpTo.reverse_pow [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R : ℝ}
-    (h : DoublingUpTo μ C (2 * R)) (hC : 1 ≤ C) (x : X) {ρ : ℝ} (hρ : 0 < ρ) :
+theorem M03b.DoublingUpTo.reverse_pow [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R : ℝ}
+    (h : M03b.DoublingUpTo μ C (2 * R)) (hC : 1 ≤ C) (x : X) {ρ : ℝ} (hρ : 0 < ρ) :
     ∀ k : ℕ, 2 ^ k * ρ ≤ 2 * R →
       (1 + ((C ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞) ^ k * μ (ball x ρ) ≤ μ (ball x (2 ^ k * ρ)) := by
   intro k
@@ -266,8 +267,8 @@ theorem DoublingUpTo.reverse_pow [BallGeometry X] {μ : Measure X} {C : ℝ≥0}
 
 /-- Lemma 1, lower inequality, power form (§3.6), explicit: with `η = C⁻³`,
 `δ = log₂(1+η)` and `c = 1/(C(1+η))`. -/
-theorem DoublingUpTo.rpow_le_measure_ball [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R : ℝ}
-    (h : DoublingUpTo μ C (2 * R)) (hC : 1 ≤ C) (x x' : X) {r r' : ℝ} (hr' : 0 < r')
+theorem M03b.DoublingUpTo.rpow_le_measure_ball [BallGeometry X] {μ : Measure X} {C : ℝ≥0} {R : ℝ}
+    (h : M03b.DoublingUpTo μ C (2 * R)) (hC : 1 ≤ C) (x x' : X) {r r' : ℝ} (hr' : 0 < r')
     (hrr : r' ≤ r) (hrR : r ≤ R) (hxx' : dist x x' ≤ r) :
     ENNReal.ofReal (1 / ((C : ℝ) * (1 + ((C : ℝ) ^ 3)⁻¹)) *
         (r / r') ^ Real.logb 2 (1 + ((C : ℝ) ^ 3)⁻¹)) * μ (ball x' r') ≤ μ (ball x r) := by
@@ -305,7 +306,7 @@ theorem DoublingUpTo.rpow_le_measure_ball [BallGeometry X] {μ : Measure X} {C :
     have hpow : q ^ Real.logb 2 (1 + η) / (1 + η) ≤ (1 + (η : ℝ)) ^ k := by
       calc q ^ Real.logb 2 (1 + η) / (1 + η) = (1 + (η : ℝ)) ^ (Real.logb 2 q - 1) := by
             rw [Real.rpow_sub (by positivity), Real.rpow_one,
-              rpow_logb_swap (by norm_num) (by norm_num) (by positivity) hq0]
+              M03b.rpow_logb_swap (by norm_num) (by norm_num) (by positivity) hq0]
         _ ≤ (1 + (η : ℝ)) ^ (k : ℝ) :=
             Real.rpow_le_rpow_of_exponent_le (by linarith) hk1
         _ = (1 + (η : ℝ)) ^ k := Real.rpow_natCast _ _

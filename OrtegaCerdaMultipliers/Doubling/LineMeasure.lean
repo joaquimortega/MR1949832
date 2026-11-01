@@ -31,13 +31,13 @@ theorem IsLineMeasure.of_weight {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsS
     IsLineMeasure μ :=
   ⟨fun K hK ↦ hφ.finite_of_compact K (subset_univ K) hK, hd, hm⟩
 
-theorem IsLineMeasure.hfin {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x r : ℝ) :
+theorem IsLineMeasure.hfin_m03b {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x r : ℝ) :
     μ (lineInterval x r) < ∞ := by
   rw [lineInterval_eq]
   exact (measure_mono (inter_subset_left.trans ball_subset_closedBall)).trans_lt
     (hμ.finite_of_compact _ (isCompact_closedBall _ _))
 
-theorem IsLineMeasure.hm {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
+theorem IsLineMeasure.hm_m03b {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
     ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R) := by
   obtain ⟨r, hr, h⟩ := hμ.mass
   exact ⟨r, hr, fun x ↦ (h x).le⟩
@@ -52,11 +52,12 @@ theorem IsLineMeasure.doubling_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A
 theorem IsLineMeasure.lineInterval_pos {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x : ℝ) {r : ℝ}
     (hr : 0 < r) : 0 < μ (lineInterval x r) := by
   rw [← linePull_ball]
-  exact IsLocDoublingM.measure_ball_pos hμ.doubling.isLocDoublingM (linePull_hm hμ.hm) x hr
+  exact IsLocDoublingM.measure_ball_pos hμ.doubling.isLocDoublingM (M03b.linePull_hm hμ.hm_m03b) x
+      hr
 theorem IsLineMeasure.lineInterval_lt_top {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x r : ℝ) :
-    μ (lineInterval x r) < ∞ := hμ.hfin x r
+    μ (lineInterval x r) < ∞ := hμ.hfin_m03b x r
 theorem IsLineMeasure.measure_singleton {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x : ℝ) :
-    μ {(x : ℂ)} = 0 := measure_singleton_line hμ.doubling hμ.hfin x
+    μ {(x : ℂ)} = 0 := measure_singleton_line hμ.doubling hμ.hfin_m03b x
 
 /-! (L3) reverse doubling at every bounded scale. -/
 theorem IsLineMeasure.reverse_doubling {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A : ℝ}
@@ -80,19 +81,20 @@ theorem IsLineMeasure.reverse_doubling {μ : Measure ℂ} (hμ : IsLineMeasure �
 
 /-! (L4) the mass radius `ρ` on the line. -/
 theorem IsLineMeasure.massRadiusLine_pos {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x : ℝ) :
-    0 < massRadiusLine μ x := OC.massRadiusLine_pos hμ.doubling hμ.hfin hμ.hm x
+    0 < massRadiusLine μ x := OC.massRadiusLine_pos hμ.doubling hμ.hfin_m03b hμ.hm_m03b x
 theorem massRadiusLine_le_of_mass {μ : Measure ℂ} {r : ℝ} (hr : 0 < r)
     (hmr : ∀ x : ℝ, 1 < μ (lineInterval x r)) (x : ℝ) : massRadiusLine μ x ≤ r :=
   massRadiusLine_le hr (fun y ↦ (hmr y).le) x
 theorem IsLineMeasure.measure_massRadiusLine {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x : ℝ) :
-    μ (lineInterval x (massRadiusLine μ x)) = 1 := measure_lineInterval_massRadiusLine hμ.doubling hμ.hfin hμ.hm x
+    μ (lineInterval x (massRadiusLine μ x)) = 1 :=
+  measure_lineInterval_massRadiusLine hμ.doubling hμ.hfin_m03b hμ.hm_m03b x
 
 /-! (L5) Claim 1 on the line. -/
 theorem IsLineMeasure.massRadiusLine_comparable {μ : Measure ℂ} (hμ : IsLineMeasure μ) {K : ℝ}
     (hK : 0 < K) :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ x t : ℝ, |x - t| ≤ K * max (massRadiusLine μ x) (massRadiusLine μ t) →
       massRadiusLine μ t ≤ C * massRadiusLine μ x := by
-  obtain ⟨C, hC, h⟩ := claim1_line hμ.doubling hμ.hfin hμ.hm K
+  obtain ⟨C, hC, h⟩ := claim1_line hμ.doubling hμ.hfin_m03b hμ.hm_m03b K
   refine ⟨max C 1, le_max_right _ _, fun x t hxt ↦ ?_⟩
   have := h t x (by rwa [abs_sub_comm, max_comm])
   exact this.trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
@@ -103,7 +105,7 @@ theorem IsLineMeasure.massRadiusLine_le_rpow {μ : Measure ℂ} (hμ : IsLineMea
     ∃ γ C : ℝ, 0 < γ ∧ γ ≤ 1 ∧ 0 < C ∧ ∀ x t : ℝ, massRadiusLine μ x ≤ |x - t| → |x - t| ≤ 1 →
       massRadiusLine μ t ≤ C * massRadiusLine μ x ^ γ * |x - t| ^ (1 - γ) := by
   obtain ⟨C, α, hC, hα, hα1, h⟩ := IsLocDoublingM.massRadiusM_div_dist_le
-    hμ.doubling.isLocDoublingM (linePull_hfin hμ.hfin) (linePull_hm hμ.hm) 1
+    hμ.doubling.isLocDoublingM (M03b.linePull_hfin hμ.hfin_m03b) (M03b.linePull_hm hμ.hm_m03b) 1
   refine ⟨α, C, hα, hα1, hC, fun x t h1 h2 ↦ ?_⟩
   have hρx := hμ.massRadiusLine_pos x
   have hd : 0 < |x - t| := hρx.trans_le h1
@@ -123,7 +125,7 @@ theorem IsLineMeasure.length_comparable {μ : Measure ℂ} (hμ : IsLineMeasure 
       ENNReal.ofReal m₁ ≤ μ ((fun t : ℝ ↦ (t : ℂ)) '' Ioc a b) →
       μ ((fun t : ℝ ↦ (t : ℂ)) '' Ioc a b) ≤ ENNReal.ofReal m₂ →
       ∀ t ∈ Icc a b, massRadiusLine μ t ≤ b - a ∧ b - a ≤ C * massRadiusLine μ t := by
-  obtain ⟨r₂, hr₂, hgrow⟩ := exists_radius_lt_measure_lineInterval hμ.hm m₂.toNNReal
+  obtain ⟨r₂, hr₂, hgrow⟩ := exists_radius_lt_measure_lineInterval hμ.hm_m03b m₂.toNNReal
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_lineInterval hμ.doubling r₂
   refine ⟨max 4 (2 * (m₂ / c) ^ (1 / δ)), le_trans (by norm_num) (le_max_left _ _),
     fun a b hab h1 h2 t ht ↦ ?_⟩
@@ -177,13 +179,13 @@ theorem IsLineMeasure.length_comparable {μ : Measure ℂ} (hμ : IsLineMeasure 
     replace hcase := not_le.1 hcase
     have key := hlow ((a + b) / 2) t (L / 2) (massRadiusLine μ t) hρt (by linarith) hLr.le
       (by rw [abs_le]; constructor <;> linarith [ht.1, ht.2])
-    rw [measure_lineInterval_massRadiusLine hμ.doubling hμ.hfin hμ.hm t, mul_one] at key
+    rw [measure_lineInterval_massRadiusLine hμ.doubling hμ.hfin_m03b hμ.hm_m03b t, mul_one] at key
     have key2 := (key.trans hmidJ)
     rw [ENNReal.ofReal_le_ofReal_iff (by linarith)] at key2
     set q := L / 2 / massRadiusLine μ t with hq
     have hq0 : 0 ≤ q := by positivity
     have hqδ : q ^ δ ≤ m₂ / c := by rw [le_div_iff₀ hc]; linarith
-    have hq1 : q ≤ (m₂ / c) ^ (1 / δ) := le_rpow_one_div_of_rpow_le hq0 hδ hqδ
+    have hq1 : q ≤ (m₂ / c) ^ (1 / δ) := M03b.le_rpow_one_div_of_rpow_le hq0 hδ hqδ
     have : L = 2 * q * massRadiusLine μ t := by rw [hq]; field_simp
     rw [this]
     calc 2 * q * massRadiusLine μ t ≤ 2 * (m₂ / c) ^ (1 / δ) * massRadiusLine μ t := by gcongr
@@ -198,8 +200,8 @@ theorem IsLineMeasure.lintegral_log_le {μ : Measure ℂ} (hμ : IsLineMeasure �
   obtain ⟨C, hC⟩ := christ_lemma23_line hμ.doubling A
   refine ⟨C, fun x R hR hRA ↦ ?_⟩
   refine le_of_eq_of_le (setLIntegral_congr_fun ?_ fun ζ hζ ↦ ?_) (hC x R hR hRA)
-  · rw [lineInterval_eq_image_ball]
-    exact measurableEmbedding_ofReal.measurableSet_image.2 measurableSet_ball
+  · rw [M03b.lineInterval_eq_image_ball]
+    exact M03b.measurableEmbedding_ofReal.measurableSet_image.2 measurableSet_ball
   · obtain ⟨t, -, rfl⟩ := hζ
     simp only [Complex.ofReal_re]
     rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
