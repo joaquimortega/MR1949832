@@ -211,6 +211,57 @@ theorem isWeakDbarSolMeasure_sum_mul {ι : Type*} [Fintype ι] {ν : Measure ℂ
         rw [integral_iUnion_fintype hΩm hΩd fun i ↦ hχσ.integrableOn, Finset.sum_neg_distrib]
     _ = -∫ z, χ z * σ z ∂ν := by rw [hΩc, Measure.restrict_univ]
 
+/-! 14.3 helpers: the partition `ℂ = G ⊔ Gᶜ` and the pointwise bounds -/
+
+/-- The exceptional-set complement `{z | ∀ x ∈ ℝ, f x = 0 → ε ρ(x) ≤ |z - x|}` is closed. -/
+theorem isClosed_setOf_forall_zero_le (f : ℂ → ℂ) (μ : Measure ℂ) (ε : ℝ) :
+    IsClosed {z : ℂ | ∀ x : ℝ, f x = 0 → ε * massRadiusLine μ x ≤ ‖z - x‖} := by
+  simp only [ofPred_forall]
+  refine isClosed_iInter fun x ↦ isClosed_iInter fun _ ↦ ?_
+  exact isClosed_le continuous_const (continuous_id.sub continuous_const).norm
+
+theorem measurableSet_fin_two_partition {G : Set ℂ} (hG : MeasurableSet G) (i : Fin 2) :
+    MeasurableSet (![G, Gᶜ] i) := by
+  fin_cases i
+  exacts [hG, hG.compl]
+
+theorem pairwise_disjoint_fin_two_partition (G : Set ℂ) :
+    Pairwise (Function.onFun Disjoint ![G, Gᶜ]) := by
+  intro i j hij
+  fin_cases i <;> fin_cases j
+  · exact absurd rfl hij
+  · exact disjoint_compl_right
+  · exact disjoint_compl_left
+  · exact absurd rfl hij
+
+theorem iUnion_fin_two_partition (G : Set ℂ) : ⋃ i, ![G, Gᶜ] i = univ := by
+  rw [iUnion_eq_univ_iff]
+  intro z
+  by_cases hz : z ∈ G
+  · exact ⟨0, hz⟩
+  · exact ⟨1, hz⟩
+
+/-- `‖Σ f_i v_i‖ e^{-φ} ≤ Σ C (‖v_i‖ e^{-α|y|})` from `‖f_i‖ e^{-φ} ≤ C e^{-α|y|}`. -/
+theorem norm_sum_mul_mul_exp_le {ι : Type*} [Fintype ι] {f v : ι → ℂ → ℂ} {φ : ℂ → ℝ}
+    {C α : ℝ} (hfu : ∀ i z, ‖f i z‖ * Real.exp (-φ z) ≤ C * Real.exp (-α * |z.im|)) (z : ℂ) :
+    ‖∑ i, f i z * v i z‖ * Real.exp (-φ z) ≤
+      ∑ i, C * (‖v i z‖ * Real.exp (-α * |z.im|)) := by
+  calc ‖∑ i, f i z * v i z‖ * Real.exp (-φ z)
+      ≤ (∑ i, ‖f i z‖ * ‖v i z‖) * Real.exp (-φ z) := by
+        gcongr
+        exact (norm_sum_le _ _).trans (le_of_eq (by simp only [norm_mul]))
+    _ = ∑ i, (‖f i z‖ * Real.exp (-φ z)) * ‖v i z‖ := by
+        rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun i _ ↦ by ring
+    _ ≤ ∑ i, (C * Real.exp (-α * |z.im|)) * ‖v i z‖ :=
+        Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hfu i z) (norm_nonneg _)
+    _ = ∑ i, C * (‖v i z‖ * Real.exp (-α * |z.im|)) :=
+        Finset.sum_congr rfl fun i _ ↦ by ring
+
+/-- `1 + M J ≤ (1 + M)(1 + J)` in `ℝ≥0∞`. -/
+theorem one_add_mul_le_mul_one_add (M J : ℝ≥0∞) : 1 + M * J ≤ (1 + M) * (1 + J) := by
+  calc 1 + M * J ≤ 1 + M * J + (J + M) := le_self_add
+    _ = (1 + M) * (1 + J) := by ring
+
 /-! 14.3 Theorem 3, corrected (weight inside the integral) -/
 theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
@@ -225,7 +276,99 @@ theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure �
         ∀ x : ℝ, (x : ℂ) ∉ L →
           ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
             C * (1 + ∫⁻ z in ball (x : ℂ) 1,
-              ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) := sorry
+              ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) := by
+  -- the multipliers for `φ - α|Im z|` (M13), with `α = α₀ > 0`
+  obtain ⟨α, hα, hmult⟩ := lineMultipliers φ μ hφ hd hm
+  obtain ⟨f, ε, Cu, hε, hCu, hfd, -, -, hup, hcover, hlowall⟩ := hmult α hα.le le_rfl
+  obtain ⟨c, hc, hlow⟩ := hlowall ε hε
+  have hφc : Continuous φ := continuousOn_univ.1 hφ.continuousOn
+  -- the partition `ℂ = G ⊔ Gᶜ`, with `f i` bounded below on the `i`-th piece
+  set G : Set ℂ := {z | ∀ x : ℝ, f 0 x = 0 → ε * massRadiusLine μ x ≤ ‖z - x‖} with hG
+  set Ω : Fin 2 → Set ℂ := ![G, Gᶜ] with hΩ
+  have hGm : MeasurableSet G := (isClosed_setOf_forall_zero_le (f 0) μ ε).measurableSet
+  have hΩm : ∀ i, MeasurableSet (Ω i) := measurableSet_fin_two_partition hGm
+  have hΩlow : ∀ i, ∀ z ∈ Ω i, c * Real.exp (φ z - α * |z.im|) ≤ ‖f i z‖ := by
+    intro i z hz
+    fin_cases i
+    · exact hlow 0 z hz
+    · obtain ⟨j, hj⟩ := hcover z
+      fin_cases j
+      · exact absurd hj hz
+      · exact hlow 1 z hj
+  have hf0 : ∀ i, ∀ z ∈ Ω i, f i z ≠ 0 := fun i z hz h ↦ by
+    have h1 := hΩlow i z hz
+    rw [h, norm_zero] at h1
+    exact absurd h1 (not_le.2 (by positivity))
+  have hfu : ∀ i z, ‖f i z‖ * Real.exp (-φ z) ≤ Cu * Real.exp (-α * |z.im|) := by
+    intro i z
+    calc ‖f i z‖ * Real.exp (-φ z) ≤ Cu * Real.exp (φ z - α * |z.im|) * Real.exp (-φ z) :=
+          mul_le_mul_of_nonneg_right (hup i z) (Real.exp_pos _).le
+      _ = Cu * Real.exp (-α * |z.im|) := by
+          rw [mul_assoc, ← Real.exp_add]; ring_nf
+  -- the Ortega-Cerdà–Seip constant for the weight `α|Im z|` and Carleson constant `c⁻¹ K`
+  obtain ⟨CO, hCO⟩ := hOCS α hα ((c⁻¹).toNNReal * K)
+  set m : ℝ := c⁻¹ * Real.exp α with hm_def
+  refine ⟨2 * Cu.toNNReal * CO * (1 + m.toNNReal), fun ν σ L hν hL hνL hσ hσ1 hcar ↦ ?_⟩
+  have := hν
+  have hfin : ∀ i, IsFiniteMeasure (divMeasure ν (Ω i) (f i)) := fun i ↦
+    isFiniteMeasure_divMeasure hL hνL (g := fun z ↦ c * Real.exp (φ z - α * |z.im|))
+      (by fun_prop) (hΩlow i) (fun z ↦ by positivity)
+  have hex : ∀ i, ∃ v : ℂ → ℂ,
+      IsWeakDbarSolMeasure v (divMeasure ν (Ω i) (f i)) (divPhase σ (f i)) ∧
+      DifferentiableOn ℂ v Lᶜ ∧
+      Filter.Tendsto (fun z ↦ ‖v z‖ * Real.exp (-α * |z.im|)) (Filter.cocompact ℂ) (nhds 0) ∧
+      ∀ x : ℝ, (x : ℂ) ∉ L →
+        ENNReal.ofReal ‖v x‖ ≤ CO * (1 + ∫⁻ z in ball (x : ℂ) 1,
+          ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂divMeasure ν (Ω i) (f i)) := by
+    intro i
+    refine hCO _ _ L (hfin i) hL ?_ (measurable_divPhase hσ (hfd i).continuous)
+      (norm_divPhase σ (f i) hσ1) ?_
+    · refine withDensity_absolutelyContinuous _ _ ?_
+      rw [Measure.restrict_apply hL.isClosed.measurableSet.compl]
+      exact measure_mono_null inter_subset_left hνL
+    · intro x r hr
+      calc _ ≤ ENNReal.ofReal c⁻¹ *
+              (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) (ball (x : ℂ) r) :=
+            divMeasure_withDensity_le (hΩm i) (hfd i).continuous hφc hc (hΩlow i) _
+              measurableSet_ball
+        _ ≤ ENNReal.ofReal c⁻¹ * (K * ENNReal.ofReal r) := by gcongr; exact hcar x r hr
+        _ = ((c⁻¹.toNNReal * K : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal r := by
+            rw [ENNReal.coe_mul, mul_assoc]; rfl
+  choose v hv1 hv2 hv3 hv4 using hex
+  refine ⟨fun z ↦ ∑ i, f i z * v i z,
+    isWeakDbarSolMeasure_sum_mul hσ hσ1 Ω hΩm (pairwise_disjoint_fin_two_partition G)
+      (iUnion_fin_two_partition G) f hfd hf0 hfin v hv1, ?_, ?_, ?_⟩
+  · exact DifferentiableOn.fun_sum fun i _ ↦ (hfd i).differentiableOn.mul (hv2 i)
+  · -- decay: `‖u‖ e^{-φ} ≤ Σ C_up ‖v_i‖ e^{-α|y|} → 0`
+    have hlim : Filter.Tendsto (fun z ↦ ∑ i, Cu * (‖v i z‖ * Real.exp (-α * |z.im|)))
+        (Filter.cocompact ℂ) (nhds 0) := by
+      simpa using tendsto_finsetSum (Finset.univ : Finset (Fin 2))
+        fun i _ ↦ (hv3 i).const_mul Cu
+    exact squeeze_zero (fun z ↦ by positivity) (norm_sum_mul_mul_exp_le hfu) hlim
+  · -- the pointwise bound at real `x ∉ L`
+    intro x hx
+    set J := ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν
+    have hJ : ∀ i, ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖)
+        ∂divMeasure ν (Ω i) (f i) ≤ ENNReal.ofReal m * J := fun i ↦
+      lintegral_ball_divMeasure_le (hΩm i) (hfd i).continuous hφc hc hα.le (hΩlow i) x
+    have h1 : ENNReal.ofReal (‖∑ i, f i x * v i x‖ * Real.exp (-φ x)) ≤
+        ∑ i, ENNReal.ofReal Cu * ENNReal.ofReal ‖v i x‖ := by
+      have h2 := norm_sum_mul_mul_exp_le (v := v) hfu (x : ℂ)
+      simp only [Complex.ofReal_im, abs_zero, mul_zero, Real.exp_zero, mul_one] at h2
+      refine (ENNReal.ofReal_le_ofReal h2).trans (le_of_eq ?_)
+      rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity]
+      exact Finset.sum_congr rfl fun i _ ↦ ENNReal.ofReal_mul hCu.le
+    calc ENNReal.ofReal (‖∑ i, f i x * v i x‖ * Real.exp (-φ x))
+        ≤ ∑ i, ENNReal.ofReal Cu * ENNReal.ofReal ‖v i x‖ := h1
+      _ ≤ ∑ _i : Fin 2, ENNReal.ofReal Cu * (CO * (1 + ENNReal.ofReal m * J)) := by
+          gcongr with i
+          exact (hv4 i x hx).trans (by gcongr; exact hJ i)
+      _ = 2 * ENNReal.ofReal Cu * CO * (1 + ENNReal.ofReal m * J) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; push_cast; ring
+      _ ≤ 2 * ENNReal.ofReal Cu * CO * ((1 + ENNReal.ofReal m) * (1 + J)) := by
+          gcongr; exact one_add_mul_le_mul_one_add _ _
+      _ = ((2 * Cu.toNNReal * CO * (1 + m.toNNReal) : ℝ≥0) : ℝ≥0∞) * (1 + J) := by
+          push_cast; rw [ENNReal.ofReal, ENNReal.ofReal]; ring
 
 /-! 14.4 the printed form, under a lower bound for `φ` on the strip `|Im z| < 1` -/
 theorem theorem3_of_lowerBound (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
