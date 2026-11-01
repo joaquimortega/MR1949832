@@ -28,10 +28,10 @@ Notation:
 
 ## 0. Provenance
 
-All copied files come from the companion project `../1995ReineAngewMath`:
+All copied files come from the companion project `../MR1340337`:
 - library `BerndtssonOrtegaCerda`, namespace `BOC`;
 - same author, Apache-2.0 license;
-- **commit `22104d9`** (`git -C ../1995ReineAngewMath rev-parse --short HEAD`). The working tree was clean, and the files were taken with `git show 22104d9:<path>`.
+- **commit `22104d9`** (`git -C ../MR1340337 rev-parse --short HEAD`). The working tree was clean, and the files were taken with `git show 22104d9:<path>`.
 
 The copy is needed because RMI must not depend on BOC: BOC will later `require` RMI (BOC module M23). Each copied file has a **Provenance** paragraph in its module docstring.
 

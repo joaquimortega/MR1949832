@@ -15,7 +15,7 @@
 - **Statements frozen.** `scripts/check_statements.py` confirms that no statement of the reviewed scaffold changed, except two false helper statements removed with approval (NOTEBOOK I-01, I-03).
 
 
-This follows the same workflow as the companion BOC project (`../1995ReineAngewMath`):
+This follows the same workflow as the companion BOC project (`../MR1340337`):
 1. Blueprint: one Markdown file per module, with a detailed proof, the Lean statements and explicit dependencies.
 2. Scaffold: all statements compiled, proofs `sorry`.
 3. Independent agent review of the blueprint and of every statement.

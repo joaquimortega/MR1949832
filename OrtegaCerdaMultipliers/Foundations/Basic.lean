@@ -6,7 +6,7 @@ import OrtegaCerdaMultipliers.Defs
 See `blueprint/M01_Foundations.md`.
 
 The files in `OrtegaCerdaMultipliers/Foundations/` are copied from the companion project
-`BerndtssonOrtegaCerda` (directory `../1995ReineAngewMath`, commit `22104d9`), so that this project
+`BerndtssonOrtegaCerda` (directory `../MR1340337`, commit `22104d9`), so that this project
 does not depend on it.  The copied files use some definitions of the BOC file `Defs.lean` that are
 not in `OrtegaCerdaMultipliers/Defs.lean`.  They are collected here, with the *same* definitions as
 in BOC (`BerndtssonOrtegaCerda/Defs.lean`, commit `22104d9`).

@@ -11,7 +11,7 @@ See `blueprint/M01_Foundations.md`.
 
 **Provenance.** Copied from `BerndtssonOrtegaCerda/Complex/Weyl.lean`
 (BOC module M06, blueprint `M06_Weyl.md`) of the companion project
-`../1995ReineAngewMath` at commit `22104d9` (same author, Apache-2.0).  Changes: namespace
+`../MR1340337` at commit `22104d9` (same author, Apache-2.0).  Changes: namespace
 `BOC` → `OC`, imports adjusted; the BOC definitions not in `OrtegaCerdaMultipliers/Defs.lean`
 are in `Foundations/Basic.lean`.
 -/

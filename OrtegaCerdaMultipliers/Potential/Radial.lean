@@ -9,7 +9,7 @@ See `blueprint/M02_Potentials.md`.
 
 **Provenance.** Copied from `BerndtssonOrtegaCerda/Potential/Radial.lean`
 (BOC module M10, blueprint `M10_RadialPotential.md`) of the companion project
-`../1995ReineAngewMath` at commit `22104d9` (same author, Apache-2.0).  Changes: namespace
+`../MR1340337` at commit `22104d9` (same author, Apache-2.0).  Changes: namespace
 `BOC` → `OC`, imports adjusted.
 -/
 
