@@ -1,0 +1,22 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "OC.theorem4_disc",
+    "OC.theorem4_plane",
+    "OC.prop2_disc",
+    "OC.prop2_plane",
+    "OC.theorem2",
+    "OC.theorem2_printed",
+    "OC.theorem1",
+    "OC.theorem1_christ",
+    "OC.prop1",
+    "OC.theorem5",
+    "OC.theorem3"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ]
+}

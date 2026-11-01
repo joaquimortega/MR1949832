@@ -1,1 +1,10 @@
 import OrtegaCerdaMultipliers.Defs
+import OrtegaCerdaMultipliers.Foundations.Basic
+import OrtegaCerdaMultipliers.Foundations.Wirtinger
+import OrtegaCerdaMultipliers.Foundations.Polar
+import OrtegaCerdaMultipliers.Foundations.LocalEstimates
+import OrtegaCerdaMultipliers.Foundations.Pompeiu
+import OrtegaCerdaMultipliers.Foundations.Weyl
+import OrtegaCerdaMultipliers.Foundations.Separated
+import OrtegaCerdaMultipliers.Foundations.DiscGeometry
+import OrtegaCerdaMultipliers.Foundations.Hyperbolic

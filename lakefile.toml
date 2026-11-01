@@ -14,3 +14,10 @@ rev = "v4.35.0"
 
 [[lean_lib]]
 name = "OrtegaCerdaMultipliers"
+
+# Self-contained statements file and its solution, checked by `comparator` (see comparator/).
+[[lean_lib]]
+name = "Challenge"
+
+[[lean_lib]]
+name = "Solution"
