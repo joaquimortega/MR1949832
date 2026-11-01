@@ -562,7 +562,7 @@ theorem measurable_discModel (c : ℝ) : Measurable (Function.uncurry (discModel
   unfold discModel Function.uncurry
   fun_prop
 
-theorem norm_one_sub_conj_mul_comm (a b : ℂ) : ‖1 - conj a * b‖ = ‖1 - conj b * a‖ := by
+theorem mk_norm_one_sub_conj_mul_comm (a b : ℂ) : ‖1 - conj a * b‖ = ‖1 - conj b * a‖ := by
   rw [← Complex.norm_conj (1 - conj b * a)]
   congr 1
   simp [map_sub, mul_comm]
@@ -588,7 +588,7 @@ theorem lintegral_discModel_left {c : ℝ} (hc0 : 0 < c) (hc1 : c < 1) {z : ℂ}
         refine setLIntegral_congr_fun measurableSet_ball fun ζ hζ => ?_
         have hζ0 : 0 < 1 - ‖ζ‖ ^ 2 := one_sub_normSq_pos hζ
         rw [discModel, ← ENNReal.ofReal_mul (by positivity),
-          ← ENNReal.ofReal_mul (by positivity), norm_one_sub_conj_mul_comm ζ z]
+          ← ENNReal.ofReal_mul (by positivity), mk_norm_one_sub_conj_mul_comm ζ z]
         congr 1
         rw [show 1 - c = 1 + -c by ring, Real.rpow_add hζ0, Real.rpow_one]
         field_simp
@@ -1363,7 +1363,7 @@ theorem lemma7_isWeakDbarSol {f : ℂ → ℂ} (hf : AEStronglyMeasurable f (vol
       _ < ∞ := ENNReal.mul_lt_top hfi (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
             (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, hK.measure_lt_top⟩))
 
-theorem exp_mul_log_eq_rpow {P : ℝ} (hP : 0 < P) (α : ℝ) :
+theorem mk_exp_mul_log_eq_rpow {P : ℝ} (hP : 0 < P) (α : ℝ) :
     Real.exp (α * Real.log P) = P ^ α := by
   rw [Real.rpow_def_of_pos hP, mul_comm]
 
@@ -1382,7 +1382,7 @@ theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
   have hexp : ∀ z ∈ 𝔻, Real.exp (-φ z) = (1 - ‖z‖ ^ 2) ^ α := by
     intro z hz
     simp only [hφ, neg_mul, neg_neg]
-    exact exp_mul_log_eq_rpow (one_sub_normSq_pos hz) α
+    exact mk_exp_mul_log_eq_rpow (one_sub_normSq_pos hz) α
   have hW : ∀ z ∈ 𝔻, (1 - ‖z‖ ^ 2) * Real.exp (-φ z) = (1 - ‖z‖ ^ 2) ^ (1 + α) := by
     intro z hz
     rw [hexp z hz, Real.rpow_add (one_sub_normSq_pos hz), Real.rpow_one]
@@ -1398,7 +1398,7 @@ theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
     have hζ0 := one_sub_normSq_pos hζ
     rw [norm_lemma7H hζ, Real.exp_sub]
     simp only [hφ]
-    rw [exp_mul_log_eq_rpow hz0, exp_mul_log_eq_rpow hζ0, Real.div_rpow hz0.le hζ0.le,
+    rw [mk_exp_mul_log_eq_rpow hz0, mk_exp_mul_log_eq_rpow hζ0, Real.div_rpow hz0.le hζ0.le,
       Real.rpow_neg hz0.le, Real.rpow_neg hζ0.le]
     have := Real.rpow_pos_of_pos hz0 α
     have := Real.rpow_pos_of_pos hζ0 α
@@ -1548,7 +1548,7 @@ theorem lemma7_sup {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
           apply ENNReal.ofReal_le_ofReal
           rw [norm_mul, discKernel, norm_div, norm_div, norm_mul, Complex.norm_real,
             Complex.norm_real, Real.norm_of_nonneg (one_sub_normSq_pos hζ).le,
-            Real.norm_of_nonneg hpi.le, norm_one_sub_conj_mul_comm ζ z]
+            Real.norm_of_nonneg hpi.le, mk_norm_one_sub_conj_mul_comm ζ z]
           rcases eq_or_ne z ζ with rfl | hne
           · simp
           have hZ : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
