@@ -1068,8 +1068,8 @@ theorem withDensity_ball_two_mul_le {g : ℂ → ℝ≥0∞} {ε K : ℝ} (hε :
     volume.withDensity g (ball z (2 * r)) ≤
       ENNReal.ofReal (4 * K / ε) * volume.withDensity g (ball z r) := by
   rw [withDensity_apply _ measurableSet_ball, withDensity_apply _ measurableSet_ball]
-  have hK : 0 ≤ K := ENNReal.ofReal_le_ofReal_iff'.1 ((hg z).1.trans (hg z).2) |>.resolve_right
-    (by linarith) |> fun h ↦ hε.le.trans h
+  have hK : 0 ≤ K :=
+    (ENNReal.ofReal_pos.1 ((ENNReal.ofReal_pos.2 hε).trans_le ((hg z).1.trans (hg z).2))).le
   calc ∫⁻ x in ball z (2 * r), g x ≤ ∫⁻ x in ball z (2 * r), ENNReal.ofReal K :=
         setLIntegral_mono measurable_const fun x _ ↦ (hg x).2
     _ = ENNReal.ofReal K * (4 * volume (ball z r)) := by
