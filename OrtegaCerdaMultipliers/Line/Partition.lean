@@ -43,7 +43,7 @@ def lineNode (μ : Measure ℂ) (α s : ℝ) (k : ℤ) (b : Bool) : ℝ :=
 
 /-! 13.2 the signed distribution function -/
 
-theorem IsLineMeasure.toReal_Ioc_add {μ : Measure ℂ} (hμ : IsLineMeasure μ) {a b c : ℝ}
+theorem IsLineMeasure.m13_toReal_Ioc_add {μ : Measure ℂ} (hμ : IsLineMeasure μ) {a b c : ℝ}
     (hab : a ≤ b) (hbc : b ≤ c) :
     (linePull μ (Ioc a c)).toReal =
       (linePull μ (Ioc a b)).toReal + (linePull μ (Ioc b c)).toReal := by
@@ -55,20 +55,20 @@ theorem lineCDF_sub {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ) {a b 
     lineCDF μ α b - lineCDF μ α a = (linePull μ (Ioc a b)).toReal - 2 * α * (b - a) := by
   unfold lineCDF
   rcases le_or_gt 0 a with ha | ha
-  · rw [ite_eq_left ha, ite_eq_left (ha.trans hab), hμ.toReal_Ioc_add ha hab]; ring
+  · rw [ite_eq_left ha, ite_eq_left (ha.trans hab), hμ.m13_toReal_Ioc_add ha hab]; ring
   rcases le_or_gt 0 b with hb | hb
-  · rw [ite_eq_right (not_le.2 ha), ite_eq_left hb, hμ.toReal_Ioc_add ha.le hb]; ring
-  · rw [ite_eq_right (not_le.2 ha), ite_eq_right (not_le.2 hb), hμ.toReal_Ioc_add hab hb.le]; ring
+  · rw [ite_eq_right (not_le.2 ha), ite_eq_left hb, hμ.m13_toReal_Ioc_add ha.le hb]; ring
+  · rw [ite_eq_right (not_le.2 ha), ite_eq_right (not_le.2 hb), hμ.m13_toReal_Ioc_add hab hb.le]; ring
 
 theorem lineCDF_eq (μ : Measure ℂ) (α t : ℝ) : lineCDF μ α t = lineCDF μ 0 t - 2 * α * t := by
   simp [lineCDF]
 
-theorem IsLineMeasure.measure_Icc_tendsto {μ : Measure ℂ} (hμ : IsLineMeasure μ) (t₀ : ℝ) :
+theorem IsLineMeasure.m13_measure_Icc_tendsto {μ : Measure ℂ} (hμ : IsLineMeasure μ) (t₀ : ℝ) :
     Tendsto (fun δ : ℝ ↦ linePull μ (Icc (t₀ - δ) (t₀ + δ))) (𝓝[>] 0) (𝓝 0) := by
   have h := tendsto_measure_biInter_gt (μ := linePull μ) (s := fun δ : ℝ ↦ Icc (t₀ - δ) (t₀ + δ))
     (a := 0) (fun _ _ ↦ measurableSet_Icc.nullMeasurableSet)
     (fun i j _ hij ↦ Icc_subset_Icc (by linarith) (by linarith))
-    ⟨1, one_pos, (hμ.linePull_compact_lt_top isCompact_Icc).ne⟩
+    ⟨1, one_pos, (hμ.m13_linePull_compact_lt_top isCompact_Icc).ne⟩
   have hI : (⋂ r > (0 : ℝ), Icc (t₀ - r) (t₀ + r)) = {t₀} := by
     ext t
     simp only [mem_iInter, mem_Icc, mem_singleton_iff]
@@ -89,14 +89,14 @@ theorem continuous_lineCDF {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ
   have key : Continuous (lineCDF μ 0) := by
     rw [Metric.continuous_iff]
     intro t₀ ε hε
-    have h := (hμ.measure_Icc_tendsto t₀)
+    have h := (hμ.m13_measure_Icc_tendsto t₀)
     have hev : ∀ᶠ δ in 𝓝[>] (0 : ℝ), linePull μ (Icc (t₀ - δ) (t₀ + δ)) < ENNReal.ofReal ε :=
       (tendsto_order.1 h).2 _ (by simpa using hε)
     obtain ⟨u, hu, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hev
     refine ⟨u / 2, by simp at hu; linarith, fun t ht ↦ ?_⟩
     have hδ : linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2)) < ENNReal.ofReal ε :=
       hsub ⟨by simp at hu; linarith, by simp at hu; linarith⟩
-    have hfin := (hμ.linePull_compact_lt_top (isCompact_Icc (a := t₀ - u / 2) (b := t₀ + u / 2)))
+    have hfin := (hμ.m13_linePull_compact_lt_top (isCompact_Icc (a := t₀ - u / 2) (b := t₀ + u / 2)))
     have hlt : (linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2))).toReal < ε := by
       rw [← ENNReal.toReal_ofReal hε.le]
       exact (ENNReal.toReal_lt_toReal hfin.ne ENNReal.ofReal_ne_top).2 hδ
@@ -121,7 +121,7 @@ theorem lineCDF_add_ge {μ : Measure ℂ} (hμ : IsLineMeasure μ) {r α : ℝ} 
   have h := lineCDF_sub hμ α (show t ≤ t + 2 * r by linarith)
   have h1 : 1 < (linePull μ (Ioc t (t + 2 * r))).toReal := by
     have hm := hmr (t + r)
-    rw [← linePull_Ioo] at hm
+    rw [← m13_linePull_Ioo] at hm
     have hm' : 1 < linePull μ (Ioc t (t + 2 * r)) :=
       lt_of_lt_of_le hm (measure_mono (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩))
     have := (ENNReal.toReal_lt_toReal ENNReal.one_ne_top (hμ.linePull_Ioc_lt_top _ _).ne).2 hm'
@@ -404,7 +404,7 @@ theorem cell_rho {C₂ : ℝ} (hC₂ : ∀ a b : ℝ, a < b →
   · rw [hm]; exact ENNReal.ofReal_le_ofReal (by nlinarith [h.hα, h.hαr, h.hr])
 
 theorem integrableOn_id (a b : ℝ) : IntegrableOn (fun t : ℝ ↦ t) (Ioc a b) (linePull μ) := by
-  have := h.hμ.isFiniteMeasureOnCompacts'
+  have := h.hμ.m13_isFiniteMeasureOnCompacts'
   exact (continuous_id.integrableOn_Icc (a := a) (b := b)).mono_set Ioc_subset_Icc_self
 
 omit h in
@@ -420,12 +420,12 @@ theorem measure_Ioc_le_half {C : ℝ≥0}
       C ^ 2 * linePull μ (Ioo (c - ℓ / 4) (c + ℓ / 4)) := by
     intro c hc
     calc linePull μ (Ioc a b) ≤ linePull μ (Ioo (c - ℓ) (c + ℓ)) := measure_mono hc
-      _ = μ (lineInterval c (2 * (2 * (ℓ / 4)))) := by rw [linePull_Ioo]; ring_nf
+      _ = μ (lineInterval c (2 * (2 * (ℓ / 4)))) := by rw [m13_linePull_Ioo]; ring_nf
       _ ≤ C * μ (lineInterval c (2 * (ℓ / 4))) := hC _ _ (by positivity) (by linarith)
       _ ≤ C * (C * μ (lineInterval c (ℓ / 4))) := by
           gcongr; exact hC _ _ (by positivity) (by linarith)
       _ = C ^ 2 * linePull μ (Ioo (c - ℓ / 4) (c + ℓ / 4)) := by
-          rw [linePull_Ioo, ← mul_assoc, pow_two]
+          rw [m13_linePull_Ioo, ← mul_assoc, pow_two]
   constructor
   · have := key (a + 3 * ℓ / 4) (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩)
     convert this using 4 <;> simp only [ℓ] <;> ring

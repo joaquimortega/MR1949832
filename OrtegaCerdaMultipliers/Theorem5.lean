@@ -9,7 +9,7 @@ See `blueprint/M13_Theorem5.md` §3.7–§3.8.  `theorem5` (verbatim from
 `comparator/statements.lean`) is proved from `lineMultipliers` (case `α = 0`).
 
 * 13.7: Fubini on `ℝ × ℝ` and the fundamental theorem of calculus along horizontal and vertical
-  lines (`integral_line_second_deriv`, `integral_abs_mul_line_second_deriv`).
+  lines (`m13_integral_line_second_deriv`, `m13_integral_abs_mul_line_second_deriv`).
 * 13.8: uniform approximation by the truncated potentials `∫ log max(|z − t|, δ)`, with the
   error controlled by (L8) and the uniform continuity of the distribution function.
 * 13.9: the series is a finite sum plus a tail dominated, uniformly on balls, by the far-field
@@ -33,33 +33,33 @@ namespace OC
 
 /-! ### Calculus along lines (for 13.7) -/
 
-theorem hasDerivAt_line (z v : ℂ) (s : ℝ) : HasDerivAt (fun s : ℝ ↦ z + s • v) v s := by
+theorem m13_hasDerivAt_line (z v : ℂ) (s : ℝ) : HasDerivAt (fun s : ℝ ↦ z + s • v) v s := by
   simpa using ((hasDerivAt_id s).smul_const v).const_add z
 
-theorem hasDerivAt_comp_line {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f) (z v : ℂ) (s : ℝ) :
+theorem m13_hasDerivAt_comp_line {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f) (z v : ℂ) (s : ℝ) :
     HasDerivAt (fun s : ℝ ↦ f (z + s • v)) (fderiv ℝ f (z + s • v) v) s :=
-  (hf.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_line z v s)
+  (hf.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt s (m13_hasDerivAt_line z v s)
 
-theorem hasDerivAt_comp_line₂ {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f) (z v : ℂ) (s : ℝ) :
+theorem m13_hasDerivAt_comp_line₂ {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f) (z v : ℂ) (s : ℝ) :
     HasDerivAt (fun s : ℝ ↦ fderiv ℝ f (z + s • v) v)
       (iteratedFDeriv ℝ 2 f (z + s • v) ![v, v]) s := by
   have hd : Differentiable ℝ (fderiv ℝ f) :=
     (hf.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num)
-  have h2 := (hd (z + s • v)).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_line z v s)
+  have h2 := (hd (z + s • v)).hasFDerivAt.comp_hasDerivAt s (m13_hasDerivAt_line z v s)
   have h3 := h2.clm_apply (hasDerivAt_const s v)
   rw [iteratedFDeriv_two_apply]
   simpa using h3
 
-theorem isometry_line (z : ℂ) {v : ℂ} (hv : ‖v‖ = 1) : Isometry fun s : ℝ ↦ z + s • v := by
+theorem m13_isometry_line (z : ℂ) {v : ℂ} (hv : ‖v‖ = 1) : Isometry fun s : ℝ ↦ z + s • v := by
   refine Isometry.of_dist_eq fun s t ↦ ?_
   rw [dist_eq_norm, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, hv, mul_one]
 
-theorem hasCompactSupport_comp_line {G : ℂ → ℝ} (hG : HasCompactSupport G) (z : ℂ) {v : ℂ}
+theorem m13_hasCompactSupport_comp_line {G : ℂ → ℝ} (hG : HasCompactSupport G) (z : ℂ) {v : ℂ}
     (hv : ‖v‖ = 1) : HasCompactSupport fun s : ℝ ↦ G (z + s • v) :=
-  hG.comp_isClosedEmbedding (isometry_line z hv).isClosedEmbedding
+  hG.comp_isClosedEmbedding (m13_isometry_line z hv).isClosedEmbedding
 
 /-- The three functions of a test function along a line. -/
-theorem line_facts {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hc : HasCompactSupport f) (z : ℂ)
+theorem m13_line_facts {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hc : HasCompactSupport f) (z : ℂ)
     {v : ℂ} (hv : ‖v‖ = 1) :
     (Continuous fun s : ℝ ↦ f (z + s • v)) ∧ HasCompactSupport (fun s : ℝ ↦ f (z + s • v)) ∧
     (Continuous fun s : ℝ ↦ fderiv ℝ f (z + s • v) v) ∧
@@ -68,18 +68,18 @@ theorem line_facts {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hc : 
       HasCompactSupport (fun s : ℝ ↦ iteratedFDeriv ℝ 2 f (z + s • v) ![v, v]) := by
   have hL : Continuous fun s : ℝ ↦ z + s • v := continuous_const.add (continuous_id.smul continuous_const)
   have hf2 : ContDiff ℝ 2 f := hf.of_le (WithTop.coe_le_coe.2 le_top)
-  refine ⟨hf.continuous.comp hL, hasCompactSupport_comp_line hc z hv, ?_, ?_, ?_, ?_⟩
+  refine ⟨hf.continuous.comp hL, m13_hasCompactSupport_comp_line hc z hv, ?_, ?_, ?_, ?_⟩
   · exact ((hf2.continuous_fderiv two_ne_zero).comp hL).clm_apply continuous_const
-  · exact hasCompactSupport_comp_line (G := fun w ↦ fderiv ℝ f w v)
+  · exact m13_hasCompactSupport_comp_line (G := fun w ↦ fderiv ℝ f w v)
       ((hc.fderiv (𝕜 := ℝ)).mono' fun w hw ↦ subset_tsupport _ fun h ↦ hw (by simp [h])) z hv
   · exact (continuous_eval_const _).comp
       ((hf.continuous_iteratedFDeriv (WithTop.coe_le_coe.mpr
         (le_top : ((2 : ℕ) : ℕ∞) ≤ ⊤))).comp hL)
-  · exact hasCompactSupport_comp_line (G := fun w ↦ iteratedFDeriv ℝ 2 f w ![v, v])
+  · exact m13_hasCompactSupport_comp_line (G := fun w ↦ iteratedFDeriv ℝ 2 f w ![v, v])
       ((hc.iteratedFDeriv (𝕜 := ℝ) 2).mono' fun w hw ↦ subset_tsupport _
         fun h ↦ hw (by simp [h])) z hv
 
-theorem eventually_atTop_zero {g : ℝ → ℝ} (hg : HasCompactSupport g) :
+theorem m13_eventually_atTop_zero {g : ℝ → ℝ} (hg : HasCompactSupport g) :
     ∀ᶠ s in atTop, g s = 0 := by
   obtain ⟨M, hM⟩ := hg.isBounded.subset_closedBall 0
   filter_upwards [eventually_gt_atTop M] with s hs
@@ -88,7 +88,7 @@ theorem eventually_atTop_zero {g : ℝ → ℝ} (hg : HasCompactSupport g) :
   rw [mem_closedBall, Real.dist_eq, sub_zero] at this
   linarith [le_abs_self s]
 
-theorem eventually_atBot_zero {g : ℝ → ℝ} (hg : HasCompactSupport g) :
+theorem m13_eventually_atBot_zero {g : ℝ → ℝ} (hg : HasCompactSupport g) :
     ∀ᶠ s in atBot, g s = 0 := by
   obtain ⟨M, hM⟩ := hg.isBounded.subset_closedBall 0
   filter_upwards [eventually_lt_atBot (-M)] with s hs
@@ -98,19 +98,19 @@ theorem eventually_atBot_zero {g : ℝ → ℝ} (hg : HasCompactSupport g) :
   linarith [neg_abs_le s]
 
 /-- `∫ f'' = 0` along a line. -/
-theorem integral_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f)
+theorem m13_integral_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f)
     (hc : HasCompactSupport f) (z : ℂ) {v : ℂ} (hv : ‖v‖ = 1) :
     ∫ s : ℝ, iteratedFDeriv ℝ 2 f (z + s • v) ![v, v] = 0 := by
-  obtain ⟨-, -, h1c, h1s, h2c, h2s⟩ := line_facts hf hc z hv
+  obtain ⟨-, -, h1c, h1s, h2c, h2s⟩ := m13_line_facts hf hc z hv
   exact integral_eq_zero_of_hasDerivAt_of_integrable
-    (fun s ↦ hasDerivAt_comp_line₂ (hf.of_le (WithTop.coe_le_coe.2 le_top)) z v s)
+    (fun s ↦ m13_hasDerivAt_comp_line₂ (hf.of_le (WithTop.coe_le_coe.2 le_top)) z v s)
     (h2c.integrable_of_hasCompactSupport h2s) (h1c.integrable_of_hasCompactSupport h1s)
 
 /-- `∫ |s| f''(s) ds = 2 f(0)` along a line. -/
-theorem integral_abs_mul_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f)
+theorem m13_integral_abs_mul_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff ℝ (⊤ : ℕ∞) f)
     (hc : HasCompactSupport f) (z : ℂ) {v : ℂ} (hv : ‖v‖ = 1) :
     ∫ s : ℝ, |s| * iteratedFDeriv ℝ 2 f (z + s • v) ![v, v] = 2 * f z := by
-  obtain ⟨h0c, h0s, h1c, h1s, h2c, h2s⟩ := line_facts hf hc z hv
+  obtain ⟨h0c, h0s, h1c, h1s, h2c, h2s⟩ := m13_line_facts hf hc z hv
   have hf2 : ContDiff ℝ 2 f := hf.of_le (WithTop.coe_le_coe.2 le_top)
   set h := fun s : ℝ ↦ f (z + s • v)
   set H := fun s : ℝ ↦ fderiv ℝ f (z + s • v) v
@@ -123,12 +123,12 @@ theorem integral_abs_mul_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff ℝ 
   have hR : ∫ s in Ioi (0 : ℝ), s * H' s = f z := by
     have := integral_Ioi_of_hasDerivAt_of_tendsto' (a := 0) (m := 0)
       (f := fun s ↦ s * H s - h s) (f' := fun s ↦ s * H' s)
-      (fun s _ ↦ (((hasDerivAt_id s).mul (hasDerivAt_comp_line₂ hf2 z v s)).sub
-          (hasDerivAt_comp_line hf2 z v s)).congr_deriv (by
+      (fun s _ ↦ (((hasDerivAt_id s).mul (m13_hasDerivAt_comp_line₂ hf2 z v s)).sub
+          (m13_hasDerivAt_comp_line hf2 z v s)).congr_deriv (by
             simp only [H, H', id, Pi.neg_apply]; ring))
       hint.integrableOn
       (tendsto_const_nhds.congr' (by
-        filter_upwards [eventually_atTop_zero h0s, eventually_atTop_zero h1s] with s e0 e1
+        filter_upwards [m13_eventually_atTop_zero h0s, m13_eventually_atTop_zero h1s] with s e0 e1
         simp only [h, H] at e0 e1 ⊢
         rw [e0, e1]; ring))
     rw [this]; simp [h]
@@ -136,12 +136,12 @@ theorem integral_abs_mul_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff ℝ 
   have hL : ∫ s in Iic (0 : ℝ), -s * H' s = f z := by
     have := integral_Iic_of_hasDerivAt_of_tendsto' (a := 0) (m := 0)
       (f := fun s ↦ -s * H s + h s) (f' := fun s ↦ -s * H' s)
-      (fun s _ ↦ ((((hasDerivAt_id s).neg).mul (hasDerivAt_comp_line₂ hf2 z v s)).add
-          (hasDerivAt_comp_line hf2 z v s)).congr_deriv (by
+      (fun s _ ↦ ((((hasDerivAt_id s).neg).mul (m13_hasDerivAt_comp_line₂ hf2 z v s)).add
+          (m13_hasDerivAt_comp_line hf2 z v s)).congr_deriv (by
             simp only [H, H', id, Pi.neg_apply]; ring))
       hint'.integrableOn
       (tendsto_const_nhds.congr' (by
-        filter_upwards [eventually_atBot_zero h0s, eventually_atBot_zero h1s] with s e0 e1
+        filter_upwards [m13_eventually_atBot_zero h0s, m13_eventually_atBot_zero h1s] with s e0 e1
         simp only [h, H] at e0 e1 ⊢
         rw [e0, e1]; ring))
     rw [this]; simp [h]
@@ -196,7 +196,7 @@ theorem integral_abs_im_mul_laplacian (χ : ℂ → ℝ) (hχ : ContDiff ℝ (�
       simp_rw [e1]
       have h1 : ∀ x : ℝ, ((y * I : ℂ) + x • (1 : ℂ)).im = y := fun x ↦ by simp
       simp_rw [h1, A]
-      rw [integral_const_mul, integral_line_second_deriv hχ hc (y * I) (v := 1) norm_one,
+      rw [integral_const_mul, m13_integral_line_second_deriv hχ hc (y * I) (v := 1) norm_one,
         mul_zero]
     simp_rw [this]
     simp
@@ -207,7 +207,7 @@ theorem integral_abs_im_mul_laplacian (χ : ℂ → ℝ) (hχ : ContDiff ℝ (�
       simp_rw [e2]
       have h1 : ∀ y : ℝ, ((x : ℂ) + y • I).im = y := fun y ↦ by simp
       simp_rw [h1, B]
-      exact integral_abs_mul_line_second_deriv hχ hc (x : ℂ) (v := I) norm_I
+      exact m13_integral_abs_mul_line_second_deriv hχ hc (x : ℂ) (v := I) norm_I
     simp_rw [this]
     rw [integral_const_mul]
   have hsplit : (fun z : ℂ ↦ |z.im| * Laplacian.laplacian χ z) =
@@ -218,7 +218,7 @@ theorem integral_abs_im_mul_laplacian (χ : ℂ → ℝ) (hχ : ContDiff ℝ (�
 theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLineMeasure μ)
     (a b : ℝ) :
     Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ := by
-  have hfin := hμ.isFiniteMeasure_restrict_Ioc a b
+  have hfin := hμ.m13_isFiniteMeasure_restrict_Ioc a b
   have hmeas : ∀ δ : ℝ, ∀ z : ℂ, Measurable fun t : ℝ ↦ Real.log (max ‖z - t‖ δ) := fun δ z ↦
     Real.measurable_log.comp ((continuous_const.sub continuous_ofReal).norm.max
       continuous_const).measurable
@@ -261,7 +261,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
     · exact (((continuous_id.sub continuous_const).norm.max continuous_const).continuousAt).log
         (ne_of_gt (hδ.trans_le (le_max_right _ _)))
   -- (L8) at scale 1
-  obtain ⟨CL, hCL⟩ := hμ.lintegral_log_line one_pos
+  obtain ⟨CL, hCL⟩ := hμ.m13_lintegral_log_line one_pos
   -- the error of the truncation
   have herr : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ z : ℂ,
       |(∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ) -
@@ -269,7 +269,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
         if z.re ∈ Icc (a - 1) (b + 1) then CL * (μ (lineInterval z.re δ)).toReal else 0 := by
     intro δ hδ hδ1 z
     set x := z.re
-    have hint1 := hμ.integrableOn_log z a b
+    have hint1 := hμ.m13_integrableOn_log z a b
     have hint2 : IntegrableOn (fun t : ℝ ↦ Real.log (max ‖z - t‖ δ)) (Ioc a b) (linePull μ) := by
       refine Integrable.of_bound (hmeas δ z).aestronglyMeasurable
         (|Real.log δ| + |Real.log (‖z‖ + |a| + |b| + δ)|) ?_
@@ -305,8 +305,8 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
           ≤ ∫⁻ t in Ioc a b, (Ioo (x - δ) (x + δ)).indicator
               (fun t ↦ ENNReal.ofReal (Real.log (δ / |t - x|))) t ∂linePull μ := by
             refine setLIntegral_mono_ae' measurableSet_Ioc ?_
-            filter_upwards [hμ.ae_ne x] with t htx _
-            have hxt : |t - x| ≤ ‖z - t‖ := norm_sub_ofReal_ge z t
+            filter_upwards [hμ.m13_ae_ne x] with t htx _
+            have hxt : |t - x| ≤ ‖z - t‖ := m13_norm_sub_ofReal_ge z t
             have hxt0 : 0 < |t - x| := abs_pos.2 (sub_ne_zero.2 htx)
             have hy0 : 0 < ‖z - t‖ := hxt0.trans_le hxt
             rcases le_total δ ‖z - t‖ with h | h
@@ -332,7 +332,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
     · have : (∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ) =
           ∫ t in Ioc a b, Real.log (max ‖z - t‖ δ) ∂linePull μ := by
         refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
-        have hxt : |t - x| ≤ ‖z - t‖ := norm_sub_ofReal_ge z t
+        have hxt : |t - x| ≤ ‖z - t‖ := m13_norm_sub_ofReal_ge z t
         have : 1 < |t - x| := by
           simp only [mem_Icc, not_and_or, not_le] at hx
           rw [abs_sub_comm]
@@ -359,7 +359,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
     have h2 := lineCDF_sub hμ 0 (show x - δ ≤ x + δ by linarith)
     rw [Real.dist_eq] at h1
     have h3 : (μ (lineInterval x δ)).toReal ≤ (linePull μ (Ioc (x - δ) (x + δ))).toReal := by
-      rw [← linePull_Ioo]
+      rw [← m13_linePull_Ioo]
       exact ENNReal.toReal_mono (hμ.linePull_Ioc_lt_top _ _).ne
         (measure_mono Ioo_subset_Ioc_self)
     have := le_abs_self (lineCDF μ 0 (x + δ) - lineCDF μ 0 (x - δ))
@@ -410,7 +410,7 @@ theorem eq_ofReal_re_of_mem_lineZeroSet {μ : Measure ℂ} {α s : ℝ} {z : ℂ
 
 /-! ### Helpers for 13.9 -/
 
-theorem continuous_logPotential_volume (a b : ℝ) :
+theorem m13_continuous_logPotential_volume (a b : ℝ) :
     Continuous fun z : ℂ ↦ ∫ t in a..b, Real.log ‖z - t‖ := by
   rcases le_total a b with hab | hab
   · have := isLineMeasure_lebLine.continuous_logPotential_Ioc a b
@@ -423,7 +423,7 @@ theorem continuous_logPotential_volume (a b : ℝ) :
     rw [intervalIntegral.integral_of_ge hab]
     rfl
 
-theorem continuousAt_log_norm_sub {a z₀ : ℂ} (h : z₀ ≠ a) :
+theorem m13_continuousAt_log_norm_sub {a z₀ : ℂ} (h : z₀ ≠ a) :
     ContinuousAt (fun z : ℂ ↦ Real.log ‖z - a‖) z₀ :=
   ((continuous_id.sub continuous_const).norm.continuousAt).log
     (norm_ne_zero_iff.2 (sub_ne_zero.2 h))
@@ -432,9 +432,9 @@ theorem IsLineMeasure.continuousAt_lineTerm {μ : Measure ℂ} (hμ : IsLineMeas
     {k : ℤ} {z₀ : ℂ} (hz : ∀ b : Bool, z₀ ≠ lineNode μ α s k b) :
     ContinuousAt (lineTerm μ α s k) z₀ := by
   unfold lineTerm
-  refine ((continuousAt_log_norm_sub (hz true)).add (continuousAt_log_norm_sub (hz false))).sub
+  refine ((m13_continuousAt_log_norm_sub (hz true)).add (m13_continuousAt_log_norm_sub (hz false))).sub
     (continuousAt_const.mul ((hμ.continuous_logPotential_Ioc _ _).continuousAt.sub
-      (continuousAt_const.mul (continuous_logPotential_volume _ _).continuousAt)))
+      (continuousAt_const.mul (m13_continuous_logPotential_volume _ _).continuousAt)))
 
 theorem IsLineMeasure.locallyIntegrable_lineTerm {μ : Measure ℂ} (hμ : IsLineMeasure μ)
     (α s : ℝ) (k : ℤ) : LocallyIntegrable (lineTerm μ α s k) := by
@@ -445,7 +445,7 @@ theorem IsLineMeasure.locallyIntegrable_lineTerm {μ : Measure ℂ} (hμ : IsLin
     hμ.continuous_logPotential_Ioc _ _
   have hc2 : Continuous fun z : ℂ ↦
       ∫ t in lineKnot μ α k..lineKnot μ α (k + 1), Real.log ‖z - t‖ :=
-    continuous_logPotential_volume _ _
+    m13_continuous_logPotential_volume _ _
   have h3 : LocallyIntegrable (fun z : ℂ ↦ (1 / (2 * Real.pi)) *
       ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), Real.log ‖z - t‖ ∂linePull μ) -
         2 * α * ∫ t in lineKnot μ α k..lineKnot μ α (k + 1), Real.log ‖z - t‖)) :=
@@ -582,17 +582,17 @@ theorem decomp {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs :
 
 end LineConsts
 
-theorem hasCompactSupport_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
+theorem m13_hasCompactSupport_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
     (hc : HasCompactSupport χ) : HasCompactSupport (Laplacian.laplacian χ) :=
   IsCompact.of_isClosed_subset hc (isClosed_tsupport _) (laplacian_testFunction hχ).2
 
 /-- The weak Laplacian of the potential of a piece `(ν|_{(a,b]})` of a line measure. -/
-theorem IsLineMeasure.integral_logPotential_Ioc_mul_laplacian {ν : Measure ℂ}
+theorem IsLineMeasure.m13_integral_logPotential_Ioc_mul_laplacian {ν : Measure ℂ}
     (hν : IsLineMeasure ν) {a b : ℝ} (hab : a ≤ b) (χ : ℂ → ℝ)
     (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) :
     ∫ z : ℂ, (∫ t in Ioc a b, Real.log ‖z - (t : ℂ)‖ ∂linePull ν) * Laplacian.laplacian χ z =
       2 * Real.pi * ∫ t in Ioc a b, χ t ∂linePull ν := by
-  have := hν.isFiniteMeasure_restrict_Ioc a b
+  have := hν.m13_isFiniteMeasure_restrict_Ioc a b
   set m := Measure.map (fun t : ℝ ↦ (t : ℂ)) ((linePull ν).restrict (Ioc a b))
   have hL : IsCompact ((fun t : ℝ ↦ (t : ℂ)) '' Icc a b) := isCompact_Icc.image continuous_ofReal
   have hmL : m ((fun t : ℝ ↦ (t : ℂ)) '' Icc a b)ᶜ = 0 := by
@@ -623,7 +623,7 @@ theorem IsLineMeasure.integral_lineTerm_mul_laplacian {μ : Measure ℂ} (hμ : 
   set a := lineKnot μ α k
   set b := lineKnot μ α (k + 1)
   obtain ⟨hΔc, -⟩ := laplacian_testFunction hχ
-  have hΔs := hasCompactSupport_laplacian hχ hc
+  have hΔs := m13_hasCompactSupport_laplacian hχ hc
   set Δχ := Laplacian.laplacian χ
   set νp : ℂ := (lineNode μ α s k true : ℂ)
   set νm : ℂ := (lineNode μ α s k false : ℂ)
@@ -649,8 +649,8 @@ theorem IsLineMeasure.integral_lineTerm_mul_laplacian {μ : Measure ℂ} (hμ : 
     ring
   have H1 := (logKernel νp).2 χ hχ hc
   have H2 := (logKernel νm).2 χ hχ hc
-  have H3 := hμ.integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
-  have H4 := isLineMeasure_lebLine.integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
+  have H3 := hμ.m13_integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
+  have H4 := isLineMeasure_lebLine.m13_integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
   rw [linePull_lebLine] at H4
   have ia : Integrable fun z ↦ Real.log ‖z - νp‖ * Δχ z + Real.log ‖z - νm‖ * Δχ z := i1.add i2
   have ic : Integrable fun z ↦ 2 * α * (Pv z * Δχ z) := i4.const_mul _
@@ -781,7 +781,7 @@ theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
   · -- the weak Laplacian
     intro χ hχ hcχ _
     obtain ⟨hΔc, -⟩ := laplacian_testFunction hχ
-    have hΔs := hasCompactSupport_laplacian hχ hcχ
+    have hΔs := m13_hasCompactSupport_laplacian hχ hcχ
     set Δχ := Laplacian.laplacian χ
     obtain ⟨R₀, hR₀⟩ := hcχ.isBounded.subset_closedBall 0
     set R := max R₀ 0
@@ -871,11 +871,11 @@ theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
       exact hχcell k hkG t (Ioc_subset_Icc_self hk)
     have hχc : Continuous fun t : ℝ ↦ χ t := hχ.continuous.comp continuous_ofReal
     have hμI := hcover (linePull μ) fun k ↦ by
-      have := hμ.isFiniteMeasureOnCompacts'
+      have := hμ.m13_isFiniteMeasureOnCompacts'
       exact (hχc.integrableOn_Icc).mono_set Ioc_subset_Icc_self
     have hvI := hcover volume fun k ↦ (hχc.integrableOn_Icc).mono_set Ioc_subset_Icc_self
     rw [hsplit, hφ.laplacian_eq χ hχ hcχ (subset_univ _), integral_abs_im_mul_laplacian χ hχ hcχ,
-      hSΔ, hcellsum, hc.finsum_lineZeroCount hα hα' hs hs' χ G hnodeG, hμ.integral_eq,
+      hSΔ, hcellsum, hc.finsum_lineZeroCount hα hα' hs hs' χ G hnodeG, hμ.m13_integral_eq,
       Finset.sum_add_distrib, Finset.sum_sub_distrib, hμI, ← Finset.mul_sum, ← Finset.mul_sum, hvI]
     ring
 
@@ -1028,7 +1028,7 @@ theorem lineMultipliers (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmon
       have hsep := HS α hα hαS' s₀ hs₀ hs₀S (lineNode μ α s₀ k b) (Or.inr ⟨(k, b), rfl⟩) x₀
         (Or.inl ⟨(j, b'), hj.symm⟩) hne
       have htri : |lineNode μ α s₀ k b - x₀| ≤ ‖z - lineNode μ α s₀ k b‖ + ‖z - x₀‖ := by
-        rw [← norm_ofReal_sub_ofReal]
+        rw [← m13_norm_ofReal_sub_ofReal]
         calc ‖((lineNode μ α s₀ k b : ℝ) : ℂ) - x₀‖ ≤
             ‖((lineNode μ α s₀ k b : ℝ) : ℂ) - z‖ + ‖z - x₀‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
           _ = _ := by rw [norm_sub_rev]

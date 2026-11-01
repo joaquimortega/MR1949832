@@ -24,7 +24,7 @@ noncomputable section
 
 namespace OC
 
-theorem range_ofReal_compl : (range fun x : ℝ ↦ (x : ℂ))ᶜ = {z : ℂ | z.im ≠ 0} := by
+theorem m13_range_ofReal_compl : (range fun x : ℝ ↦ (x : ℂ))ᶜ = {z : ℂ | z.im ≠ 0} := by
   ext z
   simp only [mem_compl_iff, mem_range, not_exists]
   constructor
@@ -40,7 +40,7 @@ theorem map_linePull {μ : Measure ℂ} (hμ : μ {z : ℂ | z.im ≠ 0} = 0) :
   rw [linePull, measurableEmbedding_ofReal'.map_comap]
   apply Measure.restrict_eq_self_of_ae_mem
   rw [ae_iff]
-  have : {a : ℂ | a ∉ range fun x : ℝ ↦ (x : ℂ)} = {z : ℂ | z.im ≠ 0} := range_ofReal_compl
+  have : {a : ℂ | a ∉ range fun x : ℝ ↦ (x : ℂ)} = {z : ℂ | z.im ≠ 0} := m13_range_ofReal_compl
   rw [this]
   exact hμ
 
@@ -52,39 +52,39 @@ theorem IsLineMeasure.linePull_Ioc_lt_top {μ : Measure ℂ} (hμ : IsLineMeasur
 
 /-! ### Helpers -/
 
-theorem IsLineMeasure.linePull_compact_lt_top {μ : Measure ℂ} (hμ : IsLineMeasure μ) {K : Set ℝ}
+theorem IsLineMeasure.m13_linePull_compact_lt_top {μ : Measure ℂ} (hμ : IsLineMeasure μ) {K : Set ℝ}
     (hK : IsCompact K) : linePull μ K < ∞ := by
   rw [linePull_apply]
   exact hμ.finite_of_compact _ (hK.image continuous_ofReal)
 
-theorem IsLineMeasure.isFiniteMeasureOnCompacts' {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
+theorem IsLineMeasure.m13_isFiniteMeasureOnCompacts' {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
     IsFiniteMeasureOnCompacts (linePull μ) :=
-  ⟨fun _ hK ↦ hμ.linePull_compact_lt_top hK⟩
+  ⟨fun _ hK ↦ hμ.m13_linePull_compact_lt_top hK⟩
 
-theorem IsLineMeasure.isFiniteMeasure_restrict_Ioc {μ : Measure ℂ} (hμ : IsLineMeasure μ)
+theorem IsLineMeasure.m13_isFiniteMeasure_restrict_Ioc {μ : Measure ℂ} (hμ : IsLineMeasure μ)
     (a b : ℝ) : IsFiniteMeasure ((linePull μ).restrict (Ioc a b)) :=
   ⟨by rw [Measure.restrict_apply_univ]; exact hμ.linePull_Ioc_lt_top a b⟩
 
-theorem IsLineMeasure.map_linePull {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
+theorem IsLineMeasure.m13_map_linePull {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
     (linePull μ).map (fun t : ℝ ↦ (t : ℂ)) = μ :=
   OC.map_linePull hμ.doubling.1
 
-theorem linePull_Ioo (μ : Measure ℂ) (x r : ℝ) :
+theorem m13_linePull_Ioo (μ : Measure ℂ) (x r : ℝ) :
     linePull μ (Ioo (x - r) (x + r)) = μ (lineInterval x r) := by
   rw [linePull_apply]; rfl
 
 /-- Integrals against `μ` (carried by `ℝ`) are integrals against `linePull μ`. -/
-theorem IsLineMeasure.integral_eq {μ : Measure ℂ} (hμ : IsLineMeasure μ) {E : Type*}
+theorem IsLineMeasure.m13_integral_eq {μ : Measure ℂ} (hμ : IsLineMeasure μ) {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] (f : ℂ → E) :
     ∫ z, f z ∂μ = ∫ t, f t ∂linePull μ := by
-  conv_lhs => rw [← hμ.map_linePull]
+  conv_lhs => rw [← hμ.m13_map_linePull]
   exact measurableEmbedding_ofReal'.integral_map f
 
 /-- Set lintegrals over images of real sets. -/
-theorem IsLineMeasure.setLIntegral_image {μ : Measure ℂ} (hμ : IsLineMeasure μ) (f : ℂ → ℝ≥0∞)
+theorem IsLineMeasure.m13_setLIntegral_image {μ : Measure ℂ} (hμ : IsLineMeasure μ) (f : ℂ → ℝ≥0∞)
     (s : Set ℝ) :
     ∫⁻ z in (fun t : ℝ ↦ (t : ℂ)) '' s, f z ∂μ = ∫⁻ t in s, f t ∂linePull μ := by
-  conv_lhs => rw [← hμ.map_linePull]
+  conv_lhs => rw [← hμ.m13_map_linePull]
   rw [measurableEmbedding_ofReal'.restrict_map, measurableEmbedding_ofReal'.lintegral_map,
     preimage_image_eq _ ofReal_injective]
 
