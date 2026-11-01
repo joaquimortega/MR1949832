@@ -4,7 +4,14 @@ import OrtegaCerdaMultipliers.Foundations.Weyl
 /-!
 # M14 (Theorem3) — Theorem 3 (degenerate weights), from Theorem 5 and [OCS99]
 
-See `blueprint/M14_Theorem3.md`.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M14_Theorem3.md`.  All proofs in this file are complete; `theorem3_weighted` and
+`theorem3_of_lowerBound` depend on M13's `lineMultipliers`, and `cex_isSubharmonicWeight` on M13's
+`integral_abs_im_mul_laplacian`.
+
+`not_theorem3_printed` is proved unconditionally.  It deviates from the blueprint (§4): the segment
+measure is replaced by `N` point masses at `x₀ - i 2^{-(k+6)}`, so that the Cauchy transform is an
+explicit sum of poles, and Bernstein's inequality is replaced by Phragmén–Lindelöf in half-planes
+(`PhragmenLindelof.right_half_plane_of_tendsto_zero_on_real`) plus the Cauchy estimate.
 
 `theorem3_weighted` is the corrected Theorem 3 (proposed main statement): hypothesis
 `TheoremOCS`, conclusion with the weighted integral `∫_{|z-x|<1} e^{-φ(z)} d|μ|(z) / |x − z|`.
