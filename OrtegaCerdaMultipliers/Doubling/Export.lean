@@ -642,7 +642,91 @@ theorem encard_le_of_disjoint_convex (a b L : ℝ) (ha : 0 < a) (hb : 0 < b) :
     ∃ M : ℕ, ∀ {ι : Type*} (E : ι → Set ℂ) (c : ι → ℂ) (r : ι → ℝ) (z : ℂ),
       Pairwise (Function.onFun Disjoint E) → (∀ i, Convex ℝ (E i)) → (∀ i, a ≤ r i) →
       (∀ i, ball (c i) (r i) ⊆ E i) → (∀ i, E i ⊆ ball (c i) (L * r i)) →
-        {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := sorry
+        {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := by
+  have hL1 : 0 < max L 0 + 1 := by linarith [le_max_right L 0]
+  set a' := min a (b / (max L 0 + 1)) with ha'
+  have ha'0 : 0 < a' := lt_min ha (div_pos hb hL1)
+  obtain ⟨M, hM⟩ := BallGeometry.encard_le_of_disjoint (X := ℂ) a' b (4 * b) ha'0
+  refine ⟨M, fun {ι} E c r z hdisj hconv har hin hout ↦ ?_⟩
+  have hr : ∀ i, 0 < r i := fun i ↦ ha.trans_le (har i)
+  let S : Set ι := {i | (E i ∩ ball z b).Nonempty}
+  let p : S → ℂ := fun j ↦ Set.Nonempty.some (j.2 : (E j ∩ ball z b).Nonempty)
+  have hp : ∀ j : S, p j ∈ E j ∩ ball z b := fun j ↦ Set.Nonempty.some_mem _
+  let t : S → ℝ := fun j ↦ min 1 (b / (dist (c j) (p j) + r j))
+  let c' : S → ℂ := fun j ↦ p j + t j • (c j - p j)
+  have hdp : ∀ j : S, 0 < dist (c j) (p j) + r j := fun j ↦ by
+    have := hr j; positivity
+  have ht0 : ∀ j, 0 < t j := fun j ↦ lt_min one_pos (div_pos hb (hdp j))
+  have ht1 : ∀ j, t j ≤ 1 := fun j ↦ min_le_left _ _
+  have htb : ∀ j, t j * (dist (c j) (p j) + r j) ≤ b := fun j ↦ by
+    calc t j * (dist (c j) (p j) + r j)
+        ≤ b / (dist (c j) (p j) + r j) * (dist (c j) (p j) + r j) :=
+          mul_le_mul_of_nonneg_right (min_le_right (1 : ℝ) _) (hdp j).le
+      _ = b := div_mul_cancel₀ _ (hdp j).ne'
+  have hrad : ∀ j, a' ≤ t j * r j := fun j ↦ by
+    have hpc : dist (c j) (p j) < L * r j := by
+      have := hout j (hp j).1
+      rwa [mem_ball, dist_comm] at this
+    have e : t j * r j = min (r j) (b / (dist (c j) (p j) + r j) * r j) := by
+      rw [min_mul_of_nonneg _ _ (hr j).le, one_mul]
+    rw [e]
+    apply min_le_min (har j)
+    rw [div_mul_eq_mul_div, le_div_iff₀ (hdp j)]
+    have hLr : dist (c j) (p j) + r j ≤ (max L 0 + 1) * r j := by
+      nlinarith [le_max_left L 0, hr j]
+    calc b / (max L 0 + 1) * (dist (c j) (p j) + r j)
+        ≤ b / (max L 0 + 1) * ((max L 0 + 1) * r j) := by gcongr
+      _ = b * r j := by field_simp
+  have hball : ∀ j : S, ball (c' j) (t j * r j) ⊆ E j ∩ ball z (2 * b) := by
+    intro j w hw
+    rw [mem_ball] at hw
+    have htne := (ht0 j).ne'
+    set u := p j + (t j)⁻¹ • (w - p j) with hu_def
+    have hwu : w = p j + t j • (u - p j) := by
+      rw [hu_def, add_sub_cancel_left, smul_smul, mul_inv_cancel₀ htne, one_smul,
+        add_sub_cancel]
+    have hu : u ∈ ball (c j) (r j) := by
+      rw [mem_ball, dist_eq_norm]
+      have e : u - c j = (t j)⁻¹ • (w - c' j) := by
+        simp only [hu_def, c', smul_sub, smul_add, smul_smul, inv_mul_cancel₀ htne, one_smul]
+        abel
+      rw [e, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (ht0 j), ← dist_eq_norm,
+        inv_mul_lt_iff₀ (ht0 j)]
+      exact hw
+    refine ⟨?_, ?_⟩
+    · rw [hwu]
+      exact (hconv j).add_smul_sub_mem (hp j).1 (hin j hu) ⟨(ht0 j).le, ht1 j⟩
+    · have h1 : dist w (p j) < b := by
+        have e : dist w (p j) = t j * dist u (p j) := by
+          rw [dist_eq_norm, dist_eq_norm, hwu, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+            abs_of_pos (ht0 j)]
+        have hu' : dist u (p j) < r j + dist (c j) (p j) := by
+          have := dist_triangle u (c j) (p j)
+          rw [mem_ball] at hu
+          linarith
+        rw [e]
+        calc t j * dist u (p j) < t j * (r j + dist (c j) (p j)) :=
+              mul_lt_mul_of_pos_left hu' (ht0 j)
+          _ ≤ b := by rw [add_comm]; exact htb j
+      have h2 : dist (p j) z < b := (hp j).2
+      rw [mem_ball]
+      linarith [dist_triangle w (p j) z]
+  have hc'z : ∀ j : S, dist (c' j) z < 2 * b := fun j ↦
+    (hball j (mem_ball_self (mul_pos (ht0 j) (hr j)))).2
+  have key := hM (fun j : S ↦ E j ∩ ball z (2 * b)) c' z
+    (fun j k hjk ↦ (hdisj (Subtype.coe_injective.ne hjk)).mono inter_subset_left
+      inter_subset_left)
+    (fun j ↦ (ball_subset_ball (hrad j)).trans (hball j))
+    (fun j w hw ↦ by
+      have h1 : dist w z < 2 * b := hw.2
+      rw [mem_ball]
+      linarith [dist_triangle w z (c' j), dist_comm z (c' j), hc'z j])
+  have huniv : {j : S | ((fun j : S ↦ E j ∩ ball z (2 * b)) j ∩ ball z b).Nonempty} = univ := by
+    ext j
+    simp only [mem_ofPred_eq, mem_univ, iff_true]
+    exact ⟨p j, ⟨(hp j).1, ball_subset_ball (by linarith) (hp j).2⟩, (hp j).2⟩
+  rw [huniv, Set.encard_univ, ENat.card_coe_set_eq] at key
+  exact key
 
 /-- Bounded count in `𝔻` (hyperbolic balls). -/
 theorem encard_le_of_disjoint_disc (a b D : ℝ) (ha : 0 < a) :
