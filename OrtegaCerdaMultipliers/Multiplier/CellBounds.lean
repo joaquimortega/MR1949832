@@ -293,7 +293,95 @@ theorem abs_cellPot_le_disc_far (A B R₀ M₀ : ℝ) (N : ℕ) (hA : 0 < A) (hB
       2 * (A + B) * massRadiusDisc ν (c i) ≤ hypDist z (c i) →
       |cellPot kerDisc ν R Λ i z| ≤
         CD * ((1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
-          ‖1 - conj z * c i‖ ^ 3) := sorry
+          ‖1 - conj z * c i‖ ^ 3) := by
+  set S₀ := (A + B) * max R₀ 0
+  set t₀ := Real.tanh (M₀ / 2)
+  have ht₀ : 0 < t₀ := tanh_pos' (by linarith)
+  refine ⟨4 * N * Real.exp (10 * S₀) * (A + B) ^ 2 / t₀ ^ 2, by positivity, ?_⟩
+  intro ν η R c m Λ hC hN i hm z hz hint hρ0 hρR hM hfar
+  set ρ := massRadiusDisc ν (c i)
+  set β := hypDist z (c i)
+  set sr := (A + B) * ρ
+  have hc := hC.center_mem' i
+  have hsr0 : 0 ≤ sr := by positivity
+  have hsrS : sr ≤ S₀ :=
+    mul_le_mul_of_nonneg_left (hρR.trans (le_max_left _ _)) (by positivity)
+  have hcpos := one_sub_normSq_pos hc
+  have hzpos := one_sub_normSq_pos hz
+  have hDpos := norm_one_sub_conj_mul_pos hz hc
+  set Bc := {w | w ∈ 𝔻 ∧ hypDist (c i) w ≤ sr}
+  have hBcconv : Convex ℝ Bc := convex_closedHypBall hc sr
+  have hcBc : c i ∈ Bc := ⟨hc, by simp [hsr0]⟩
+  -- points of `Bc` are hyperbolically far from `z`
+  have hfarξ : ∀ ξ ∈ Bc, M₀ / 2 ≤ hypDist z ξ := by
+    intro ξ hξ
+    have htri := hypDist_triangle hz hξ.1 hc
+    rw [hypDist_comm ξ] at htri
+    have : β ≤ hypDist z ξ + sr := htri.trans (by linarith [hξ.2])
+    linarith
+  have hξz : ∀ ξ ∈ Bc, ξ ≠ z := by
+    intro ξ hξ h
+    have := hfarξ ξ hξ
+    rw [h, hypDist_self] at this
+    linarith
+  have hlow : ∀ ξ ∈ Bc, t₀ * ‖1 - conj z * ξ‖ ≤ ‖z - ξ‖ := by
+    intro ξ hξ
+    have h1 : t₀ ≤ pseudoHyp z ξ := by
+      rw [← tanh_hypDist hz hξ.1]; exact tanh_le_tanh (hfarξ ξ hξ)
+    have hD := norm_one_sub_conj_mul_pos hz hξ.1
+    rw [pseudoHyp, le_div_iff₀ hD] at h1
+    linarith
+  have hcomp : ∀ ξ ∈ Bc, ‖1 - conj z * c i‖ ≤ Real.exp (2 * sr) * ‖1 - conj z * ξ‖ :=
+    fun ξ hξ ↦ (norm_one_sub_conj_mul_comparable hz hc hξ.1 hξ.2).2
+  set Bd := 2 * (1 - ‖z‖ ^ 2) * Real.exp (6 * sr) / (t₀ ^ 2 * ‖1 - conj z * c i‖ ^ 3)
+  have hBd : ∀ ξ ∈ Bc, 2 * (1 - ‖z‖ ^ 2) / (‖z - ξ‖ ^ 2 * ‖1 - conj z * ξ‖) ≤ Bd := by
+    intro ξ hξ
+    have hD := norm_one_sub_conj_mul_pos hz hξ.1
+    have h1 := hlow ξ hξ
+    have h2 := hcomp ξ hξ
+    have hzξ : 0 < ‖z - ξ‖ := norm_pos_iff.2 (sub_ne_zero.2 (hξz ξ hξ).symm)
+    have he : Real.exp (6 * sr) = Real.exp (2 * sr) ^ 3 := by
+      rw [← Real.exp_nat_mul]; ring_nf
+    rw [div_le_div_iff₀ (by positivity) (by positivity), he]
+    have h3 : (t₀ * ‖1 - conj z * ξ‖) ^ 2 ≤ ‖z - ξ‖ ^ 2 := by
+      gcongr
+    have h4 : ‖1 - conj z * c i‖ ^ 3 ≤ (Real.exp (2 * sr) * ‖1 - conj z * ξ‖) ^ 3 := by
+      gcongr
+    calc 2 * (1 - ‖z‖ ^ 2) * (t₀ ^ 2 * ‖1 - conj z * c i‖ ^ 3)
+        ≤ 2 * (1 - ‖z‖ ^ 2) * (t₀ ^ 2 * (Real.exp (2 * sr) * ‖1 - conj z * ξ‖) ^ 3) := by
+          gcongr
+      _ = 2 * (1 - ‖z‖ ^ 2) * Real.exp (2 * sr) ^ 3 *
+            ((t₀ * ‖1 - conj z * ξ‖) ^ 2 * ‖1 - conj z * ξ‖) := by ring
+      _ ≤ 2 * (1 - ‖z‖ ^ 2) * Real.exp (2 * sr) ^ 3 * (‖z - ξ‖ ^ 2 * ‖1 - conj z * ξ‖) := by
+          gcongr
+  have hpt : ∀ ζ ∈ Bc, |kerDisc z ζ - taylorDisc 2 z (c i) ζ| ≤
+      2 * Real.exp (10 * S₀) * (A + B) ^ 2 / t₀ ^ 2 *
+        ((1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * ρ) ^ 2 / ‖1 - conj z * c i‖ ^ 3) := by
+    intro ζ hζ
+    have hseg : segment ℝ (c i) ζ ⊆ Bc := hBcconv.segment_subset hcBc hζ
+    have hK3 := abs_kerDisc_sub_taylorDisc_two_le hz (Bd := Bd)
+      (fun ξ hξ ↦ ⟨(hseg hξ).1, hξz ξ (hseg hξ)⟩) (fun ξ hξ ↦ hBd ξ (hseg hξ))
+    refine hK3.trans ?_
+    have hζc := norm_sub_le_mul_exp hc hζ.1 hsr0 hζ.2
+    have hζc2 : ‖ζ - c i‖ ^ 2 ≤ (sr * Real.exp (2 * sr) * (1 - ‖c i‖ ^ 2)) ^ 2 := by gcongr
+    have he10 : Real.exp (6 * sr) * Real.exp (2 * sr) ^ 2 ≤ Real.exp (10 * S₀) := by
+      rw [← Real.exp_nat_mul, ← Real.exp_add]
+      exact Real.exp_le_exp.2 (by push_cast; nlinarith)
+    calc Bd * ‖ζ - c i‖ ^ 2 ≤ Bd * (sr * Real.exp (2 * sr) * (1 - ‖c i‖ ^ 2)) ^ 2 := by
+          gcongr
+      _ = 2 * (Real.exp (6 * sr) * Real.exp (2 * sr) ^ 2) * (A + B) ^ 2 / t₀ ^ 2 *
+            ((1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * ρ) ^ 2 / ‖1 - conj z * c i‖ ^ 3) := by
+          simp only [Bd, sr]; field_simp
+      _ ≤ _ := by gcongr
+  obtain ⟨p, hp, hT⟩ := exists_poly_taylorDisc (m := 2) (by norm_num) z (c i)
+  have hmom : ∀ j < 2, ∫ ζ in R i, ζ ^ j ∂ν = ((Λ i).map (· ^ j)).sum :=
+    fun j hj ↦ hN.moments i j (lt_of_lt_of_le hj hm)
+  have hbd := abs_cellPot_le_of_bound (hN.card i) (hC.measure_eq i) (hC.measurableSet i)
+    (hC.isBounded_disc i) hmom hint hp (fun ζ ↦ hT ζ)
+    (fun w hw ↦ hpt w ⟨hN.mem i w hw, (hN.near i w hw).trans (by nlinarith)⟩)
+    (fun ζ hζ ↦ hpt ζ ⟨hC.subset_univ i hζ, (hC.subset i ζ hζ).trans (by nlinarith)⟩)
+  refine hbd.trans (le_of_eq ?_)
+  ring
 
 /-! ### The non-near part is uniformly bounded (§3.7) -/
 
