@@ -462,6 +462,93 @@ theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < �
     (fun x hx y hy ↦ (hclA ν hν x hx y hy).2.2) (fun x hx y hy ↦ (hcl2 ν hν x hx y hy).2.2)
     (fun i ↦ hC.iUnion_eq ▸ subset_iUnion R i) hC.center_mem hC.subset hΛ hsep hns hs
 
+namespace Prop2
+
+theorem thm4BoundsPlane_mono {ψ : ℂ → ℝ} {μ : Measure ℂ} {h : ℂ → ℂ} {M : ℕ} {C C' : ℝ≥0}
+    (hC : 0 < C) (hCC' : C ≤ C') (hb : Thm4BoundsPlane ψ μ h M C) :
+    Thm4BoundsPlane ψ μ h M C' := by
+  intro z
+  obtain ⟨h1, h2, h3⟩ := hb z
+  have hc : (C : ℝ≥0∞) ≤ C' := ENNReal.coe_le_coe.2 hCC'
+  have hc' : ((C'⁻¹ : ℝ≥0) : ℝ≥0∞) ≤ ((C⁻¹ : ℝ≥0) : ℝ≥0∞) :=
+    ENNReal.coe_le_coe.2 (inv_anti₀ hC hCC')
+  exact ⟨le_trans (by gcongr) h1, h2.trans (by gcongr), h3.trans (by gcongr)⟩
+
+theorem thm4BoundsDisc_mono {ψ : ℂ → ℝ} {μ : Measure ℂ} {h : ℂ → ℂ} {M : ℕ} {C C' : ℝ≥0}
+    (hC : 0 < C) (hCC' : C ≤ C') (hb : Thm4BoundsDisc ψ μ h M C) :
+    Thm4BoundsDisc ψ μ h M C' := by
+  intro z hz
+  obtain ⟨h1, h2, h3⟩ := hb z hz
+  have hc : (C : ℝ≥0∞) ≤ C' := ENNReal.coe_le_coe.2 hCC'
+  have hc' : ((C'⁻¹ : ℝ≥0) : ℝ≥0∞) ≤ ((C⁻¹ : ℝ≥0) : ℝ≥0∞) :=
+    ENNReal.coe_le_coe.2 (inv_anti₀ hC hCC')
+  exact ⟨le_trans (by gcongr) h1, h2.trans (by gcongr), h3.trans (by gcongr)⟩
+
+/-- Upper bound `|h| ≤ C² e^ψ` from the Theorem-4 upper bound and the Remark `d ≤ C ρ`. -/
+theorem upper_of_bounds {D : ℝ≥0∞} {ρ x ψ : ℝ} {C : ℝ≥0} (hx : 0 ≤ x)
+    (h1 : ENNReal.ofReal (x * Real.exp (-ψ)) ≤ C * (D / ENNReal.ofReal ρ))
+    (h2 : D ≤ C * ENNReal.ofReal ρ) : x ≤ (C : ℝ) ^ 2 * Real.exp ψ := by
+  have h3 : D / ENNReal.ofReal ρ ≤ C := ENNReal.div_le_of_le_mul h2
+  have h4 : ENNReal.ofReal (x * Real.exp (-ψ)) ≤ ENNReal.ofReal ((C : ℝ) ^ 2) := by
+    rw [ENNReal.ofReal_pow C.coe_nonneg, ENNReal.ofReal_coe_nnreal, sq]
+    exact h1.trans (by gcongr)
+  rw [ENNReal.ofReal_le_ofReal_iff (by positivity)] at h4
+  calc x = x * Real.exp (-ψ) * Real.exp ψ := by rw [mul_assoc, ← Real.exp_add]; simp
+    _ ≤ (C : ℝ) ^ 2 * Real.exp ψ := mul_le_mul_of_nonneg_right h4 (Real.exp_pos ψ).le
+
+/-- Lower bound `C⁻¹ c₆^M e^ψ ≤ |h|` from the Theorem-4 lower bound and `d ≥ c₆ ρ`. -/
+theorem lower_of_bounds {D : ℝ≥0∞} {ρ c₆ x ψ : ℝ} {C : ℝ≥0} {M : ℕ} (hρ : 0 < ρ)
+    (hc₆ : 0 ≤ c₆) (hC : 0 < C) (hx : 0 ≤ x) (hD : ENNReal.ofReal (c₆ * ρ) ≤ D)
+    (h1 : ((C⁻¹ : ℝ≥0) : ℝ≥0∞) * (D / ENNReal.ofReal ρ) ^ M ≤
+      ENNReal.ofReal (x * Real.exp (-ψ))) :
+    (C : ℝ)⁻¹ * c₆ ^ M * Real.exp ψ ≤ x := by
+  have h2 : ENNReal.ofReal c₆ ≤ D / ENNReal.ofReal ρ := by
+    rw [ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hρ)) (Or.inl ENNReal.ofReal_ne_top),
+      ← ENNReal.ofReal_mul hc₆]
+    exact hD
+  have hC' : (0 : ℝ) < C := hC
+  have h3 : ENNReal.ofReal ((C : ℝ)⁻¹ * c₆ ^ M) ≤ ENNReal.ofReal (x * Real.exp (-ψ)) := by
+    rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hc₆,
+      ENNReal.ofReal_inv_of_pos hC', ENNReal.ofReal_coe_nnreal, ← ENNReal.coe_inv hC.ne']
+    exact le_trans (by gcongr) h1
+  rw [ENNReal.ofReal_le_ofReal_iff (by positivity)] at h3
+  calc (C : ℝ)⁻¹ * c₆ ^ M * Real.exp ψ ≤ x * Real.exp (-ψ) * Real.exp ψ :=
+        mul_le_mul_of_nonneg_right h3 (Real.exp_pos ψ).le
+    _ = x := by rw [mul_assoc, ← Real.exp_add]; simp
+
+theorem nodeSet_countable (Λ : ℕ → Multiset ℂ) : (nodeSet Λ).Countable := by
+  have : nodeSet Λ = ⋃ i, ((Λ i).toFinset : Set ℂ) := by ext w; simp [nodeSet]
+  rw [this]
+  exact countable_iUnion fun i ↦ (Λ i).toFinset.countable_toSet
+
+theorem exists_mem_disc_notMem_nodeSet (Λ : ℕ → Multiset ℂ) : ∃ z ∈ 𝔻, z ∉ nodeSet Λ := by
+  by_contra h
+  push Not at h
+  have h0 : volume (nodeSet Λ) = 0 := (nodeSet_countable Λ).measure_zero volume
+  exact (measure_ball_pos volume (0 : ℂ) one_pos).ne' (measure_mono_null h h0)
+
+/-- Constants of the good-set bounds: `C_P = max(C², C c₆^{-M})`. -/
+theorem constP_spec {C : ℝ≥0} (hC : 1 ≤ C) {c₆ : ℝ} (M : ℕ) (hc₆ : 0 < c₆) :
+    C ≤ Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M)) ∧
+    (C : ℝ) ^ 2 ≤ (Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M)) : ℝ) ∧
+    ((Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M)) : ℝ))⁻¹ ≤ (C : ℝ)⁻¹ * c₆ ^ M := by
+  have hC1 : (1 : ℝ) ≤ C := by exact_mod_cast hC
+  have hCP : ((Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M)) : ℝ)) =
+      max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M) := Real.coe_toNNReal _ (le_max_of_le_left (sq_nonneg _))
+  have hCC2 : (C : ℝ) ≤ C ^ 2 := by nlinarith
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← NNReal.coe_le_coe, hCP]; exact le_max_of_le_left hCC2
+  · rw [hCP]; exact le_max_left _ _
+  · rw [hCP]
+    have hpos : 0 < (C : ℝ)⁻¹ * c₆ ^ M := by positivity
+    calc (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M))⁻¹ ≤ ((C : ℝ)⁻¹ * c₆ ^ M)⁻¹⁻¹ := by
+          apply inv_anti₀ (inv_pos.2 hpos)
+          rw [mul_inv, inv_inv, ← inv_pow]
+          exact le_max_right _ _
+      _ = (C : ℝ)⁻¹ * c₆ ^ M := inv_inv _
+
+end Prop2
+
 /-- **Proposition 2, quantitative, full form (plane).** -/
 theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
     ∃ (n M : ℕ) (C : ℝ≥0) (ε : ℝ), 1 ≤ M ∧ 1 ≤ C ∧ 0 < ε ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
@@ -482,7 +569,115 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
         (∀ z ∈ 𝔻, ∃ i, ∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) ∧
         (∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
           (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
-        (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) := sorry
+        (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) := by
+  classical
+  -- constants, all depending only on `(Cd, R₀)`
+  obtain ⟨a, A, ha, hA, hpart⟩ := lemma4_disc_quant Cd (15 * R₀) 12 (by norm_num)
+  obtain ⟨Bl, hBl, hnodes⟩ := exists_nodes_disc A hA
+  obtain ⟨Bk₀, hfar⟩ := nodes_far_of_color_disc Cd (15 * R₀) a A Bl ha hA hBl
+  set B := max Bk₀ 0 / A with hB_def
+  have hB : 0 ≤ B := div_nonneg (le_max_right _ _) hA.le
+  have hBA : Bk₀ ≤ B * A := by
+    rw [hB_def, div_mul_cancel₀ _ hA.ne']; exact le_max_left _ _
+  obtain ⟨ρ₀, B', hρ₀, hB', hnodesB⟩ := hnodes B hB
+  obtain ⟨L₀, hL₀⟩ := hfar (B * A) B' hBA
+  obtain ⟨c₅, hc₅, hfarL⟩ := hL₀ L₀ le_rfl
+  obtain ⟨n, hcolor⟩ := exists_separated_coloring_disc Cd (15 * R₀) a A L₀ ha
+  obtain ⟨M, C, hM, hC, hmult⟩ :=
+    multiplier_of_nodes_disc Cd R₀ a A B' ρ₀ 12 hR₀ ha hA hB' hρ₀ (by norm_num)
+  obtain ⟨C1, hC1, hcl1⟩ := claim1_disc_quant Cd (15 * R₀) 1
+  obtain ⟨C1', hC1', hcl1'⟩ := claim1_disc_quant Cd R₀ 1
+  obtain ⟨Cρ, -, hρν⟩ := massRadiusDisc_lapNorm_quant Cd R₀
+  set K := max (C1 / c₅) 1 with hK_def
+  have hK0 : 0 < K := lt_of_lt_of_le one_pos (le_max_right _ _)
+  set ε := K⁻¹ with hε_def
+  have hε : 0 < ε := inv_pos.2 hK0
+  set c₆ := min (ε / C1') 1 with hc₆_def
+  have hc₆ : 0 < c₆ := lt_min (div_pos hε (by linarith)) one_pos
+  have hC0 : 0 < C := lt_of_lt_of_le one_pos hC
+  obtain ⟨hCCP, hC2CP, hCPinv⟩ := Prop2.constP_spec hC M hc₆
+  set CP : ℝ≥0 := Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M))
+  refine ⟨n, M, CP, ε, hM, hC.trans hCCP, hε, fun ψ μ hw ↦ ?_⟩
+  -- the cells of `ν = Δψ/2π`, their colouring, and the multipliers
+  set ν := lapNorm μ with hν_def
+  have hν : MeasClassDisc ν Cd (15 * R₀) := hw.meas.lapNorm
+  obtain ⟨R, hR⟩ := hpart ν hν
+  obtain ⟨c, hc⟩ := hR.exists_cells
+  obtain ⟨col, hcol⟩ := hcolor ν 12 R c hν hc
+  have hRΩ : ∀ i, R i ⊆ 𝔻 := fun i ↦ hc.iUnion_eq ▸ subset_iUnion R i
+  have hcD : ∀ i, c i ∈ 𝔻 := fun i ↦ hRΩ i (hc.center_mem i)
+  have hρpos : ∀ i, 0 < massRadiusDisc ν (c i) := fun i ↦ (hcl1 ν hν _ (hcD i) _ (hcD i)).1
+  have hl : ∀ l : Fin n, ∃ g : ℂ → ℂ, DifferentiableOn ℂ g 𝔻 ∧ (∃ z₀ ∈ 𝔻, g z₀ ≠ 0) ∧
+      Thm4BoundsDisc ψ μ g M C ∧ ∀ i, col i = l → ∀ z ∈ R i, ∀ w ∈ 𝔻, g w = 0 →
+        c₅ * massRadiusDisc ν z ≤ hypDist z w := by
+    intro l
+    let sel : ℕ → Bool := fun j ↦
+      decide (colorSel hypDist (massRadiusDisc ν) R c col (Bl + 2) l j)
+    obtain ⟨m, Λ, hΛ, hm2, hm3, hfalse, htrue⟩ := hnodesB ν a R c hc hρpos sel
+    obtain ⟨g, hgd, hzero, -, hb⟩ := hmult ψ μ hw R c m Λ hc hΛ hm2 hm3
+    have hfar' := hfarL ν 12 R c col l Λ hν hc hΛ.mem hcol
+      (fun j hj w hw ↦ hfalse j (by simp [sel, hj]) w hw)
+      (fun j hj w hw ↦ ⟨htrue j (by simp [sel, hj]) w hw, hΛ.near j w hw⟩)
+    obtain ⟨z₀, hz₀, hz₀n⟩ := Prop2.exists_mem_disc_notMem_nodeSet Λ
+    refine ⟨g, hgd, ⟨z₀, hz₀, fun h0 ↦ hz₀n ((hzero z₀ hz₀).1 h0)⟩, hb, ?_⟩
+    intro i hi z hz w hwD hw0
+    obtain ⟨j, hj⟩ := (hzero w hwD).1 hw0
+    exact hfar' i hi z hz j w hj
+  choose h hhd hh0 hhb hhfar using hl
+  have hupper : ∀ l, ∀ z ∈ 𝔻, ‖h l z‖ ≤ (C : ℝ) ^ 2 * Real.exp (ψ z) := fun l z hz ↦
+    Prop2.upper_of_bounds (norm_nonneg _) (hhb l z hz).2.1 (hhb l z hz).2.2
+  refine ⟨h, hhd, hh0, fun l ↦ Prop2.thm4BoundsDisc_mono hC0 hCCP (hhb l), ?_, ?_, ?_⟩
+  · -- every point is good for the colour of its cell
+    intro z hz
+    rw [← hc.iUnion_eq] at hz
+    obtain ⟨k, hk⟩ := mem_iUnion.1 hz
+    have hzD := hRΩ k hk
+    refine ⟨col k, fun w hwD hw0 ↦ ?_⟩
+    have h5 := hhfar (col k) k rfl z hk w hwD hw0
+    have hd0 : 0 ≤ hypDist z w := hypDist_nonneg z w
+    have hρw : massRadiusDisc μ w ≤ massRadiusDisc ν w := (hρν μ hw.meas w hwD).1
+    have hKd : massRadiusDisc ν w ≤ K * hypDist z w := by
+      by_cases hcase : hypDist w z ≤ 1 * max (massRadiusDisc ν w) (massRadiusDisc ν z)
+      · have h6 := (hcl1 ν hν w hwD z hzD).2.2 hcase
+        have h7 : C1 * massRadiusDisc ν z ≤ C1 / c₅ * hypDist z w := by
+          rw [div_mul_eq_mul_div, le_div_iff₀ hc₅]
+          nlinarith
+        calc massRadiusDisc ν w ≤ C1 / c₅ * hypDist z w := h6.trans h7
+          _ ≤ K * hypDist z w := mul_le_mul_of_nonneg_right (le_max_left _ _) hd0
+      · push Not at hcase
+        rw [hypDist_comm] at hcase
+        calc massRadiusDisc ν w ≤ hypDist z w :=
+              (le_max_left _ _).trans (by simpa using hcase.le)
+          _ ≤ K * hypDist z w := le_mul_of_one_le_left hd0 (le_max_right _ _)
+    calc ε * massRadiusDisc μ w ≤ ε * (K * hypDist z w) :=
+          mul_le_mul_of_nonneg_left (hρw.trans hKd) hε.le
+      _ = hypDist z w := by rw [hε_def, ← mul_assoc, inv_mul_cancel₀ hK0.ne', one_mul]
+  · -- the two-sided bound on the good set
+    intro l z hz hgood
+    have hρz : 0 < massRadiusDisc μ z := (hcl1' μ hw.meas z hz z hz).1
+    have hD : ENNReal.ofReal (c₆ * massRadiusDisc μ z) ≤
+        hypDistSet z {w | w ∈ 𝔻 ∧ h l w = 0} := by
+      refine le_iInf₂ fun w hw ↦ ENNReal.ofReal_le_ofReal ?_
+      obtain ⟨hwD, hw0⟩ := hw
+      have hεw := hgood w hwD hw0
+      by_cases hcase : hypDist z w ≤ 1 * max (massRadiusDisc μ z) (massRadiusDisc μ w)
+      · have h6 := (hcl1' μ hw.meas z hz w hwD).2.2 hcase
+        have h7 : ε * massRadiusDisc μ z ≤ C1' * hypDist z w := by nlinarith
+        calc c₆ * massRadiusDisc μ z ≤ ε / C1' * massRadiusDisc μ z :=
+              mul_le_mul_of_nonneg_right (min_le_left _ _) hρz.le
+          _ ≤ hypDist z w := by
+              rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]; linarith
+      · push Not at hcase
+        calc c₆ * massRadiusDisc μ z ≤ 1 * massRadiusDisc μ z :=
+              mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
+          _ ≤ hypDist z w := by
+              rw [one_mul]; exact (le_max_left _ _).trans (by simpa using hcase.le)
+    have hlow := Prop2.lower_of_bounds hρz hc₆.le hC0 (norm_nonneg _) hD (hhb l z hz).1
+    refine ⟨le_trans ?_ hlow, (hupper l z hz).trans ?_⟩
+    · exact mul_le_mul_of_nonneg_right hCPinv (Real.exp_pos _).le
+    · exact mul_le_mul_of_nonneg_right hC2CP (Real.exp_pos _).le
+  · intro l z hz
+    exact (hupper l z hz).trans (mul_le_mul_of_nonneg_right hC2CP (Real.exp_pos _).le)
 
 /-- **Proposition 2 (disc)** (paper, p. 369): finitely many multipliers `h₁, …, h_n`, each
 satisfying the conclusion of Theorem 4, whose exceptional sets
