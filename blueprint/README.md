@@ -9,10 +9,11 @@
 
 ## 0. Plan and status
 
-**Status (2026-11-01):**
-- **All modules proved.** All 14 modules M01–M14 are proved: 53 Lean files, with no `sorry` and no axioms beyond `propext`, `Classical.choice` and `Quot.sound`.
-- **Main results accepted.** comparator accepts the 13 main results (`comparator/last_run.log`).
-- **Statements frozen.** `scripts/check_statements.py` confirms that no statement of the reviewed scaffold changed, except two false helper statements removed with approval (NOTEBOOK I-01, I-03).
+**Status (2026-11-02):**
+- **All modules proved.** All 14 modules M01–M14 are proved: 54 Lean files, with no `sorry` and no axioms beyond `propext`, `Classical.choice` and `Quot.sound`.
+- **Theorem 3 unconditional.** `TheoremOCS` ([OCS99] as quoted on p. 375) is proved in the companion project MR1682065 (`OCS.theoremOCS`). The 18 files it needs are vendored in `OrtegaCerdaSeip/` (commit `3f16484`, see `OrtegaCerdaSeip/VENDORED.md`), and `TheoremOCSProof.lean` proves `theoremOCS_holds`. `theorem3_weighted` is unconditional; the conditional form is `theorem3_weighted_of_theoremOCS`.
+- **Main results accepted.** comparator (`lake comparator`) accepts the 14 main results (`comparator/last_run.log`).
+- **Statements frozen.** `scripts/check_statements.py` confirms that no statement of the reviewed scaffold changed, except two false helper statements removed with approval (NOTEBOOK I-01, I-03) and the deliberate removal of the hypothesis `hOCS` from `theorem3_weighted` and `theorem3_of_lowerBound` (2026-11-02; the conditional statements are kept as `*_of_theoremOCS`).
 
 
 This follows the same workflow as the companion BOC project (`../MR1340337`):
@@ -34,7 +35,7 @@ Main results:
 - **Theorem 1** (Christ) in the locally doubling form: `theorem1`, plus `theorem1_christ` for the doubling form as stated.
 - **Proposition 1**, kernel decay: `prop1`.
 - **Theorem 5**, multipliers for measures on `ℝ`: `theorem5`.
-- **Theorem 3**: `theorem3 : TheoremOCS → …`. It is conditional on the cited Ortega-Cerdà–Seip theorem [OCS99], exactly as the paper uses it.
+- **Theorem 3**, corrected (the printed form is false, `theorem3_printed_false`): `theorem3_weighted_of_theoremOCS : TheoremOCS → …`, conditional on the cited Ortega-Cerdà–Seip theorem [OCS99] exactly as the paper uses it, and the unconditional `theorem3_weighted`, since `TheoremOCS` is proved in MR1682065 (`theoremOCS_holds`).
 
 The statements are in `comparator/statements.lean`, and the definitions in `OrtegaCerdaMultipliers/Defs.lean`.
 
@@ -76,7 +77,7 @@ Not formalized:
 | M11 | `M11_Theorem2.md` | `Theorem2.lean` | Theorem 2 and the printed variant; bridge lemma for `C²` weights with `δ ≤ (1−|z|²)²Δψ ≤ M` (used by BOC) | §4.2 |
 | M12 | `M12_Theorem1.md` | `Theorem1.lean` | Theorem 1 (locally doubling), the Christ corollary, Proposition 1 | §4.2 |
 | M13 | `M13_Theorem5.md` | `Theorem5.lean` | Theorem 5 (zeros on `ℝ`) | §4.3 |
-| M14 | `M14_Theorem3.md` | `Theorem3.lean` | Theorem 3 from `TheoremOCS` and Theorem 5 | §4.3 |
+| M14 | `M14_Theorem3.md` | `Theorem3.lean`, `TheoremOCSProof.lean` | Theorem 3 from `TheoremOCS` and Theorem 5; `TheoremOCS` from the vendored `OrtegaCerdaSeip` (MR1682065) | §4.3 |
 
 ### Dependency graph
 
@@ -114,7 +115,7 @@ Priority: the disc path M01–M11 comes first, since it is what BOC needs. Then 
 7. **Proposition 2 (statement).** Includes the Theorem-4 bounds for each multiplier, as the paper says, and the disjoint exceptional sets.
 8. **Theorem 3.**
    - **False as printed.** The M14 writer gave a counterexample, two referees confirmed it, and it is proved in Lean (`theorem3_printed_false`). The integral needs the weight: `∫ e^{-φ(z)} d|μ|(z) / |x − z|`; the corrected statement `theorem3_weighted` is proved.
-   - **`TheoremOCS`.** It is the version quoted on p. 375, with `limsup = 0`. The published [OCS99] lemma states `limsup < ∞`; `= 0` follows from its proof. This is to be recorded in the yaml.
+   - **`TheoremOCS`.** It is the version quoted on p. 375, with `limsup = 0`. The published [OCS99] lemma states `limsup < ∞`; `= 0` follows from its proof. Recorded in the yaml. It is now proved in MR1682065 (`OCS.theoremOCS`, its NOTEBOOK N-08 for `= 0`), vendored here, so Theorem 3 is unconditional.
    - **Multipliers.** Theorem 3 needs multipliers for the signed measure `μ − 2α dx`. M13 builds them; Theorem 5 is the case `α = 0`.
 9. **Shared definitions.** `hypArea = dm/(1 − |z|²)²` on 𝔻 is defined once, in M01, and used by M04, M08, M10 and M11.
 

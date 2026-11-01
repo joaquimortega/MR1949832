@@ -5,7 +5,9 @@
 - The cited theorem [OCS99] is quoted on p. 375.
 - The proof is one sentence on p. 375: "These two ingredients together prove Theorem 3 in the same way as we proved Theorem 1 and Theorem 2". It is reconstructed below.
 
-**Lean file:** `OrtegaCerdaMultipliers/Theorem3.lean`.
+**Lean files:** `OrtegaCerdaMultipliers/Theorem3.lean`; `OrtegaCerdaMultipliers/TheoremOCSProof.lean` (added 2026-11-02).
+
+**Status (2026-11-02):** proved, no `sorry`. `theorem3_weighted` and `theorem3_of_lowerBound` are unconditional: `TheoremOCS` is proved in MR1682065 (`OCS.theoremOCS`, vendored in `OrtegaCerdaSeip/`), and `TheoremOCSProof.lean` gives `theoremOCS_holds`. The statements of §1.3 with the hypothesis `hOCS` are kept as `theorem3_weighted_of_theoremOCS` and `theorem3_of_lowerBound_of_theoremOCS`. The printed `theorem3` is false (`theorem3_printed_false`); now that `TheoremOCS` is proved, the equivalence `theorem3 ↔ ¬ TheoremOCS` of §0.1 just says so.
 
 **Depends on:**
 - **M13**: `lineMultipliers` (two multipliers for `φ − α|Im z|`, disjoint exceptional sets);

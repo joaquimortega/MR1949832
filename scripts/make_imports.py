@@ -23,7 +23,7 @@ MODULES = [  # (module, title, file prefixes relative to OrtegaCerdaMultipliers/
     ("M11", "Theorem 2", ["Theorem2"]),
     ("M12", "Theorem 1, Prop. 1", ["Theorem1"]),
     ("M13", "Theorem 5", ["Line/", "Theorem5"]),
-    ("M14", "Theorem 3", ["Theorem3"]),
+    ("M14", "Theorem 3", ["Theorem3", "TheoremOCSProof"]),
     ("Main", "re-export", ["Main"]),
 ]
 

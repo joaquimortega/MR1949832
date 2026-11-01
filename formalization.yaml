@@ -22,8 +22,9 @@ project:
       - Theorem 2: in 𝔻, with the norms ‖u e^{-φ}‖_{L^p(dm/(1−|z|²))}.
 
     The real line (Theorems 5 and 3). Multipliers with real zeros for Laplacians carried by ℝ.
-    Theorem 3, a weighted estimate for ∂̄u = μ, is conditional on the Ortega-Cerdà–Seip theorem
-    the paper quotes. As printed it is false; the corrected statement is formalized.
+    Theorem 3, a weighted estimate for ∂̄u = μ, uses the Ortega-Cerdà–Seip theorem the paper
+    quotes, which is proved in the companion formalization MR1682065 and vendored here. As printed
+    Theorem 3 is false; the corrected statement is proved unconditionally.
 
     Weights are pairs (φ, μ): φ continuous and Δφ = μ in the sense of distributions. Mathlib has
     no Riesz-measure theory, and for the paper's weights this class is equivalent to the
@@ -61,9 +62,13 @@ sources:
     location: "The theorem quoted on p. 375 of the article (Lemma 4 of [OCS99])"
     relationship: "background"
     note: >-
-      Not proved. Used as the explicit hypothesis OC.TheoremOCS of OC.theorem3_weighted, in the
-      form quoted on p. 375, which has limsup |u|e^{-α|Im z|} = 0. The published lemma states only
-      limsup < ∞; the "= 0" version follows from its proof (checked by a referee agent). See
+      Not assumed. The theorem quoted on p. 375 is OC.TheoremOCS, which has
+      limsup |u|e^{-α|Im z|} = 0; the published lemma states only limsup < ∞, and "= 0" follows
+      from its proof. It is proved, with "= 0" (its NOTEBOOK N-08), in the companion formalization
+      https://github.com/joaquimortega/MR1682065 as OCS.theoremOCS. The 18 files it needs are
+      vendored in OrtegaCerdaSeip/ (commit 3f164843606d8fc2e0fd8271fe033e8225905103), and
+      OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS makes OC.theorem3_weighted
+      unconditional. OC.theorem3_weighted_of_theoremOCS keeps the article's conditional form. See
       NOTEBOOK N-07.
     author_endorsement: "participated"
   - title: "On the ∂̄ equation in weighted L² norms in C¹"
@@ -84,6 +89,16 @@ related_formalizations:
     note: >-
       The companion project uses OC.theorem2_uniform to prove its Theorem 6 without the
       external Theorem G (its blueprint M23).
+  - name: "Ortega-Cerdà–Seip (1999), Lean formalization"
+    id: "https://github.com/joaquimortega/MR1682065"
+    url: "https://github.com/joaquimortega/MR1682065"
+    relationship: "builds-on"
+    note: >-
+      Proves [OCS99, Lemma 4] in the form quoted on p. 375 (OCS.theoremOCS : OCS.TheoremOCS, the
+      same definition as OC.TheoremOCS). A sorry-free subset of its library OrtegaCerdaSeip (the
+      import closure of OrtegaCerdaSeip.Lemma4.Main, 18 files, commit
+      3f164843606d8fc2e0fd8271fe033e8225905103) is vendored in OrtegaCerdaSeip/ and imported
+      only by OrtegaCerdaMultipliers/TheoremOCSProof.lean; it makes Theorem 3 unconditional.
 
 classification:
   arxiv: ["math.CV"]
@@ -94,8 +109,10 @@ status:
     The whole article.
       - Proved: Theorems 1, 2, 4, 5 and Propositions 1, 2 (with Lemmas 1–8, Claims 1–2).
       - Refuted in Lean: Theorem 3 as printed (OC.theorem3_printed_false).
-      - Proved conditionally: Theorem 3, in corrected form, on the quoted Ortega-Cerdà–Seip
-        theorem (OC.TheoremOCS), as in the article.
+      - Proved: Theorem 3, in corrected form (OC.theorem3_weighted), unconditionally. The quoted
+        Ortega-Cerdà–Seip theorem (OC.TheoremOCS) is proved in the companion formalization
+        MR1682065 (OCS.theoremOCS), whose needed part is vendored in OrtegaCerdaSeip/. The
+        article's conditional form is OC.theorem3_weighted_of_theoremOCS.
       - Not formalized: Berndtsson's Example (p. 356), whose weight takes the value −∞, and the
         background theorems the article only quotes (Hörmander, Donnelly–Fefferman,
         Lyubarskiĭ–Sodin, Seip).
@@ -174,9 +191,13 @@ status:
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/config.json"
-      literature_dependencies:
-        - statement: "The Ortega-Cerdà–Seip ∂̄-estimate for compactly supported measures with e^{-α|Im z|}d|μ| two-sided Carleson, as quoted on p. 375 (limsup = 0 version); formalized as the hypothesis OC.TheoremOCS"
-          source: "Multipliers for entire functions and an interpolation problem of Beurling"
+      literature_dependencies: []
+    - declaration: "OC.theorem3_weighted_of_theoremOCS"
+      file: "OrtegaCerdaMultipliers/Theorem3.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
     - declaration: "OC.theorem3_printed_false"
       file: "OrtegaCerdaMultipliers/Theorem3.lean"
       sorry_count: 0
@@ -200,7 +221,8 @@ automation:
         verifies that no statement changed since the reviewed scaffold.
 
         Foundation files were copied (not imported) from the companion BOC project, which itself
-        will depend on this project. Verification: comparator, run under systemd-run.
+        will depend on this project. Verification: comparator, run under systemd-run; since
+        2026-11-02, `lake comparator` (bwrap sandbox).
       cost:
         wall_time: "about 6.5 hours (2026-11-01, 12:40–19:10 CET, including a pause of about 1 h for a usage limit)"
         hardware: "API-only models; local workstation (16 cores, 31 GB RAM) for Lean builds"
@@ -230,6 +252,10 @@ automation:
         - a lemma whose `∫ z, a - b` parsed as `∫ z, (a - b)`.
         Both were unused and were removed, with corrected versions proved (NOTEBOOK I-01,
         I-03); the freeze-check lists them as approved removals.
+    Update of 2026-11-02: Theorem 3 was made unconditional by vendoring the part of the
+    MR1682065 library that proves OC.TheoremOCS. theorem3_weighted and theorem3_of_lowerBound lost
+    the hypothesis hOCS (a deliberate change that the freeze-check reports); the conditional
+    statements are kept as *_of_theoremOCS (NOTEBOOK I-07).
 
 fidelity:
   divergences: >-
@@ -328,10 +354,15 @@ alignment:
       module: "OrtegaCerdaMultipliers/Theorem5.lean"
       status: "proved"
     - source: "Theorem 3 (corrected)"
-      lean: "OC.theorem3_weighted"
+      lean: "OC.theorem3_weighted, OC.theorem3_of_lowerBound; conditional forms OC.theorem3_weighted_of_theoremOCS, OC.theorem3_of_lowerBound_of_theoremOCS"
       module: "OrtegaCerdaMultipliers/Theorem3.lean"
-      status: "literature-dependency"
-      note: "conditional on OC.TheoremOCS, the [OCS99] theorem as quoted on p. 375; the printed statement is false (NOTEBOOK N-01)"
+      status: "proved"
+      note: "unconditional, via OC.theoremOCS_holds; the printed statement is false (NOTEBOOK N-01)"
+    - source: "The Ortega-Cerdà–Seip theorem quoted on p. 375 ([OCS99, Lemma 4], limsup = 0 version)"
+      lean: "OC.TheoremOCS, OC.theoremOCS_holds"
+      module: "OrtegaCerdaMultipliers/TheoremOCSProof.lean"
+      status: "proved"
+      note: "OC.theoremOCS_holds := OCS.theoremOCS, proved in MR1682065 and vendored in OrtegaCerdaSeip/ (NOTEBOOK N-07)"
     - source: "Theorem 3 as printed (p. 358)"
       lean: "OC.theorem3_printed_false, OC.not_theorem3_printed"
       module: "OrtegaCerdaMultipliers/Theorem3.lean"
@@ -349,5 +380,6 @@ acknowledgements: >-
     - Besicovitch–Vitali covering and Lebesgue differentiation;
     - the polar-coordinate and Möbius changes of variables.
   Foundation files (∂̄ calculus, Cauchy transform, Weyl's lemma for ∂̄, disc geometry) come from
-  the companion BOC formalization. Verification used leanprover/comparator, landrun and
-  lean4export.
+  the companion BOC formalization. The proof of the Ortega-Cerdà–Seip theorem (OrtegaCerdaSeip/)
+  is vendored from the companion formalization MR1682065. Verification used
+  leanprover/comparator, landrun and lean4export, and from 2026-11-02 `lake comparator`.

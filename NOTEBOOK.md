@@ -34,7 +34,7 @@ The failure does not use the [OCS99] theorem. The problem is invariant under `φ
 - it uses finitely many dyadic point masses `x₀ − i 2^{-(k+6)}` instead of a segment;
 - Bernstein's inequality, which is not in Mathlib, is replaced by Phragmén–Lindelöf on the two half-planes, the Cauchy estimate and the mean value theorem.
 
-**Correction.** Weight the integral: `∫_{|z−x|<1} e^{-φ(z)} d|μ|(z)/|x−z|`. The corrected statement is formalized (`theorem3`, conditional on `TheoremOCS` as in the paper). The printed form holds when `φ` is bounded below on `|Im z| < 1`, e.g. `φ = α|Im z|`, the case of [OCS99].
+**Correction.** Weight the integral: `∫_{|z−x|<1} e^{-φ(z)} d|μ|(z)/|x−z|`. The corrected statement is formalized: `theorem3_weighted_of_theoremOCS`, conditional on `TheoremOCS` as in the paper, and the unconditional `theorem3_weighted`, since `TheoremOCS` is proved (N-07). The printed form holds when `φ` is bounded below on `|Im z| < 1`, e.g. `φ = α|Im z|`, the case of [OCS99] (`theorem3_of_lowerBound`).
 
 ### N-02 (E, confirmed) — Theorem 4, p. 363 (and p. 372): inequalities reversed
 The display reads `d(z,Λ)/ρ(z) ≲ |h(z)| e^{-ψ(z)} ≲ (d(z,Λ)/ρ(z))^M`. It should read `(d/ρ)^M ≲ |h| e^{-ψ} ≲ d/ρ`, because `d/ρ ≲ 1`. The formal statement uses the corrected order.
@@ -66,6 +66,7 @@ A weight is a continuous `φ` with distributional Laplacian `μ` (`IsSubharmonic
 The paper quotes [OCS99] with `limsup_{z→∞} |u(z)| e^{-α|Im z|} = 0`. The published statement (Lemma 4 of the UB postprint) gives only `< ∞`.
 - The `= 0` version follows from the [OCS99] proof (a referee checked each of its three pieces), and Theorem 3 needs it.
 - The hypothesis `TheoremOCS` is the p. 375 quotation.
+- **Proved (2026-11-02).** The companion formalization of [OCS99], MR1682065, proves `TheoremOCS`, including the strengthening `limsup = 0` (its NOTEBOOK N-08), as `OCS.theoremOCS`. Its 18 needed files are vendored in `OrtegaCerdaSeip/` (commit `3f16484`), and `OC.theoremOCS_holds := OCS.theoremOCS` makes `theorem3_weighted` and `theorem3_of_lowerBound` unconditional. The conditional forms are kept as `theorem3_weighted_of_theoremOCS` and `theorem3_of_lowerBound_of_theoremOCS`.
 
 ## Section 2: locally doubling measures
 
@@ -209,3 +210,8 @@ Doubling of the regularized measure in the disc: squeezing between `ε·hypArea`
 - **M12 (N-23 made precise).** With the auxiliary weight `ψ = φ′ − c|z|²`, the plane kernel must carry `e^{2c(ζ̄z − |ζ|²)}`, and then the `±c|·|²` terms cancel exactly to `e^{-c|z−ζ|²}`. The paper's `ψ = φ − (ε/2)|z|²` corresponds to `c = ε/2`, i.e. the exponent `ε`, not `2ε`.
 - **M12 (N-03 made formal).** `thm1H_eq_zero_of_zero` proves that the kernel vanishes at the zeros of the multipliers.
 - **M14.** The constant of the corrected Theorem 3 is `C = 2 C_up C_O (1 + c⁻¹ e^α)`.
+
+### I-07 (M14, 2026-11-02) — Theorem 3 made unconditional
+- `TheoremOCS` is proved in MR1682065 (N-07), vendored in `OrtegaCerdaSeip/`; `TheoremOCSProof.lean` proves `OC.theoremOCS_holds`.
+- `theorem3_weighted` and `theorem3_of_lowerBound` lose the hypothesis `hOCS`; their former statements are kept, unchanged, as `theorem3_weighted_of_theoremOCS` and `theorem3_of_lowerBound_of_theoremOCS`. The comparator checks both `theorem3_weighted` and `theorem3_weighted_of_theoremOCS` (14 theorems).
+- `scripts/check_statements.py` therefore reports these two statements as `CHANGED` (only `hOCS` removed): a deliberate change, not added to its approved list.

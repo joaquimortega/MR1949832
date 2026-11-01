@@ -59,7 +59,8 @@ instances; `sorry` counts the `sorry` tokens outside comments.
 | M13 | `Line/Partition.lean` | 52 | 0 | `Line/Basic` |
 | M13 | `Line/Potential.lean` | 38 | 0 | `Line/Partition` |
 | M13 | `Theorem5.lean` | 32 | 0 | `Line/Potential`, `LogModulusWeak`, `Potential/Fundamental` |
-| M14 | `Theorem3.lean` | 74 | 0 | `Theorem5`, `Foundations/Weyl` |
+| M14 | `Theorem3.lean` | 76 | 0 | `Theorem5`, `Foundations/Weyl`, `TheoremOCSProof` |
+| M14 | `TheoremOCSProof.lean` | 1 | 0 | `Defs` |
 | Main | `Main.lean` | 0 | 0 | `Multiplier/Theorem4`, `SeveralMultipliers`, `Theorem2`, `Theorem1`, `Theorem5`, `Theorem3` |
 
 ## Modules
@@ -80,10 +81,10 @@ instances; `sorry` counts the `sorry` tokens outside comments.
 | M11 | Theorem 2 | 1 | 41 | 0 | M04, M09 |
 | M12 | Theorem 1, Prop. 1 | 1 | 11 | 0 | M04, M09 |
 | M13 | Theorem 5 | 4 | 137 | 0 | M03, M07 |
-| M14 | Theorem 3 | 1 | 74 | 0 | M13 |
+| M14 | Theorem 3 | 2 | 77 | 0 | M13 |
 | Main | re-export | 1 | 0 | 0 | M11, M12, M14 |
 
-Total: 53 files, 1559 declarations, 0 `sorry`.
+Total: 54 files, 1562 declarations, 0 `sorry`.
 
 ## Dependency graph (transitive reduction)
 
