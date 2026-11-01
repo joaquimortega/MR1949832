@@ -6,7 +6,9 @@ import OrtegaCerdaMultipliers.Foundations.DiscGeometry
 /-!
 # M10 (ModelKernels) — Lemmas 7 and 8, the Schur test, Forelli–Rudin integrals
 
-See `blueprint/M10_ModelKernels.md`.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M10_ModelKernels.md`.  All proofs are complete except `lintegral_FR_near`, which is
+false as stated (it needs `s ≤ 1`; see the `FALSE?` comment); `lintegral_FR` uses the corrected
+`lintegral_FR_near_of_le_one` instead.
 
 Reconciliation: the Forelli–Rudin bound `integral_one_sub_conj_mul_rpow_neg_three_le` that M08
 uses for the far field in the disc is stated here (M08 imports M10).
