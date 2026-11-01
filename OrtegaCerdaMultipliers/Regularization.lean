@@ -5,14 +5,31 @@ import OrtegaCerdaMultipliers.Foundations.HyperbolicExtra
 /-!
 # M04 (Regularization) — Lemma 6: regularization of the weight
 
-See `blueprint/M04_Regularization.md`.  Scaffold: statements, proofs `sorry`; the definitions are
-real.
+See `blueprint/M04_Regularization.md`.  Fully proved (modulo the upstream M01–M03 interfaces).
 
 Lemma 6 in `ℂ` and `𝔻`, via the compactly supported local potentials of M02 §4 applied to
 `σ = w·μ` with `w(ζ) = 1/(2μ(B(ζ,R)))`.  Reconciliation: `logSmall_plane`, `logSmall_disc` moved
 to M03 (`Doubling/Export.lean`); M03's names are used for (A1)–(A4) (`doubling_upTo_*`,
 `christ_lemma23_*`, `rpow_le_measure_*`, `measure_singleton_*`); the forms of Lemma 6 consumed by
 M11/M12 are the corollaries `lemma6_disc_hypArea`, `lemma6_plane_volume`.
+
+**Structure of the proofs.**
+* `Reg.isSubharmonicWeight_regularized` (generic `Ω`): `ψ = φ + V` is a weight with Laplacian
+  `μ.withDensity (1 - w) + volume.withDensity (smoothedDensity σ s)`, `σ = μ.withDensity w`.
+* Disc: `Reg.lemma6_disc_core` chooses `ε, K, M, Cd'` from `(Cd, R, D₁, D₂, C_L)` before the
+  weight, where `D₁, D₂, C_L` are the constants of `μ(D(x,R+r₁)) ≤ D₁ μ(D(x,r₁))`,
+  `μ(D(x,2r₂)) ≤ D₂ μ(D(x,R))` and [Chr91, Lemma 2.3] at radius `r₂` (`r₁ = artanh(1/9)`,
+  `r₂ = artanh(1/2)`).  These come from `measure_hypBall_le_rpow`, `christ_lemma23_disc`
+  (`Reg.exists_disc_consts`, for `lemma6_disc`) or uniformly in the class from
+  `measure_ball_le_rpow_quant` on `HDisc`, `christ_disc_quant` (`Reg.exists_disc_consts_quant`,
+  for `lemma6_disc_quant`).
+* Deviations from the doc: (i) `D₁`, `D₂` come from the power form `measure_*_le_rpow` (one
+  application) instead of iterated doubling; (ii) the doubling of `volume.withDensity g` on
+  hyperbolic discs is read off the sandwich `ε·hypArea ≤ g dm ≤ K·hypArea` and
+  `hypArea (D(z,r)) = π sinh² r` (ratio `4 cosh² r ≤ 4 cosh²(1/2)`), not from (G1)–(G3);
+  (iii) in `localPot_disc_le` the bound `s(ζ)/|z−ζ| ≤ 1/β(z,ζ)` uses `artanh t ≤ 2t` on
+  `[0, 1/2]` instead of the monotonicity of `artanh t / t`; (iv) the mass radius of the
+  regularized measure in `lemma6_disc_quant` is `5R` (`ofReal_lt_measure_hypBall`, `μ' ≥ μ/2`).
 -/
 
 open MeasureTheory Metric Set Complex
@@ -77,7 +94,7 @@ theorem le_two_smul_withDensity_one_sub {μ : Measure ℂ} {w : ℂ → ℝ≥0�
 
 /-- Upper bound for the weighted average of `f` (the averaged weight `(2 m)⁻¹`). -/
 theorem setLIntegral_inv_two_mul_mul_le {μ : Measure ℂ} {B : Set ℂ} (hBm : MeasurableSet B)
-    (hB : μ B ≠ ∞) {m f : ℂ → ℝ≥0∞} {D C : ℝ} (hD : 0 ≤ D) (hC : 0 ≤ C)
+    (hB : μ B ≠ ∞) {m f : ℂ → ℝ≥0∞} {D C : ℝ} (hD : 0 ≤ D)
     (h : ∀ ζ ∈ B, μ B ≤ ENNReal.ofReal D * m ζ)
     (hf : ∫⁻ ζ in B, f ζ ∂μ ≤ ENNReal.ofReal C * μ B) :
     ∫⁻ ζ in B, (2 * m ζ)⁻¹ * f ζ ∂μ ≤ ENNReal.ofReal (D * C / 2) := by
@@ -114,7 +131,7 @@ theorem setLIntegral_inv_two_mul_le {μ : Measure ℂ} {B : Set ℂ} (hBm : Meas
     (hB : μ B ≠ ∞) {m : ℂ → ℝ≥0∞} {D : ℝ} (hD : 0 ≤ D)
     (h : ∀ ζ ∈ B, μ B ≤ ENNReal.ofReal D * m ζ) :
     ∫⁻ ζ in B, (2 * m ζ)⁻¹ ∂μ ≤ ENNReal.ofReal (D / 2) := by
-  have := setLIntegral_inv_two_mul_mul_le hBm hB hD zero_le_one h (f := fun _ ↦ 1)
+  have := setLIntegral_inv_two_mul_mul_le hBm hB hD h (f := fun _ ↦ 1) (C := 1)
     (by simp)
   simpa using this
 
@@ -338,6 +355,13 @@ theorem ae_massWeightDisc_le_one {μ : Measure ℂ} (hc : μ 𝔻ᶜ = 0) {R : �
   filter_upwards [ae_massWeightDisc_le hc hm] with ζ hζ
   exact hζ.trans (ENNReal.inv_le_one.2 one_le_two)
 
+theorem massWeight_le {μ : Measure ℂ} {R : ℝ} (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) (ζ : ℂ) :
+    massWeight μ R ζ ≤ 2⁻¹ := by
+  unfold massWeight
+  apply ENNReal.inv_le_inv.2
+  calc (2 : ℝ≥0∞) = 2 * 1 := (mul_one 2).symm
+    _ ≤ 2 * μ (ball ζ R) := by gcongr; exact hm ζ
+
 end Reg
 
 theorem measurable_massWeight {μ : Measure ℂ} [SFinite μ] (R : ℝ) :
@@ -363,7 +387,32 @@ theorem measurable_massWeightDisc {μ : Measure ℂ} [SFinite μ] (R : ℝ) :
 
 theorem isLocalPotData_plane {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight univ φ μ)
     (hd : IsLocallyDoubling μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) :
-    IsLocalPotData univ (μ.withDensity (massWeight μ R)) (fun _ ↦ R) := sorry
+    IsLocalPotData univ (μ.withDensity (massWeight μ R)) (fun _ ↦ R) := by
+  have : SigmaFinite μ := hφ.sigmaFinite isOpen_univ
+  have hle : μ.withDensity (massWeight μ R) ≤ μ :=
+    Reg.withDensity_le_self (ae_of_all _ fun ζ ↦ (Reg.massWeight_le hm ζ).trans
+      (ENNReal.inv_le_one.2 one_le_two))
+  have hfin : ∀ z r, μ (ball z r) < ∞ := fun z r ↦ hφ.measure_ball_lt_top z r
+  refine ⟨isOpen_univ, measurable_const, fun _ _ ↦ hR, ⟨R, fun _ ↦ le_rfl⟩,
+    fun _ _ ↦ subset_univ _, by simp, inferInstance, ?_, ?_, ?_⟩
+  · intro z
+    refine le_antisymm ((Measure.le_iff'.1 hle {z}).trans ?_) bot_le
+    rw [measure_singleton_plane hd hfin z]
+  · intro K _ hKc
+    obtain ⟨ρ, hKρ⟩ := (isBounded_iff_subset_closedBall (0 : ℂ)).1 hKc.isBounded
+    have hsub : {ζ | ∃ z ∈ K, dist z ζ < R} ⊆ closedBall 0 (ρ + R) := by
+      rintro ζ ⟨z, hzK, hzζ⟩
+      have hz := hKρ hzK
+      rw [mem_closedBall] at hz ⊢
+      linarith [dist_triangle ζ z 0, dist_comm z ζ]
+    calc _ ≤ μ {ζ | ∃ z ∈ K, dist z ζ < R} := Measure.le_iff'.1 hle _
+      _ ≤ μ (closedBall 0 (ρ + R)) := measure_mono hsub
+      _ < ∞ := hφ.finite_of_compact _ (subset_univ _) (isCompact_closedBall _ _)
+  · intro K _ hKc η hη
+    obtain ⟨δ, hδ, hδ1, hδK⟩ :=
+      logSmall_plane hd (fun K hK ↦ hφ.finite_of_compact K (subset_univ K) hK) hKc hη
+    exact ⟨δ, hδ, hδ1, fun z hz ↦
+      (lintegral_mono' (Measure.restrict_mono subset_rfl hle) le_rfl).trans (hδK z hz)⟩
 
 theorem isLocalPotData_disc {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight 𝔻 φ μ)
     (hd : IsLocallyDoublingDisc μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
@@ -572,7 +621,7 @@ variable {φ : ℂ → ℝ} {μ : Measure ℂ} {R : ℝ}
 
 /-- Lower bound for `g` (doc §5.2), with the constant `D₁` of
 `μ(D(x, R + r₁)) ≤ D₁ μ(D(x, r₁))`. -/
-theorem smoothedDensity_disc_ge (hφ : IsSubharmonicWeight 𝔻 φ μ) (hR : 0 < R)
+theorem smoothedDensity_disc_ge (hφ : IsSubharmonicWeight 𝔻 φ μ)
     (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) {D₁ : ℝ} (hD₁ : 0 < D₁)
     (h₁ : ∀ x ∈ 𝔻, μ (hypBall x (R + r₁)) ≤ ENNReal.ofReal D₁ * μ (hypBall x r₁))
     {x : ℂ} (hx : x ∈ 𝔻) :
@@ -758,7 +807,7 @@ theorem localPot_disc_le_of (hφ : IsSubharmonicWeight 𝔻 φ μ) (hd : IsLocal
       ENNReal.ofReal (D₂ * C_L / 2) := by
     rw [hrestr]
     refine (lintegral_withDensity_le_lintegral_mul _ hwm _).trans ?_
-    exact setLIntegral_inv_two_mul_mul_le (m := fun ζ ↦ μ (hypBall ζ R)) hBm hμB hD₂.le hCL
+    exact setLIntegral_inv_two_mul_mul_le (m := fun ζ ↦ μ (hypBall ζ R)) hBm hμB hD₂.le
       (fun ζ hζ ↦ (measure_mono (hypBall_subset_hypBall_two_mul hz hζ)).trans (h₂ ζ hζ.1))
       (hL z hz)
   have hbound0 : σ B ≤ ENNReal.ofReal (D₂ / 2) := by
@@ -787,6 +836,257 @@ theorem localPot_disc_le_of (hφ : IsSubharmonicWeight 𝔻 φ μ) (hd : IsLocal
   exact (ENNReal.ofReal_le_ofReal_iff (potConstDisc_nonneg hD₂.le hCL hC₀)).1 hfin
 
 end DiscBounds
+
+/-! #### Explicit bounds in the plane -/
+
+section PlaneBounds
+
+variable {φ : ℂ → ℝ} {μ : Measure ℂ} {R : ℝ}
+
+/-- Lower bound for `g` (doc §4.2), with the constant `C` of doubling up to scale `R`. -/
+theorem smoothedDensity_plane_ge (hφ : IsSubharmonicWeight univ φ μ) (hR : 0 < R)
+    (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) {C : ℝ≥0}
+    (hC : ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R → μ (ball z (2 * r)) ≤ C * μ (ball z r)) (x : ℂ) :
+    ENNReal.ofReal (1 / (2 * Real.pi * R ^ 2 * (C : ℝ) ^ 2)) ≤
+      smoothedDensity (μ.withDensity (massWeight μ R)) (fun _ ↦ R) x := by
+  set w := massWeight μ R with hwdef
+  set B := ball x (R / 2) with hBdef
+  have hBm : MeasurableSet B := measurableSet_ball
+  have hCC : (C : ℝ≥0∞) = ENNReal.ofReal (C : ℝ) := (ENNReal.ofReal_coe_nnreal).symm
+  have h2R : μ (ball x R) ≤ C * μ B := by
+    have := hC x (R / 2) (by positivity) (by linarith)
+    rwa [show 2 * (R / 2) = R by ring] at this
+  have hRB : ∀ ζ ∈ B, μ (ball ζ R) ≤ ENNReal.ofReal ((C : ℝ) ^ 2) * μ B := by
+    intro ζ hζ
+    have hsub : ball ζ R ⊆ ball x (2 * R) := by
+      intro y hy
+      rw [mem_ball] at hy hζ ⊢
+      linarith [dist_triangle y ζ x]
+    calc μ (ball ζ R) ≤ μ (ball x (2 * R)) := measure_mono hsub
+      _ ≤ C * μ (ball x R) := hC x R hR le_rfl
+      _ ≤ C * (C * μ B) := by gcongr
+      _ = ENNReal.ofReal ((C : ℝ) ^ 2) * μ B := by
+          rw [ENNReal.ofReal_pow NNReal.zero_le_coe, ← hCC]
+          ring
+  have hμB : μ B ≠ ∞ := (hφ.measure_ball_lt_top x _).ne
+  have hμB0 : μ B ≠ 0 := by
+    intro h0
+    have h1 : (1 : ℝ≥0∞) ≤ 0 := by
+      calc (1 : ℝ≥0∞) ≤ μ (ball x R) := hm x
+        _ ≤ C * μ B := h2R
+        _ = 0 := by rw [h0, mul_zero]
+    exact absurd h1 (by norm_num)
+  have hCpos : 0 < (C : ℝ) := by
+    by_contra hc
+    have hc0 : C = 0 := by
+      have := le_antisymm (not_lt.1 hc) C.2
+      exact_mod_cast this
+    apply hμB0
+    have h1 : (1 : ℝ≥0∞) ≤ 0 := by
+      calc (1 : ℝ≥0∞) ≤ μ (ball x R) := hm x
+        _ ≤ C * μ B := h2R
+        _ = 0 := by rw [hc0, ENNReal.coe_zero, zero_mul]
+    exact absurd h1 (by norm_num)
+  have hw : ENNReal.ofReal (1 / (2 * (C : ℝ) ^ 2)) ≤ ∫⁻ ζ in B, w ζ ∂μ :=
+    le_setLIntegral_inv_two_mul (m := fun ζ ↦ μ (ball ζ R)) hBm hμB0 hμB (by positivity) hRB
+  have hk : ∀ ζ ∈ B, ENNReal.ofReal (1 / (Real.pi * R ^ 2)) ≤
+      ENNReal.ofReal (bumpKernel R (x - ζ)) := by
+    intro ζ hζ
+    apply ENNReal.ofReal_le_ofReal
+    have hk0 := le_bumpKernel hR (x - ζ)
+    have hmem : x - ζ ∈ ball (0 : ℂ) (R / 2) := by
+      rw [mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm]
+      exact hζ
+    rwa [indicator_of_mem hmem, Pi.one_apply, mul_one] at hk0
+  calc ENNReal.ofReal (1 / (2 * Real.pi * R ^ 2 * (C : ℝ) ^ 2))
+      = ENNReal.ofReal (1 / (Real.pi * R ^ 2)) * ENNReal.ofReal (1 / (2 * (C : ℝ) ^ 2)) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        field_simp
+    _ ≤ ENNReal.ofReal (1 / (Real.pi * R ^ 2)) * ∫⁻ ζ in B, w ζ ∂μ := by gcongr
+    _ = ENNReal.ofReal (1 / (Real.pi * R ^ 2)) * (μ.withDensity w) B := by
+        rw [withDensity_apply _ hBm]
+    _ = ∫⁻ ζ in B, ENNReal.ofReal (1 / (Real.pi * R ^ 2)) ∂(μ.withDensity w) :=
+        (setLIntegral_const B _).symm
+    _ ≤ ∫⁻ ζ in B, ENNReal.ofReal (bumpKernel R (x - ζ)) ∂(μ.withDensity w) :=
+        setLIntegral_mono' hBm hk
+    _ ≤ smoothedDensity (μ.withDensity w) (fun _ ↦ R) x := setLIntegral_le_lintegral _ _
+
+/-- For `ζ ∈ B(x, R)`: `μ(B(x,R)) ≤ C μ(B(ζ,R))`. -/
+theorem measure_ball_le_of_mem {C : ℝ≥0} (hR : 0 < R)
+    (hC : ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R → μ (ball z (2 * r)) ≤ C * μ (ball z r)) {x ζ : ℂ}
+    (hζ : ζ ∈ ball x R) : μ (ball x R) ≤ ENNReal.ofReal (C : ℝ) * μ (ball ζ R) := by
+  have hsub : ball x R ⊆ ball ζ (2 * R) := by
+    intro y hy
+    rw [mem_ball] at hy hζ ⊢
+    linarith [dist_triangle y x ζ, dist_comm x ζ]
+  rw [ENNReal.ofReal_coe_nnreal]
+  exact (measure_mono hsub).trans (hC ζ R hR le_rfl)
+
+/-- Upper bound for `g` (doc §4.2). -/
+theorem smoothedDensity_plane_le (hφ : IsSubharmonicWeight univ φ μ) (hR : 0 < R) {C : ℝ≥0}
+    (hC : ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R → μ (ball z (2 * r)) ≤ C * μ (ball z r)) (x : ℂ) :
+    smoothedDensity (μ.withDensity (massWeight μ R)) (fun _ ↦ R) x ≤
+      ENNReal.ofReal (2 * C / (Real.pi * R ^ 2)) := by
+  set w := massWeight μ R with hwdef
+  set B := ball x R with hBdef
+  have hBm : MeasurableSet B := measurableSet_ball
+  set c : ℝ := 4 / (Real.pi * R ^ 2) with hc
+  have hk : ∀ ζ, ENNReal.ofReal (bumpKernel R (x - ζ)) ≤
+      B.indicator (fun _ ↦ ENNReal.ofReal c) ζ := by
+    intro ζ
+    have hk0 := bumpKernel_le hR (x - ζ)
+    by_cases hζ : ζ ∈ B
+    · rw [indicator_of_mem hζ]
+      apply ENNReal.ofReal_le_ofReal
+      have hmem : x - ζ ∈ ball (0 : ℂ) R := by
+        rw [mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm]
+        exact hζ
+      rwa [indicator_of_mem hmem, Pi.one_apply, mul_one] at hk0
+    · rw [indicator_of_notMem hζ]
+      have hmem : x - ζ ∉ ball (0 : ℂ) R := by
+        rw [mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm]
+        exact hζ
+      rw [indicator_of_notMem hmem, mul_zero] at hk0
+      rw [ENNReal.ofReal_of_nonpos hk0]
+  have hμB : μ B ≠ ∞ := (hφ.measure_ball_lt_top x _).ne
+  have hw : ∫⁻ ζ in B, w ζ ∂μ ≤ ENNReal.ofReal ((C : ℝ) / 2) :=
+    setLIntegral_inv_two_mul_le (m := fun ζ ↦ μ (ball ζ R)) hBm hμB C.2
+      fun ζ hζ ↦ measure_ball_le_of_mem hR hC hζ
+  calc smoothedDensity (μ.withDensity w) (fun _ ↦ R) x
+      ≤ ∫⁻ ζ, B.indicator (fun _ ↦ ENNReal.ofReal c) ζ ∂(μ.withDensity w) := lintegral_mono hk
+    _ = ENNReal.ofReal c * (μ.withDensity w) B := lintegral_indicator_const hBm _
+    _ = ENNReal.ofReal c * ∫⁻ ζ in B, w ζ ∂μ := by rw [withDensity_apply _ hBm]
+    _ ≤ ENNReal.ofReal c * ENNReal.ofReal ((C : ℝ) / 2) := by gcongr
+    _ = ENNReal.ofReal (2 * C / (Real.pi * R ^ 2)) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        rw [hc]
+        field_simp
+        ring
+
+/-- The constant of the bound on the local potential in the plane. -/
+def potConstPlane (C C_L C₀ : ℝ) : ℝ :=
+  2 * (4 * Real.pi)⁻¹ * (C * C_L / 2) + (4 * Real.pi)⁻¹ * C₀ * (C / 2)
+
+/-- Bound on the local potential (doc §4.3). -/
+theorem localPot_plane_le_of (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoubling μ)
+    (hR : 0 < R) (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) {C : ℝ≥0}
+    (hC : ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R → μ (ball z (2 * r)) ≤ C * μ (ball z r))
+    {C_L C₀ : ℝ} (hCL : 0 ≤ C_L) (hC₀ : 0 ≤ C₀) (hpot : LocalPotBound C₀)
+    (hL : ∀ z : ℂ, ∫⁻ ζ in ball z R, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂μ ≤
+      ENNReal.ofReal C_L * μ (ball z R)) (z : ℂ) :
+    localPot (μ.withDensity (massWeight μ R)) (fun _ ↦ R) z ≤ potConstPlane C C_L C₀ := by
+  have : SigmaFinite μ := hφ.sigmaFinite isOpen_univ
+  set w := massWeight μ R with hwdef
+  have hwm : Measurable w := measurable_massWeight R
+  set σ := μ.withDensity w with hσdef
+  have h := isLocalPotData_plane hφ hd hR hm
+  have hP := hpot univ σ (fun _ ↦ R) h z
+  set B := ball z R with hBdef
+  have hBm : MeasurableSet B := measurableSet_ball
+  have hμB : μ B ≠ ∞ := (hφ.measure_ball_lt_top z _).ne
+  have hEB : {ζ : ℂ | dist z ζ < R} = B := by
+    ext ζ
+    rw [hBdef, mem_ball, dist_comm]
+    rfl
+  set a₁ : ℝ := 2 * (4 * Real.pi)⁻¹ with ha₁
+  set a₀ : ℝ := (4 * Real.pi)⁻¹ * C₀ with ha₀
+  have ha₁0 : 0 ≤ a₁ := by positivity
+  have ha₀0 : 0 ≤ a₀ := by positivity
+  have hpt : ∀ ζ, ENNReal.ofReal ((4 * Real.pi)⁻¹ * (Real.log (R ^ 2 / ‖z - ζ‖ ^ 2) + C₀)) ≤
+      ENNReal.ofReal a₁ * ENNReal.ofReal (Real.log (R / dist z ζ)) + ENNReal.ofReal a₀ := by
+    intro ζ
+    have hlog : Real.log (R ^ 2 / ‖z - ζ‖ ^ 2) = 2 * Real.log (R / dist z ζ) := by
+      rw [dist_eq_norm, ← div_pow, Real.log_pow]
+      norm_num
+    calc ENNReal.ofReal ((4 * Real.pi)⁻¹ * (Real.log (R ^ 2 / ‖z - ζ‖ ^ 2) + C₀))
+        = ENNReal.ofReal (a₁ * Real.log (R / dist z ζ) + a₀) := by
+          congr 1
+          rw [hlog, ha₁, ha₀]
+          ring
+      _ ≤ ENNReal.ofReal (a₁ * Real.log (R / dist z ζ)) + ENNReal.ofReal a₀ :=
+          ENNReal.ofReal_add_le
+      _ = _ := by rw [ENNReal.ofReal_mul ha₁0]
+  have hrestr : σ.restrict B = (μ.restrict B).withDensity w := restrict_withDensity hBm w
+  have hbound1 : ∫⁻ ζ in B, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂σ ≤
+      ENNReal.ofReal (C * C_L / 2) := by
+    rw [hrestr]
+    refine (lintegral_withDensity_le_lintegral_mul _ hwm _).trans ?_
+    exact setLIntegral_inv_two_mul_mul_le (m := fun ζ ↦ μ (ball ζ R)) hBm hμB C.2
+      (fun ζ hζ ↦ measure_ball_le_of_mem hR hC hζ) (hL z)
+  have hbound0 : σ B ≤ ENNReal.ofReal ((C : ℝ) / 2) := by
+    rw [hσdef, withDensity_apply _ hBm]
+    exact setLIntegral_inv_two_mul_le (m := fun ζ ↦ μ (ball ζ R)) hBm hμB C.2
+      fun ζ hζ ↦ measure_ball_le_of_mem hR hC hζ
+  have hM : 0 ≤ potConstPlane C C_L C₀ := by
+    unfold potConstPlane
+    have := C.2
+    positivity
+  have hfin : ENNReal.ofReal (localPot σ (fun _ ↦ R) z) ≤
+      ENNReal.ofReal (potConstPlane C C_L C₀) := by
+    calc ENNReal.ofReal (localPot σ (fun _ ↦ R) z)
+        ≤ ∫⁻ ζ in {ζ | dist z ζ < R}, ENNReal.ofReal ((4 * Real.pi)⁻¹ *
+            (Real.log (R ^ 2 / ‖z - ζ‖ ^ 2) + C₀)) ∂σ := hP
+      _ ≤ ∫⁻ ζ in B, (ENNReal.ofReal a₁ * ENNReal.ofReal (Real.log (R / dist z ζ)) +
+            ENNReal.ofReal a₀) ∂σ := by
+          rw [hEB]
+          exact setLIntegral_mono' hBm fun ζ _ ↦ hpt ζ
+      _ = ENNReal.ofReal a₁ * ∫⁻ ζ in B, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂σ +
+            ENNReal.ofReal a₀ * σ B := by
+          rw [lintegral_add_right _ measurable_const,
+            lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, setLIntegral_const,
+            mul_comm (ENNReal.ofReal a₀)]
+      _ ≤ ENNReal.ofReal a₁ * ENNReal.ofReal (C * C_L / 2) +
+            ENNReal.ofReal a₀ * ENNReal.ofReal ((C : ℝ) / 2) := by gcongr
+      _ = ENNReal.ofReal (potConstPlane C C_L C₀) := by
+          have := C.2
+          rw [← ENNReal.ofReal_mul ha₁0, ← ENNReal.ofReal_mul ha₀0,
+            ← ENNReal.ofReal_add (by positivity) (by positivity)]
+          rfl
+  exact (ENNReal.ofReal_le_ofReal_iff hM).1 hfin
+
+/-- The doubling of `ν₀ + μ̃` in the plane. -/
+theorem doubling_plane_add {ν₀ μ' : Measure ℂ} {Cd A : ℝ≥0}
+    (hdC : IsLocallyDoublingWith μ Cd) (hν₀ : ν₀ ≤ μ) (h2 : μ ≤ (2 : ℝ≥0∞) • ν₀)
+    (hμ' : ∀ z : ℂ, ∀ r : ℝ, 0 < r → 2 * r < 1 →
+      μ' (ball z (2 * r)) ≤ A * μ' (ball z r)) :
+    IsLocallyDoublingWith (ν₀ + μ') (max (2 * Cd) A) := by
+  intro z r hr h2r
+  rw [Measure.add_apply, Measure.add_apply]
+  refine add_le_max_mul ?_ (hμ' z r hr h2r)
+  calc ν₀ (ball z (2 * r)) ≤ μ (ball z (2 * r)) := Measure.le_iff'.1 hν₀ _
+    _ ≤ Cd * μ (ball z r) := hdC z r hr h2r
+    _ ≤ Cd * (2 * ν₀ (ball z r)) := by
+        gcongr
+        exact Measure.le_iff'.1 h2 _
+    _ = ((2 * Cd : ℝ≥0) : ℝ≥0∞) * ν₀ (ball z r) := by push_cast; ring
+
+/-- Doubling of a measure with density between `ε` and `K`. -/
+theorem withDensity_ball_two_mul_le {g : ℂ → ℝ≥0∞} {ε K : ℝ} (hε : 0 < ε)
+    (hg : ∀ z, ENNReal.ofReal ε ≤ g z ∧ g z ≤ ENNReal.ofReal K) (z : ℂ) (r : ℝ) :
+    volume.withDensity g (ball z (2 * r)) ≤
+      ENNReal.ofReal (4 * K / ε) * volume.withDensity g (ball z r) := by
+  rw [withDensity_apply _ measurableSet_ball, withDensity_apply _ measurableSet_ball]
+  have hK : 0 ≤ K := ENNReal.ofReal_le_ofReal_iff'.1 ((hg z).1.trans (hg z).2) |>.resolve_right
+    (by linarith) |> fun h ↦ hε.le.trans h
+  calc ∫⁻ x in ball z (2 * r), g x ≤ ∫⁻ x in ball z (2 * r), ENNReal.ofReal K :=
+        setLIntegral_mono measurable_const fun x _ ↦ (hg x).2
+    _ = ENNReal.ofReal K * (4 * volume (ball z r)) := by
+        rw [setLIntegral_const, Complex.volume_ball, Complex.volume_ball,
+          ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
+        ring
+    _ = ENNReal.ofReal (4 * K / ε) * (ENNReal.ofReal ε * volume (ball z r)) := by
+        rw [← mul_assoc (ENNReal.ofReal (4 * K / ε)), ← ENNReal.ofReal_mul (by positivity),
+          div_mul_cancel₀ _ hε.ne', ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat]
+        ring
+    _ = ENNReal.ofReal (4 * K / ε) * ∫⁻ x in ball z r, ENNReal.ofReal ε := by
+        rw [setLIntegral_const]
+    _ ≤ ENNReal.ofReal (4 * K / ε) * ∫⁻ x in ball z r, g x := by
+        gcongr with x
+        exact (hg x).1
+
+end PlaneBounds
 
 /-- **Lemma 6 (disc), core**: the construction of doc §3/§5, with all constants chosen before the
 weight, from the doubling constant `Cd`, the radius `R` and the constants `D₁`, `D₂`, `C_L` of the
@@ -824,7 +1124,7 @@ theorem lemma6_disc_core (Cd : ℝ≥0) {R : ℝ} (hR : 0 < R) {D₁ D₂ C_L : 
   set g := smoothedDensity (μ.withDensity (massWeightDisc μ R)) discRadius with hgdef
   have hgb : ∀ z ∈ 𝔻, ENNReal.ofReal (ε / (1 - ‖z‖ ^ 2) ^ 2) ≤ g z ∧
       g z ≤ ENNReal.ofReal (K / (1 - ‖z‖ ^ 2) ^ 2) := fun z hz ↦
-    ⟨smoothedDensity_disc_ge hφ hR hm hD₁ h₁ hz, smoothedDensity_disc_le hφ hD₂ h₂ hz⟩
+    ⟨smoothedDensity_disc_ge hφ hm hD₁ h₁ hz, smoothedDensity_disc_le hφ hD₂ h₂ hz⟩
   have hg0 : ∀ z ∉ 𝔻, g z = 0 := fun z hz ↦ h.smoothedDensity_eq_zero hz
   have hν₀ : μ.withDensity (fun ζ ↦ 1 - massWeightDisc μ R ζ) ≤ μ :=
     withDensity_le_self (ae_of_all _ fun _ ↦ tsub_le_self)
@@ -896,7 +1196,11 @@ theorem smoothedDensity_plane_bounds {φ : ℂ → ℝ} {μ : Measure ℂ}
     (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) :
     ∃ ε K : ℝ, 0 < ε ∧ ∀ x : ℂ,
       ENNReal.ofReal ε ≤ smoothedDensity (μ.withDensity (massWeight μ R)) (fun _ ↦ R) x ∧
-      smoothedDensity (μ.withDensity (massWeight μ R)) (fun _ ↦ R) x ≤ ENNReal.ofReal K := sorry
+      smoothedDensity (μ.withDensity (massWeight μ R)) (fun _ ↦ R) x ≤ ENNReal.ofReal K := by
+  obtain ⟨C, hC1, hC⟩ := doubling_upTo_plane hd R
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC1)
+  exact ⟨1 / (2 * Real.pi * R ^ 2 * (C : ℝ) ^ 2), 2 * C / (Real.pi * R ^ 2), by positivity,
+    fun x ↦ ⟨Reg.smoothedDensity_plane_ge hφ hR hm hC x, Reg.smoothedDensity_plane_le hφ hR hC x⟩⟩
 
 theorem smoothedDensity_disc_bounds {φ : ℂ → ℝ} {μ : Measure ℂ}
     (hφ : IsSubharmonicWeight 𝔻 φ μ) (hd : IsLocallyDoublingDisc μ) {R : ℝ} (hR : 0 < R)
@@ -908,11 +1212,18 @@ theorem smoothedDensity_disc_bounds {φ : ℂ → ℝ} {μ : Measure ℂ}
         ENNReal.ofReal (K / (1 - ‖x‖ ^ 2) ^ 2) := by
   obtain ⟨D₁, D₂, C_L, hD₁, hD₂, hCL, h₁, h₂, hL⟩ := Reg.exists_disc_consts hd hR
   exact ⟨128 / (25 * Real.pi * D₁), 288 * D₂ / Real.pi, by positivity, fun x hx ↦
-    ⟨Reg.smoothedDensity_disc_ge hφ hR hm hD₁ h₁ hx, Reg.smoothedDensity_disc_le hφ hD₂ h₂ hx⟩⟩
+    ⟨Reg.smoothedDensity_disc_ge hφ hm hD₁ h₁ hx, Reg.smoothedDensity_disc_le hφ hD₂ h₂ hx⟩⟩
 
 theorem localPot_plane_le {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight univ φ μ)
     (hd : IsLocallyDoubling μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) :
-    ∃ M : ℝ, ∀ z : ℂ, localPot (μ.withDensity (massWeight μ R)) (fun _ ↦ R) z ≤ M := sorry
+    ∃ M : ℝ, ∀ z : ℂ, localPot (μ.withDensity (massWeight μ R)) (fun _ ↦ R) z ≤ M := by
+  obtain ⟨C, -, hC⟩ := doubling_upTo_plane hd R
+  obtain ⟨CL, hCL⟩ := christ_lemma23_plane hd R
+  obtain ⟨C₀, hC₀, hpot⟩ := exists_localPot_le
+  refine ⟨Reg.potConstPlane C CL C₀, fun z ↦
+    Reg.localPot_plane_le_of hφ hd hR hm hC CL.2 hC₀ hpot (fun z ↦ ?_) z⟩
+  have := hCL z R hR le_rfl
+  rwa [← ENNReal.ofReal_coe_nnreal] at this
 
 theorem localPot_disc_le {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight 𝔻 φ μ)
     (hd : IsLocallyDoublingDisc μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
@@ -930,7 +1241,29 @@ theorem lemma6_plane {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicW
       IsLocallyDoubling (ν₀ + volume.withDensity g) ∧
       (∀ z, |ψ z - φ z| ≤ M) ∧
       (∀ z, ENNReal.ofReal ε ≤ g z ∧ g z ≤ ENNReal.ofReal K) ∧
-      ν₀ ≤ μ ∧ μ ≤ (2 : ℝ≥0∞) • ν₀ := sorry
+      ν₀ ≤ μ ∧ μ ≤ (2 : ℝ≥0∞) • ν₀ := by
+  obtain ⟨R, hR, hm⟩ := hm
+  have : SigmaFinite μ := hφ.sigmaFinite isOpen_univ
+  have hw : Measurable (massWeight μ R) := measurable_massWeight R
+  have h := isLocalPotData_plane hφ hd hR hm
+  have hw2 : ∀ᵐ ζ ∂μ, massWeight μ R ζ ≤ 2⁻¹ := ae_of_all _ (Reg.massWeight_le hm)
+  have hw1 : ∀ᵐ ζ ∂μ, massWeight μ R ζ ≤ 1 :=
+    ae_of_all _ fun ζ ↦ (Reg.massWeight_le hm ζ).trans (ENNReal.inv_le_one.2 one_le_two)
+  obtain ⟨ε, K, hε, hgb⟩ := smoothedDensity_plane_bounds hφ hd hR hm
+  obtain ⟨M, hM⟩ := localPot_plane_le hφ hd hR hm
+  obtain ⟨Cd, hdC⟩ := hd
+  have hν₀ : μ.withDensity (fun ζ ↦ 1 - massWeight μ R ζ) ≤ μ :=
+    Reg.withDensity_le_self (ae_of_all _ fun _ ↦ tsub_le_self)
+  have h2 := Reg.le_two_smul_withDensity_one_sub hw hw2
+  refine ⟨fun z ↦ φ z + localPot (μ.withDensity (massWeight μ R)) (fun _ ↦ R) z,
+    μ.withDensity (fun ζ ↦ 1 - massWeight μ R ζ),
+    smoothedDensity (μ.withDensity (massWeight μ R)) (fun _ ↦ R), ε, K, M, hε,
+    h.measurable_smoothedDensity, Reg.isSubharmonicWeight_regularized hφ hw hw1 h,
+    ⟨_, Reg.doubling_plane_add (A := Real.toNNReal (4 * K / ε)) hdC hν₀ h2
+      fun z r _ _ ↦ Reg.withDensity_ball_two_mul_le hε hgb z r⟩, fun z ↦ ?_, hgb, hν₀, h2⟩
+  simp only [add_sub_cancel_left]
+  rw [abs_of_nonneg (h.localPot_nonneg z)]
+  exact hM z
 
 /-- **Lemma 6 (disc)** (paper, p. 370). -/
 theorem lemma6_disc {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight 𝔻 φ μ)
@@ -973,7 +1306,14 @@ theorem lemma6_disc_hypArea (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubha
 theorem lemma6_plane_volume (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
     (hd : IsLocallyDoubling μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 < μ (ball z r)) :
     ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ) (ε B : ℝ), 0 < ε ∧ IsSubharmonicWeight univ φ' μ' ∧
-      IsLocallyDoubling μ' ∧ ENNReal.ofReal ε • volume ≤ μ' ∧ ∀ z, |φ z - φ' z| ≤ B := sorry
+      IsLocallyDoubling μ' ∧ ENNReal.ofReal ε • volume ≤ μ' ∧ ∀ z, |φ z - φ' z| ≤ B := by
+  obtain ⟨r, hr, hm'⟩ := hm
+  obtain ⟨ψ, ν₀, g, ε, K, M, hε, hg, hψ, hdbl, hψφ, hgb, hν₀, h2⟩ :=
+    lemma6_plane hφ hd ⟨r, hr, fun z ↦ (hm' z).le⟩
+  refine ⟨ψ, ν₀ + volume.withDensity g, ε, M, hε, hψ, hdbl, ?_,
+    fun z ↦ by rw [abs_sub_comm]; exact hψφ z⟩
+  rw [← withDensity_const]
+  exact (withDensity_mono (ae_of_all _ fun z ↦ (hgb z).1)).trans (Measure.le_add_left le_rfl)
 
 /-- **Lemma 6 (disc), uniform form** (requested for `theorem2_uniform`): the constants `ε`, `B`
 and the class `(Cd', R')` of the regularized measure depend only on the class `(Cd, R)` of `μ`,
