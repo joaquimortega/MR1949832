@@ -234,15 +234,115 @@ structure IsLocalPotData (Ω : Set ℂ) (σ : Measure ℂ) (s : ℂ → ℝ) : P
 namespace IsLocalPotData
 variable {Ω : Set ℂ} {σ : Measure ℂ} {s : ℂ → ℝ}
 
+theorem ae_mem (h : IsLocalPotData Ω σ s) : ∀ᵐ ζ ∂σ, ζ ∈ Ω := by
+  rw [ae_iff]; exact h.carried
+
+theorem ae_ne (h : IsLocalPotData Ω σ s) (z : ℂ) : ∀ᵐ ζ ∂σ, ζ ≠ z := by
+  rw [ae_iff]
+  simpa using h.noAtoms z
+
+/-- The set `A_K = {ζ | ∃ z ∈ K, dist z ζ < s ζ}` is measurable for compact `K`. -/
+theorem measurableSet_nbhd (h : IsLocalPotData Ω σ s) {K : Set ℂ} (hKc : IsCompact K) :
+    MeasurableSet {ζ | ∃ z ∈ K, dist z ζ < s ζ} := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · simp
+  have e : {ζ | ∃ z ∈ K, dist z ζ < s ζ} = {ζ | infDist ζ K < s ζ} := by
+    ext ζ
+    simp only [mem_ofPred_eq]
+    constructor
+    · rintro ⟨z, hz, hd⟩
+      exact (infDist_le_dist_of_mem hz).trans_lt (by rwa [dist_comm])
+    · intro hd
+      obtain ⟨z, hz, hzd⟩ := hKc.exists_infDist_eq_dist hne ζ
+      exact ⟨z, hz, by rwa [dist_comm, ← hzd]⟩
+  rw [e]
+  exact measurableSet_lt (continuous_infDist_pt K).measurable h.measurable
+
+theorem measurable_kernel_prod (h : IsLocalPotData Ω σ s) :
+    Measurable (fun p : ℂ × ℂ ↦ bumpKernel (s p.2) (p.1 - p.2)) := by
+  have : Measurable (fun p : ℂ × ℂ ↦ Function.uncurry bumpKernel (s p.2, p.1 - p.2)) :=
+    measurable_bumpKernel.comp
+      ((h.measurable.comp measurable_snd).prodMk (measurable_fst.sub measurable_snd))
+  exact this
+
+theorem measurable_bumpPot_prod (h : IsLocalPotData Ω σ s) :
+    Measurable (fun p : ℂ × ℂ ↦ bumpPot (s p.2) (p.1 - p.2)) := by
+  have : Measurable (fun p : ℂ × ℂ ↦ Function.uncurry bumpPot (s p.2, p.1 - p.2)) :=
+    measurable_bumpPot.comp
+      ((h.measurable.comp measurable_snd).prodMk (measurable_fst.sub measurable_snd))
+  exact this
+
 theorem measurable_smoothedDensity (h : IsLocalPotData Ω σ s) :
-    Measurable (smoothedDensity σ s) := sorry
+    Measurable (smoothedDensity σ s) := by
+  have := h.sFinite
+  exact (ENNReal.measurable_ofReal.comp h.measurable_kernel_prod).lintegral_prod_right'
+
 theorem smoothedDensity_eq_zero (h : IsLocalPotData Ω σ s) {x : ℂ} (hx : x ∉ Ω) :
-    smoothedDensity σ s x = 0 := sorry
+    smoothedDensity σ s x = 0 := by
+  unfold smoothedDensity
+  rw [lintegral_congr_ae (g := fun _ ↦ 0) ?_, lintegral_zero]
+  filter_upwards [h.ae_mem] with ζ hζ
+  have hd : s ζ ≤ ‖x - ζ‖ := by
+    by_contra hcon
+    push Not at hcon
+    exact hx (h.ball_subset ζ hζ (by rw [mem_ball, dist_eq_norm]; exact hcon))
+  simp [bumpKernel_eq_zero (h.pos ζ hζ) hd]
+
+/-- `∫⁻_S k_r(x − ζ) dx ≤ 1`. -/
+theorem lintegral_ofReal_bumpKernel_le_one {r : ℝ} (hr : 0 < r) (ζ : ℂ) (S : Set ℂ) :
+    ∫⁻ x in S, ENNReal.ofReal (bumpKernel r (x - ζ)) ≤ 1 := by
+  have hint : Integrable (fun x ↦ bumpKernel r (x - ζ)) :=
+    ((contDiff_bumpKernel hr).continuous.integrable_of_hasCompactSupport
+      (hasCompactSupport_bumpKernel hr)).comp_sub_right ζ
+  calc ∫⁻ x in S, ENNReal.ofReal (bumpKernel r (x - ζ))
+      ≤ ∫⁻ x, ENNReal.ofReal (bumpKernel r (x - ζ)) := setLIntegral_le_lintegral _ _
+    _ = ENNReal.ofReal (∫ x, bumpKernel r (x - ζ)) :=
+        (ofReal_integral_eq_lintegral_ofReal hint
+          (Eventually.of_forall fun x ↦ bumpKernel_nonneg hr _)).symm
+    _ = 1 := by
+        rw [show (∫ x, bumpKernel r (x - ζ)) = 1 from integral_kernel_bump_sub hr ζ]
+        simp
+
 theorem lintegral_smoothedDensity_lt_top (h : IsLocalPotData Ω σ s) {K : Set ℂ} (hK : K ⊆ Ω)
-    (hKc : IsCompact K) : ∫⁻ x in K, smoothedDensity σ s x < ∞ := sorry
+    (hKc : IsCompact K) : ∫⁻ x in K, smoothedDensity σ s x < ∞ := by
+  have := h.sFinite
+  set A := {ζ | ∃ z ∈ K, dist z ζ < s ζ}
+  have hm := ENNReal.measurable_ofReal.comp h.measurable_kernel_prod
+  calc ∫⁻ x in K, smoothedDensity σ s x
+      = ∫⁻ x in K, ∫⁻ ζ, ENNReal.ofReal (bumpKernel (s ζ) (x - ζ)) ∂σ := rfl
+    _ = ∫⁻ ζ, (∫⁻ x in K, ENNReal.ofReal (bumpKernel (s ζ) (x - ζ))) ∂σ :=
+        lintegral_lintegral_swap (f := fun x ζ ↦ ENNReal.ofReal (bumpKernel (s ζ) (x - ζ)))
+          (μ := volume.restrict K) (ν := σ) hm.aemeasurable
+    _ ≤ ∫⁻ ζ, A.indicator 1 ζ ∂σ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [h.ae_mem] with ζ hζ
+        by_cases hA : ζ ∈ A
+        · rw [indicator_of_mem hA, Pi.one_apply]
+          exact lintegral_ofReal_bumpKernel_le_one (h.pos ζ hζ) ζ K
+        · rw [indicator_of_notMem hA]
+          refine le_of_eq ?_
+          rw [← lintegral_zero (μ := volume.restrict K)]
+          refine setLIntegral_congr_fun hKc.measurableSet fun x hx ↦ ?_
+          have hd : s ζ ≤ ‖x - ζ‖ := by
+            by_contra hcon
+            push Not at hcon
+            exact hA ⟨x, hx, by rwa [dist_eq_norm]⟩
+          simp [bumpKernel_eq_zero (h.pos ζ hζ) hd]
+    _ ≤ ∫⁻ ζ in A, 1 ∂σ := lintegral_indicator_le _ _
+    _ = σ A := by rw [setLIntegral_const, one_mul]
+    _ < ∞ := h.locFin K hK hKc
+
 theorem measure_lt_top (h : IsLocalPotData Ω σ s) {K : Set ℂ} (hK : K ⊆ Ω)
-    (hKc : IsCompact K) : σ K < ∞ := sorry
-theorem localPot_nonneg (h : IsLocalPotData Ω σ s) (z : ℂ) : 0 ≤ localPot σ s z := sorry
+    (hKc : IsCompact K) : σ K < ∞ :=
+  (measure_mono (show K ⊆ {ζ | ∃ z ∈ K, dist z ζ < s ζ} from
+    fun ζ hζ ↦ ⟨ζ, hζ, by rw [dist_self]; exact h.pos ζ (hK hζ)⟩)).trans_lt (h.locFin K hK hKc)
+
+theorem localPot_nonneg (h : IsLocalPotData Ω σ s) (z : ℂ) : 0 ≤ localPot σ s z := by
+  unfold localPot
+  refine integral_nonneg_of_ae ?_
+  filter_upwards [h.ae_mem, h.ae_ne z] with ζ hζ hζz
+  exact bumpPot_nonneg (h.pos ζ hζ) (sub_ne_zero.2 hζz.symm)
+
 theorem continuousOn_localPot (h : IsLocalPotData Ω σ s) : ContinuousOn (localPot σ s) Ω := sorry
 
 /-- **`ΔV = σ̃ − σ` weakly.** -/
@@ -258,6 +358,32 @@ theorem exists_localPot_le : ∃ C₀ : ℝ, 0 ≤ C₀ ∧ ∀ (Ω : Set ℂ) (
     IsLocalPotData Ω σ s → ∀ z : ℂ,
       ENNReal.ofReal (localPot σ s z) ≤
         ∫⁻ ζ in {ζ | dist z ζ < s ζ},
-          ENNReal.ofReal ((4 * Real.pi)⁻¹ * (Real.log (s ζ ^ 2 / ‖z - ζ‖ ^ 2) + C₀)) ∂σ := sorry
+          ENNReal.ofReal ((4 * Real.pi)⁻¹ * (Real.log (s ζ ^ 2 / ‖z - ζ‖ ^ 2) + C₀)) ∂σ := by
+  obtain ⟨C₀, hC₀, hC⟩ := exists_bumpPot_le
+  refine ⟨C₀, hC₀, fun Ω σ s h z ↦ ?_⟩
+  set B := {ζ | dist z ζ < s ζ}
+  have hB : MeasurableSet B := measurableSet_lt (measurable_const.dist measurable_id) h.measurable
+  have hnn : 0 ≤ᵐ[σ] fun ζ ↦ bumpPot (s ζ) (z - ζ) := by
+    filter_upwards [h.ae_mem, h.ae_ne z] with ζ hζ hζz
+    exact bumpPot_nonneg (h.pos ζ hζ) (sub_ne_zero.2 hζz.symm)
+  have h1 : ENNReal.ofReal (localPot σ s z) ≤ ∫⁻ ζ, ENNReal.ofReal (bumpPot (s ζ) (z - ζ)) ∂σ := by
+    unfold localPot
+    by_cases hint : Integrable (fun ζ ↦ bumpPot (s ζ) (z - ζ)) σ
+    · rw [ofReal_integral_eq_lintegral_ofReal hint hnn]
+    · rw [integral_undef hint, ENNReal.ofReal_zero]
+      exact bot_le
+  refine h1.trans ?_
+  rw [← lintegral_indicator hB]
+  refine lintegral_mono_ae ?_
+  filter_upwards [h.ae_mem, h.ae_ne z] with ζ hζ hζz
+  have hne : z - ζ ≠ 0 := sub_ne_zero.2 hζz.symm
+  by_cases hζB : ζ ∈ B
+  · rw [indicator_of_mem hζB]
+    have hlt : ‖z - ζ‖ < s ζ := by rw [← dist_eq_norm]; exact hζB
+    exact ENNReal.ofReal_le_ofReal (hC (s ζ) (h.pos ζ hζ) (z - ζ) hne hlt)
+  · rw [indicator_of_notMem hζB]
+    have hge : s ζ ≤ ‖z - ζ‖ := by
+      rw [← dist_eq_norm]; exact not_lt.1 hζB
+    rw [bumpPot_eq_zero (h.pos ζ hζ) hge, ENNReal.ofReal_zero]
 
 end OC
