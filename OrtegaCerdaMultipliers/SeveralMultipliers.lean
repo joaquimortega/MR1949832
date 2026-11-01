@@ -558,7 +558,110 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
         (∀ z : ℂ, ∃ i, ∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) ∧
         (∀ i, ∀ z : ℂ, (∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) →
           (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
-        (∀ i, ∀ z : ℂ, ‖h i z‖ ≤ C * Real.exp (ψ z)) := sorry
+        (∀ i, ∀ z : ℂ, ‖h i z‖ ≤ C * Real.exp (ψ z)) := by
+  classical
+  -- constants, all depending only on `(Cd, R₀)`
+  obtain ⟨a, A, ha, hA, hpart⟩ := lemma4_plane_quant Cd (15 * R₀) 12 (by norm_num)
+  obtain ⟨Bk₀, hfar⟩ := nodes_far_of_color_plane Cd (15 * R₀) a A (6 * A) ha hA (by positivity)
+  set B := max Bk₀ 0 / A with hB_def
+  have hB : 0 ≤ B := div_nonneg (le_max_right _ _) hA.le
+  have hBA : Bk₀ ≤ B * A := by
+    rw [hB_def, div_mul_cancel₀ _ hA.ne']; exact le_max_left _ _
+  obtain ⟨L₀, hL₀⟩ := hfar (B * A) ((B + 12) * A) hBA
+  obtain ⟨c₅, hc₅, hfarL⟩ := hL₀ L₀ le_rfl
+  obtain ⟨n, hcolor⟩ := exists_separated_coloring_plane Cd (15 * R₀) a A L₀ ha
+  obtain ⟨M, C, hM, hC, hmult⟩ :=
+    multiplier_of_nodes_plane Cd R₀ a A ((B + 12) * A) 12 hR₀ ha hA (by positivity)
+      (by norm_num)
+  obtain ⟨C1, hC1, hcl1⟩ := claim1_plane_quant Cd (15 * R₀) 1
+  obtain ⟨C1', hC1', hcl1'⟩ := claim1_plane_quant Cd R₀ 1
+  obtain ⟨Cρ, -, hρν⟩ := massRadius_lapNorm_quant Cd R₀
+  set K := max (C1 / c₅) 1 with hK_def
+  have hK0 : 0 < K := lt_of_lt_of_le one_pos (le_max_right _ _)
+  set ε := K⁻¹ with hε_def
+  have hε : 0 < ε := inv_pos.2 hK0
+  set c₆ := min (ε / C1') 1 with hc₆_def
+  have hc₆ : 0 < c₆ := lt_min (div_pos hε (by linarith)) one_pos
+  have hC0 : 0 < C := lt_of_lt_of_le one_pos hC
+  obtain ⟨hCCP, hC2CP, hCPinv⟩ := Prop2.constP_spec hC M hc₆
+  set CP : ℝ≥0 := Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M))
+  refine ⟨n, M, CP, ε, hM, hC.trans hCCP, hε, fun ψ μ hw ↦ ?_⟩
+  -- the cells of `ν = Δψ/2π`, their colouring, and the multipliers
+  set ν := lapNorm μ with hν_def
+  have hν : MeasClassPlane ν Cd (15 * R₀) := hw.meas.lapNorm
+  obtain ⟨R, hR⟩ := hpart ν hν
+  obtain ⟨c, hc⟩ := hR.exists_cells
+  obtain ⟨col, hcol⟩ := hcolor ν 12 R c hν hc
+  have hl : ∀ l : Fin n, ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∃ z₀, g z₀ ≠ 0) ∧
+      Thm4BoundsPlane ψ μ g M C ∧ ∀ i, col i = l → ∀ z ∈ R i, ∀ w, g w = 0 →
+        c₅ * massRadius ν z ≤ dist z w := by
+    intro l
+    let sel : ℕ → Bool := fun j ↦
+      decide (colorSel dist (massRadius ν) R c col (6 * A + 2) l j)
+    obtain ⟨Λ, hΛ, hfalse, htrue⟩ := exists_nodes_plane hc hA.le B hB sel
+    obtain ⟨g, hgd, hzero, -, hb⟩ := hmult ψ μ hw R c (fun _ ↦ 3) Λ hc hΛ (fun _ ↦ le_rfl)
+    have hfar' := hfarL ν 12 R c col l Λ hν hc hcol
+      (fun j hj w hw ↦ hfalse j (by simp [sel, hj]) w hw)
+      (fun j hj w hw ↦ ⟨htrue j (by simp [sel, hj]) w hw, hΛ.near j w hw⟩)
+    obtain ⟨z₀, -, hz₀n⟩ := Prop2.exists_mem_disc_notMem_nodeSet Λ
+    refine ⟨g, hgd, ⟨z₀, fun h0 ↦ hz₀n ((hzero z₀).1 h0)⟩, hb, ?_⟩
+    intro i hi z hz w hw0
+    obtain ⟨j, hj⟩ := (hzero w).1 hw0
+    exact hfar' i hi z hz j w hj
+  choose h hhd hh0 hhb hhfar using hl
+  have hupper : ∀ l, ∀ z, ‖h l z‖ ≤ (C : ℝ) ^ 2 * Real.exp (ψ z) := fun l z ↦
+    Prop2.upper_of_bounds (norm_nonneg _) (hhb l z).2.1 (hhb l z).2.2
+  refine ⟨h, hhd, hh0, fun l ↦ Prop2.thm4BoundsPlane_mono hC0 hCCP (hhb l), ?_, ?_, ?_⟩
+  · -- every point is good for the colour of its cell
+    intro z
+    have hz : z ∈ ⋃ i, R i := by rw [hc.iUnion_eq]; exact mem_univ z
+    obtain ⟨k, hk⟩ := mem_iUnion.1 hz
+    refine ⟨col k, fun w hw0 ↦ ?_⟩
+    have h5 := hhfar (col k) k rfl z hk w hw0
+    have hd0 : 0 ≤ dist z w := dist_nonneg
+    have hρw : massRadius μ w ≤ massRadius ν w := (hρν μ hw.meas w).1
+    have hKd : massRadius ν w ≤ K * dist z w := by
+      by_cases hcase : dist w z ≤ 1 * max (massRadius ν w) (massRadius ν z)
+      · have h6 := (hcl1 ν hν w z).2.2 hcase
+        have h7 : C1 * massRadius ν z ≤ C1 / c₅ * dist z w := by
+          rw [div_mul_eq_mul_div, le_div_iff₀ hc₅]
+          nlinarith
+        calc massRadius ν w ≤ C1 / c₅ * dist z w := h6.trans h7
+          _ ≤ K * dist z w := mul_le_mul_of_nonneg_right (le_max_left _ _) hd0
+      · push Not at hcase
+        rw [dist_comm] at hcase
+        calc massRadius ν w ≤ dist z w :=
+              (le_max_left _ _).trans (by simpa using hcase.le)
+          _ ≤ K * dist z w := le_mul_of_one_le_left hd0 (le_max_right _ _)
+    calc ε * massRadius μ w ≤ ε * (K * dist z w) :=
+          mul_le_mul_of_nonneg_left (hρw.trans hKd) hε.le
+      _ = dist z w := by rw [hε_def, ← mul_assoc, inv_mul_cancel₀ hK0.ne', one_mul]
+  · -- the two-sided bound on the good set
+    intro l z hgood
+    have hρz : 0 < massRadius μ z := (hcl1' μ hw.meas z z).1
+    have hD : ENNReal.ofReal (c₆ * massRadius μ z) ≤ edistSet z {w | h l w = 0} := by
+      refine le_iInf₂ fun w hw0 ↦ ?_
+      rw [edist_dist]
+      refine ENNReal.ofReal_le_ofReal ?_
+      have hεw := hgood w hw0
+      by_cases hcase : dist z w ≤ 1 * max (massRadius μ z) (massRadius μ w)
+      · have h6 := (hcl1' μ hw.meas z w).2.2 hcase
+        have h7 : ε * massRadius μ z ≤ C1' * dist z w := by nlinarith
+        calc c₆ * massRadius μ z ≤ ε / C1' * massRadius μ z :=
+              mul_le_mul_of_nonneg_right (min_le_left _ _) hρz.le
+          _ ≤ dist z w := by
+              rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]; linarith
+      · push Not at hcase
+        calc c₆ * massRadius μ z ≤ 1 * massRadius μ z :=
+              mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
+          _ ≤ dist z w := by
+              rw [one_mul]; exact (le_max_left _ _).trans (by simpa using hcase.le)
+    have hlow := Prop2.lower_of_bounds hρz hc₆.le hC0 (norm_nonneg _) hD (hhb l z).1
+    refine ⟨le_trans ?_ hlow, (hupper l z).trans ?_⟩
+    · exact mul_le_mul_of_nonneg_right hCPinv (Real.exp_pos _).le
+    · exact mul_le_mul_of_nonneg_right hC2CP (Real.exp_pos _).le
+  · intro l z
+    exact (hupper l z).trans (mul_le_mul_of_nonneg_right hC2CP (Real.exp_pos _).le)
 
 /-- **Proposition 2, quantitative, full form (disc).** -/
 theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
