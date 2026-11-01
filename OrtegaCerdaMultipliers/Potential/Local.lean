@@ -343,7 +343,208 @@ theorem localPot_nonneg (h : IsLocalPotData Ω σ s) (z : ℂ) : 0 ≤ localPot 
   filter_upwards [h.ae_mem, h.ae_ne z] with ζ hζ hζz
   exact bumpPot_nonneg (h.pos ζ hζ) (sub_ne_zero.2 hζz.symm)
 
-theorem continuousOn_localPot (h : IsLocalPotData Ω σ s) : ContinuousOn (localPot σ s) Ω := sorry
+/-- Pointwise bound on the singular part: for `‖z − ζ‖ < ρ ≤ 1`,
+`G_{s ζ}(z − ζ) ≤ Λ (1 + log (1/‖z − ζ‖))`. -/
+theorem bumpPot_le_log_bound {C₀ S r : ℝ} (hC : ∀ s : ℝ, 0 < s → ∀ x : ℂ, x ≠ 0 → ‖x‖ < s →
+      bumpPot s x ≤ (4 * Real.pi)⁻¹ * (Real.log (s ^ 2 / ‖x‖ ^ 2) + C₀))
+    (hC₀ : 0 ≤ C₀) (hr : 0 < r) (hrS : r ≤ S) {x : ℂ} (hx : x ≠ 0) (hx1 : ‖x‖ < 1) :
+    bumpPot r x ≤ (4 * Real.pi)⁻¹ * (|Real.log (S ^ 2)| + C₀ + 2) *
+      (1 + Real.log (1 / ‖x‖)) := by
+  have hd : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hL : 0 ≤ Real.log (1 / ‖x‖) :=
+    Real.log_nonneg (by rw [le_div_iff₀ hd, one_mul]; exact hx1.le)
+  have hπ : 0 ≤ (4 * Real.pi)⁻¹ := by have := Real.pi_pos; positivity
+  rcases le_or_gt r ‖x‖ with hrx | hrx
+  · rw [bumpPot_eq_zero hr hrx]
+    have : 0 ≤ |Real.log (S ^ 2)| + C₀ + 2 := by positivity
+    positivity
+  · refine (hC r hr x hx hrx).trans ?_
+    rw [mul_assoc]
+    refine mul_le_mul_of_nonneg_left ?_ hπ
+    have h1 : Real.log (r ^ 2 / ‖x‖ ^ 2) = Real.log (r ^ 2) + 2 * Real.log (1 / ‖x‖) := by
+      rw [Real.log_div (by positivity) (by positivity), Real.log_pow, Real.log_pow, one_div,
+        Real.log_inv]
+      push_cast; ring
+    have h2 : Real.log (r ^ 2) ≤ Real.log (S ^ 2) :=
+      Real.log_le_log (by positivity) (pow_le_pow_left₀ hr.le hrS 2)
+    have h3 := le_abs_self (Real.log (S ^ 2))
+    rw [h1]
+    nlinarith [abs_nonneg (Real.log (S ^ 2))]
+
+theorem continuousOn_localPot (h : IsLocalPotData Ω σ s) : ContinuousOn (localPot σ s) Ω := by
+  have := h.sFinite
+  intro z₀ hz₀
+  refine ContinuousAt.continuousWithinAt ?_
+  obtain ⟨C₀, hC₀, hC⟩ := exists_bumpPot_le
+  obtain ⟨S, hS⟩ := h.bdd
+  obtain ⟨r₀, hr₀, hr₀Ω⟩ : ∃ r₀ : ℝ, 0 < r₀ ∧ closedBall z₀ r₀ ⊆ Ω := by
+    obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 h.isOpen z₀ hz₀
+    exact ⟨ε / 2, half_pos hε, (closedBall_subset_ball (half_lt_self hε)).trans hεU⟩
+  set K₀ := closedBall z₀ r₀ with hK₀
+  have hK₀c : IsCompact K₀ := isCompact_closedBall _ _
+  set A := {ζ | ∃ z ∈ K₀, dist z ζ < s ζ} with hAdef
+  have hA : MeasurableSet A := h.measurableSet_nbhd hK₀c
+  have hσA : σ A < ∞ := h.locFin K₀ hr₀Ω hK₀c
+  set f : ℂ → ℂ → ℝ := fun z ζ ↦ bumpPot (s ζ) (z - ζ) with hfdef
+  have hfm : ∀ z, Measurable (f z) := fun z ↦ by
+    have : Measurable (fun ζ : ℂ ↦ (fun p : ℂ × ℂ ↦ bumpPot (s p.2) (p.1 - p.2)) (z, ζ)) :=
+      h.measurable_bumpPot_prod.comp (measurable_const.prodMk measurable_id)
+    exact this
+  rw [Metric.continuousAt_iff]
+  intro ε hε
+  set Λ := (4 * Real.pi)⁻¹ * (|Real.log (S ^ 2)| + C₀ + 2) with hΛdef
+  have hΛ : 0 ≤ Λ := by have := Real.pi_pos; positivity
+  set η := ε / (3 * (Λ + 1)) with hηdef
+  have hη : 0 < η := by positivity
+  have hΛη : Λ * η < ε / 3 := by
+    rw [hηdef, mul_div_assoc', div_lt_div_iff₀ (by positivity) (by norm_num)]
+    nlinarith
+  obtain ⟨ρ, hρ, hρ1, hlog⟩ := h.logSmall K₀ hr₀Ω hK₀c η hη
+  set T := max 0 ((4 * Real.pi)⁻¹ * (Real.log (S ^ 2 / ρ ^ 2) + C₀)) with hTdef
+  have hT0 : 0 ≤ T := le_max_left _ _
+  set g : ℂ → ℂ → ℝ := fun z ζ ↦ min (f z ζ) T with hgdef
+  set t : ℂ → ℂ → ℝ := fun z ζ ↦ f z ζ - min (f z ζ) T with htdef
+  set φ : ℂ → ℂ → ℝ := fun z ↦ (ball z ρ).indicator fun ζ ↦ Λ * (1 + Real.log (1 / ‖z - ζ‖))
+    with hφdef
+  -- basic a.e. facts
+  have hae : ∀ z, ∀ᵐ ζ ∂σ, ζ ∈ Ω ∧ ζ ≠ z := fun z ↦ by
+    filter_upwards [h.ae_mem, h.ae_ne z] with ζ h1 h2 using ⟨h1, h2⟩
+  have hf0 : ∀ z ζ, ζ ∈ Ω → ζ ≠ z → 0 ≤ f z ζ := fun z ζ hζ hne ↦
+    bumpPot_nonneg (h.pos ζ hζ) (sub_ne_zero.2 hne.symm)
+  -- bound for `g`
+  have hg_bound : ∀ z ∈ K₀, ∀ᵐ ζ ∂σ, ‖g z ζ‖ ≤ A.indicator (fun _ ↦ T) ζ := by
+    intro z hz
+    filter_upwards [hae z] with ζ ⟨hζ, hne⟩
+    have hmin0 : 0 ≤ g z ζ := le_min (hf0 z ζ hζ hne) hT0
+    rw [Real.norm_eq_abs, abs_of_nonneg hmin0]
+    by_cases hζA : ζ ∈ A
+    · rw [indicator_of_mem hζA]; exact min_le_right _ _
+    · rw [indicator_of_notMem hζA]
+      have hd : s ζ ≤ ‖z - ζ‖ := by
+        rw [← dist_eq_norm]; by_contra hcon; exact hζA ⟨z, hz, not_le.1 hcon⟩
+      simp only [hgdef, hfdef]
+      rw [bumpPot_eq_zero (h.pos ζ hζ) hd, min_eq_left hT0]
+  -- bound for the tail `t`
+  have ht_bound : ∀ z ∈ K₀, ∀ᵐ ζ ∂σ, 0 ≤ t z ζ ∧ t z ζ ≤ φ z ζ := by
+    intro z hz
+    filter_upwards [hae z] with ζ ⟨hζ, hne⟩
+    have hf0' := hf0 z ζ hζ hne
+    have hsζ := h.pos ζ hζ
+    have hne' : z - ζ ≠ 0 := sub_ne_zero.2 hne.symm
+    refine ⟨sub_nonneg.2 (min_le_left _ _), ?_⟩
+    by_cases hb : ‖z - ζ‖ < ρ
+    · have hmem : ζ ∈ ball z ρ := by rw [mem_ball, dist_comm, dist_eq_norm]; exact hb
+      simp only [hφdef, indicator_of_mem hmem]
+      calc t z ζ ≤ f z ζ := sub_le_self _ (le_min hf0' hT0)
+        _ ≤ Λ * (1 + Real.log (1 / ‖z - ζ‖)) :=
+          bumpPot_le_log_bound hC hC₀ hsζ (hS ζ) hne' (hb.trans_le hρ1)
+    · have hnmem : ζ ∉ ball z ρ := by
+        rw [mem_ball, dist_comm, dist_eq_norm]; exact hb
+      simp only [hφdef, indicator_of_notMem hnmem]
+      have hfT : f z ζ ≤ T := by
+        rcases le_or_gt (s ζ) ‖z - ζ‖ with hd | hd
+        · simp only [hfdef]; rw [bumpPot_eq_zero hsζ hd]; exact hT0
+        · refine ((hC (s ζ) hsζ (z - ζ) hne' hd).trans ?_).trans (le_max_right _ _)
+          have hπ : 0 ≤ (4 * Real.pi)⁻¹ := by have := Real.pi_pos; positivity
+          refine mul_le_mul_of_nonneg_left (add_le_add ?_ le_rfl) hπ
+          have hd0 : 0 < ‖z - ζ‖ := norm_pos_iff.2 hne'
+          refine Real.log_le_log (by positivity) ?_
+          rw [div_le_div_iff₀ (by positivity) (by positivity)]
+          have h1 : s ζ ^ 2 ≤ S ^ 2 := pow_le_pow_left₀ hsζ.le (hS ζ) 2
+          have h2 : ρ ^ 2 ≤ ‖z - ζ‖ ^ 2 := pow_le_pow_left₀ hρ.le (not_lt.1 hb) 2
+          nlinarith [pow_pos hρ 2, pow_pos hsζ 2]
+      simp only [htdef, min_eq_left hfT, sub_self, le_refl]
+  -- the dominating function of the tail
+  have hφ_nonneg : ∀ z ζ, 0 ≤ φ z ζ := by
+    intro z ζ
+    simp only [hφdef]
+    by_cases hmem : ζ ∈ ball z ρ
+    · rw [indicator_of_mem hmem]
+      refine mul_nonneg hΛ ?_
+      by_cases hzζ : z - ζ = 0
+      · simp [hzζ]
+      · have hd : 0 < ‖z - ζ‖ := norm_pos_iff.2 hzζ
+        have hd1 : ‖z - ζ‖ < 1 := by
+          rw [mem_ball, dist_comm, dist_eq_norm] at hmem; linarith
+        have : 0 ≤ Real.log (1 / ‖z - ζ‖) :=
+          Real.log_nonneg (by rw [le_div_iff₀ hd, one_mul]; exact hd1.le)
+        linarith
+    · rw [indicator_of_notMem hmem]
+  have hφm : ∀ z, Measurable (φ z) := fun z ↦ by
+    refine Measurable.indicator ?_ measurableSet_ball
+    exact measurable_const.mul (measurable_const.add (Real.measurable_log.comp (by fun_prop)))
+  have hφ_lint : ∀ z ∈ K₀, ∫⁻ ζ, ENNReal.ofReal (φ z ζ) ∂σ ≤ ENNReal.ofReal (Λ * η) := by
+    intro z hz
+    have e : (fun ζ ↦ ENNReal.ofReal (φ z ζ)) = (ball z ρ).indicator
+        (fun ζ ↦ ENNReal.ofReal Λ * ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖))) := by
+      ext ζ
+      simp only [hφdef]
+      by_cases hmem : ζ ∈ ball z ρ
+      · rw [indicator_of_mem hmem, indicator_of_mem hmem, ENNReal.ofReal_mul hΛ]
+      · rw [indicator_of_notMem hmem, indicator_of_notMem hmem, ENNReal.ofReal_zero]
+    rw [e, lintegral_indicator measurableSet_ball, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+      ENNReal.ofReal_mul hΛ]
+    gcongr
+    exact hlog z hz
+  have hφi : ∀ z ∈ K₀, Integrable (φ z) σ := fun z hz ↦
+    ⟨(hφm z).aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal
+      (Eventually.of_forall (hφ_nonneg z))).2 ((hφ_lint z hz).trans_lt ENNReal.ofReal_lt_top)⟩
+  have hφ_int : ∀ z ∈ K₀, ∫ ζ, φ z ζ ∂σ ≤ Λ * η := by
+    intro z hz
+    rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall (hφ_nonneg z))
+      (hφm z).aestronglyMeasurable]
+    have := ENNReal.toReal_mono ENNReal.ofReal_ne_top (hφ_lint z hz)
+    rwa [ENNReal.toReal_ofReal (mul_nonneg hΛ hη.le)] at this
+  -- integrability of `g z`, `t z`
+  have hAi : Integrable (A.indicator fun _ ↦ T) σ :=
+    (integrable_indicator_iff hA).2 (integrableOn_const hσA.ne)
+  have hgm : ∀ z, Measurable (g z) := fun z ↦ (hfm z).min measurable_const
+  have hgi : ∀ z ∈ K₀, Integrable (g z) σ := fun z hz ↦
+    Integrable.mono' hAi (hgm z).aestronglyMeasurable (hg_bound z hz)
+  have hti : ∀ z ∈ K₀, Integrable (t z) σ := fun z hz ↦ by
+    refine Integrable.mono' (hφi z hz) ((hfm z).sub (hgm z)).aestronglyMeasurable ?_
+    filter_upwards [ht_bound z hz] with ζ ⟨h1, h2⟩
+    rw [Real.norm_eq_abs, abs_of_nonneg h1]; exact h2
+  have ht_int : ∀ z ∈ K₀, 0 ≤ ∫ ζ, t z ζ ∂σ ∧ ∫ ζ, t z ζ ∂σ ≤ Λ * η := by
+    intro z hz
+    refine ⟨integral_nonneg_of_ae ?_, (integral_mono_ae (hti z hz) (hφi z hz) ?_).trans
+      (hφ_int z hz)⟩
+    · filter_upwards [ht_bound z hz] with ζ hζ using hζ.1
+    · filter_upwards [ht_bound z hz] with ζ hζ using hζ.2
+  have hsplit : ∀ z ∈ K₀, localPot σ s z = (∫ ζ, g z ζ ∂σ) + ∫ ζ, t z ζ ∂σ := by
+    intro z hz
+    rw [← integral_add (hgi z hz) (hti z hz)]
+    simp only [localPot, hgdef, htdef, hfdef]
+    congr 1; ext ζ; ring
+  -- continuity of the truncated part
+  have hcont : Tendsto (fun z ↦ ∫ ζ, g z ζ ∂σ) (𝓝 z₀) (𝓝 (∫ ζ, g z₀ ζ ∂σ)) := by
+    refine tendsto_integral_filter_of_dominated_convergence _
+      (Eventually.of_forall fun z ↦ (hgm z).aestronglyMeasurable) ?_ hAi ?_
+    · filter_upwards [closedBall_mem_nhds z₀ hr₀] with z hz using hg_bound z hz
+    · filter_upwards [hae z₀] with ζ ⟨hζ, hne⟩
+      have hopen : IsOpen {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} :=
+        (isOpen_lt continuous_const continuous_fst).inter
+          (isOpen_ne_fun continuous_snd continuous_const)
+      have hmem : (s ζ, z₀ - ζ) ∈ {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} :=
+        ⟨h.pos ζ hζ, sub_ne_zero.2 hne.symm⟩
+      have hca : ContinuousAt (Function.uncurry bumpPot) (s ζ, z₀ - ζ) :=
+        continuousOn_bumpPot_uncurry.continuousAt (hopen.mem_nhds hmem)
+      have hc2 : ContinuousAt (fun z : ℂ ↦ bumpPot (s ζ) (z - ζ)) z₀ :=
+        hca.comp (f := fun z : ℂ ↦ (s ζ, z - ζ))
+          (continuousAt_const.prodMk (continuousAt_id.sub continuousAt_const))
+      exact Filter.Tendsto.min hc2.tendsto (tendsto_const_nhds (x := T))
+  obtain ⟨δ₂, hδ₂, hδ₂'⟩ := Metric.tendsto_nhds_nhds.1 hcont (ε / 3) (by positivity)
+  refine ⟨min δ₂ r₀, lt_min hδ₂ hr₀, fun z hz ↦ ?_⟩
+  have hzK : z ∈ K₀ := by
+    rw [hK₀, mem_closedBall]; exact (hz.trans_le (min_le_right _ _)).le
+  have hz₀K : z₀ ∈ K₀ := mem_closedBall_self hr₀.le
+  have h1 := hδ₂' (hz.trans_le (min_le_left _ _))
+  rw [Real.dist_eq] at h1 ⊢
+  rw [hsplit z hzK, hsplit z₀ hz₀K]
+  obtain ⟨a1, a2⟩ := ht_int z hzK
+  obtain ⟨b1, b2⟩ := ht_int z₀ hz₀K
+  rw [abs_lt] at h1 ⊢
+  constructor <;> linarith [h1.1, h1.2]
 
 /-- **`ΔV = σ̃ − σ` weakly.** -/
 theorem integral_localPot_mul_laplacian (h : IsLocalPotData Ω σ s) {χ : ℂ → ℝ}
