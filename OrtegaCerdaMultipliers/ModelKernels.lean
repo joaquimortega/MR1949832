@@ -833,6 +833,86 @@ theorem isWeakDbarSol_kernel {Ω : Set ℂ} (hΩ : IsOpen Ω) {H : ℂ → ℂ �
 
 /-! ## §5 Conjugated-kernel operators (used by M11 and M12) -/
 
+theorem continuousOn_discDensity : ContinuousOn (fun z : ℂ ↦ 1 / (1 - ‖z‖ ^ 2)) 𝔻 :=
+  continuousOn_const.div (by fun_prop) fun _ hz ↦ (one_sub_normSq_pos hz).ne'
+
+theorem volume_restrict_disc_le_discMeasure : volume.restrict 𝔻 ≤ discMeasure := by
+  calc volume.restrict 𝔻 = (volume.restrict 𝔻).withDensity 1 := withDensity_one.symm
+    _ ≤ discMeasure := by
+      refine withDensity_mono ?_
+      filter_upwards [ae_restrict_mem measurableSet_ball] with z hz
+      simp only [Pi.one_apply, ENNReal.one_le_ofReal]
+      have := one_sub_normSq_pos hz
+      rw [le_div_iff₀ this]
+      nlinarith [norm_nonneg z]
+
+theorem discMeasure_lt_top_of_isCompact {K : Set ℂ} (hK : IsCompact K) (hKD : K ⊆ 𝔻) :
+    discMeasure K < ∞ := by
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuousOn_discDensity.mono hKD)
+  rw [discMeasure, withDensity_apply _ hK.measurableSet]
+  calc ∫⁻ z in K, ENNReal.ofReal (1 / (1 - ‖z‖ ^ 2)) ∂(volume.restrict 𝔻)
+      ≤ ∫⁻ z in K, ENNReal.ofReal B ∂(volume.restrict 𝔻) :=
+        setLIntegral_mono' hK.measurableSet fun z hz ↦
+          ENNReal.ofReal_le_ofReal ((le_abs_self _).trans (hB z hz))
+    _ = ENNReal.ofReal B * (volume.restrict 𝔻) K := setLIntegral_const _ _
+    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+        (lt_of_le_of_lt (Measure.restrict_apply_le _ _) hK.measure_lt_top)
+
+theorem lintegral_lt_top_of_eLpNorm_discMeasure {g : ℂ → ℝ≥0∞}
+    (hg : AEStronglyMeasurable g discMeasure) {K : Set ℂ} (hK : IsCompact K) (hKD : K ⊆ 𝔻)
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hfin : eLpNorm g p discMeasure < ∞) :
+    ∫⁻ z in K, g z < ∞ := by
+  have h1 : volume.restrict K ≤ discMeasure.restrict K := by
+    calc volume.restrict K = (volume.restrict 𝔻).restrict K := by
+          rw [Measure.restrict_restrict_of_subset hKD]
+      _ ≤ discMeasure.restrict K :=
+          Measure.restrict_mono subset_rfl volume_restrict_disc_le_discMeasure
+  have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
+    rw [ENNReal.toReal_one, div_one, sub_nonneg]
+    rcases eq_or_ne p ∞ with rfl | hpt
+    · simp
+    · exact div_le_one_of_le₀ (by rw [← ENNReal.toReal_one]; exact ENNReal.toReal_mono hpt hp)
+        ENNReal.toReal_nonneg
+  calc ∫⁻ z in K, g z ≤ ∫⁻ z, g z ∂(discMeasure.restrict K) := lintegral_mono' h1 le_rfl
+    _ = eLpNorm g 1 (discMeasure.restrict K) := by
+        rw [eLpNorm_one_eq_lintegral_enorm hg.restrict]; simp
+    _ ≤ eLpNorm g p (discMeasure.restrict K) *
+          (discMeasure.restrict K) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hg.restrict
+    _ ≤ eLpNorm g p discMeasure *
+          (discMeasure.restrict K) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) := by
+        gcongr
+        exact Measure.restrict_le_self
+    _ < ∞ := by
+        refine ENNReal.mul_lt_top hfin (ENNReal.rpow_lt_top_of_nonneg hexp ?_)
+        rw [Measure.restrict_apply_univ]
+        exact (discMeasure_lt_top_of_isCompact hK hKD).ne
+
+/-- The pointwise bound of the conjugated disc kernel by the positive model kernel. -/
+theorem norm_discKernelH_le {φ : ℂ → ℝ} {c A : ℝ} {H : ℂ → ℂ → ℂ}
+    (hHb : ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
+      ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖))
+    {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) :
+    ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ ≤ A / Real.pi * Real.exp (φ z - φ ζ) *
+      ((1 - ‖z‖ ^ 2) ^ c * (1 - ‖ζ‖ ^ 2) ^ (1 - c) / (‖1 - conj ζ * z‖ * ‖z - ζ‖)) := by
+  have hz0 := one_sub_normSq_pos hz
+  have hζ0 := one_sub_normSq_pos hζ
+  have hY := norm_one_sub_conj_mul_pos hζ hz
+  have hpi := Real.pi_pos
+  rw [norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg hpi.le]
+  rcases eq_or_ne z ζ with rfl | hne
+  · simp
+  have hZ : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
+  have hζc := Real.rpow_pos_of_pos hζ0 c
+  calc ‖H z ζ‖ / (Real.pi * ‖z - ζ‖)
+      ≤ (A * Real.exp (φ z - φ ζ) * ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c *
+          ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖)) / (Real.pi * ‖z - ζ‖) := by
+        gcongr
+        exact hHb z hz ζ hζ
+    _ = _ := by
+        rw [Real.div_rpow hz0.le hζ0.le, Real.rpow_sub hζ0, Real.rpow_one]
+        field_simp
+
 theorem disc_kernel_operator {φ : ℂ → ℝ} (hφ : ContinuousOn φ 𝔻) {c A : ℝ} (hc0 : 0 < c)
     (hc1 : c < 1) {H : ℂ → ℂ → ℂ} (hHm : Measurable (Function.uncurry H))
     (hHd : ∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) (hH1 : ∀ ζ ∈ 𝔻, H ζ ζ = 1)
@@ -846,8 +926,149 @@ theorem disc_kernel_operator {φ : ℂ → ℝ} (hφ : ContinuousOn φ 𝔻) {c 
         eLpNorm (fun z ↦ (∫ ζ in 𝔻, H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ) *
             (Real.exp (-φ z) : ℝ)) p discMeasure ≤
           ENNReal.ofReal (24 * A / (c * (1 - c))) *
-            eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure :=
-  sorry
+            eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure := by
+  set u : ℂ → ℂ := fun z ↦ ∫ ζ in 𝔻, H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ with hu
+  set F : ℂ → ℂ := fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ) with hFdef
+  obtain ⟨p₀, hp₀, hFfin⟩ := hadm
+  have h0 : (0 : ℂ) ∈ 𝔻 := mem_ball_self one_pos
+  have hA : 1 ≤ A := by
+    have := hHb 0 h0 0 h0
+    simpa [hH1 0 h0] using this
+  have hpi := Real.pi_pos
+  have hAπ : 0 ≤ A / Real.pi := div_nonneg (by linarith) hpi.le
+  have hνac : discMeasure ≪ volume.restrict 𝔻 := withDensity_absolutelyContinuous _ _
+  have hwc : ContinuousOn (fun z : ℂ ↦ (((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ) : ℂ)) 𝔻 :=
+    Complex.continuous_ofReal.comp_continuousOn
+      ((by fun_prop : Continuous fun z : ℂ ↦ 1 - ‖z‖ ^ 2).continuousOn.mul
+        (Real.continuous_exp.comp_continuousOn hφ.neg))
+  have hF : AEStronglyMeasurable F discMeasure :=
+    (hf.mul (hwc.aestronglyMeasurable measurableSet_ball)).mono_ac hνac
+  have hFe : AEMeasurable (fun z ↦ ‖F z‖ₑ) discMeasure := hF.enorm
+  have hFnorm : ∀ ζ ∈ 𝔻, ‖F ζ‖ = ‖f ζ‖ * ((1 - ‖ζ‖ ^ 2) * Real.exp (-φ ζ)) := by
+    intro ζ hζ
+    rw [hFdef, norm_mul, Complex.norm_real,
+      Real.norm_of_nonneg (mul_nonneg (one_sub_normSq_pos hζ).le (Real.exp_pos _).le)]
+  set TF : ℂ → ℝ≥0∞ := fun z ↦ ∫⁻ ζ, discModel c z ζ * ‖F ζ‖ₑ ∂discMeasure with hTF
+  have hTFm : AEStronglyMeasurable TF discMeasure := by
+    have : AEMeasurable (fun q : ℂ × ℂ ↦ discModel c q.1 q.2 * ‖F q.2‖ₑ)
+        (discMeasure.prod discMeasure) :=
+      (measurable_discModel c).aemeasurable.mul hFe.comp_snd
+    exact this.lintegral_prod_right'.aestronglyMeasurable
+  have hTFb : ∀ p : ℝ≥0∞, 1 ≤ p →
+      eLpNorm TF p discMeasure ≤
+        ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) * eLpNorm F p discMeasure := by
+    intro p hp
+    have := eLpNorm_discModel_le hc0 hc1 hFe hp
+    rwa [eLpNorm_enorm _ hF] at this
+  -- the key pointwise estimate
+  have hKP : ∀ z ∈ 𝔻, ∫⁻ ζ in 𝔻, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ ≤
+      ENNReal.ofReal (A / Real.pi * Real.exp (φ z)) * TF z := by
+    intro z hz
+    simp only [hTF]
+    rw [discMeasure, lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      measurable_discDensity (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
+      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine setLIntegral_mono' measurableSet_ball fun ζ hζ ↦ ?_
+    have hz0 := one_sub_normSq_pos hz
+    have hζ0 := one_sub_normSq_pos hζ
+    have hM0 : 0 ≤ (1 - ‖z‖ ^ 2) ^ c * (1 - ‖ζ‖ ^ 2) ^ (1 - c) /
+        (‖1 - conj ζ * z‖ * ‖z - ζ‖) := by positivity
+    simp only [Pi.mul_apply, discModel]
+    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
+      ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul hM0,
+      ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity),
+      hFnorm ζ hζ]
+    apply ENNReal.ofReal_le_ofReal
+    calc ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ * ‖f ζ‖
+        ≤ (A / Real.pi * Real.exp (φ z - φ ζ) *
+            ((1 - ‖z‖ ^ 2) ^ c * (1 - ‖ζ‖ ^ 2) ^ (1 - c) / (‖1 - conj ζ * z‖ * ‖z - ζ‖))) *
+              ‖f ζ‖ :=
+          mul_le_mul_of_nonneg_right (norm_discKernelH_le hHb hz hζ) (norm_nonneg _)
+      _ = _ := by
+          rw [Real.exp_sub, Real.exp_neg]
+          field_simp
+  -- local integrability of `f`
+  have hfl : LocallyIntegrableOn f 𝔻 := by
+    rw [locallyIntegrableOn_iff isOpen_ball.isLocallyClosed]
+    intro K hKD hK
+    refine ⟨hf.mono_measure (Measure.restrict_mono hKD le_rfl), ?_⟩
+    rw [hasFiniteIntegral_iff_enorm]
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hφ.mono hKD)
+    obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuousOn_discDensity.mono hKD)
+    calc ∫⁻ z in K, ‖f z‖ₑ ≤ ∫⁻ z in K, ENNReal.ofReal (Real.exp C * B) * ‖F z‖ₑ := by
+          refine setLIntegral_mono' hK.measurableSet fun z hzK ↦ ?_
+          have hz := hKD hzK
+          have hz0 := one_sub_normSq_pos hz
+          rw [← ofReal_norm, ← ofReal_norm,
+            ← ENNReal.ofReal_mul (mul_nonneg (Real.exp_pos _).le
+              ((norm_nonneg _).trans (hB z hzK))), hFnorm z hz]
+          apply ENNReal.ofReal_le_ofReal
+          have h1 : Real.exp (φ z) ≤ Real.exp C :=
+            Real.exp_le_exp.2 ((le_abs_self _).trans (hC z hzK))
+          have h2 : 1 / (1 - ‖z‖ ^ 2) ≤ B := (le_abs_self _).trans (hB z hzK)
+          calc ‖f z‖ = (Real.exp (φ z) * (1 / (1 - ‖z‖ ^ 2))) *
+                (‖f z‖ * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z))) := by
+                rw [Real.exp_neg]; field_simp
+            _ ≤ (Real.exp C * B) * (‖f z‖ * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z))) := by
+                gcongr
+      _ = ENNReal.ofReal (Real.exp C * B) * ∫⁻ z in K, ‖F z‖ₑ :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+          (lintegral_lt_top_of_eLpNorm_discMeasure hFe.aestronglyMeasurable hK hKD hp₀
+            (by rwa [eLpNorm_enorm _ hF]))
+  -- the local Fubini condition
+  have hloc : ∀ K ⊆ 𝔻, IsCompact K →
+      ∫⁻ z in K, ∫⁻ ζ in 𝔻, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ < ∞ := by
+    intro K hKD hK
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hφ.mono hKD)
+    calc ∫⁻ z in K, ∫⁻ ζ in 𝔻, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ
+        ≤ ∫⁻ z in K, ENNReal.ofReal (A / Real.pi * Real.exp C) * TF z := by
+          refine setLIntegral_mono' hK.measurableSet fun z hzK ↦ (hKP z (hKD hzK)).trans ?_
+          gcongr
+          exact (le_abs_self _).trans (hC z hzK)
+      _ = ENNReal.ofReal (A / Real.pi * Real.exp C) * ∫⁻ z in K, TF z :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+          (lintegral_lt_top_of_eLpNorm_discMeasure hTFm hK hKD hp₀
+            ((hTFb p₀ hp₀).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hFfin)))
+  refine ⟨isWeakDbarSol_kernel isOpen_ball hHm hHd hH1 hf hfl hloc, fun p hp ↦ ?_⟩
+  -- the `L^p` estimate
+  have hum : AEStronglyMeasurable u volume := weak_aestronglyMeasurable_kernelOp hHm hf
+  have hEc : ContinuousOn (fun z : ℂ ↦ ((Real.exp (-φ z) : ℝ) : ℂ)) 𝔻 :=
+    Complex.continuous_ofReal.comp_continuousOn (Real.continuous_exp.comp_continuousOn hφ.neg)
+  have hv : AEStronglyMeasurable (fun z ↦ u z * ((Real.exp (-φ z) : ℝ) : ℂ)) discMeasure :=
+    (hum.restrict.mul (hEc.aestronglyMeasurable measurableSet_ball)).mono_ac hνac
+  have hpt : ∀ᵐ z ∂discMeasure, ‖u z * ((Real.exp (-φ z) : ℝ) : ℂ)‖ₑ ≤
+      ‖ENNReal.ofReal (A / Real.pi) * TF z‖ₑ := by
+    filter_upwards [ae_discMeasure_mem] with z hz
+    rw [enorm_eq_self, enorm_mul, ← ofReal_norm (((Real.exp (-φ z) : ℝ) : ℂ)),
+      Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+    calc ‖u z‖ₑ * ENNReal.ofReal (Real.exp (-φ z))
+        ≤ (∫⁻ ζ in 𝔻, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ) *
+            ENNReal.ofReal (Real.exp (-φ z)) := by
+          gcongr
+          refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq ?_)
+          simp_rw [enorm_mul]
+      _ ≤ ENNReal.ofReal (A / Real.pi * Real.exp (φ z)) * TF z *
+            ENNReal.ofReal (Real.exp (-φ z)) := by
+          gcongr
+          exact hKP z hz
+      _ = ENNReal.ofReal (A / Real.pi) * TF z := by
+          rw [mul_comm _ (TF z), mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_assoc,
+            ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one, mul_comm]
+  calc eLpNorm (fun z ↦ u z * ((Real.exp (-φ z) : ℝ) : ℂ)) p discMeasure
+      ≤ eLpNorm (fun z ↦ ENNReal.ofReal (A / Real.pi) * TF z) p discMeasure :=
+        eLpNorm_mono_enorm_ae hv hpt
+    _ = ENNReal.ofReal (A / Real.pi) * eLpNorm TF p discMeasure :=
+        eLpNorm_const_mul_ennreal hTFm
+    _ ≤ ENNReal.ofReal (A / Real.pi) *
+          (ENNReal.ofReal (24 * Real.pi / (c * (1 - c))) * eLpNorm F p discMeasure) := by
+        gcongr
+        exact hTFb p hp
+    _ = ENNReal.ofReal (24 * A / (c * (1 - c))) * eLpNorm F p discMeasure := by
+        rw [← mul_assoc, ← ENNReal.ofReal_mul hAπ]
+        congr 2
+        field_simp
 
 theorem plane_kernel_operator {φ : ℂ → ℝ} (hφ : Continuous φ) {c A : ℝ} (hc : 0 < c)
     {H : ℂ → ℂ → ℂ} (hHm : Measurable (Function.uncurry H))
