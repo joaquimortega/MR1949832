@@ -185,11 +185,54 @@ theorem abs_kerDisc_sub_taylorDisc_two_le {z c ζ : ℂ} (hz : z ∈ 𝔻) {Bd :
     (hB : ∀ ξ ∈ segment ℝ c ζ, 2 * (1 - ‖z‖ ^ 2) / (‖z - ξ‖ ^ 2 * ‖1 - conj z * ξ‖) ≤ Bd) :
     |kerDisc z ζ - taylorDisc 2 z c ζ| ≤ Bd * ‖ζ - c‖ ^ 2 := sorry
 
+theorem natDegree_C_mul_X_sub_C_pow_le (a c : ℂ) (k : ℕ) :
+    ((Polynomial.C a * (Polynomial.X - Polynomial.C c)) ^ k).natDegree ≤ k := by
+  refine Polynomial.natDegree_pow_le.trans ?_
+  have : (Polynomial.C a * (Polynomial.X - Polynomial.C c)).natDegree ≤ 1 :=
+    (Polynomial.natDegree_C_mul_le _ _).trans (Polynomial.natDegree_X_sub_C_le _)
+  nlinarith
+
 theorem exists_poly_taylorPlane {m : ℕ} (hm : 1 ≤ m) (z c : ℂ) :
-    ∃ p : Polynomial ℂ, p.natDegree < m ∧ ∀ ζ, taylorPlane m z c ζ = (p.eval ζ).re := sorry
+    ∃ p : Polynomial ℂ, p.natDegree < m ∧ ∀ ζ, taylorPlane m z c ζ = (p.eval ζ).re := by
+  open Polynomial in
+  refine ⟨C (Real.log ‖z - c‖ : ℂ) - ∑ k ∈ Finset.Ico 1 m,
+      C (1 / (k : ℂ)) * (C (z - c)⁻¹ * (X - C c)) ^ k, ?_, fun ζ ↦ ?_⟩
+  · have : (C (Real.log ‖z - c‖ : ℂ) - ∑ k ∈ Finset.Ico 1 m,
+        C (1 / (k : ℂ)) * (C (z - c)⁻¹ * (X - C c)) ^ k).natDegree ≤ m - 1 := by
+      refine (natDegree_sub_le _ _).trans (max_le (by simp) ?_)
+      refine natDegree_sum_le_of_forall_le _ _ fun k hk ↦ ?_
+      refine (natDegree_C_mul_le _ _).trans ((natDegree_C_mul_X_sub_C_pow_le _ _ _).trans ?_)
+      have := (Finset.mem_Ico.1 hk).2; omega
+    omega
+  · simp only [taylorPlane, eval_sub, eval_C, eval_finset_sum, eval_mul, eval_pow, eval_X,
+      sub_re, ofReal_re]
+    congr 2
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    simp only [div_eq_mul_inv]
+    ring
 
 theorem exists_poly_taylorDisc {m : ℕ} (hm : 1 ≤ m) (z c : ℂ) :
-    ∃ p : Polynomial ℂ, p.natDegree < m ∧ ∀ ζ, taylorDisc m z c ζ = (p.eval ζ).re := sorry
+    ∃ p : Polynomial ℂ, p.natDegree < m ∧ ∀ ζ, taylorDisc m z c ζ = (p.eval ζ).re := by
+  open Polynomial in
+  refine ⟨C (Real.log (pseudoHyp c z) : ℂ) - ∑ k ∈ Finset.Ico 1 m,
+      C (1 / (k : ℂ)) * ((C (z - c)⁻¹ * (X - C c)) ^ k -
+        (C (conj z / (1 - conj z * c)) * (X - C c)) ^ k), ?_, fun ζ ↦ ?_⟩
+  · have : (C (Real.log (pseudoHyp c z) : ℂ) - ∑ k ∈ Finset.Ico 1 m,
+        C (1 / (k : ℂ)) * ((C (z - c)⁻¹ * (X - C c)) ^ k -
+          (C (conj z / (1 - conj z * c)) * (X - C c)) ^ k)).natDegree ≤ m - 1 := by
+      refine (natDegree_sub_le _ _).trans (max_le (by simp) ?_)
+      refine natDegree_sum_le_of_forall_le _ _ fun k hk ↦ ?_
+      refine (natDegree_C_mul_le _ _).trans ((natDegree_sub_le _ _).trans
+        (max_le ((natDegree_C_mul_X_sub_C_pow_le _ _ _).trans ?_)
+          ((natDegree_C_mul_X_sub_C_pow_le _ _ _).trans ?_))) <;>
+      · have := (Finset.mem_Ico.1 hk).2; omega
+    omega
+  · simp only [taylorDisc, eval_sub, eval_C, eval_finset_sum, eval_mul, eval_pow, eval_X,
+      sub_re, ofReal_re]
+    congr 2
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    simp only [div_eq_mul_inv]
+    ring
 
 /-- Moment cancellation. -/
 theorem cellPot_eq_sub_poly {ν : Measure ℂ} {R : ℕ → Set ℂ} {Λ : ℕ → Multiset ℂ} {i m : ℕ}
@@ -198,6 +241,44 @@ theorem cellPot_eq_sub_poly {ν : Measure ℂ} {R : ℕ → Set ℂ} {Λ : ℕ �
     {k : ℂ → ℂ → ℝ} {z : ℂ} (hint : IntegrableOn (k z) (R i) ν)
     {T : ℂ → ℝ} {p : Polynomial ℂ} (hp : p.natDegree < m) (hT : ∀ ζ, T ζ = (p.eval ζ).re) :
     cellPot k ν R Λ i z =
-      ((Λ i).map fun w ↦ k z w - T w).sum - ∫ ζ in R i, (k z ζ - T ζ) ∂ν := sorry
+      ((Λ i).map fun w ↦ k z w - T w).sum - ∫ ζ in R i, (k z ζ - T ζ) ∂ν := by
+  obtain ⟨r, hr⟩ := hb.subset_closedBall 0
+  -- integrability of polynomials on the cell
+  have hpoly : ∀ q : Polynomial ℂ, IntegrableOn (fun ζ ↦ q.eval ζ) (R i) ν := by
+    intro q
+    obtain ⟨Cq, hCq⟩ := (isCompact_closedBall (0 : ℂ) r).exists_bound_of_continuousOn
+      (q.continuous.continuousOn)
+    refine IntegrableOn.of_bound hfin q.continuous.aestronglyMeasurable.restrict Cq ?_
+    exact (ae_restrict_iff' hR).2 (Filter.Eventually.of_forall fun ζ hζ ↦ hCq ζ (hr hζ))
+  have hTint : IntegrableOn T (R i) ν := by
+    have : T = fun ζ ↦ (p.eval ζ).re := funext hT
+    rw [this]; exact (hpoly p).re
+  -- moments
+  have hmomp : ∫ ζ in R i, p.eval ζ ∂ν = ((Λ i).map fun w ↦ p.eval w).sum := by
+    have hev : ∀ ζ, p.eval ζ = ∑ j ∈ Finset.range m, p.coeff j * ζ ^ j :=
+      fun ζ ↦ Polynomial.eval_eq_sum_range' hp ζ
+    simp_rw [hev]
+    rw [integral_finsetSum _ fun j _ ↦ (hpoly (Polynomial.X ^ j)).congr
+      (Filter.Eventually.of_forall fun ζ ↦ by simp) |>.const_mul (p.coeff j)]
+    simp_rw [integral_const_mul]
+    have hswap : ∀ (L : Multiset ℂ) (f : ℕ → ℂ → ℂ),
+        ∑ j ∈ Finset.range m, (L.map (f j)).sum =
+          (L.map fun w ↦ ∑ j ∈ Finset.range m, f j w).sum := by
+      intro L f
+      induction L using Multiset.induction_on with
+      | empty => simp
+      | cons a t ih => simp [Multiset.map_cons, Multiset.sum_cons, Finset.sum_add_distrib, ih]
+    rw [← hswap]
+    refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [hmom j (Finset.mem_range.1 hj), Multiset.sum_map_mul_left]
+  have hTsum : ((Λ i).map T).sum = ∫ ζ in R i, T ζ ∂ν := by
+    simp_rw [hT]
+    rw [show (∫ x in R i, (p.eval x).re ∂ν) = (∫ x in R i, p.eval x ∂ν).re from
+      integral_re (hpoly p), hmomp]
+    induction (Λ i) using Multiset.induction_on with
+    | empty => simp
+    | cons a t ih => simp [Multiset.map_cons, Multiset.sum_cons, ih]
+  rw [cellPot, integral_sub hint hTint, Multiset.sum_map_sub, hTsum]
+  ring
 
 end OC
