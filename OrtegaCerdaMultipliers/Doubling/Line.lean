@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Doubling.Plane
 /-!
 # M03 (Doubling) — The line: pull-back of `μ` to `ℝ`
 
-See `blueprint/M03_Doubling.md` §2.2.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M03_Doubling.md` §2.2.  All proofs are complete.
 
 `linePull μ = μ.comap ofReal`, transfer of `IsLocallyDoublingLine` and `massRadiusLine`.
 -/

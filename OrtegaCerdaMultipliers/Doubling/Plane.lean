@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Doubling.Abstract
 /-!
 # M03 (Doubling) — Geometry instances for normed spaces; the plane
 
-See `blueprint/M03_Doubling.md` §2.2.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M03_Doubling.md` §2.2.  All proofs are complete.
 
 `BallGeometry` for finite-dimensional real normed spaces (so `ℂ` and `ℝ`), porous lines and
 segments in `ℂ`, `IsDoubling → IsLocallyDoubling`.

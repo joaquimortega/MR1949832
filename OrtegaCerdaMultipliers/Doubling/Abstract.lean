@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Defs
 /-!
 # M03 (Doubling) — Locally doubling measures on a metric space
 
-See `blueprint/M03_Doubling.md` §2.1.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M03_Doubling.md` §2.1.  All proofs are complete.
 
 The whole theory of §2 of the paper on an abstract metric space `X` with `BallGeometry`:
 `IsLocDoublingM`, `BallGeometry`, `IsPorous`, `massRadiusM`, scale-up, Lemma 1, Lemma 2 (porous

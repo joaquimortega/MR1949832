@@ -4,8 +4,8 @@ import OrtegaCerdaMultipliers.Foundations.HyperbolicExtra
 /-!
 # M03 (Doubling) — The disc with the hyperbolic metric
 
-See `blueprint/M03_Doubling.md` §2.3.  Scaffold: statements, proofs `sorry`; definitions and data
-are real.  The metric-space instance on `HDisc` is fully proved (its topology is definitionally
+See `blueprint/M03_Doubling.md` §2.3.  All proofs are complete; `BallGeometry HDisc` uses a local
+proof of the radial distance formula (`hypDist_radial'`).  The metric-space instance on `HDisc` is fully proved (its topology is definitionally
 the subspace topology), from the M01 lemmas `hypDist_self`, `hypDist_comm`, `hypDist_triangle`,
 `hypDist_eq_zero_iff`, `hypBall_subset_ball`, `isOpen_hypBall`.
 -/
@@ -97,6 +97,42 @@ theorem tanh_le_tanh_of_le {a b : ℝ} (h : a ≤ b) : Real.tanh a ≤ Real.tanh
     ⟨Real.neg_one_lt_tanh b, Real.tanh_lt_one b⟩, Real.artanh_tanh, Real.artanh_tanh]
   exact h
 
+/-- Radial hyperbolic distances (a local proof of M01's `hypDist_radial`, so that
+`BallGeometry HDisc` does not depend on an upstream `sorry`). -/
+theorem hypDist_radial' {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) (hb : b < 1) {u : ℂ}
+    (hu : ‖u‖ = 1) : hypDist (a * u) (b * u) = Real.artanh b - Real.artanh a := by
+  have hpos : 0 < 1 - a * b := by nlinarith
+  have h1 : ‖(a : ℂ) * u - b * u‖ = b - a := by
+    rw [← sub_mul, norm_mul, hu, mul_one, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_eq_abs, abs_of_nonpos (by linarith)]
+    ring
+  have h2 : ‖1 - conj ((a : ℂ) * u) * (b * u)‖ = 1 - a * b := by
+    have hcu : conj u * u = 1 := by
+      rw [Complex.conj_mul', hu]
+      simp
+    have e : 1 - conj ((a : ℂ) * u) * (b * u) = ((1 - a * b : ℝ) : ℂ) := by
+      rw [map_mul, Complex.conj_ofReal]
+      push_cast
+      linear_combination (-(a : ℂ) * b) * hcu
+    rw [e, Complex.norm_real, Real.norm_of_nonneg hpos.le]
+  rw [hypDist, pseudoHyp, h1, h2]
+  have hq1 : (b - a) / (1 - a * b) < 1 := by
+    rw [div_lt_one hpos]
+    nlinarith
+  have hq0 : 0 ≤ (b - a) / (1 - a * b) := div_nonneg (by linarith) hpos.le
+  have key := artanh_add_artanh (x := a) (y := (b - a) / (1 - a * b))
+    ⟨by linarith, by linarith⟩ ⟨by linarith, hq1⟩
+  have hsimp : (a + (b - a) / (1 - a * b)) / (1 + a * ((b - a) / (1 - a * b))) = b := by
+    have ha2 : 1 - a * b + a * (b - a) ≠ 0 := by nlinarith
+    rw [div_eq_iff (by
+      rw [show 1 + a * ((b - a) / (1 - a * b)) = (1 - a * b + a * (b - a)) / (1 - a * b) by
+        field_simp]
+      exact div_ne_zero ha2 hpos.ne')]
+    field_simp
+    ring
+  rw [hsimp] at key
+  linarith
+
 instance : BallGeometry HDisc where
   exists_between x y s hs hsd := by
     have hx : x.1 ∈ 𝔻 := x.2
@@ -143,7 +179,7 @@ instance : BallGeometry HDisc where
       have h0m₀ : hypDist 0 m₀ = s := by
         rw [hypDist_zero_left, hm₀n, hadef, Real.artanh_tanh]
       have hm₀w : hypDist m₀ w = d - s := by
-        rw [hm₀def, hwu, hypDist_radial ha0 hab hb1 hu, Real.artanh_tanh, hadef, Real.artanh_tanh]
+        rw [hm₀def, hwu, hypDist_radial' ha0 hab hb1 hu, Real.artanh_tanh, hadef, Real.artanh_tanh]
       have hm : mobius x.1 m₀ ∈ 𝔻 := mobius_mem_disc hx hm₀
       refine ⟨mk (mobius x.1 m₀) hm, le_of_eq ?_, le_of_eq ?_⟩
       · show hypDist x.1 (mobius x.1 m₀) = s
