@@ -123,44 +123,53 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
           (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
         (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) := sorry
 
-/-- The fixed comparator statement (disc), from `prop2_disc_quant`. -/
+-- (reconciled) `prop2_disc`, `prop2_plane` are now the comparator statements (Theorem-4 bounds
+-- for each multiplier); proved from `prop2_*_quant`.
+/-- **Proposition 2 (disc)** (paper, p. 369): finitely many multipliers `h₁, …, h_n`, each
+satisfying the conclusion of Theorem 4, whose exceptional sets
+`E_{h_i} = ⋃_{λ ∈ Z(h_i)} D(λ, ε ρ(λ))` have empty intersection; outside `E_{h_i}`,
+`|h_i| ≃ e^ψ` (the remark after Theorem 4). -/
 theorem prop2_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
     (hd : IsLocallyDoublingDisc μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z R)) :
-    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (ε : ℝ) (C : ℝ), 0 < ε ∧ 0 < C ∧
-      (∀ i, DifferentiableOn ℂ (h i) 𝔻) ∧
+    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (M : ℕ) (ε : ℝ) (C : ℝ≥0), 0 < ε ∧ 0 < C ∧
+      (∀ i, DifferentiableOn ℂ (h i) 𝔻 ∧ (∃ z₀ ∈ 𝔻, h i z₀ ≠ 0) ∧ ∀ z ∈ 𝔻,
+        C⁻¹ * (hypDistSet z {w | w ∈ 𝔻 ∧ h i w = 0} /
+            ENNReal.ofReal (massRadiusDisc μ z)) ^ M ≤
+          ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ∧
+        ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ≤
+          C * (hypDistSet z {w | w ∈ 𝔻 ∧ h i w = 0} / ENNReal.ofReal (massRadiusDisc μ z))) ∧
       (∀ z ∈ 𝔻, ∃ i, ∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) ∧
       ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
-        C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
+        (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
   obtain ⟨R, hR, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
   obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R hR
-  obtain ⟨h, hh, -, -, hcov, hgood, -⟩ := hall ψ μ hw
-  have hC0 : (0 : ℝ) < C := by
-    have : (1 : ℝ) ≤ C := by exact_mod_cast hC
-    linarith
-  exact ⟨n, h, ε, C, hε, hC0, hh, hcov, hgood⟩
-
-/-- The fixed comparator statement (plane), from `prop2_plane_quant`. -/
+  obtain ⟨h, hh, hz₀, hb, hcov, hgood, -⟩ := hall ψ μ hw
+  exact ⟨n, h, M, ε, C, hε, zero_lt_one.trans_le hC,
+    fun i ↦ ⟨hh i, hz₀ i, fun z hz ↦ ⟨(hb i z hz).1, (hb i z hz).2.1⟩⟩, hcov, hgood⟩
+/-- **Proposition 2 (plane)** (paper, p. 369). -/
 theorem prop2_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight univ ψ μ)
     (hd : IsLocallyDoubling μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z : ℂ, 1 < μ (ball z R)) :
-    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (ε : ℝ) (C : ℝ), 0 < ε ∧ 0 < C ∧
-      (∀ i, Differentiable ℂ (h i)) ∧
+    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (M : ℕ) (ε : ℝ) (C : ℝ≥0), 0 < ε ∧ 0 < C ∧
+      (∀ i, Differentiable ℂ (h i) ∧ (∃ z₀, h i z₀ ≠ 0) ∧ ∀ z : ℂ,
+        C⁻¹ * (edistSet z {w | h i w = 0} / ENNReal.ofReal (massRadius μ z)) ^ M ≤
+          ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ∧
+        ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ≤
+          C * (edistSet z {w | h i w = 0} / ENNReal.ofReal (massRadius μ z))) ∧
       (∀ z : ℂ, ∃ i, ∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) ∧
       ∀ i, ∀ z : ℂ, (∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) →
-        C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
+        (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
   obtain ⟨R, hR, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
       fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
   obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R hR
-  obtain ⟨h, hh, -, -, hcov, hgood, -⟩ := hall ψ μ hw
-  have hC0 : (0 : ℝ) < C := by
-    have : (1 : ℝ) ≤ C := by exact_mod_cast hC
-    linarith
-  exact ⟨n, h, ε, C, hε, hC0, hh, hcov, hgood⟩
+  obtain ⟨h, hh, hz₀, hb, hcov, hgood, -⟩ := hall ψ μ hw
+  exact ⟨n, h, M, ε, C, hε, zero_lt_one.trans_le hC,
+    fun i ↦ ⟨hh i, hz₀ i, fun z ↦ ⟨(hb i z).1, (hb i z).2.1⟩⟩, hcov, hgood⟩
 
 /-- M11's required form (disc). -/
 theorem prop2_disc_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
@@ -203,51 +212,16 @@ theorem prop2_plane_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmo
     linarith
   exact ⟨n, h, ε, C, hε, hC0, hh, hcov, hup, fun i z hg ↦ (hgood i z hg).1⟩
 
-/-- The strengthened comparator form (coordinator): every `h i` satisfies the conclusion of
-Theorem 4 and `h i ≢ 0`; the exceptional sets have empty intersection; `|h i| ≃ e^ψ` off them. -/
-theorem prop2_disc_strong (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
-    (hd : IsLocallyDoublingDisc μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z R)) :
-    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (M : ℕ) (C : ℝ≥0) (ε : ℝ), 0 < ε ∧
-      (∀ i, DifferentiableOn ℂ (h i) 𝔻 ∧ (∃ z₀ ∈ 𝔻, h i z₀ ≠ 0) ∧
-        ∀ z ∈ 𝔻,
-          C⁻¹ * (hypDistSet z {w | w ∈ 𝔻 ∧ h i w = 0} / ENNReal.ofReal (massRadiusDisc μ z)) ^ M ≤
-            ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ∧
-          ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ≤
-            C * (hypDistSet z {w | w ∈ 𝔻 ∧ h i w = 0} / ENNReal.ofReal (massRadiusDisc μ z))) ∧
-      (∀ z ∈ 𝔻, ∃ i, ∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) ∧
-      ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
-        (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
-  obtain ⟨R, hR, hmR⟩ := hm
-  obtain ⟨Cd, hCd⟩ := hd
-  have hw : WeightClassDisc ψ μ Cd R :=
-    ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, -, hε, hall⟩ := prop2_disc_quant Cd R hR
-  obtain ⟨h, hh, hz₀, hb, hcov, hgood, -⟩ := hall ψ μ hw
-  exact ⟨n, h, M, C, ε, hε, fun i ↦ ⟨hh i, hz₀ i, fun z hz ↦ ⟨(hb i z hz).1, (hb i z hz).2.1⟩⟩,
-    hcov, hgood⟩
+-- (reconciled) `prop2_disc_strong`, `prop2_plane_strong` are dropped: they coincide with the
+-- comparator `prop2_disc`, `prop2_plane` above up to the order of the existential binders.
 
-/-- The strengthened comparator form (plane). -/
-theorem prop2_plane_strong (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight univ ψ μ)
-    (hd : IsLocallyDoubling μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z : ℂ, 1 < μ (ball z R)) :
-    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (M : ℕ) (C : ℝ≥0) (ε : ℝ), 0 < ε ∧
-      (∀ i, Differentiable ℂ (h i) ∧ (∃ z₀, h i z₀ ≠ 0) ∧
-        ∀ z : ℂ,
-          C⁻¹ * (edistSet z {w | h i w = 0} / ENNReal.ofReal (massRadius μ z)) ^ M ≤
-            ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ∧
-          ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ≤
-            C * (edistSet z {w | h i w = 0} / ENNReal.ofReal (massRadius μ z))) ∧
-      (∀ z : ℂ, ∃ i, ∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) ∧
-      ∀ i, ∀ z : ℂ, (∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) →
-        (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
-  obtain ⟨R, hR, hmR⟩ := hm
-  obtain ⟨Cd, hCd⟩ := hd
-  have hw : WeightClassPlane ψ μ Cd R :=
-    ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
-      fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, -, hε, hall⟩ := prop2_plane_quant Cd R hR
-  obtain ⟨h, hh, hz₀, hb, hcov, hgood, -⟩ := hall ψ μ hw
-  exact ⟨n, h, M, C, ε, hε, fun i ↦ ⟨hh i, hz₀ i, fun z ↦ ⟨(hb i z).1, (hb i z).2.1⟩⟩,
-    hcov, hgood⟩
+/-- A finite cover by measurable sets refines to a measurable partition (moved here from M11, so
+that both M11 and M12 can use it without M12 importing M11). -/
+theorem exists_measurable_partition {X : Type*} [MeasurableSpace X] {n : ℕ} {S : Set X}
+    (hS : MeasurableSet S) (G : Fin n → Set X) (hG : ∀ i, MeasurableSet (G i))
+    (hcov : ∀ z ∈ S, ∃ i, z ∈ G i) :
+    ∃ Ω : Fin n → Set X, (∀ i, MeasurableSet (Ω i)) ∧ (∀ i, Ω i ⊆ G i ∩ S) ∧
+      ∀ z ∈ S, ∃! i, z ∈ Ω i
 
 /-- The partition form used by M11 (disc). -/
 theorem prop2_disc_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
@@ -425,6 +399,15 @@ Set `C_P := max(C², C c₆^{−M})`, rounded up in `ℝ≥0`. Then the `_quant`
   - **`prop2_*_strong`** is that statement written out with the Theorem-4 inequalities inlined. It is proved from `_quant` in the scratch file. If the comparator adopts it verbatim, nothing else is needed.
 
 ---
+
+### 4a. Interface (reconciled)
+
+Lean file `SeveralMultipliers.lean`. Changes from the §1 block:
+- **`prop2_disc`, `prop2_plane`.** They are verbatim the current comparator statements, which already contain the Theorem-4 bounds and `h i ≢ 0` for each multiplier. They are proved from `prop2_*_quant`. The former weak forms follow from `prop2_*_full`.
+- **`prop2_*_strong`.** Dropped as duplicates.
+- **`exists_measurable_partition`.** Moved here from M11, so that both M11 and M12 get it without M12 importing M11.
+- **Upstream owners.** `lapNorm`, the classes and `claim1_*_quant` are M03's (`Doubling/Quant.lean`); `lemma4_*_quant` and `IsMassPartition` are M05's; `hypArea`, `hypArea_hypBall` are M01's.
+- **`measClassDisc_of_hypArea`: the constant.** The statement has `∃ Cd`, so it is unaffected. In the proof (§3.6), `4cosh²(½) ≈ 5.086 > 5`, so `⌈5b/a⌉₊` is not enough. Take `Cd := ⌈6b/a⌉₊`.
 
 ## 5. Issues found (for NOTEBOOK)
 

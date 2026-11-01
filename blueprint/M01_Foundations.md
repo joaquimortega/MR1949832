@@ -662,6 +662,45 @@ See the corresponding BOC blueprints:
 
 ---
 
+## 5a. Interface (reconciled)
+
+The scaffold adds one M01 file, `Foundations/HyperbolicExtra.lean` (proofs `sorry`; `hypArea` is
+a real definition). It contains the M01-type statements that later docs assume and that
+`Hyperbolic.lean` does not state:
+- `hypArea` (the shared hyperbolic area measure, M11's name and formula; used by M08, M09, M11) and `hypArea_hypBall` (M08 §4.1);
+- `hypDist_radial`, `hypBall_zero`, `continuousOn_hypDist` (assumed by M03 §4.2);
+- `ball_subset_hypBall_tanh`, `hypBall_subset_ball_tanh`: M03 §4.2 assumed these under the names `ball_subset_hypBall`, `hypBall_subset_ball`, which `Hyperbolic.lean` already uses for the `r ≤ 1` forms with constants `1/10` and `18`. The existing statements are unchanged; the `tanh` forms get new names;
+- the disc geometry lemmas of M08 §2.2 (`norm_sub_le_of_hypDist_le`, `norm_one_sub_conj_mul_comparable`, `convex_closedHypBall`), moved here from M08.
+
+Assumed names that already exist in a stronger form are not duplicated: `hypDist_nonneg` and `isOpen_hypBall` (no membership hypotheses), `hypBall_eq_pseudoBall` (M04's `hypBall_eq`, which also had `0 < r`).
+
+```lean
+/-- The hyperbolic area measure `dm(z) / (1 - |z|²)²` on `𝔻` (shared definition; M11's form). -/
+def hypArea : Measure ℂ :=
+  (volume.restrict 𝔻).withDensity fun z ↦ ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2)
+/-- Hyperbolic area of a hyperbolic disc: `hypArea (D(z, r)) = π sinh² r` (Möbius invariance and
+the computation at `0`: `∫_{|w|<t} dm/(1-|w|²)² = π t²/(1 - t²)` with `t = tanh r`). -/
+theorem hypArea_hypBall {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 ≤ r) :
+    hypArea (hypBall z r) = ENNReal.ofReal (Real.pi * Real.sinh r ^ 2)
+theorem hypDist_radial {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (ht : t < 1) {u : ℂ} (hu : ‖u‖ = 1) :
+    hypDist (s * u) (t * u) = Real.artanh t - Real.artanh s
+theorem hypBall_zero {r : ℝ} (hr : 0 < r) : hypBall 0 r = ball 0 (Real.tanh r)
+theorem continuousOn_hypDist : ContinuousOn (fun p : ℂ × ℂ ↦ hypDist p.1 p.2) (𝔻 ×ˢ 𝔻)
+theorem ball_subset_hypBall_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+    ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / 2) ⊆ hypBall z r
+theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+    hypBall z r ⊆ ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / (1 - Real.tanh r))
+theorem norm_sub_le_of_hypDist_le {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {s : ℝ}
+    (hs : hypDist c w ≤ s) (hs1 : Real.tanh s < 1) :
+    ‖w - c‖ ≤ Real.tanh s / (1 - Real.tanh s) * (1 - ‖c‖ ^ 2)
+theorem norm_one_sub_conj_mul_comparable {z c ξ : ℂ} (hz : z ∈ 𝔻) (hc : c ∈ 𝔻) (hξ : ξ ∈ 𝔻)
+    {s : ℝ} (hs : hypDist c ξ ≤ s) :
+    ‖1 - conj z * ξ‖ ≤ Real.exp (2 * s) * ‖1 - conj z * c‖ ∧
+      ‖1 - conj z * c‖ ≤ Real.exp (2 * s) * ‖1 - conj z * ξ‖
+theorem convex_closedHypBall {c : ℂ} (hc : c ∈ 𝔻) (s : ℝ) :
+    Convex ℝ {w | w ∈ 𝔻 ∧ hypDist c w ≤ s}
+```
+
 ## 6. Notes
 
 - **Laplacian.** RMI's `IsSubharmonicWeight` uses `Laplacian.laplacian`. The copied `lap` lemmas (`lap_comp_normSq`, `lap_log_normSq`, `lap_comp_holomorphic`, `integral_mul_lap`, …) transfer through `laplacian_eq_four_mul_lap`. Example: `Δ log|z|² = 0` off `0`, and `Δ(α|z|²) = 4α`.

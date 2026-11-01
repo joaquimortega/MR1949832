@@ -72,6 +72,7 @@ Comparison, clause by clause ([OCS99, Lemma 4] / quote on RMI p. 375 / `TheoremO
 
 ### 1.2 Fixed comparator statement (false, §0.1)
 ```lean
+-- (reconciled) NOT declared in `Theorem3.lean` (known false); kept there only as a comment.
 theorem theorem3 (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
     (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) (K : ℝ≥0) :
@@ -351,6 +352,18 @@ M02, M03, M05–M12 directly (only through M13).
 `theorem3_weighted`, the proposed comparator statement; `theorem3_of_lowerBound`; `theorem3` itself cannot be proved (§0.1).
 
 ---
+
+### 5.5 Interface (reconciled)
+
+Lean file `Theorem3.lean`; the statements of §1.3 are unchanged.
+- **The printed `theorem3` is not declared.** It is known false (`not_theorem3_printed`). The comparator statement is kept in the file inside a comment, so that the build contains no `sorry` theorem that is known to be false.
+- **`theorem3_weighted`** has the shape of a main statement:
+  - hypothesis `TheoremOCS`;
+  - the same hypotheses and quantifiers as `theorem3`;
+  - the weighted integral `∫_{|z−x|<1} e^{−φ(z)} d|μ|(z)/|x − z|` in the conclusion.
+
+  It is the intended replacement of `theorem3` in `comparator/statements.lean`.
+- **Upstream.** M14 consumes only `lineMultipliers` from M13, together with M01's `dbar_mul`, `dbar_eq_zero_of_differentiableAt` and `integrable_mul_of_locallyIntegrableOn`.
 
 ## 6. Issues found (for the NOTEBOOK)
 

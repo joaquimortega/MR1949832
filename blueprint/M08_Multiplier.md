@@ -95,6 +95,8 @@ All estimates are proved for `ρ̃` and converted to `ρ` at the very end (§3.1
 /-- `Δψ/(2π)`.  With this normalisation a zero of `h` contributes exactly one unit of mass:
 `Δ log|h| = 2π Σ δ_λ` and `Δψ = 2π · lapNorm μ`. -/
 def lapNorm (μ : Measure ℂ) : Measure ℂ := (ENNReal.ofReal (2 * Real.pi))⁻¹ • μ
+-- (reconciled) `lapNorm`, `IsLocallyDoublingWith`, `IsLocallyDoublingDiscWith`, `MeasClassPlane`,
+-- `MeasClassDisc` are defined in M03 (`Doubling/Quant.lean`), unchanged.
 
 /-- Local doubling with an explicit constant (plane). -/
 def IsLocallyDoublingWith (μ : Measure ℂ) (Cd : ℝ≥0) : Prop :=
@@ -234,6 +236,7 @@ theorem cellPot_eq_sub_poly {ν : Measure ℂ} {R : ℕ → Set ℂ} {Λ : ℕ �
     cellPot k ν R Λ i z =
       ((Λ i).map fun w ↦ k z w - T w).sum - ∫ ζ in R i, (k z ζ - T ζ) ∂ν := sorry
 
+-- (reconciled) the next three lemmas are stated in M01 (`Foundations/HyperbolicExtra.lean`), unchanged.
 /-- Euclidean/hyperbolic comparisons used in the disc (M01-type geometry). -/
 theorem norm_sub_le_of_hypDist_le {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {s : ℝ}
     (hs : hypDist c w ≤ s) (hs1 : Real.tanh s < 1) :
@@ -247,6 +250,7 @@ theorem norm_one_sub_conj_mul_comparable {z c ξ : ℂ} (hz : z ∈ 𝔻) (hc : 
 theorem convex_closedHypBall {c : ℂ} (hc : c ∈ 𝔻) (s : ℝ) :
     Convex ℝ {w | w ∈ 𝔻 ∧ hypDist c w ≤ s} := sorry
 
+-- (reconciled) stated in M10 (`ModelKernels.lean`), unchanged; M08 imports M10.
 /-- Forelli–Rudin, the case used here (possibly from M10). -/
 theorem integral_one_sub_conj_mul_rpow_neg_three_le :
     ∃ C : ℝ, ∀ z ∈ 𝔻,
@@ -918,6 +922,20 @@ The stubs are in the scratch file; names may change, shapes should not.
 - **To M13 (line):** nothing directly. M13 reproduces the same scheme with barycentres (`m = 2`, where `Σ|I_i|/d ≲ 1` per ring suffices). Its far/near split and per-cell bounds mirror §3.4–§3.7.
 
 ---
+
+### 4.3 Interface (reconciled)
+
+Lean files: `Multiplier/Defs.lean`, `Kernel.lean`, `Cells.lean`, `NearField.lean`, `Potential.lean`, `Estimates.lean`, `Nodes.lean`, `Theorem4.lean`. Every statement of §2 is unchanged.
+
+Only the owners changed:
+- **M03** (`Doubling/Quant.lean`) owns `lapNorm`, the explicit-constant doubling predicates, `MeasClassPlane/Disc`, and all the uniform lemmas of §4.1 (exact signatures).
+- **M05** (`Partition/Lemma4.lean`) owns `IsMassPartition` and `lemma4_*_quant`.
+- **M01** (`Foundations/HyperbolicExtra.lean`) owns `hypArea`, `hypArea_hypBall` and the three disc-geometry lemmas of §2.2.
+- **M10** owns `integral_one_sub_conj_mul_rpow_neg_three_le`.
+- **M03** (`Doubling/Export.lean`) owns `logSmall_plane/disc`, moved from M04. So M08 does not import M04.
+- **M07**: the M07 entry point is `exists_analytic_norm_eq_exp_of_isWeakLogModulus` (`LogModulusWeak.lean`), which needs no `hweyl`/`hker`.
+
+`WeightClassPlane/Disc` stay in `Multiplier/Defs.lean`. `theorem4_disc` and `theorem4_plane` are verbatim the comparator statements and are proved from `theorem4_*_quant` as in §2.8.
 
 ## 5. Issues found (for NOTEBOOK)
 

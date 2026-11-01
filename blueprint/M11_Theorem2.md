@@ -92,11 +92,13 @@ All statements typecheck (scratch file `m11_check.lean`, which contains M10's st
 ```lean
 /-- The hyperbolic area measure `dm(z)/(1-|z|²)²` on `𝔻`. Proposed shared definition; it must
 live in the earliest module that uses it (M04). -/
+-- (reconciled) defined once, in M01 (`Foundations/HyperbolicExtra.lean`), with this formula.
 def hypArea : Measure ℂ :=
   (volume.restrict 𝔻).withDensity fun z ↦ ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2)
 
 /-- (M04) Lemma 6 in the disc. -/
-theorem lemma6_disc (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
+-- (reconciled) stated in M04 as `lemma6_disc_hypArea` (corollary of M04's `lemma6_disc`).
+theorem lemma6_disc_hypArea (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
     (hd : IsLocallyDoublingDisc μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
     ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ) (ε B : ℝ), 0 < ε ∧ IsSubharmonicWeight 𝔻 φ' μ' ∧
       IsLocallyDoublingDisc μ' ∧ ENNReal.ofReal ε • hypArea ≤ μ' ∧
@@ -104,11 +106,14 @@ theorem lemma6_disc (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWe
 
 /-- (M03) Growth of hyperbolic balls: any measure with a uniform positive lower bound on
 the balls of one radius has arbitrarily large mass on the balls of a larger radius. -/
+-- (reconciled) stated in M03 (`Doubling/Export.lean`), unchanged; proved there from the
+-- explicit-radius form `ofReal_lt_measure_hypBall`.
 theorem exists_hypBall_measure_gt {μ : Measure ℂ} {r m₀ : ℝ} (hr : 0 < r) (hm₀ : 0 < m₀)
     (h : ∀ z ∈ 𝔻, ENNReal.ofReal m₀ ≤ μ (hypBall z r)) (M : ℝ) :
     ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, ENNReal.ofReal M < μ (hypBall z R)
 
 /-- (M09) Proposition 2 in the disc, with the global upper bound `|h_i| ≤ C e^ψ` on `𝔻`. -/
+-- (reconciled) stated and proved in M09, unchanged.
 theorem prop2_disc_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
     (hd : IsLocallyDoublingDisc μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z R)) :
     ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (ε : ℝ) (C : ℝ), 0 < ε ∧ 0 < C ∧
@@ -128,12 +133,15 @@ Notes on these assumptions.
 ### 2.2 Exported helpers
 
 ```lean
+-- (reconciled) stated in M04 (`Regularization.lean`), unchanged.
 theorem Measure.exists_add_eq_of_le {X : Type*} [MeasurableSpace X] {μ ν : Measure X}
     [SigmaFinite μ] (h : ν ≤ μ) : ∃ d : Measure X, d + ν = μ
 
+-- (reconciled) M02's (`Potential/Weyl.lean`), unchanged.
 theorem IsSubharmonicWeight.sigmaFinite {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
     {μ : Measure ℂ} (hφ : IsSubharmonicWeight Ω φ μ) : SigmaFinite μ
 
+-- (reconciled) M02's, with `ContDiff ℝ 2 χ` (implied by `ContDiff ℝ ⊤ χ`).
 theorem integral_mul_laplacian_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {U : ℂ → ℝ}
     (hU : ContDiffOn ℝ 2 U Ω) {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
     (hχc : HasCompactSupport χ) (hχs : tsupport χ ⊆ Ω) :
@@ -170,6 +178,7 @@ theorem exists_aux_weight_disc (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSu
       (∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μψ (hypBall z R)) ∧
       ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B
 
+-- (reconciled) stated in M09 (`SeveralMultipliers.lean`), unchanged.
 theorem exists_measurable_partition {X : Type*} [MeasurableSpace X] {n : ℕ} {S : Set X}
     (hS : MeasurableSet S) (G : Fin n → Set X) (hG : ∀ i, MeasurableSet (G i))
     (hcov : ∀ z ∈ S, ∃ i, z ∈ G i) :
@@ -248,6 +257,7 @@ theorem dbar_sup_estimate_C2_uniform {δ M : ℝ} (hδ : 0 < δ) :
 
 /-- PROPOSED for M09: Proposition 2 with constants uniform over weights comparable to the
 hyperbolic area. -/
+-- (reconciled) stated in M09, unchanged.
 theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     ∃ (n : ℕ) (ε C : ℝ), 0 < ε ∧ 0 < C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       IsSubharmonicWeight 𝔻 ψ μ → ENNReal.ofReal a • hypArea ≤ μ →
@@ -486,6 +496,86 @@ For other exponents `p` with `‖F‖_p = ∞` the inequality is trivial. For `p
 - **To the comparator:** `theorem2`, `theorem2_printed`.
 
 ---
+
+### 6a. Interface (reconciled)
+
+Lean file `Theorem2.lean`; the consumed lemmas live upstream (see the `(reconciled)` comments in the §2.1–§2.2 blocks).
+
+**`theorem2_uniform`** is a comparator statement. The scaffold makes it the quantitative core:
+- it is proved from two uniform lemmas plus M10's `disc_kernel_operator`;
+- `theorem2` is proved from it.
+
+The uniform lemmas rest on M04's `lemma6_disc_quant`, M03's explicit-radius growth lemma `ofReal_lt_measure_hypBall`, and M09's `prop2_disc_quant`:
+
+```lean
+/-- **Lemma 6 (disc), uniform form** (requested for `theorem2_uniform`): the constants `ε`, `B`
+and the class `(Cd', R')` of the regularized measure depend only on the class `(Cd, R)` of `μ`,
+not on the weight.  (The construction of `lemma6_disc` is uniform: the bounds come from
+[Chr91, Lemma 2.3] and doubling at bounded scales, `christ_disc_quant`, `doubling_upTo_disc`.) -/
+theorem lemma6_disc_quant (Cd : ℝ≥0) (R : ℝ) (hR : 0 < R) :
+    ∃ (ε B : ℝ) (Cd' : ℝ≥0) (R' : ℝ), 0 < ε ∧ 0 ≤ B ∧ 0 < R' ∧
+      ∀ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight 𝔻 φ μ → MeasClassDisc μ Cd R →
+        ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ), IsSubharmonicWeight 𝔻 φ' μ' ∧
+          MeasClassDisc μ' Cd' R' ∧ ENNReal.ofReal ε • hypArea ≤ μ' ∧
+          ∀ z ∈ 𝔻, |φ z - φ' z| ≤ B
+
+/-- The auxiliary weight `ψ ≈ φ + c log(1 − |z|²)`, uniformly in the class `(Cd, r)`: from
+`lemma6_disc_quant` (M04), `isSubharmonicWeight_add_log` and the growth lemma
+`ofReal_lt_measure_hypBall` (M03, explicit radius). -/
+theorem exists_aux_weight_disc_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
+    ∃ (c B : ℝ) (Cd' : ℝ≥0) (R' : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ B ∧ 0 < R' ∧
+      ∀ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight 𝔻 φ μ → MeasClassDisc μ Cd r →
+        ∃ (ψ : ℂ → ℝ) (μψ : Measure ℂ), IsSubharmonicWeight 𝔻 ψ μψ ∧ MeasClassDisc μψ Cd' R' ∧
+          ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B
+/-- The kernel of Theorem 2, uniformly in the class `(Cd, r)`: from
+`exists_aux_weight_disc_quant`, `prop2_disc_quant` (M09) applied to the auxiliary weight, and
+`exists_measurable_partition`. -/
+theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
+    ∃ (c A : ℝ), 0 < c ∧ c < 1 ∧ 0 ≤ A ∧ ∀ (φ : ℂ → ℝ) (μ : Measure ℂ),
+      IsSubharmonicWeight 𝔻 φ μ → MeasClassDisc μ Cd r →
+      ∃ H : ℂ → ℂ → ℂ, Measurable (Function.uncurry H) ∧
+        (∀ ζ ∈ 𝔻, DifferentiableOn ℂ (fun z ↦ H z ζ) 𝔻) ∧ (∀ ζ ∈ 𝔻, H ζ ζ = 1) ∧
+        ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
+          ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖)
+
+/-- **Theorem 2, uniform form**: the constant depends only on the doubling constant `Cd` and the
+radius `r` of the mass condition (this is what the proof gives, and what the companion BOC
+project needs: one constant for a whole family of weights). -/
+theorem theorem2_uniform (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
+    ∃ C : ℝ≥0, ∀ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight 𝔻 φ μ →
+      (∀ z ∈ 𝔻, ∀ s : ℝ, 0 < s → 2 * s < 1 → μ (hypBall z (2 * s)) ≤ Cd * μ (hypBall z s)) →
+      (∀ z ∈ 𝔻, 1 < μ (hypBall z r)) →
+      ∀ f : ℂ → ℂ, AEStronglyMeasurable f (volume.restrict 𝔻) →
+      (∃ p : ℝ≥0∞, 1 ≤ p ∧
+        eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure < ∞) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSol 𝔻 u f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
+        eLpNorm (fun z ↦ u z * (Real.exp (-φ z) : ℝ)) p discMeasure ≤
+          C * eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure := by
+  obtain ⟨c, A, hc0, hc1, -, hK⟩ := exists_disc_solution_kernel_quant Cd r hr
+  refine ⟨(24 * A / (c * (1 - c))).toNNReal, fun φ μ hφ hdμ hmμ f hf hadm ↦ ?_⟩
+  obtain ⟨H, hHm, hHd, hH1, hHb⟩ := hK φ μ hφ (MeasClassDisc.of_weight hφ hdμ hmμ)
+  obtain ⟨hsol, hest⟩ := disc_kernel_operator hφ.continuousOn hc0 hc1 hHm hHd hH1 hHb f hf hadm
+  exact ⟨_, hsol, hest⟩
+
+/-- **Theorem 2** (paper, p. 357), in the normalisation that its proof gives (NOTEBOOK): one
+solution `u` of `∂̄u = f` in `𝔻` satisfies, for every `p ∈ [1, ∞]`,
+`‖u e^{-φ}‖_{L^p(dm/(1-|z|²))} ≲ ‖f (1-|z|²) e^{-φ}‖_{L^p(dm/(1-|z|²))}`.  For `p = ∞` this is
+`sup |u| e^{-φ} ≲ sup |f(ζ)| (1-|ζ|) e^{-φ(ζ)}` (essential suprema). -/
+theorem theorem2 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
+    (hd : IsLocallyDoublingDisc μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
+    ∃ C : ℝ≥0, ∀ f : ℂ → ℂ, AEStronglyMeasurable f (volume.restrict 𝔻) →
+      (∃ p : ℝ≥0∞, 1 ≤ p ∧
+        eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure < ∞) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSol 𝔻 u f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
+        eLpNorm (fun z ↦ u z * (Real.exp (-φ z) : ℝ)) p discMeasure ≤
+          C * eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure := by
+  obtain ⟨r, hr, hmr⟩ := hm
+  obtain ⟨Cd, hCd⟩ := hd
+  obtain ⟨C, hC⟩ := theorem2_uniform Cd r hr
+  exact ⟨C, hC φ μ hφ hCd hmr⟩
+```
+- `dbar_sup_estimate_C2_uniform` (§8.3) is now derivable: from `theorem2_uniform` together with `bridge_*`.
+- `theorem2_printed` is verbatim the comparator statement (`sorry`).
 
 ## 7. The bridge lemma for BOC
 

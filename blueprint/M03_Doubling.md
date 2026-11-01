@@ -388,7 +388,13 @@ instance : TopologicalSpace HDisc := inferInstanceAs (TopologicalSpace {z : ℂ 
 
 /-- The hyperbolic metric on `HDisc`; its topology is (definitionally) the subspace topology. -/
 instance : MetricSpace HDisc :=
-  MetricSpace.ofDistTopology (fun a b : HDisc ↦ hypDist a.1 b.1) sorry sorry sorry sorry sorry
+  MetricSpace.ofDistTopology (fun a b : HDisc ↦ hypDist a.1 b.1)
+    (fun a ↦ hypDist_self a.1) (fun a b ↦ hypDist_comm a.1 b.1)
+    (fun a b c ↦ hypDist_triangle a.2 b.2 c.2) isOpen_iff_hypDist
+    (fun a b h ↦ Subtype.ext ((hypDist_eq_zero_iff a.2 b.2).1 h))
+-- (scaffold) proved; `isOpen_iff_hypDist` is stated and proved just before the instance:
+-- theorem isOpen_iff_hypDist (s : Set HDisc) :
+--     IsOpen s ↔ ∀ x ∈ s, ∃ ε > 0, ∀ y : HDisc, hypDist x.1 y.1 < ε → y ∈ s
 
 instance : MeasurableSpace HDisc := inferInstanceAs (MeasurableSpace {z : ℂ // z ∈ 𝔻})
 instance : BorelSpace HDisc := inferInstanceAs (BorelSpace {z : ℂ // z ∈ 𝔻})
@@ -1069,7 +1075,7 @@ theorem mobius_zero (a : ℂ) : mobius a 0 = a := sorry
 theorem mobius_mem_disc {a z : ℂ} (ha : a ∈ 𝔻) (hz : z ∈ 𝔻) : mobius a z ∈ 𝔻 := sorry
 theorem hypDist_comm (z w : ℂ) : hypDist z w = hypDist w z := sorry
 theorem hypDist_self (z : ℂ) : hypDist z z = 0 := sorry
-theorem hypDist_nonneg {z w : ℂ} (hz : z ∈ 𝔻) (hw : w ∈ 𝔻) : 0 ≤ hypDist z w := sorry
+theorem hypDist_nonneg (z w : ℂ) : 0 ≤ hypDist z w  -- (reconciled) M01 form, no hypotheses
 theorem hypDist_eq_zero_iff {z w : ℂ} (hz : z ∈ 𝔻) (hw : w ∈ 𝔻) : hypDist z w = 0 ↔ z = w := sorry
 theorem hypDist_triangle {u v w : ℂ} (hu : u ∈ 𝔻) (hv : v ∈ 𝔻) (hw : w ∈ 𝔻) :
     hypDist u w ≤ hypDist u v + hypDist v w := sorry
@@ -1078,17 +1084,187 @@ theorem hypDist_mobius {a u v : ℂ} (ha : a ∈ 𝔻) (hu : u ∈ 𝔻) (hv : v
 theorem hypDist_zero_left (z : ℂ) : hypDist 0 z = Real.artanh ‖z‖ := sorry
 theorem hypDist_radial {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (ht : t < 1) {u : ℂ} (hu : ‖u‖ = 1) :
     hypDist (s * u) (t * u) = Real.artanh t - Real.artanh s := sorry
-theorem ball_subset_hypBall {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+-- (reconciled) M01 name `ball_subset_hypBall_tanh` (`ball_subset_hypBall` is the `r ≤ 1` form)
+theorem ball_subset_hypBall_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
     ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / 2) ⊆ hypBall z r := sorry
-theorem hypBall_subset_ball {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+-- (reconciled) M01 name `hypBall_subset_ball_tanh` (`hypBall_subset_ball` is the `r ≤ 1` form)
+theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
     hypBall z r ⊆ ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / (1 - Real.tanh r)) := sorry
 theorem hypBall_zero {r : ℝ} (hr : 0 < r) : hypBall 0 r = ball 0 (Real.tanh r) := sorry
-theorem isOpen_hypBall {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : IsOpen (hypBall z r) := sorry
+theorem isOpen_hypBall (z : ℂ) (r : ℝ) : IsOpen (hypBall z r)  -- (reconciled) M01 form
 theorem continuousOn_hypDist : ContinuousOn (fun p : ℂ × ℂ ↦ hypDist p.1 p.2) (𝔻 ×ˢ 𝔻) := sorry
 end OC
 ```
 
 ---
+
+### 4.3 Interface (reconciled)
+
+Lean files: `Doubling/Abstract.lean`, `Plane.lean`, `Line.lean`, `HypDisc.lean`, `Export.lean` as in §2, plus two new files:
+- `Doubling/Quant.lean`: the uniform forms (README §3a.6, M08 §4.1);
+- `Doubling/LineMeasure.lean`: the line forms that M13 §4.2 needs.
+
+**Definitions moved here from M08.** The explicit-constant predicates, the classes and `lapNorm` are written in M08 §2.1. They are defined in `Quant.lean` because the uniform M03 and M05 lemmas are stated with them. Line and abstract analogues are added:
+
+```lean
+/-- Local doubling with an explicit constant (plane). -/
+def IsLocallyDoublingWith (μ : Measure ℂ) (Cd : ℝ≥0) : Prop :=
+  ∀ z : ℂ, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (ball z (2 * r)) ≤ Cd * μ (ball z r)
+/-- Local doubling with an explicit constant (disc, hyperbolic balls). -/
+def IsLocallyDoublingDiscWith (μ : Measure ℂ) (Cd : ℝ≥0) : Prop :=
+  ∀ z ∈ 𝔻, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (hypBall z (2 * r)) ≤ Cd * μ (hypBall z r)
+/-- Local doubling with an explicit constant (line; `μ` carried by `ℝ`). -/
+def IsLocallyDoublingLineWith (μ : Measure ℂ) (Cd : ℝ≥0) : Prop :=
+  μ {z : ℂ | z.im ≠ 0} = 0 ∧ ∀ x : ℝ, ∀ r : ℝ, 0 < r → 2 * r < 1 →
+    μ (lineInterval x (2 * r)) ≤ Cd * μ (lineInterval x r)
+/-- The class of measures with parameters `(Cd, R₀)` (plane). -/
+structure MeasClassPlane (ν : Measure ℂ) (Cd : ℝ≥0) (R₀ : ℝ) : Prop where
+  doubling : IsLocallyDoublingWith ν Cd
+  mass : ∀ z : ℂ, 1 < ν (ball z R₀)
+  finite : ∀ K : Set ℂ, IsCompact K → ν K < ∞
+/-- The class of measures with parameters `(Cd, R₀)` (disc). -/
+structure MeasClassDisc (ν : Measure ℂ) (Cd : ℝ≥0) (R₀ : ℝ) : Prop where
+  doubling : IsLocallyDoublingDiscWith ν Cd
+  mass : ∀ z ∈ 𝔻, 1 < ν (hypBall z R₀)
+  finite : ∀ K ⊆ 𝔻, IsCompact K → ν K < ∞
+/-- The class of measures with parameters `(Cd, R₀)` (line). -/
+structure MeasClassLine (ν : Measure ℂ) (Cd : ℝ≥0) (R₀ : ℝ) : Prop where
+  doubling : IsLocallyDoublingLineWith ν Cd
+  mass : ∀ x : ℝ, 1 < ν (lineInterval x R₀)
+  finite : ∀ K : Set ℂ, IsCompact K → ν K < ∞
+/-- `Δψ/(2π)`.  With this normalisation a zero of `h` contributes exactly one unit of mass:
+`Δ log|h| = 2π Σ δ_λ` and `Δψ = 2π · lapNorm μ`. -/
+def lapNorm (μ : Measure ℂ) : Measure ℂ := (ENNReal.ofReal (2 * Real.pi))⁻¹ • μ
+/-- Local doubling on a metric space with an explicit constant. -/
+def IsLocDoublingMWith (μ : Measure X) (Cd : ℝ≥0) : Prop :=
+  ∀ x : X, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (ball x (2 * r)) ≤ Cd * μ (ball x r)
+/-- The abstract class with parameters `(Cd, R₀)`: explicit doubling constant, every ball of
+radius `R₀` has mass `≥ 1`, balls have finite mass. -/
+structure MeasClassM (μ : Measure X) (Cd : ℝ≥0) (R₀ : ℝ) : Prop where
+  doubling : IsLocDoublingMWith μ Cd
+  mass : ∀ x : X, 1 ≤ μ (ball x R₀)
+  finite : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞
+```
+
+**Uniform lemmas.** In every lemma the constants are chosen after `(Cd, R₀)` and the displayed auxiliary parameters, and before the measure.
+- **M08 §4.1 forms**, exactly as requested:
+
+```lean
+/-- (M03, growth + scaling) `lapNorm` stays in a class; `ρ` and `ρ̃` are comparable. -/
+theorem MeasClassPlane.lapNorm {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} (h : MeasClassPlane μ Cd R₀) :
+    MeasClassPlane (lapNorm μ) Cd (15 * R₀)
+theorem MeasClassDisc.lapNorm {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} (h : MeasClassDisc μ Cd R₀) :
+    MeasClassDisc (lapNorm μ) Cd (15 * R₀)
+theorem massRadius_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
+    ∀ μ : Measure ℂ, MeasClassPlane μ Cd R₀ → ∀ z,
+      massRadius μ z ≤ massRadius (lapNorm μ) z ∧ massRadius (lapNorm μ) z ≤ C * massRadius μ z
+theorem massRadiusDisc_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
+    ∀ μ : Measure ℂ, MeasClassDisc μ Cd R₀ → ∀ z ∈ 𝔻,
+      massRadiusDisc μ z ≤ massRadiusDisc (lapNorm μ) z ∧
+        massRadiusDisc (lapNorm μ) z ≤ C * massRadiusDisc μ z
+/-- (M03, quantitative Claim 1 + positivity/upper bound of `ρ`). -/
+theorem claim1_plane_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
+    ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ → ∀ z w : ℂ,
+      0 < massRadius ν z ∧ massRadius ν z ≤ R₀ ∧
+      (dist z w ≤ K * max (massRadius ν z) (massRadius ν w) →
+        massRadius ν z ≤ C * massRadius ν w)
+theorem claim1_disc_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
+    ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ → ∀ z ∈ 𝔻, ∀ w ∈ 𝔻,
+      0 < massRadiusDisc ν z ∧ massRadiusDisc ν z ≤ R₀ ∧
+      (hypDist z w ≤ K * max (massRadiusDisc ν z) (massRadiusDisc ν w) →
+        massRadiusDisc ν z ≤ C * massRadiusDisc ν w)
+/-- (M03, quantitative) mass of comparable balls. -/
+theorem measure_ball_massRadius_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C : ℝ≥0,
+    ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ → ∀ z, ν (ball z (K * massRadius ν z)) ≤ C
+theorem measure_hypBall_massRadius_quant (Cd : ℝ≥0) (R₀ K : ℝ) : ∃ C : ℝ≥0,
+    ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ → ∀ z ∈ 𝔻,
+      ν (hypBall z (K * massRadiusDisc ν z)) ≤ C
+/-- (M03, quantitative decay; `massRadiusM_div_dist_le` with `M₀ = 1/4`). -/
+theorem decay_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C α : ℝ, 0 < C ∧ 0 < α ∧
+    ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ → ∀ z ζ : ℂ,
+      massRadius ν z ≤ dist z ζ → dist z ζ ≤ 1 / 4 →
+        massRadius ν ζ / dist z ζ ≤ C * (massRadius ν z / dist z ζ) ^ α
+theorem decay_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C α : ℝ, 0 < C ∧ 0 < α ∧
+    ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ → ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻,
+      massRadiusDisc ν z ≤ hypDist z ζ → hypDist z ζ ≤ 1 / 4 →
+        massRadiusDisc ν ζ / hypDist z ζ ≤ C * (massRadiusDisc ν z / hypDist z ζ) ^ α
+/-- (M03, quantitative [Chr91, Lemma 2.3]). -/
+theorem christ_plane_quant (Cd : ℝ≥0) (R₀ S : ℝ) : ∃ C : ℝ≥0,
+    ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ → ∀ z : ℂ, ∀ s : ℝ, 0 < s → s ≤ S →
+      ∫⁻ ζ in ball z s, ENNReal.ofReal (Real.log (s / dist z ζ)) ∂ν ≤ C * ν (ball z s)
+theorem christ_disc_quant (Cd : ℝ≥0) (R₀ S : ℝ) : ∃ C : ℝ≥0,
+    ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ → ∀ z ∈ 𝔻, ∀ s : ℝ, 0 < s → s ≤ S →
+      ∫⁻ ζ in hypBall z s, ENNReal.ofReal (Real.log (s / hypDist z ζ)) ∂ν ≤
+        C * ν (hypBall z s)
+```
+- **Abstract forms** (on `X` with `BallGeometry`, for `MeasClassM μ Cd R₀`): `doubling_upTo_quant`, `measure_ball_le_rpow_quant`, `rpow_le_measure_ball_quant`, `lemma1_quant`, `measure_ball_massRadiusM_bounds_quant`, `measure_ball_massRadiusM_quant`, `claim1_quant`, `massRadiusM_div_dist_le_quant`, `decay_quant`, `lemma3_quant`, `christ_lemma23_quant`, `massRadiusM_inv_smul_quant`. Some examples:
+
+```lean
+theorem doubling_upTo_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
+    ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ x : X, ∀ r : ℝ, 0 < r →
+      r ≤ R₁ → μ (ball x (2 * r)) ≤ C * μ (ball x r)
+/-- **Claim 1**, uniform form, with `0 < ρ ≤ R₀`. -/
+theorem claim1_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K : ℝ) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ μ : Measure X, MeasClassM μ Cd R₀ → ∀ x y : X,
+      0 < massRadiusM μ x ∧ massRadiusM μ x ≤ R₀ ∧
+      (dist x y ≤ K * max (massRadiusM μ x) (massRadiusM μ y) →
+        massRadiusM μ x ≤ C * massRadiusM μ y)
+/-- **Decay**, geometric form, uniform. -/
+theorem decay_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀ : ℝ) :
+    ∃ C θ : ℝ, 0 < C ∧ 0 < θ ∧ θ < 1 ∧ ∀ μ : Measure X, MeasClassM μ Cd R₀ →
+      ∀ (z ζ : X) (n : ℕ), 2 ^ n * massRadiusM μ z ≤ dist z ζ → dist z ζ ≤ M₀ →
+        massRadiusM μ ζ / dist z ζ ≤ C * θ ^ n
+/-- **[Chr91, Lemma 2.3]**, uniform form. -/
+theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
+    ∃ C : ℝ≥0, ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ (x : X) (R : ℝ), 0 < R → R ≤ R₁ →
+      ∫⁻ y in ball x R, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤ C * μ (ball x R)
+```
+- **Transfers:** `MeasClassPlane.measClassM` (proved), `MeasClassDisc.measClassM_discPull`, `MeasClassLine.measClassM_linePull`, `MeasClassPlane.of_weight`, `MeasClassDisc.of_weight` (proved).
+- **Line forms:** `claim1_line_quant`, `decay_line_quant`, `christ_line_quant`.
+
+**Additions to `Export.lean`** (requested by M04 and M11; `logSmall_*` moved from M04, so that M08 does not depend on M04):
+
+```lean
+/-- No atoms, plane (M04's (A4)). -/
+theorem measure_singleton_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
+    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : μ {z} = 0
+/-- No atoms, disc (M04's (A4')). -/
+theorem measure_singleton_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
+    (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞) {z : ℂ} (hz : z ∈ 𝔻) : μ {z} = 0
+/-- **Growth of hyperbolic balls, explicit radius**: if every hyperbolic ball of radius `r` has
+mass `≥ m₀ > 0`, then every ball of radius `(2k + 1) r`, `k = ⌈M/m₀⌉₊`, has mass `> M`: it
+contains `k + 1` disjoint balls of radius `r` centred on a geodesic through its centre.  No
+doubling needed; the radius depends only on `r`, `m₀` and the target mass `M`, not on `μ`. -/
+theorem ofReal_lt_measure_hypBall {μ : Measure ℂ} {r m₀ : ℝ} (hr : 0 < r) (hm₀ : 0 < m₀)
+    (h : ∀ z ∈ 𝔻, ENNReal.ofReal m₀ ≤ μ (hypBall z r)) (M : ℝ) {z : ℂ} (hz : z ∈ 𝔻) :
+    ENNReal.ofReal M < μ (hypBall z ((2 * ⌈M / m₀⌉₊ + 1) * r))
+/-- **Growth of hyperbolic balls** (M11 §2.1): a uniform positive lower bound on the balls of one
+radius gives arbitrarily large mass on the balls of a larger radius.  No doubling needed. -/
+theorem exists_hypBall_measure_gt {μ : Measure ℂ} {r m₀ : ℝ} (hr : 0 < r) (hm₀ : 0 < m₀)
+    (h : ∀ z ∈ 𝔻, ENNReal.ofReal m₀ ≤ μ (hypBall z r)) (M : ℝ) :
+    ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, ENNReal.ofReal M < μ (hypBall z R)
+/-- Uniform smallness of the logarithmic integral near a compact set (plane).  Moved here from
+M04 (`Regularization.lean`), so that M08 can use it without depending on M04. -/
+theorem logSmall_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
+    (hfin : ∀ K : Set ℂ, IsCompact K → μ K < ∞) {K : Set ℂ} (hK : IsCompact K) {η : ℝ}
+    (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
+      ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η
+/-- Uniform smallness of the logarithmic integral near a compact subset of `𝔻` (disc).  Moved
+here from M04. -/
+theorem logSmall_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
+    (hfin : ∀ K ⊆ 𝔻, IsCompact K → μ K < ∞) {K : Set ℂ} (hK𝔻 : K ⊆ 𝔻) (hK : IsCompact K)
+    {η : ℝ} (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
+      ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η
+```
+
+**For M13** (`LineMeasure.lean`): the structure `IsLineMeasure`, `IsLineMeasure.of_weight` (proved) and L1–L8 exactly as in M13 §4.2. `IsLineMeasure.doubling_le` and `massRadiusLine_le_of_mass` are proved from `doubling_upTo_line` and `massRadiusLine_le`.
+
+**`HDisc`.** The metric-space instance is fully proved (§2.3 block). It carries real data and no `sorry`.
+
+**Used under M03 names by later modules:**
+- M04's (A1)–(A4) become `doubling_upTo_*`, `christ_lemma23_*`, `rpow_le_measure_*`, `measure_singleton_plane/disc`;
+- M11's `exists_hypBall_measure_gt` is stated above;
+- M12's `IsDoubling.isLocallyDoubling` is M03's.
 
 ## 5. Issues found (for the NOTEBOOK)
 

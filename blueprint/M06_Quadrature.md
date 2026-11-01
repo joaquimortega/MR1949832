@@ -246,6 +246,10 @@ Consequences for M08 and M09:
 - **Multiplicities.** Nodes have multiplicity `≥ k`. Theorem 4's lower bound `(d(z,Λ)/ρ(z))^M` then holds with `M ≤ N · #(near rectangles)`. The Remark's separated zeros with `M = 1` is not obtained, and the paper does not need it.
 - **M09.** Choose `B` so that `B r_i` exceeds the distance from `c_i` to the far side of every immediate neighbour of `R_i` (Claim 2). Then choose the family separation `M` of Proposition 2 larger than `(B + 4m)·const`.
 
+### 5a. Interface (reconciled)
+
+**Normalisation: M08 governs.** M08 uses `m = 3`, `k = 4`, `N = m·k = 12`. The choice `k := m` (so `N = 9`) in item 3 above is superseded. `lemma5` and `lemma5_moments` only need `m ≤ k`, so nothing changes in `Quadrature.lean`. The statements are unchanged and fully proved, and the file is now in the root import.
+
 ## 6. Open risk: the disc case (M08 disc, hence Theorem 2)
 
 In `𝔻` the nodes must lie **in `𝔻`**, and within bounded hyperbolic distance of `R_i`. `lemma5` gives Euclidean distance `2m r_i`. Normalise by the Möbius map `T_{c_i}` (the kernel `log|(z−ζ)/(1−z̄ζ)|` is Möbius invariant, so moments may be matched in that coordinate). Then `R_i ⊆ B̄(0, tanh D_i)`, where `D_i` is the hyperbolic diameter of `R_i`.

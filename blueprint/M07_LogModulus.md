@@ -223,6 +223,31 @@ def LogKernelStmt : Prop :=
 
 Weyl for `Δ` only needs to hold on balls (`U = ball c r`). The M02 proof can mollify, use the mean-value property, and apply Mathlib's `HarmonicOnNhd` (`ContDiffAt ℝ 2` plus `Δ = 0` near each point).
 
+### 4a. Interface (reconciled)
+
+`LogModulus.lean` is unchanged. It is proved, and it is now in the root import. The new file `LogModulusWeak.lean` imports it together with M02 and discharges the two hypotheses. Its proofs are terms over the M02 lemmas:
+- `weylLaplacian` comes from `exists_harmonicOnNhd_ae_eq_of_weakHarmonic`, M02's `L¹_loc` Weyl lemma. That lemma has exactly the body of `WeylLaplacianStmt`.
+- `logKernel` comes from `locallyIntegrable_log_norm_sub` and `integral_log_norm_sub_mul_laplacian`.
+
+M08 and M13 call the unconditional entry point.
+
+```lean
+/-- **M02 → M07: Weyl's lemma for `Δ`** (from `exists_harmonicOnNhd_ae_eq_of_weakHarmonic`). -/
+theorem weylLaplacian : WeylLaplacianStmt
+/-- **M02 → M07: the logarithmic kernel** (from `locallyIntegrable_log_norm_sub` and
+`integral_log_norm_sub_mul_laplacian`). -/
+theorem logKernel : LogKernelStmt
+/-- `IsWeakLogModulus.ballwise` without the M02 hypotheses. -/
+theorem IsWeakLogModulus.logModulusBallwise {Ω : Set ℂ} {n : ℂ → ℕ} {v : ℂ → ℝ}
+    (hd : IsWeakLogModulus Ω n v) (c : ℂ) : LogModulusBallwise Ω c n v
+/-- **M07, weak form, unconditional**: the statement M08 and M13 call. -/
+theorem exists_analytic_norm_eq_exp_of_isWeakLogModulus {Ω : Set ℂ} {c : ℂ}
+    (hΩ : ∀ z ∈ Ω, ∃ r, dist z c < r ∧ closedBall c r ⊆ Ω)
+    {n : ℂ → ℕ} {v : ℂ → ℝ} (hd : IsWeakLogModulus Ω n v) :
+    ∃ h : ℂ → ℂ, AnalyticOnNhd ℂ h Ω ∧ (∀ z ∈ Ω, n z = 0 → ‖h z‖ = Real.exp (v z)) ∧
+      ∀ z ∈ Ω, analyticOrderAt h z = n z
+```
+
 ## 5. Interface to M08 (Theorem 4): verifying `IsWeakLogModulus Ω n v`
 
 M08 calls `exists_analytic_norm_eq_exp_of_weak`:

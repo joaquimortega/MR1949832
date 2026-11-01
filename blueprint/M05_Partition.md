@@ -168,6 +168,16 @@ theorem rect_inner_outer {L : ℝ} (hL : 1 ≤ L) {x₁ x₂ y₁ y₂ : ℝ} (h
     ∃ (p : ℂ) (r : ℝ), 0 < r ∧ 6 * r ≤ max (x₂ - x₁) (y₂ - y₁) ∧
       ball p r ⊆ midThird x₁ x₂ y₁ y₂ ∧ rect x₁ x₂ y₁ y₂ ⊆ ball p (6 * L * r) := sorry
 
+/-- The number of slab doublings in the proof of `exists_rect_partition` (M05 §3.5):
+`k₀ = ⌈log(C₀ + 1) / log(1 + η_s)⌉₊` with `η_s = 1/(2 max C_E 1)`. -/
+def rectRatioK₀ (C₀ : ℕ) (C_E : ℝ) : ℕ :=
+  ⌈Real.log (C₀ + 1) / Real.log (1 + 1 / (2 * max C_E 1))⌉₊
+/-- The explicit side-ratio bound of `exists_rect_partition` (M05 §3.5): `L = max 3 (1/c_*)`
+with `c_* = 3^{-k₀} min(1/4, κ)`.  It depends only on `C₀`, `C_E` and `κ`, not on the measure. -/
+def rectRatioBound (C₀ : ℕ) (C_E κ : ℝ) : ℝ :=
+  max 3 (3 ^ rectRatioK₀ C₀ C_E / min (1 / 4) κ)
+theorem one_le_rectRatioBound (C₀ : ℕ) (C_E κ : ℝ) : 1 ≤ rectRatioBound C₀ C_E κ  -- proved
+
 /-- **Bisection + slicing** (the core of Lemma 4).  `P` is a hereditary admissibility predicate,
 `C₀` is such that admissible good rectangles of mass `> C₀` have middle third of mass `> 1`, and
 `ν` is Euclidean doubling at the scale `σ` inside admissible rectangles; then every admissible
@@ -186,13 +196,13 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
       κ * max (x₂ - x₁) (y₂ - y₁) ≤ σ x₁ x₂ y₁ y₂ ∧
       ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ σ x₁ x₂ y₁ y₂ →
         ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2))) :
-    ∃ L : ℝ, 1 ≤ L ∧ ∀ (n : ℕ) (x₁ x₂ y₁ y₂ : ℝ), 1 ≤ n → IsRectLE 3 x₁ x₂ y₁ y₂ →
+    ∀ (n : ℕ) (x₁ x₂ y₁ y₂ : ℝ), 1 ≤ n → IsRectLE 3 x₁ x₂ y₁ y₂ →
       P x₁ x₂ y₁ y₂ → ν (rect x₁ x₂ y₁ y₂) = n →
       ∃ q : Fin n → ℝ × ℝ × ℝ × ℝ,
         Pairwise (Function.onFun Disjoint fun i ↦ rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) ∧
         (⋃ i, rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = rect x₁ x₂ y₁ y₂ ∧
         ∀ i, ν (rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = 1 ∧
-          IsRectLE L (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ∧
+          IsRectLE (rectRatioBound C₀ C_E κ) (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ∧
           ∃ x₁' x₂' y₁' y₂' : ℝ, IsRectLE 3 x₁' x₂' y₁' y₂' ∧ P x₁' x₂' y₁' y₂' ∧
             ν (rect x₁' x₂' y₁' y₂') ≤ C₀ ∧
             rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ⊆ rect x₁' x₂' y₁' y₂' := sorry
@@ -665,6 +675,27 @@ Work with `ν := linePull μ` on `ℝ` and `G(t) := ν(Ico 0 t).toReal` (negativ
   - the definition of `pseudoHyp`/`hypDist` from `Defs.lean` (for `pseudoHyp_cayleyInv`).
 
 ---
+
+### 4.3 Interface (reconciled)
+
+Lean files: `Partition/Rectangles.lean`, `Cayley.lean`, `Lemma4.lean`, `Properties.lean`.
+- **`exists_rect_partition`: explicit side-ratio bound.** The statement no longer has `∃ L` after the measure. The ratio bound is the explicit `rectRatioBound C₀ C_E κ = max 3 (3^{k₀} / min(1/4, κ))` of §3.5, with `k₀ = rectRatioK₀ C₀ C_E`. It depends only on `C₀`, `C_E`, `κ` (block in §2.1).
+- **Uniform Lemma 4** (requested by M08 §4.1). The constants `a`, `A` come after `(Cd, R₀, N)` and before the measure. The classes `MeasClassPlane/Disc/Line` are M03's (`Doubling/Quant.lean`).
+
+```lean
+/-- (M05, quantitative Lemma 4). -/
+theorem lemma4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) : ∃ a A : ℝ, 0 < a ∧ 0 < A ∧
+    ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ →
+      ∃ R : ℕ → Set ℂ, IsMassPartition ν univ dist (massRadius ν) N a A R
+theorem lemma4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) : ∃ a A : ℝ, 0 < a ∧ 0 < A ∧
+    ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ →
+      ∃ R : ℕ → Set ℂ, IsMassPartition ν 𝔻 hypDist (massRadiusDisc ν) N a A R
+theorem lemma4_line_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) : ∃ a A : ℝ, 0 < a ∧ 0 < A ∧
+    ∀ ν : Measure ℂ, MeasClassLine ν Cd R₀ →
+      ∃ R : ℕ → Set ℂ, IsMassPartition ν (range fun t : ℝ ↦ (t : ℂ)) dist
+        (fun z ↦ massRadiusLine ν z.re) N a A R
+```
+- `IsMassPartition` is defined once, here; M08's stub is removed.
 
 ## 5. Issues found (for the NOTEBOOK)
 

@@ -523,6 +523,18 @@ The constant is `1·√(π/α)`.
 
 ---
 
+### 4a. Interface (reconciled)
+
+Lean file `ModelKernels.lean`; every statement of §2 is unchanged. Added, for M08 (far field in the disc, `farField_sum_le_disc`), which imports M10:
+
+```lean
+/-- Forelli–Rudin, the case `∫_𝔻 dm(w)/|1 − z̄w|³ ≲ (1 − |z|²)⁻¹` used by M08 (far field in the
+disc, `farField_sum_le_disc`). -/
+theorem integral_one_sub_conj_mul_rpow_neg_three_le :
+    ∃ C : ℝ, ∀ z ∈ 𝔻,
+      ∫⁻ w in 𝔻, ENNReal.ofReal (1 / ‖1 - conj z * w‖ ^ 3) ≤ ENNReal.ofReal (C / (1 - ‖z‖ ^ 2))
+```
+
 ## 5. Issues found (for NOTEBOOK)
 
 1. **p. 372, Lemma 7, "immediate consequence of Hölder's inequality".** The sup estimate is the Schur `L^∞` bound with the Forelli–Rudin integral `J_α`. The `L^p` estimate with the printed weight `(1−|z|)^{α−1}` on both sides is *not* a plain Schur test: the `L^∞` Schur integral `∫ dm(ζ)/(|1−ζ̄z||z−ζ|)` diverges like `log 1/(1−|z|)`. It follows either from Schur with power test functions or, more simply, from the `L^∞`/`L^1` Schur test after conjugating by `(1−|z|²)^{α/p}` (§3.6). The printed statement is correct for every `p ∈ [1,∞)`, with a constant that blows up as `p → ∞`. At `p = ∞` the operator `lemma7Op` is unbounded in that normalisation: for fixed `z₀` near `∂𝔻`, the datum `f(ζ) = (1−|ζ|²)^{−1}·\overline{\mathrm{sgn}\,K(z₀,ζ)}` has `sup|f|(1−|ζ|²) = 1` and `|u(z₀)| = (1/π)∫ dm/(|1−ζ̄z₀||z₀−ζ|) ≈ log 1/(1−|z₀|)`. That is why the sup estimate carries different weights.

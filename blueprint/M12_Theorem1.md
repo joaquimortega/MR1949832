@@ -80,12 +80,14 @@ All typecheck (scratch file `m12_check.lean`, which contains M10's statements an
 
 ```lean
 /-- (M04) Lemma 6 in the plane. -/
-theorem lemma6_plane (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
+-- (reconciled) stated in M04 as `lemma6_plane_volume` (corollary of M04's `lemma6_plane`).
+theorem lemma6_plane_volume (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
     (hd : IsLocallyDoubling μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 < μ (ball z r)) :
     ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ) (ε B : ℝ), 0 < ε ∧ IsSubharmonicWeight univ φ' μ' ∧
       IsLocallyDoubling μ' ∧ ENNReal.ofReal ε • volume ≤ μ' ∧ ∀ z, |φ z - φ' z| ≤ B
 
 /-- (M09) Proposition 2 in the plane, with the global upper bound. -/
+-- (reconciled) stated and proved in M09, unchanged.
 theorem prop2_plane_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight univ ψ μ)
     (hd : IsLocallyDoubling μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z : ℂ, 1 < μ (ball z R)) :
     ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (ε : ℝ) (C : ℝ), 0 < ε ∧ 0 < C ∧
@@ -136,6 +138,7 @@ theorem exists_plane_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
       (∀ ζ, Differentiable ℂ (fun z ↦ H z ζ)) ∧ (∀ ζ, H ζ ζ = 1) ∧
       ∀ z ζ, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2)
 
+-- (reconciled) M03's (`Doubling/Plane.lean`); not restated in M12.
 theorem IsDoubling.isLocallyDoubling {μ : Measure ℂ} (h : IsDoubling μ) :
     IsLocallyDoubling μ
 
@@ -254,6 +257,29 @@ Take `H, c, A` from §3.6 and define
 - `two_le_measure_ball_three_mul` and `IsLocallyDoubling.of_le_of_le` (general).
 
 ---
+
+### 4a. Interface (reconciled)
+
+Lean file `Theorem1.lean`. It does not import M11. The consumed helpers come from upstream:
+- `Measure.exists_add_eq_of_le` from M04;
+- `exists_measurable_partition` and `prop2_plane_full` from M09;
+- `IsSubharmonicWeight.sigmaFinite` from M02;
+- `IsDoubling.isLocallyDoubling` from M03;
+- Lemma 6 as `lemma6_plane_volume` (M04).
+
+`theorem1`, `theorem1_christ`, `prop1` are verbatim the comparator statements. `theorem1_christ` is proved:
+
+```lean
+/-- **Theorem 1** as stated in the paper (Christ, [Chr91]): `Δφ` doubling. -/
+theorem theorem1_christ (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
+    (hd : IsDoubling μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 ≤ μ (ball z r)) :
+    ∃ C : ℝ≥0, ∀ f : ℂ → ℂ, AEStronglyMeasurable f volume →
+      (∃ p : ℝ≥0∞, 1 ≤ p ∧ eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume < ∞) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSol univ u f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
+        eLpNorm (fun z ↦ u z * (Real.exp (-φ z) : ℝ)) p volume ≤
+          C * eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume :=
+  theorem1 φ μ hφ hd.isLocallyDoubling hm
+```
 
 ## 5. Issues found (for NOTEBOOK)
 

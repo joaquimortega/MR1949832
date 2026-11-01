@@ -166,6 +166,18 @@ theorem harmonicOnNhd_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ
     (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ Ω →
       ∫ z, φ z * Laplacian.laplacian χ z = 0) :
     InnerProductSpace.HarmonicOnNhd φ Ω
+
+/-- **Weyl's lemma for `Δ`, `L¹_loc` form** (added in the scaffold; the body of M07's
+`WeylLaplacianStmt`). -/
+/-- **Weyl's lemma for `Δ`, `L¹_loc` form** (the body of M07's `WeylLaplacianStmt`): a locally
+integrable weakly harmonic function is a.e. equal to a harmonic function.  (Mollify:
+`φ * bumpKernel s` is smooth and weakly, hence classically, harmonic, and equals its own
+`bumpKernel`-averages; let `s → 0`.) -/
+theorem exists_harmonicOnNhd_ae_eq_of_weakHarmonic {U : Set ℂ} (hU : IsOpen U) {f : ℂ → ℝ}
+    (hf : LocallyIntegrableOn f U)
+    (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ U →
+      ∫ z, f z * Laplacian.laplacian χ z = 0) :
+    ∃ u : ℂ → ℝ, InnerProductSpace.HarmonicOnNhd u U ∧ ∀ᵐ z ∂(volume.restrict U), f z = u z
 ```
 
 The hypothesis uses `C^∞` test functions, exactly as in `IsSubharmonicWeight.laplacian_eq`. Only continuous `φ` is treated. Every weight is continuous, and the functions M07 applies Weyl to (`ψ` minus potentials) are continuous off the singular set. The `L¹_loc` version is not needed (remark at the end of this section).
@@ -573,6 +585,28 @@ Fix `z₀ ∈ Ω` and `ε > 0`. Let `C₀` be from `exists_bumpPot_le` and `S` f
   - `IsSubharmonicWeight.sub_contDiffOn`, for `ψ + c log(1−|z|²)`, `u = −c log(1−|z|²)`, `Δu = 4c/(1−|z|²)²`, and for `ψ − c|z|²`, `Δu = 4c`;
   - `isSubharmonicWeight_of_contDiffOn` (README §5 bridge lemma);
   - `integral_mul_laplacian_of_contDiffOn`.
+
+### 5a. Interface (reconciled)
+
+Lean files: `Potential/Radial.lean` (verbatim copy of BOC `Potential/Radial.lean`, fully proved), `Potential/Fundamental.lean`, `Potential/Weyl.lean`, `Potential/Local.lean`, and `Potential/GlobalKernels.lean` (Appendix A).
+- **Weyl for `L¹_loc` functions.** `LogModulus.lean` applies `WeylLaplacianStmt` to `v − Σ n log|·−ζ|`, which is only `L¹_loc`, and M13 §4.2 assumes the same. So M02 also states `exists_harmonicOnNhd_ae_eq_of_weakHarmonic` (block in §2), whose statement is exactly the body of `WeylLaplacianStmt` (for every open `U`, in particular balls). The remark in §2 that the `L¹_loc` version is not needed is superseded.
+- **M02 → M07.** `LogModulusWeak.lean` proves `weylLaplacian : WeylLaplacianStmt` and `logKernel : LogKernelStmt` from the M02 lemmas (term proofs). It also gives the unconditional `IsWeakLogModulus.logModulusBallwise` and `exists_analytic_norm_eq_exp_of_isWeakLogModulus`.
+- **Requested by M13 §4.2**, in `Potential/Fundamental.lean`:
+
+```lean
+/-- Uniform local integrability of `log|z − a|` for `a` in a compact set. -/
+theorem integrableOn_log_norm_sub_uniform {K K' : Set ℂ} (hK : IsCompact K)
+    (hK' : IsCompact K') :
+    ∃ M : ℝ, ∀ a ∈ K', IntegrableOn (fun z ↦ Real.log ‖z - a‖) K ∧
+      ∫ z in K, |Real.log ‖z - a‖| ≤ M
+/-- `Δ (∫ log|z − ζ| dν(ζ)) = 2π ν` weakly, for a finite measure with compact support. -/
+theorem integral_logPotential_mul_laplacian (ν : Measure ℂ) [IsFiniteMeasure ν] {L : Set ℂ}
+    (hL : IsCompact L) (hνL : ν Lᶜ = 0) (χ : ℂ → ℝ) (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
+    (hc : HasCompactSupport χ) :
+    ∫ z, (∫ ζ, Real.log ‖z - ζ‖ ∂ν) * Laplacian.laplacian χ z = 2 * Real.pi * ∫ ζ, χ ζ ∂ν
+```
+- The `bumpKernel` API of §4.1 (`contDiff_bumpKernel` … `measurable_bumpKernel`) is in `Potential/Weyl.lean`, next to the definition, because Weyl's proof uses it. The statements are unchanged.
+- `IsSubharmonicWeight.sigmaFinite` and `integral_mul_laplacian_of_contDiffOn` exist only here; M11 and M12 use them. M11's `ContDiff ℝ ⊤` test functions follow by `ContDiff.of_le`.
 
 ## 6. Issues found (for NOTEBOOK)
 

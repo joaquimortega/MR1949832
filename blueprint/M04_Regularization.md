@@ -82,6 +82,8 @@ def massWeightDisc (μ : Measure ℂ) (R : ℝ) (ζ : ℂ) : ℝ≥0∞ := (2 * 
 /-- Smoothing radius in the disc: `s(ζ) = (1 − |ζ|²)/4`. -/
 def discRadius (ζ : ℂ) : ℝ := (1 - ‖ζ‖ ^ 2) / 4
 
+-- (reconciled) `logSmall_plane`, `logSmall_disc` are stated in M03 (`Doubling/Export.lean`),
+-- unchanged, so that M08 can use them without importing M04.
 theorem logSmall_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
     (hfin : ∀ K : Set ℂ, IsCompact K → μ K < ∞) {K : Set ℂ} (hK : IsCompact K) {η : ℝ}
     (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
@@ -134,6 +136,13 @@ theorem localPot_disc_le {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmo
 ### 2.3 Assumed from M03 (to be reconciled with `M03_Doubling.md`)
 
 ```lean
+-- (reconciled) M04 uses M03's statements (`Doubling/Export.lean`):
+--   (A1) `doubling_upTo_plane`, `doubling_upTo_disc` (identical shape);
+--   (A2) `christ_lemma23_plane`, `christ_lemma23_disc` (`dist z ζ` for `‖z - ζ‖`);
+--   (A3) `rpow_le_measure_ball_plane`, `rpow_le_measure_hypBall` (reverse doubling, with
+--        `ENNReal.ofReal (c * (r / r') ^ δ) * μ (ball z r') ≤ μ (ball z r)`);
+--   (A4) `measure_singleton_plane`, `measure_singleton_disc` (finiteness on balls).
+-- The stubs below are kept only to document the original request.
 /-- (A1) doubling up to any fixed scale. -/
 theorem IsLocallyDoubling.exists_doubling_le {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
     (R₁ : ℝ) : ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R₁ →
@@ -407,6 +416,52 @@ For `0 < δ ≤ tanh(1/2)(1 − ρ_K²)/2`, put `τ := artanh(2δ/(1−ρ_K²)) 
 **Exports:**
 - `lemma6_plane` (to M12), `lemma6_disc` (to M11).
 - `logSmall_plane`, `logSmall_disc`: generic facts about locally doubling measures, possibly useful to M07/M08 (continuity of potentials).
+
+### 8a. Interface (reconciled)
+
+Lean file `Regularization.lean`. Definitions and statements of §2.1–§2.2 are unchanged, except that `logSmall_*` moved to M03. The doc's assumptions map to upstream names:
+- **M03.** (A1)–(A4) map to M03 names (see the comment in the §2.3 block).
+- **M01.**
+  - (G0) is `hypBall_eq_pseudoBall` (no `0 < r` needed).
+  - (G1)–(G3) are `ball_subset_pseudoBall`, `pseudoBall_subset_ball`, `one_sub_normSq_comparable`.
+  - (G5) is `hypDist_triangle` and `hypDist_zero_left`.
+  - `hypArea` is M01's (`Foundations/HyperbolicExtra.lean`).
+
+**Added** for M11/M12 and for `theorem2_uniform`:
+- the two corollaries in the shape that M11 §2.1 and M12 §2.1 assumed (they assumed the name `lemma6_*` for a different statement);
+- a uniform Lemma 6 in the disc (constants after `(Cd, R)`, before the measure);
+- `Measure.exists_add_eq_of_le`, moved from M11 so that M12 need not import M11.
+
+```lean
+/-- Lemma 6 (disc) in the form M11 consumes: `μ' ≥ ε · hypArea` and `|φ − φ'| ≤ B`.  Follows
+from `lemma6_disc` (`μ' = ν₀ + volume.withDensity g`, `g ≥ ε/(1-|z|²)²` on `𝔻`; `1 < ·`
+implies the hypothesis `1 ≤ ·` of `lemma6_disc`). -/
+theorem lemma6_disc_hypArea (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
+    (hd : IsLocallyDoublingDisc μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
+    ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ) (ε B : ℝ), 0 < ε ∧ IsSubharmonicWeight 𝔻 φ' μ' ∧
+      IsLocallyDoublingDisc μ' ∧ ENNReal.ofReal ε • hypArea ≤ μ' ∧
+      ∀ z ∈ 𝔻, |φ z - φ' z| ≤ B
+/-- Lemma 6 (plane) in the form M12 consumes: `μ' ≥ ε · dm` and `|φ − φ'| ≤ B`.  Follows from
+`lemma6_plane`. -/
+theorem lemma6_plane_volume (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
+    (hd : IsLocallyDoubling μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 < μ (ball z r)) :
+    ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ) (ε B : ℝ), 0 < ε ∧ IsSubharmonicWeight univ φ' μ' ∧
+      IsLocallyDoubling μ' ∧ ENNReal.ofReal ε • volume ≤ μ' ∧ ∀ z, |φ z - φ' z| ≤ B
+/-- **Lemma 6 (disc), uniform form** (requested for `theorem2_uniform`): the constants `ε`, `B`
+and the class `(Cd', R')` of the regularized measure depend only on the class `(Cd, R)` of `μ`,
+not on the weight.  (The construction of `lemma6_disc` is uniform: the bounds come from
+[Chr91, Lemma 2.3] and doubling at bounded scales, `christ_disc_quant`, `doubling_upTo_disc`.) -/
+theorem lemma6_disc_quant (Cd : ℝ≥0) (R : ℝ) (hR : 0 < R) :
+    ∃ (ε B : ℝ) (Cd' : ℝ≥0) (R' : ℝ), 0 < ε ∧ 0 ≤ B ∧ 0 < R' ∧
+      ∀ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight 𝔻 φ μ → MeasClassDisc μ Cd R →
+        ∃ (φ' : ℂ → ℝ) (μ' : Measure ℂ), IsSubharmonicWeight 𝔻 φ' μ' ∧
+          MeasClassDisc μ' Cd' R' ∧ ENNReal.ofReal ε • hypArea ≤ μ' ∧
+          ∀ z ∈ 𝔻, |φ z - φ' z| ≤ B
+/-- Splitting a σ-finite measure dominating another (used by M11 and M12 to write `μ' = ν + ε·m`;
+moved here from M11 so that M12 need not import M11). -/
+theorem Measure.exists_add_eq_of_le {X : Type*} [MeasurableSpace X] {μ ν : Measure X}
+    [SigmaFinite μ] (h : ν ≤ μ) : ∃ d : Measure X, d + ν = μ
+```
 
 ## 9. Issues found (for NOTEBOOK)
 

@@ -62,11 +62,12 @@ theorem IsLineMeasure.of_weight {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsS
 **Definitions** (M13, new):
 ```lean
 /-- `μ` seen as a measure on `ℝ`. -/
-def lineMeasure (μ : Measure ℂ) : Measure ℝ := μ.comap (fun t : ℝ ↦ (t : ℂ))
+-- (reconciled) M13's `linePull` is M03's `linePull` (same definition), used below:
+-- def linePull (μ : Measure ℂ) : Measure ℝ := μ.comap fun x : ℝ ↦ (x : ℂ)
 
 /-- Signed distribution function of `σ_α = μ − 2α·dt`: `G_α(t) = σ_α((0,t])` (oriented). -/
 def lineCDF (μ : Measure ℂ) (α t : ℝ) : ℝ :=
-  (if 0 ≤ t then (lineMeasure μ (Ioc 0 t)).toReal else -(lineMeasure μ (Ioc t 0)).toReal)
+  (if 0 ≤ t then (linePull μ (Ioc 0 t)).toReal else -(linePull μ (Ioc t 0)).toReal)
     - 2 * α * t
 
 /-- First hitting time of the level `s` by `G_α`. -/
@@ -79,7 +80,7 @@ def lineLength (μ : Measure ℂ) (α : ℝ) (k : ℤ) : ℝ := lineKnot μ α (
 
 /-- Signed barycentre `λ_k = (1/4π) ∫_{I_k} t dσ_α(t)`. -/
 def lineCentre (μ : Measure ℂ) (α : ℝ) (k : ℤ) : ℝ :=
-  ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), t ∂lineMeasure μ) -
+  ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), t ∂linePull μ) -
     2 * α * ∫ t in lineKnot μ α k..lineKnot μ α (k + 1), t) / (4 * Real.pi)
 
 /-- The two nodes `λ_k ± s a_k` of the cell `I_k` (`b = true` is `+`). -/
@@ -90,7 +91,7 @@ def lineNode (μ : Measure ℂ) (α s : ℝ) (k : ℤ) (b : Bool) : ℝ :=
 def lineTerm (μ : Measure ℂ) (α s : ℝ) (k : ℤ) (z : ℂ) : ℝ :=
   Real.log ‖z - lineNode μ α s k true‖ + Real.log ‖z - lineNode μ α s k false‖ -
     (1 / (2 * Real.pi)) *
-      ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), Real.log ‖z - t‖ ∂lineMeasure μ) -
+      ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), Real.log ‖z - t‖ ∂linePull μ) -
         2 * α * ∫ t in lineKnot μ α k..lineKnot μ α (k + 1), Real.log ‖z - t‖)
 
 def linePotential (μ : Measure ℂ) (α s : ℝ) (z : ℂ) : ℝ := ∑' k : ℤ, lineTerm μ α s k z
@@ -107,16 +108,17 @@ def lineZeroCount (μ : Measure ℂ) (α s : ℝ) (z : ℂ) : ℕ :=
 **Exported lemmas** (M13):
 ```lean
 -- 13.1 bridge ℂ ↔ ℝ
-theorem lineMeasure_apply (μ : Measure ℂ) {s : Set ℝ} (hs : MeasurableSet s) :
-    lineMeasure μ s = μ ((fun t : ℝ ↦ (t : ℂ)) '' s)
-theorem map_lineMeasure {μ : Measure ℂ} (hμ : μ {z : ℂ | z.im ≠ 0} = 0) :
-    (lineMeasure μ).map (fun t : ℝ ↦ (t : ℂ)) = μ
-theorem IsLineMeasure.lineMeasure_Ioc_lt_top {μ : Measure ℂ} (hμ : IsLineMeasure μ) (a b : ℝ) :
-    lineMeasure μ (Ioc a b) < ∞
+-- (reconciled) `linePull_apply` is M03's `linePull_apply` (no measurability needed):
+-- theorem linePull_apply (μ : Measure ℂ) (s : Set ℝ) :
+--     linePull μ s = μ ((fun x : ℝ ↦ (x : ℂ)) '' s)
+theorem map_linePull {μ : Measure ℂ} (hμ : μ {z : ℂ | z.im ≠ 0} = 0) :
+    (linePull μ).map (fun t : ℝ ↦ (t : ℂ)) = μ
+theorem IsLineMeasure.linePull_Ioc_lt_top {μ : Measure ℂ} (hμ : IsLineMeasure μ) (a b : ℝ) :
+    linePull μ (Ioc a b) < ∞
 
 -- 13.2 the signed distribution function
 theorem lineCDF_sub {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ) {a b : ℝ} (hab : a ≤ b) :
-    lineCDF μ α b - lineCDF μ α a = (lineMeasure μ (Ioc a b)).toReal - 2 * α * (b - a)
+    lineCDF μ α b - lineCDF μ α a = (linePull μ (Ioc a b)).toReal - 2 * α * (b - a)
 theorem continuous_lineCDF {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ) :
     Continuous (lineCDF μ α)
 theorem lineCDF_add_ge {μ : Measure ℂ} (hμ : IsLineMeasure μ) {r α : ℝ} (hr : 0 < r)
@@ -129,8 +131,8 @@ theorem lineKnot_strictMono … : StrictMono (lineKnot μ α)
 theorem lineLength_le … (k : ℤ) : lineLength μ α k ≤ 52 * r
 theorem existsUnique_lineKnot_mem … (t : ℝ) :
     ∃! k : ℤ, t ∈ Ioc (lineKnot μ α k) (lineKnot μ α (k + 1))
-theorem lineMeasure_Ioc_lineKnot … (k : ℤ) :
-    lineMeasure μ (Ioc (lineKnot μ α k) (lineKnot μ α (k + 1))) =
+theorem linePull_Ioc_lineKnot … (k : ℤ) :
+    linePull μ (Ioc (lineKnot μ α k) (lineKnot μ α (k + 1))) =
       ENNReal.ofReal (4 * Real.pi + 2 * α * lineLength μ α k)
 
 -- 13.4 barycentres and separation
@@ -184,7 +186,7 @@ theorem integral_abs_im_mul_laplacian (χ : ℂ → ℝ) (hχ : ContDiff ℝ (�
 -- 13.8 continuity of the potential of a piece of μ
 theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLineMeasure μ)
     (a b : ℝ) :
-    Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂lineMeasure μ
+    Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ
 
 -- 13.9 the M07 input
 theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
@@ -589,6 +591,17 @@ If M03 does not cover the line, these go into `Line/Basic.lean`. Proof sketches:
 **Not used:** M05 (its `ℝ` partition is for a positive measure with integer masses; ours is for `σ_α`, with masses `4π`), M06 (quadrature), M08, M09.
 
 ---
+
+### 4.3 Interface (reconciled)
+
+Lean files: `Line/Basic.lean`, `Line/Partition.lean`, `Line/Potential.lean`, `Theorem5.lean`.
+- **`lineMeasure` → `linePull`.** M13's `lineMeasure` is literally M03's `linePull`, so the Lean files use `linePull`. In the blocks above, `lineMeasure` is replaced by `linePull`; the renamed lemmas are `map_linePull`, `IsLineMeasure.linePull_Ioc_lt_top` and `linePull_Ioc_lineKnot`. `lineMeasure_apply` is M03's `linePull_apply`. In the prose, `μ_ℝ` is `linePull μ`.
+- **§4.2, M03 items.** `IsLineMeasure` and L1–L8 are stated in M03 (`Doubling/LineMeasure.lean`), exactly as in §4.2. `IsLineMeasure.of_weight`, `IsLineMeasure.doubling_le` and `massRadiusLine_le_of_mass` are proved there.
+- **§4.2, M02 items.**
+  - `integrableOn_log_norm_sub_uniform` and `integral_logPotential_mul_laplacian` are in `Potential/Fundamental.lean`.
+  - `logKernel : LogKernelStmt` and `weylLaplacian : WeylLaplacianStmt` are in `LogModulusWeak.lean`, proved from M02.
+  - The M07 entry point without hypotheses is `exists_analytic_norm_eq_exp_of_isWeakLogModulus`.
+- **`theorem5`** is verbatim the comparator statement, proved from `lineMultipliers` as in §1.2.
 
 ## 5. Issues found (for the NOTEBOOK)
 
