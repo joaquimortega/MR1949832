@@ -515,7 +515,7 @@ theorem uniform_tail {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ}
     have hfar : 2 * lineLength μ α k ≤ ‖z - lineCentre μ α k‖ := by linarith
     refine (hc.far_field hα hα' hs hs' k z hfar).trans ?_
     have hfar0' : 2 * lineLength μ α k ≤ |lineCentre μ α k| := h0 ▸ hfar0
-    simp only [h0, hfar0', if_true]
+    simp only [h0, hfar0', ite_true]
     have hlpos : 0 < |lineCentre μ α k| := by linarith
     have : lineLength μ α k / ‖z - lineCentre μ α k‖ ≤ 2 * (lineLength μ α k / |lineCentre μ α k|) := by
       calc lineLength μ α k / ‖z - lineCentre μ α k‖ ≤ lineLength μ α k / (|lineCentre μ α k| / 2) :=
@@ -555,16 +555,16 @@ theorem decomp {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs :
     ((hFu k hk).1 z hz).trans (hu.le_tsum k (fun j _ ↦ hu0 j))⟩, fun z ↦ ?_⟩
   · refine continuousOn_tsum (u := u) (fun k ↦ ?_) hu (fun k z hz ↦ ?_)
     · by_cases hk : k ∈ F
-      · simp only [hk, if_true]; exact continuousOn_const
-      · simp only [hk, if_false]
+      · simp only [hk, ite_true]; exact continuousOn_const
+      · simp only [hk, ite_false]
         intro z hz
         refine (hc.hμ.continuousAt_lineTerm fun b hb ↦ ?_).continuousWithinAt
         have h1 := (hFu k hk).2 b
         rw [mem_closedBall, dist_zero_right, hb, norm_real, Real.norm_eq_abs] at hz
         linarith
     · by_cases hk : k ∈ F
-      · simp only [hk, if_true, norm_zero]; exact hu0 k
-      · simp only [hk, if_false, Real.norm_eq_abs]; exact (hFu k hk).1 z hz
+      · simp only [hk, ite_true, norm_zero]; exact hu0 k
+      · simp only [hk, ite_false, Real.norm_eq_abs]; exact (hFu k hk).1 z hz
   · have hT := (hc.lineTerm_split hCf hα hα' hs hs' z).1
     have hg : Summable fun k ↦ if k ∈ F then 0 else lineTerm μ α s k z := by
       refine hT.congr_cofinite ?_
@@ -780,7 +780,6 @@ theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
     exact ((hφc.continuousAt.sub him.continuousAt).add hSc).continuousWithinAt
   · -- the weak Laplacian
     intro χ hχ hcχ _
-    beta_reduce
     obtain ⟨hΔc, -⟩ := laplacian_testFunction hχ
     have hΔs := hasCompactSupport_laplacian hχ hcχ
     set Δχ := Laplacian.laplacian χ
@@ -829,10 +828,10 @@ theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
           if k ∈ F then ∫ z, ‖lineTerm μ α s k z * Δχ z‖ else 0)
           (fun k hk ↦ by simp [hk])).add (hu.mul_right (∫ z, ‖Δχ z‖)))
       by_cases hk : k ∈ F
-      · simp only [hk, if_true]
+      · simp only [hk, ite_true]
         have : 0 ≤ u k * ∫ z, ‖Δχ z‖ := mul_nonneg (hu0 k) (integral_nonneg fun z ↦ norm_nonneg _)
         linarith
-      · simp only [hk, if_false, zero_add]; exact hbound k hk
+      · simp only [hk, ite_false, zero_add]; exact hbound k hk
     have hSΔ : ∫ z, linePotential μ α s z * Δχ z = ∑' k, ∫ z, lineTerm μ α s k z * Δχ z := by
       rw [integral_tsum_of_summable_integral_norm iT hsumm]
       congr 1; ext z
