@@ -232,6 +232,109 @@ theorem eq_integral_bumpKernel_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) 
     exact integral_bumpKernel_mul_eq_of_weakHarmonic hfi h hs₁.1 hs₁.2 hzs
   exact tendsto_nhds_unique hlim (tendsto_const_nhds.congr' hev.symm)
 
+theorem hasCompactSupport_bumpKernel {s : ℝ} (hs : 0 < s) : HasCompactSupport (bumpKernel s) := by
+  refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) s) fun x hx ↦ ?_
+  rw [mem_closedBall, dist_zero_right, not_le] at hx
+  exact bumpKernel_eq_zero hs hx.le
+
+/-- `∫ k_s(w − y) g(w) dw` only sees `g` on `closedBall y s`. -/
+theorem integral_bumpKernel_mul_indicator {s : ℝ} (hs : 0 < s) {g : ℂ → ℝ} {y : ℂ} {K : Set ℂ}
+    (hK : closedBall y s ⊆ K) :
+    ∫ w, bumpKernel s (w - y) * K.indicator g w = ∫ w, bumpKernel s (w - y) * g w := by
+  congr 1; ext w
+  by_cases hw : w ∈ closedBall y s
+  · rw [indicator_of_mem (hK hw)]
+  · rw [mem_closedBall, dist_eq_norm, not_le] at hw
+    rw [bumpKernel_eq_zero hs hw.le, zero_mul, zero_mul]
+
+/-- **Local smooth representative** (Weyl, Steps 3–5, `L¹_loc` form): on `ball z₀ R`, the average
+`F(y) = ∫ k_R(w − y) f(w) dw` is harmonic and equals `f` a.e. -/
+theorem harmonicAt_and_ae_eq_integral_bumpKernel {U : Set ℂ} {f : ℂ → ℝ}
+    (hf : LocallyIntegrableOn f U)
+    (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ U →
+      ∫ z, f z * Laplacian.laplacian χ z = 0)
+    {z₀ : ℂ} {R : ℝ} (hR : 0 < R) (hsub : closedBall z₀ (2 * R) ⊆ U) :
+    (∀ y ∈ ball z₀ R,
+        InnerProductSpace.HarmonicAt (fun y ↦ ∫ w, bumpKernel R (w - y) * f w) y) ∧
+      ∀ᵐ y, y ∈ ball z₀ R → f y = ∫ w, bumpKernel R (w - y) * f w := by
+  set K := closedBall z₀ (2 * R)
+  set F : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel R (w - y) * f w with hF
+  have hfK : IntegrableOn f K := hf.integrableOn_compact_subset hsub (isCompact_closedBall _ _)
+  set f' : ℂ → ℝ := K.indicator f
+  have hf'i : Integrable f' := (integrable_indicator_iff measurableSet_closedBall).2 hfK
+  have hf'l : LocallyIntegrable f' := hf'i.locallyIntegrable
+  set G : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel R (w - y) * f' w with hG
+  -- `closedBall y R ⊆ K` near `z₀`
+  have hballK : ∀ y ∈ ball z₀ R, ∀ s ≤ R, closedBall y s ⊆ K := by
+    intro y hy s hs w hw
+    rw [mem_closedBall] at hw ⊢
+    rw [mem_ball] at hy
+    calc dist w z₀ ≤ dist w y + dist y z₀ := dist_triangle _ _ _
+      _ ≤ 2 * R := by linarith
+  have hFG : ∀ y ∈ ball z₀ R, F y = G y := fun y hy ↦
+    (integral_bumpKernel_mul_indicator hR (hballK y hy R le_rfl)).symm
+  -- `G` is smooth
+  have hGconv : G = convolution f' (bumpKernel R) (ContinuousLinearMap.lsmul ℝ ℝ) volume := by
+    funext y
+    show (∫ w, bumpKernel R (w - y) * f' w) = _
+    rw [convolution_def]
+    congr 1; funext w
+    rw [ContinuousLinearMap.lsmul_apply, smul_eq_mul, bumpKernel_sub_comm, mul_comm]
+  have hGs : ContDiff ℝ (⊤ : ℕ∞) G := by
+    rw [hGconv]
+    exact (hasCompactSupport_bumpKernel hR).contDiff_convolution_right _ hf'l
+      (contDiff_bumpKernel hR)
+  have hG2 : ContDiff ℝ 2 G := hGs.of_le (WithTop.coe_le_coe.2 le_top)
+  -- `f = G` a.e. on the ball
+  have hae : ∀ᵐ y, y ∈ ball z₀ R → f y = G y := by
+    filter_upwards [ae_tendsto_integral_bumpKernel_mul hf'l] with y hy hyb
+    have hyK : y ∈ K := hballK y hyb R le_rfl (mem_closedBall_self hR.le)
+    have hev : (fun s ↦ ∫ w, bumpKernel s (w - y) * f' w) =ᶠ[𝓝[>] 0] fun _ ↦ G y := by
+      filter_upwards [Ioo_mem_nhdsGT hR] with s hs
+      rw [integral_bumpKernel_mul_indicator hs.1 (hballK y hyb s hs.2.le),
+        integral_bumpKernel_mul_eq_of_weakHarmonic hf h hs.1 hs.2
+          ((hballK y hyb R le_rfl).trans hsub), ← hFG y hyb]
+    have h1 := tendsto_nhds_unique hy (tendsto_const_nhds.congr' hev.symm)
+    rwa [show f' y = f y from indicator_of_mem hyK f] at h1
+  -- `ΔG = 0` on the ball
+  have hΔc : Continuous (Laplacian.laplacian G) := continuous_laplacian hG2
+  have hΔae : ∀ᵐ x, x ∈ ball z₀ R → Laplacian.laplacian G x = 0 := by
+    refine isOpen_ball.ae_eq_zero_of_integral_contDiff_smul_eq_zero
+      (hΔc.locallyIntegrable.locallyIntegrableOn _) fun β hβ hβc hβs ↦ ?_
+    have hβ2 : ContDiff ℝ 2 β := hβ.of_le (WithTop.coe_le_coe.2 le_top)
+    have h1 := integral_mul_lap hβ2 hβc hG2
+    have h2 : ∫ x, β x • Laplacian.laplacian G x = ∫ x, G x * Laplacian.laplacian β x := by
+      simp_rw [smul_eq_mul, laplacian_eq_four_mul_lap]
+      calc ∫ x, β x * (4 * lap G x) = 4 * ∫ x, β x * lap G x := by
+            rw [← integral_const_mul]; congr 1; ext x; ring
+        _ = 4 * ∫ x, lap β x * G x := by rw [h1]
+        _ = ∫ x, G x * (4 * lap β x) := by
+            rw [← integral_const_mul]; congr 1; ext x; ring
+    have h3 : (fun x ↦ G x * Laplacian.laplacian β x) =ᵐ[volume]
+        fun x ↦ f x * Laplacian.laplacian β x := by
+      filter_upwards [hae] with x hx
+      by_cases hxb : x ∈ ball z₀ R
+      · rw [hx hxb]
+      · have : Laplacian.laplacian β x = 0 :=
+          laplacian_eq_zero_of_notMem_tsupport fun h' ↦ hxb (hβs h')
+        rw [this, mul_zero, mul_zero]
+    rw [h2, integral_congr_ae h3]
+    exact h β hβ hβc (hβs.trans (ball_subset_closedBall.trans
+      ((closedBall_subset_closedBall (by linarith)).trans hsub)))
+  have hΔ0 : ∀ x ∈ ball z₀ R, Laplacian.laplacian G x = 0 := by
+    have h' : Laplacian.laplacian G =ᵐ[volume.restrict (ball z₀ R)] fun _ ↦ 0 := by
+      rw [EventuallyEq, ae_restrict_iff' measurableSet_ball]
+      exact hΔae
+    exact Measure.eqOn_open_of_ae_eq h' isOpen_ball hΔc.continuousOn continuousOn_const
+  refine ⟨fun y hy ↦ ?_, ?_⟩
+  · have hFG' : F =ᶠ[𝓝 y] G := by
+      filter_upwards [isOpen_ball.mem_nhds hy] with x hx using hFG x hx
+    refine (InnerProductSpace.harmonicAt_congr_nhds hFG').2 ⟨hG2.contDiffAt, ?_⟩
+    filter_upwards [isOpen_ball.mem_nhds hy] with x hx using hΔ0 x hx
+  · filter_upwards [hae] with y hy hyb
+    rw [hy hyb]
+    exact (hFG y hyb).symm
+
 /-- **Weyl's lemma for `Δ`.** A continuous weakly harmonic function is harmonic. -/
 theorem harmonicOnNhd_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
     (hφ : ContinuousOn φ Ω)
