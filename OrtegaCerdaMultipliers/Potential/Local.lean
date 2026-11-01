@@ -166,7 +166,44 @@ theorem exists_integral_abs_bumpPot_le : ∃ C₁ : ℝ, ∀ s : ℝ, 0 < s →
     Complex.finrank_real_complex, smul_eq_mul, inv_pow, inv_inv, abs_of_pos (by positivity),
     mul_comm]
 
+/-- **The smoothed point mass** (corrected form of `integral_bumpPot_mul_laplacian`, with the
+parentheses that the statement needs): `Δ_z G_s(z − ζ) = bumpKernel s (· − ζ) − δ_ζ` weakly. -/
+theorem integral_bumpPot_mul_laplacian' {s : ℝ} (hs : 0 < s) {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
+    (hc : HasCompactSupport χ) (ζ : ℂ) :
+    ∫ z, bumpPot s (z - ζ) * Laplacian.laplacian χ z =
+      (∫ z, bumpKernel s (z - ζ) * χ z) - χ ζ := by
+  have hΔc := continuous_laplacian hχ
+  have hΔs := hasCompactSupport_laplacian hc
+  have hlogint : Integrable (fun z ↦ Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z) := by
+    simpa [smul_eq_mul] using
+      (locallyIntegrable_log_normSq_sub ζ).integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have hSint : Integrable
+      (fun z ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z) :=
+    (((contDiff_sFun (bump_pos hs) (bump_lt hs)).continuous.comp
+      ((continuous_norm.comp (continuous_id.sub continuous_const)).pow 2)).mul
+        hΔc).integrable_of_hasCompactSupport hΔs.mul_left
+  have e : (fun z ↦ bumpPot s (z - ζ) * Laplacian.laplacian χ z) = fun z ↦
+      -(4 * Real.pi)⁻¹ * (Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z +
+        sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z) := by
+    ext z
+    simp only [bumpPot]
+    rw [show wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) =
+      Real.log (‖z - ζ‖ ^ 2) + sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) from rfl]
+    ring
+  rw [e, integral_const_mul, integral_add hlogint hSint,
+    integral_log_normSq_sub_mul_laplacian hχ hc ζ, integral_sFun_mul_laplacian hs hχ hc ζ]
+  have hπ : Real.pi ≠ 0 := Real.pi_ne_zero
+  simp only [bumpKernel]
+  field_simp
+  ring
+
+
 /-- **The smoothed point mass.** `Δ_z G_s(z − ζ) = bumpKernel s (· − ζ) − δ_ζ` weakly. -/
+-- FALSE?: the right-hand side parses as `∫ z, (bumpKernel s (z - ζ) * χ z - χ ζ)` (the body of
+-- `∫` extends over `- χ ζ`).  That integrand is not integrable when `χ ζ ≠ 0`, so the right side
+-- is `0`.  Counterexample: `ζ = 0`, `s = 1`, `χ` a smooth bump with `χ 0 = 1` supported in
+-- `ball 0 (1/10)`; then the left side is `∫ k₁ χ - 1 ≤ 4/100 - 1 < 0`.  The intended statement,
+-- with parentheses, is `integral_bumpPot_mul_laplacian'` (proved above).
 theorem integral_bumpPot_mul_laplacian {s : ℝ} (hs : 0 < s) {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
     (hc : HasCompactSupport χ) (ζ : ℂ) :
     ∫ z, bumpPot s (z - ζ) * Laplacian.laplacian χ z =
