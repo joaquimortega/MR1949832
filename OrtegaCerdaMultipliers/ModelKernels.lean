@@ -1070,6 +1070,30 @@ theorem disc_kernel_operator {φ : ℂ → ℝ} (hφ : ContinuousOn φ 𝔻) {c 
         congr 2
         field_simp
 
+theorem lintegral_lt_top_of_eLpNorm_volume {g : ℂ → ℝ≥0∞}
+    (hg : AEStronglyMeasurable g volume) {K : Set ℂ} (hK : IsCompact K)
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hfin : eLpNorm g p volume < ∞) :
+    ∫⁻ z in K, g z < ∞ := by
+  have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
+    rw [ENNReal.toReal_one, div_one, sub_nonneg]
+    rcases eq_or_ne p ∞ with rfl | hpt
+    · simp
+    · exact div_le_one_of_le₀ (by rw [← ENNReal.toReal_one]; exact ENNReal.toReal_mono hpt hp)
+        ENNReal.toReal_nonneg
+  calc ∫⁻ z in K, g z = eLpNorm g 1 (volume.restrict K) := by
+        rw [eLpNorm_one_eq_lintegral_enorm hg.restrict]; simp
+    _ ≤ eLpNorm g p (volume.restrict K) *
+          (volume.restrict K) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hg.restrict
+    _ ≤ eLpNorm g p volume *
+          (volume.restrict K) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) := by
+        gcongr
+        exact Measure.restrict_le_self
+    _ < ∞ := by
+        refine ENNReal.mul_lt_top hfin (ENNReal.rpow_lt_top_of_nonneg hexp ?_)
+        rw [Measure.restrict_apply_univ]
+        exact hK.measure_lt_top.ne
+
 theorem plane_kernel_operator {φ : ℂ → ℝ} (hφ : Continuous φ) {c A : ℝ} (hc : 0 < c)
     {H : ℂ → ℂ → ℂ} (hHm : Measurable (Function.uncurry H))
     (hHd : ∀ ζ, Differentiable ℂ (fun z ↦ H z ζ)) (hH1 : ∀ ζ, H ζ ζ = 1)
@@ -1081,7 +1105,140 @@ theorem plane_kernel_operator {φ : ℂ → ℝ} (hφ : Continuous φ) {c A : �
         eLpNorm (fun z ↦ (∫ ζ, H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ) *
             (Real.exp (-φ z) : ℝ)) p volume ≤
           ENNReal.ofReal (A * Real.sqrt (Real.pi / c)) *
-            eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume := sorry
+            eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume := by
+  set u : ℂ → ℂ := fun z ↦ ∫ ζ, H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ with hu
+  set F : ℂ → ℂ := fun z ↦ f z * (Real.exp (-φ z) : ℝ) with hFdef
+  obtain ⟨p₀, hp₀, hFfin⟩ := hadm
+  have hA : 1 ≤ A := by
+    have := hHb 0 0
+    simpa [hH1 0] using this
+  have hpi := Real.pi_pos
+  have hAπ : 0 ≤ A / Real.pi := div_nonneg (by linarith) hpi.le
+  have hEc : Continuous fun z : ℂ ↦ ((Real.exp (-φ z) : ℝ) : ℂ) := by fun_prop
+  have hF : AEStronglyMeasurable F volume := hf.mul hEc.aestronglyMeasurable
+  have hFe : AEMeasurable (fun z ↦ ‖F z‖ₑ) volume := hF.enorm
+  have hFnorm : ∀ ζ, ‖F ζ‖ = ‖f ζ‖ * Real.exp (-φ ζ) := by
+    intro ζ
+    rw [hFdef, norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+  set TF : ℂ → ℝ≥0∞ := fun z ↦ ∫⁻ ζ, planeModel c z ζ * ‖F ζ‖ₑ with hTF
+  have hTFm : AEStronglyMeasurable TF volume := by
+    have : AEMeasurable (fun q : ℂ × ℂ ↦ planeModel c q.1 q.2 * ‖F q.2‖ₑ)
+        (volume.prod volume) :=
+      (measurable_planeModel c).aemeasurable.mul hFe.comp_snd
+    exact this.lintegral_prod_right'.aestronglyMeasurable
+  have hTFb : ∀ p : ℝ≥0∞, 1 ≤ p →
+      eLpNorm TF p volume ≤
+        ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) * eLpNorm F p volume := by
+    intro p hp
+    have := eLpNorm_planeModel_le hc hFe hp
+    rwa [eLpNorm_enorm _ hF] at this
+  have hker : ∀ z ζ, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ ≤
+      A / Real.pi * Real.exp (φ z - φ ζ) * (Real.exp (-c * ‖z - ζ‖ ^ 2) / ‖z - ζ‖) := by
+    intro z ζ
+    rw [norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg hpi.le]
+    rcases eq_or_ne z ζ with rfl | hne
+    · simp
+    have hZ : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
+    calc ‖H z ζ‖ / (Real.pi * ‖z - ζ‖)
+        ≤ (A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2)) / (Real.pi * ‖z - ζ‖) := by
+          gcongr
+          exact hHb z ζ
+      _ = _ := by field_simp
+  have hKP : ∀ z, ∫⁻ ζ, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ ≤
+      ENNReal.ofReal (A / Real.pi * Real.exp (φ z)) * TF z := by
+    intro z
+    simp only [hTF]
+    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine lintegral_mono fun ζ ↦ ?_
+    simp only [planeModel]
+    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
+      ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity),
+      ← ENNReal.ofReal_mul (by positivity), hFnorm ζ]
+    apply ENNReal.ofReal_le_ofReal
+    calc ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ * ‖f ζ‖
+        ≤ (A / Real.pi * Real.exp (φ z - φ ζ) *
+            (Real.exp (-c * ‖z - ζ‖ ^ 2) / ‖z - ζ‖)) * ‖f ζ‖ :=
+          mul_le_mul_of_nonneg_right (hker z ζ) (norm_nonneg _)
+      _ = _ := by
+          rw [Real.exp_sub, Real.exp_neg]
+          field_simp
+  have hfl : LocallyIntegrableOn f univ := by
+    rw [locallyIntegrableOn_iff isOpen_univ.isLocallyClosed]
+    intro K _ hK
+    refine ⟨hf.restrict, ?_⟩
+    rw [hasFiniteIntegral_iff_enorm]
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hφ.continuousOn
+    calc ∫⁻ z in K, ‖f z‖ₑ ≤ ∫⁻ z in K, ENNReal.ofReal (Real.exp C) * ‖F z‖ₑ := by
+          refine setLIntegral_mono' hK.measurableSet fun z hzK ↦ ?_
+          rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (Real.exp_pos _).le, hFnorm z]
+          apply ENNReal.ofReal_le_ofReal
+          have h1 : Real.exp (φ z) ≤ Real.exp C :=
+            Real.exp_le_exp.2 ((le_abs_self _).trans (hC z hzK))
+          calc ‖f z‖ = Real.exp (φ z) * (‖f z‖ * Real.exp (-φ z)) := by
+                rw [Real.exp_neg]; field_simp
+            _ ≤ Real.exp C * (‖f z‖ * Real.exp (-φ z)) := by gcongr
+      _ = ENNReal.ofReal (Real.exp C) * ∫⁻ z in K, ‖F z‖ₑ :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+          (lintegral_lt_top_of_eLpNorm_volume hFe.aestronglyMeasurable hK hp₀
+            (by rwa [eLpNorm_enorm _ hF]))
+  have hloc : ∀ K ⊆ (univ : Set ℂ), IsCompact K →
+      ∫⁻ z in K, ∫⁻ ζ in univ, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ < ∞ := by
+    intro K _ hK
+    simp only [Measure.restrict_univ]
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hφ.continuousOn
+    calc ∫⁻ z in K, ∫⁻ ζ, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ
+        ≤ ∫⁻ z in K, ENNReal.ofReal (A / Real.pi * Real.exp C) * TF z := by
+          refine setLIntegral_mono' hK.measurableSet fun z hzK ↦ (hKP z).trans ?_
+          gcongr
+          exact (le_abs_self _).trans (hC z hzK)
+      _ = ENNReal.ofReal (A / Real.pi * Real.exp C) * ∫⁻ z in K, TF z :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+          (lintegral_lt_top_of_eLpNorm_volume hTFm hK hp₀
+            ((hTFb p₀ hp₀).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hFfin)))
+  have hfu : AEStronglyMeasurable f (volume.restrict univ) := by
+    rw [Measure.restrict_univ]; exact hf
+  have hsol := isWeakDbarSol_kernel isOpen_univ hHm (fun ζ _ ↦ (hHd ζ).differentiableOn)
+    (fun ζ _ ↦ hH1 ζ) hfu hfl hloc
+  simp only [Measure.restrict_univ] at hsol
+  refine ⟨hsol, fun p hp ↦ ?_⟩
+  have hum : AEStronglyMeasurable u volume := by
+    have := weak_aestronglyMeasurable_kernelOp hHm hfu
+    simpa only [Measure.restrict_univ] using this
+  have hv : AEStronglyMeasurable (fun z ↦ u z * ((Real.exp (-φ z) : ℝ) : ℂ)) volume :=
+    hum.mul hEc.aestronglyMeasurable
+  have hpt : ∀ᵐ z ∂volume, ‖u z * ((Real.exp (-φ z) : ℝ) : ℂ)‖ₑ ≤
+      ‖ENNReal.ofReal (A / Real.pi) * TF z‖ₑ := by
+    refine Filter.Eventually.of_forall fun z ↦ ?_
+    rw [enorm_eq_self, enorm_mul, ← ofReal_norm (((Real.exp (-φ z) : ℝ) : ℂ)),
+      Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+    calc ‖u z‖ₑ * ENNReal.ofReal (Real.exp (-φ z))
+        ≤ (∫⁻ ζ, ‖H z ζ / ((Real.pi : ℂ) * (z - ζ))‖ₑ * ‖f ζ‖ₑ) *
+            ENNReal.ofReal (Real.exp (-φ z)) := by
+          gcongr
+          refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq ?_)
+          simp_rw [enorm_mul]
+      _ ≤ ENNReal.ofReal (A / Real.pi * Real.exp (φ z)) * TF z *
+            ENNReal.ofReal (Real.exp (-φ z)) := by
+          gcongr
+          exact hKP z
+      _ = ENNReal.ofReal (A / Real.pi) * TF z := by
+          rw [mul_comm _ (TF z), mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_assoc,
+            ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one, mul_comm]
+  calc eLpNorm (fun z ↦ u z * ((Real.exp (-φ z) : ℝ) : ℂ)) p volume
+      ≤ eLpNorm (fun z ↦ ENNReal.ofReal (A / Real.pi) * TF z) p volume :=
+        eLpNorm_mono_enorm_ae hv hpt
+    _ = ENNReal.ofReal (A / Real.pi) * eLpNorm TF p volume :=
+        eLpNorm_const_mul_ennreal hTFm
+    _ ≤ ENNReal.ofReal (A / Real.pi) *
+          (ENNReal.ofReal (Real.pi * Real.sqrt (Real.pi / c)) * eLpNorm F p volume) := by
+        gcongr
+        exact hTFb p hp
+    _ = ENNReal.ofReal (A * Real.sqrt (Real.pi / c)) * eLpNorm F p volume := by
+        rw [← mul_assoc, ← ENNReal.ofReal_mul hAπ]
+        congr 2
+        field_simp
 
 /-! ## §6 Lemma 7 -/
 
@@ -1439,7 +1596,12 @@ def lemma8Op (α : ℝ) (f : ℂ → ℂ) (z : ℂ) : ℂ :=
 
 theorem norm_exp_planeKernel_num (α : ℝ) (z ζ : ℂ) :
     ‖Complex.exp (2 * α * (conj ζ * z - ((‖ζ‖ ^ 2 : ℝ) : ℂ)))‖ =
-      Real.exp (α * ‖z‖ ^ 2 - α * ‖ζ‖ ^ 2) * Real.exp (-α * ‖z - ζ‖ ^ 2) := sorry
+      Real.exp (α * ‖z‖ ^ 2 - α * ‖ζ‖ ^ 2) * Real.exp (-α * ‖z - ζ‖ ^ 2) := by
+  rw [Complex.norm_exp, ← Real.exp_add]
+  congr 1
+  simp only [Complex.sq_norm, Complex.normSq_apply, mul_re, sub_re, ofReal_re, conj_re,
+    conj_im, mul_im, ofReal_im, sub_im, re_ofNat, im_ofNat]
+  ring
 
 theorem lemma8 {α : ℝ} (hα : 0 < α) (f : ℂ → ℂ) (hf : AEStronglyMeasurable f volume)
     (hadm : ∃ p : ℝ≥0∞, 1 ≤ p ∧
@@ -1447,6 +1609,34 @@ theorem lemma8 {α : ℝ} (hα : 0 < α) (f : ℂ → ℂ) (hf : AEStronglyMeasu
     IsWeakDbarSol univ (lemma8Op α f) f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
       eLpNorm (fun z ↦ lemma8Op α f z * (Real.exp (-α * ‖z‖ ^ 2) : ℂ)) p volume ≤
         ENNReal.ofReal (Real.sqrt (Real.pi / α)) *
-          eLpNorm (fun z ↦ f z * (Real.exp (-α * ‖z‖ ^ 2) : ℂ)) p volume := sorry
+          eLpNorm (fun z ↦ f z * (Real.exp (-α * ‖z‖ ^ 2) : ℂ)) p volume := by
+  set φ : ℂ → ℝ := fun z ↦ α * ‖z‖ ^ 2 with hφ
+  set H : ℂ → ℂ → ℂ := fun z ζ ↦ Complex.exp (2 * α * (conj ζ * z - ((‖ζ‖ ^ 2 : ℝ) : ℂ)))
+    with hH
+  have hφe : ∀ z, -φ z = -α * ‖z‖ ^ 2 := fun z ↦ by simp only [hφ]; ring
+  have hfun : (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) =
+      fun z ↦ f z * (Real.exp (-α * ‖z‖ ^ 2) : ℂ) := by
+    funext z; rw [hφe]
+  have hHm : Measurable (Function.uncurry H) := by
+    simp only [hH]
+    fun_prop
+  have hHd : ∀ ζ, Differentiable ℂ (fun z ↦ H z ζ) := fun ζ ↦ by
+    simp only [hH]
+    fun_prop
+  have hH1 : ∀ ζ, H ζ ζ = 1 := fun ζ ↦ by
+    simp only [hH, Complex.conj_mul']
+    push_cast
+    simp
+  have hHb : ∀ z ζ, ‖H z ζ‖ ≤ 1 * Real.exp (φ z - φ ζ) * Real.exp (-α * ‖z - ζ‖ ^ 2) :=
+    fun z ζ ↦ by
+      rw [hH, norm_exp_planeKernel_num, one_mul]
+  obtain ⟨hsol, hest⟩ := plane_kernel_operator (by fun_prop) hα hHm hHd hH1 hHb f hf
+    (by rwa [hfun])
+  refine ⟨hsol, fun p hp ↦ ?_⟩
+  have := hest p hp
+  rw [hfun, one_mul] at this
+  convert this using 3 with z
+  rw [hφe]
+  rfl
 
 end OC
