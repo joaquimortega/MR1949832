@@ -165,7 +165,51 @@ theorem isWeakDbarSolMeasure_sum_mul {ι : Type*} [Fintype ι] {ν : Measure ℂ
     (hf0 : ∀ i, ∀ z ∈ Ω i, f i z ≠ 0) (hfin : ∀ i, IsFiniteMeasure (divMeasure ν (Ω i) (f i)))
     (v : ι → ℂ → ℂ) (hv : ∀ i, IsWeakDbarSolMeasure (v i) (divMeasure ν (Ω i) (f i))
       (divPhase σ (f i))) :
-    IsWeakDbarSolMeasure (fun z ↦ ∑ i, f i z * v i z) ν σ := sorry
+    IsWeakDbarSolMeasure (fun z ↦ ∑ i, f i z * v i z) ν σ := by
+  refine ⟨?_, fun χ hχ hc ↦ ?_⟩
+  · exact locallyIntegrable_finsetSum _ fun i _ ↦ (hv i).1.continuous_mul (hf i).continuous
+  have hχ1 := contDiff_one_of_top hχ
+  -- the test functions `β_i = f_i χ`, with `∂̄β_i = f_i ∂̄χ`
+  have hβ : ∀ i, ContDiff ℝ (⊤ : ℕ∞) (fun z ↦ f i z * χ z) := fun i ↦
+    ((hf i).contDiff.restrict_scalars ℝ).mul hχ
+  have hβc : ∀ i, HasCompactSupport (fun z ↦ f i z * χ z) := fun i ↦ hc.mul_left
+  have hdβ : ∀ i z, dbar (fun z ↦ f i z * χ z) z = f i z * dbar χ z := by
+    intro i z
+    rw [dbar_mul (((hf i) z).restrictScalars ℝ) (hχ1.differentiable one_ne_zero z),
+      dbar_eq_zero_of_differentiableAt ((hf i) z), zero_mul, zero_add]
+  -- each piece: `∫ v_i f_i ∂̄χ = -∫_{Ω_i} χ σ dν`
+  have hpiece : ∀ i, ∫ z, v i z * (f i z * dbar χ z) = -∫ z in Ω i, χ z * σ z ∂ν := by
+    intro i
+    have h := (hv i).2 _ (hβ i) (hβc i)
+    simp_rw [hdβ] at h
+    rw [h, divMeasure, integral_withDensity_eq_integral_toReal_smul
+      (measurable_ofReal_one_div_norm (hf i).continuous)
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+    congr 1
+    refine setIntegral_congr_fun (hΩm i) fun z hz ↦ ?_
+    have h0 := hf0 i z hz
+    have hn : (‖f i z‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 h0
+    simp only [divPhase, h0, ↓reduceIte]
+    rw [ENNReal.toReal_ofReal (by positivity), Complex.real_smul]
+    push_cast
+    field_simp
+  have hint : ∀ i, Integrable (fun z ↦ v i z * (f i z * dbar χ z)) := fun i ↦
+    integrable_mul_of_locallyIntegrableOn ((hv i).1.locallyIntegrableOn univ)
+      ((hf i).continuous.mul (continuous_dbar hχ1)) ((hasCompactSupport_dbar hc).mul_left)
+      (subset_univ _)
+  have hχσ : Integrable (fun z ↦ χ z * σ z) ν := by
+    obtain ⟨B, hB⟩ := hχ.continuous.bounded_above_of_compact_support hc
+    refine Integrable.mono' (integrable_const B)
+      (hχ.continuous.measurable.mul hσ).aestronglyMeasurable (ae_of_all _ fun z ↦ ?_)
+    rw [norm_mul, hσ1, mul_one]
+    exact hB z
+  calc ∫ z, (∑ i, f i z * v i z) * dbar χ z = ∫ z, ∑ i, v i z * (f i z * dbar χ z) := by
+        congr 1; ext z; rw [Finset.sum_mul]; refine Finset.sum_congr rfl fun i _ ↦ ?_; ring
+    _ = ∑ i, ∫ z, v i z * (f i z * dbar χ z) := integral_finsetSum _ fun i _ ↦ hint i
+    _ = ∑ i, -∫ z in Ω i, χ z * σ z ∂ν := Finset.sum_congr rfl fun i _ ↦ hpiece i
+    _ = -∫ z in ⋃ i, Ω i, χ z * σ z ∂ν := by
+        rw [integral_iUnion_fintype hΩm hΩd fun i ↦ hχσ.integrableOn, Finset.sum_neg_distrib]
+    _ = -∫ z, χ z * σ z ∂ν := by rw [hΩc, Measure.restrict_univ]
 
 /-! 14.3 Theorem 3, corrected (weight inside the integral) -/
 theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
