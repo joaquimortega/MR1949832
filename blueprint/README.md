@@ -1,7 +1,7 @@
 # Blueprint: Ortega-Cerdà, *Multipliers and weighted ∂̄-estimates* (RMI 2002)
 
 **Source.** J. Ortega-Cerdà, Rev. Mat. Iberoamericana **18** (2002), 355–377.
-- Local copy (gitignored): `RMI-18-2002-355.pdf`.
+- Reference copy (gitignored), the printed version: `literature/10.4171-rmi-322.pdf` (doi:10.4171/rmi/322). `RMI-18-2002-355.pdf` in the root is a byte-identical copy.
 - arXiv version: `literature/arXiv-math-9912139.pdf`.
 - Page references `[p. 363]` are to the journal pagination.
 
