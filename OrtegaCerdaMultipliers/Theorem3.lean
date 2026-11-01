@@ -473,6 +473,115 @@ theorem cex_mass : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < cexMeasure (lineInter
   rw [cexMeasure_lineInterval, mul_one, ENNReal.ofReal_ofNat]
   norm_num
 
+/-! 14.6 analytic tools for `not_theorem3_printed` (Phragmén–Lindelöf replaces Bernstein) -/
+
+/-- **Half-plane step.** For an entire `G` with `‖G z‖ e^{-|Im z|} → 0` and `‖G‖ ≤ M` on `ℝ`,
+and `ζ = ±i`: `‖G (ζ w) e^{-w}‖ ≤ M` for `Re w ≥ 0` (Phragmén–Lindelöf in the right half-plane). -/
+theorem norm_mul_exp_neg_le_of_entire {G : ℂ → ℂ} (hG : Differentiable ℂ G) {M : ℝ}
+    (hM : ∀ x : ℝ, ‖G x‖ ≤ M)
+    (hdec : Filter.Tendsto (fun z ↦ ‖G z‖ * Real.exp (-|z.im|)) (Filter.cocompact ℂ) (nhds 0))
+    {ζ : ℂ} (hζ : ζ = I ∨ ζ = -I) {w : ℂ} (hw : 0 ≤ w.re) :
+    ‖G (ζ * w) * Complex.exp (-w)‖ ≤ M := by
+  set F : ℂ → ℂ := fun w ↦ G (ζ * w) * Complex.exp (-w) with hF
+  have hζn : ‖ζ‖ = 1 := by rcases hζ with rfl | rfl <;> simp
+  have hζim : ∀ w : ℂ, |(ζ * w).im| = |w.re| := by
+    intro w; rcases hζ with rfl | rfl <;> simp
+  have hFn : ∀ w : ℂ, 0 ≤ w.re → ‖F w‖ = ‖G (ζ * w)‖ * Real.exp (-|(ζ * w).im|) := by
+    intro w hw
+    rw [hF, norm_mul, Complex.norm_exp, neg_re, hζim, abs_of_nonneg hw]
+  have hFd : Differentiable ℂ F :=
+    (hG.comp (differentiable_const _ |>.mul differentiable_id)).mul
+      (Complex.differentiable_exp.comp differentiable_neg)
+  -- `w ↦ ζ w` maps `cobounded` to `cobounded`
+  have hζc : Filter.Tendsto (fun w : ℂ ↦ ζ * w) (Bornology.cobounded ℂ) (Bornology.cobounded ℂ) := by
+    rw [← tendsto_norm_atTop_iff_cobounded]
+    simpa [norm_mul, hζn] using tendsto_norm_cobounded_atTop (E := ℂ)
+  have hlim : Filter.Tendsto F (Bornology.cobounded ℂ ⊓ Filter.principal {z | 0 < z.re})
+      (nhds 0) := by
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    have h1 : Filter.Tendsto (fun w ↦ ‖G (ζ * w)‖ * Real.exp (-|(ζ * w).im|))
+        (Bornology.cobounded ℂ) (nhds 0) := by
+      rw [Metric.cobounded_eq_cocompact] at hζc ⊢
+      exact hdec.comp hζc
+    refine (h1.mono_left inf_le_left).congr' ?_
+    filter_upwards [Filter.mem_inf_of_right (Filter.mem_principal_self _)] with w hw
+    exact (hFn w (le_of_lt hw)).symm
+  have hreal : Filter.Tendsto (fun x : ℝ ↦ F x) Filter.atTop (nhds 0) := by
+    refine hlim.comp (Filter.tendsto_inf.2 ⟨?_, Filter.tendsto_principal.2 ?_⟩)
+    · rw [← tendsto_norm_atTop_iff_cobounded]
+      simpa using Filter.tendsto_abs_atTop_atTop
+    · filter_upwards [Filter.eventually_gt_atTop 0] with x hx
+      simpa using hx
+  have him : ∀ x : ℝ, ‖F (x * I)‖ ≤ M := by
+    intro x
+    have hr : ζ * (x * I) = ((if ζ = I then -x else x : ℝ) : ℂ) := by
+      rcases hζ with rfl | rfl
+      · simp only [ite_true]; push_cast; ring_nf; simp
+      · have : (-I : ℂ) ≠ I := by
+          intro h; have := congrArg Complex.im h; simp at this; norm_num at this
+        simp only [this, ite_false]; ring_nf; simp
+    show ‖G (ζ * (x * I)) * Complex.exp (-(x * I))‖ ≤ M
+    rw [hr, norm_mul, Complex.norm_exp]
+    simp only [neg_re, mul_re, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
+      neg_zero, Real.exp_zero]
+    exact hM _
+  show ‖F w‖ ≤ M
+  refine PhragmenLindelof.right_half_plane_of_tendsto_zero_on_real hFd.diffContOnCl
+    ⟨0, by norm_num, 0, ?_⟩ hreal him hw
+  simp only [zero_mul, Real.exp_zero]
+  exact hlim.isBigO_one ℝ
+
+/-- **Phragmén–Lindelöf on `ℂ`.** An entire `G` with `‖G z‖ e^{-|Im z|} → 0` at `∞` and
+`‖G‖ ≤ M` on `ℝ` satisfies `‖G z‖ ≤ M e^{|Im z|}`. -/
+theorem norm_le_mul_exp_abs_im_of_entire {G : ℂ → ℂ} (hG : Differentiable ℂ G) {M : ℝ}
+    (hM : ∀ x : ℝ, ‖G x‖ ≤ M)
+    (hdec : Filter.Tendsto (fun z ↦ ‖G z‖ * Real.exp (-|z.im|)) (Filter.cocompact ℂ) (nhds 0))
+    (z : ℂ) : ‖G z‖ ≤ M * Real.exp |z.im| := by
+  rcases le_or_gt 0 z.im with h | h
+  · have := norm_mul_exp_neg_le_of_entire hG hM hdec (Or.inl rfl) (w := -I * z)
+      (by simpa using h)
+    have e : I * (-I * z) = z := by ring_nf; simp
+    rw [e, norm_mul, Complex.norm_exp] at this
+    simp only [mul_re, I_re, I_im, zero_mul, zero_sub, neg_mul, one_mul, neg_neg] at this
+    rw [abs_of_nonneg h]
+    have hpos := Real.exp_pos z.im
+    calc ‖G z‖ = ‖G z‖ * Real.exp (-z.im) * Real.exp z.im := by
+          rw [mul_assoc, ← Real.exp_add]; simp
+      _ ≤ M * Real.exp z.im := by gcongr
+  · have := norm_mul_exp_neg_le_of_entire hG hM hdec (Or.inr rfl) (w := I * z)
+      (by simpa using h.le)
+    have e : -I * (I * z) = z := by ring_nf; simp
+    rw [e, norm_mul, Complex.norm_exp] at this
+    simp only [neg_re, mul_re, I_re, I_im, zero_mul, one_mul, zero_sub, neg_neg] at this
+    rw [abs_of_neg h]
+    calc ‖G z‖ = ‖G z‖ * Real.exp z.im * Real.exp (-z.im) := by
+          rw [mul_assoc, ← Real.exp_add]; simp
+      _ ≤ M * Real.exp (-z.im) := by gcongr
+
+/-- **Cauchy estimate + mean value theorem** on `ℝ`, from `‖G z‖ ≤ M e^{|Im z|}`. -/
+theorem norm_sub_le_of_norm_le_mul_exp {G : ℂ → ℂ} (hG : Differentiable ℂ G) {M : ℝ}
+    (hb : ∀ z, ‖G z‖ ≤ M * Real.exp |z.im|) (a b : ℝ) :
+    ‖G b - G a‖ ≤ M * Real.exp 1 * |b - a| := by
+  have hM : 0 ≤ M := by
+    have := hb 0; simp only [zero_im, abs_zero, Real.exp_zero, mul_one] at this
+    exact (norm_nonneg _).trans this
+  have hder : ∀ z : ℂ, z.im = 0 → ‖deriv G z‖ ≤ M * Real.exp 1 := by
+    intro z hz
+    have := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le one_pos hG.diffContOnCl
+      (C := M * Real.exp 1) fun y hy ↦ by
+        refine (hb y).trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hM)
+        have h1 := abs_im_le_norm (y - z)
+        rw [sub_im, hz, sub_zero, ← dist_eq, mem_sphere.1 hy] at h1
+        exact h1
+    simpa using this
+  have := Convex.norm_image_sub_le_of_norm_deriv_le (s := segment ℝ (a : ℂ) b)
+    (fun z _ ↦ hG z) (fun z hz ↦ hder z ?_) (convex_segment _ _)
+    (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)
+  · rwa [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] at this
+  · rw [segment_eq_image] at hz
+    obtain ⟨t, -, rfl⟩ := hz
+    simp
+
 /-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`; hence `theorem3` in
 `comparator/statements.lean` is equivalent to `¬ TheoremOCS`. -/
 theorem not_theorem3_printed :
