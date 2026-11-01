@@ -321,6 +321,125 @@ theorem exists_strip_cuts {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = 
     fun k ↦ ⟨(hblock k).1, (hblock k).2.1⟩, rect_exists_Ico_of_gap hh (fun k ↦ (hblock k).1),
     fun k ↦ (hblock k).2.2⟩
 
+theorem rect_mem_ball_of_abs {z : ℂ} {a b s : ℝ} (hs : 0 < s) (h1 : |z.re - a| ≤ s / 2)
+    (h2 : |z.im - b| ≤ s / 2) : z ∈ ball (⟨a, b⟩ : ℂ) s := by
+  rw [mem_ball, Complex.dist_eq]
+  have hsq : ‖z - ⟨a, b⟩‖ ^ 2 < s ^ 2 := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp only [Complex.sub_re, Complex.sub_im]
+    have e1 : (z.re - a) * (z.re - a) ≤ (s / 2) ^ 2 := by
+      rw [← sq]; apply sq_le_sq' <;> linarith [abs_le.1 h1]
+    have e2 : (z.im - b) * (z.im - b) ≤ (s / 2) ^ 2 := by
+      rw [← sq]; apply sq_le_sq' <;> linarith [abs_le.1 h2]
+    nlinarith
+  exact lt_of_pow_lt_pow_left₀ 2 hs.le hsq
+
+theorem rect_abs_lt_of_mem_ball {z c : ℂ} {r : ℝ} (h : z ∈ ball c r) :
+    |z.re - c.re| < r ∧ |z.im - c.im| < r := by
+  rw [mem_ball, Complex.dist_eq] at h
+  exact ⟨by have := (Complex.abs_re_le_norm (z - c)).trans_lt h; simpa using this,
+    by have := (Complex.abs_im_le_norm (z - c)).trans_lt h; simpa using this⟩
+
+/-- Core of the slab reverse doubling: the slab is covered by balls of radius `s` centred on its
+mid-line; each is compared, by one doubling step, with a ball of radius `s/2` centred on the
+vertical line `re = v` (at distance `2s`); those smaller balls lie in `T` and overlap at most
+twice. -/
+theorem rect_slab_core {ν : Measure ℂ} {C_E u s y₁ y₂ v : ℝ} {T : Set ℂ} (hs : 0 < s)
+    (hsl : s ≤ y₂ - y₁) (hv : |u + s / 2 - v| = 2 * s)
+    (hT : ∀ η : ℝ, y₁ + s / 2 ≤ η → η ≤ y₂ - s / 2 → ball (⟨v, η⟩ : ℂ) (s / 2) ⊆ T ∧
+      ν (ball (⟨v, η⟩ : ℂ) (4 * s)) ≤ ENNReal.ofReal C_E * ν (ball (⟨v, η⟩ : ℂ) (s / 2))) :
+    ν (rect u (u + s) y₁ y₂) ≤ ENNReal.ofReal (2 * C_E) * ν T := by
+  classical
+  set hgt : ℕ → ℝ := fun j ↦ y₁ + (j + 1 / 2) * s with hhgt
+  set good : ℕ → Prop := fun j ↦ ((j : ℝ) + 1) * s ≤ y₂ - y₁ with hgood
+  set E : ℕ → Set ℂ := fun j ↦ if good j then ball (⟨u + s / 2, hgt j⟩ : ℂ) s else ∅ with hE
+  set D : ℕ → Set ℂ := fun j ↦ if good j then ball (⟨v, hgt j⟩ : ℂ) (s / 2) else ∅ with hD
+  have hgt_lo : ∀ j : ℕ, y₁ + s / 2 ≤ hgt j := fun j ↦ by
+    simp only [hhgt]; have : (0 : ℝ) ≤ j := j.cast_nonneg; nlinarith
+  have hgt_hi : ∀ j : ℕ, good j → hgt j ≤ y₂ - s / 2 := fun j hj ↦ by
+    simp only [hhgt]; simp only [hgood] at hj; nlinarith
+  -- shifting each ball of the cover
+  have hshift : ∀ η : ℝ, ball (⟨u + s / 2, η⟩ : ℂ) s ⊆ ball (⟨v, η⟩ : ℂ) (4 * s) := by
+    intro η z hz
+    rw [mem_ball] at hz ⊢
+    have hd : dist (⟨u + s / 2, η⟩ : ℂ) ⟨v, η⟩ = 2 * s := by
+      rw [Complex.dist_eq, ← hv]
+      have : (⟨u + s / 2, η⟩ : ℂ) - ⟨v, η⟩ = ((u + s / 2 - v : ℝ) : ℂ) := by
+        apply Complex.ext <;> simp
+      rw [this, Complex.norm_real, Real.norm_eq_abs]
+    linarith [dist_triangle z ⟨u + s / 2, η⟩ ⟨v, η⟩]
+  have hEj : ∀ j, ν (E j) ≤ ENNReal.ofReal C_E * ν (D j) := by
+    intro j
+    by_cases hj : good j
+    · simp only [hE, hD, if_pos hj]
+      exact (measure_mono (hshift _)).trans (hT _ (hgt_lo j) (hgt_hi j hj)).2
+    · simp only [hE, hD, if_neg hj, measure_empty, mul_zero, le_refl]
+  have htop : ν (ball (⟨u + s / 2, y₂ - s / 2⟩ : ℂ) s) ≤
+      ENNReal.ofReal C_E * ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2)) :=
+    (measure_mono (hshift _)).trans (hT _ (by linarith) le_rfl).2
+  -- the cover
+  have hcover : rect u (u + s) y₁ y₂ ⊆ (⋃ j, E j) ∪ ball (⟨u + s / 2, y₂ - s / 2⟩ : ℂ) s := by
+    rintro z ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
+    have hre : |z.re - (u + s / 2)| ≤ s / 2 := by rw [abs_le]; constructor <;> linarith
+    by_cases htop' : y₂ - s ≤ z.im
+    · exact Or.inr (rect_mem_ball_of_abs hs hre (by rw [abs_le]; constructor <;> linarith))
+    · push_neg at htop'
+      left
+      set j := ⌊(z.im - y₁) / s⌋₊
+      have hj1 : (j : ℝ) ≤ (z.im - y₁) / s := Nat.floor_le (div_nonneg (by linarith) hs.le)
+      have hj2 : (z.im - y₁) / s < j + 1 := Nat.lt_floor_add_one _
+      rw [le_div_iff₀ hs] at hj1
+      rw [div_lt_iff₀ hs] at hj2
+      have hgj : good j := by simp only [hgood]; nlinarith
+      refine mem_iUnion.2 ⟨j, ?_⟩
+      simp only [hE, if_pos hgj]
+      refine rect_mem_ball_of_abs hs hre ?_
+      simp only [hhgt]
+      rw [abs_le]; constructor <;> nlinarith
+  -- the comparison balls are disjoint and lie in `T`
+  have hDdisj : Pairwise (Function.onFun Disjoint D) := by
+    intro i j hij
+    simp only [Function.onFun, hD]
+    split_ifs with hi hj
+    · rw [Set.disjoint_left]
+      intro z hzi hzj
+      have a1 := (rect_abs_lt_of_mem_ball hzi).2
+      have a2 := (rect_abs_lt_of_mem_ball hzj).2
+      simp only [hhgt] at a1 a2
+      rw [abs_lt] at a1 a2
+      rcases lt_or_gt_of_ne hij with h | h
+      · have : (i : ℝ) + 1 ≤ j := by exact_mod_cast h
+        nlinarith
+      · have : (j : ℝ) + 1 ≤ i := by exact_mod_cast h
+        nlinarith
+    all_goals simp
+  have hDmeas : ∀ j, MeasurableSet (D j) := fun j ↦ by
+    simp only [hD]; split_ifs
+    · exact measurableSet_ball
+    · exact MeasurableSet.empty
+  have hDT : (⋃ j, D j) ⊆ T := by
+    refine iUnion_subset fun j ↦ ?_
+    simp only [hD]; split_ifs with hj
+    · exact (hT _ (hgt_lo j) (hgt_hi j hj)).1
+    · exact empty_subset _
+  have hsum : ∑' j, ν (D j) ≤ ν T := by
+    rw [← measure_iUnion hDdisj hDmeas]; exact measure_mono hDT
+  have htopT : ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2)) ≤ ν T :=
+    measure_mono (hT _ (by linarith) le_rfl).1
+  calc ν (rect u (u + s) y₁ y₂)
+      ≤ ν ((⋃ j, E j) ∪ ball (⟨u + s / 2, y₂ - s / 2⟩ : ℂ) s) := measure_mono hcover
+    _ ≤ ∑' j, ν (E j) + ν (ball (⟨u + s / 2, y₂ - s / 2⟩ : ℂ) s) :=
+        (measure_union_le _ _).trans (add_le_add (measure_iUnion_le _) le_rfl)
+    _ ≤ ∑' j, ENNReal.ofReal C_E * ν (D j) +
+          ENNReal.ofReal C_E * ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2)) :=
+        add_le_add (ENNReal.tsum_le_tsum hEj) htop
+    _ = ENNReal.ofReal C_E * (∑' j, ν (D j) + ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2))) := by
+        rw [ENNReal.tsum_mul_left, mul_add]
+    _ ≤ ENNReal.ofReal C_E * (ν T + ν T) := by gcongr
+    _ = ENNReal.ofReal (2 * C_E) * ν T := by
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat, ← two_mul,
+          ← mul_assoc, mul_comm (ENNReal.ofReal C_E) 2]
+
 /-- Slab reverse doubling (the missing argument behind "we use Lemma 1", p. 365): a vertical slab
 of width `s` in a rectangle has a neighbouring slab of comparable mass, provided `s` is at most
 the height and the scale `σ` at which `ν` is Euclidean doubling. -/
@@ -328,14 +447,29 @@ theorem slab_reverse_doubling_right {ν : Measure ℂ} {C_E u s y₁ y₂ : ℝ}
     (hsl : s ≤ y₂ - y₁)
     (hED : ∀ w ∈ rect (u + s) (u + 3 * s) y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ s →
       ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2))) :
-    ν (rect u (u + s) y₁ y₂) ≤ ENNReal.ofReal (2 * C_E) * ν (rect (u + s) (u + 3 * s) y₁ y₂) :=
-  sorry
+    ν (rect u (u + s) y₁ y₂) ≤ ENNReal.ofReal (2 * C_E) * ν (rect (u + s) (u + 3 * s) y₁ y₂) := by
+  refine rect_slab_core (v := u + 5 * s / 2) hs hsl ?_ fun η h1 h2 ↦ ⟨?_, ?_⟩
+  · rw [show u + s / 2 - (u + 5 * s / 2) = -(2 * s) by ring, abs_neg, abs_of_pos (by linarith)]
+  · intro z hz
+    obtain ⟨a1, a2⟩ := rect_abs_lt_of_mem_ball hz
+    rw [abs_lt] at a1 a2
+    exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+  · exact hED _ ⟨⟨by simp; linarith, by simp; linarith⟩, ⟨by simp; linarith, by simp; linarith⟩⟩
+      s hs le_rfl
 
 theorem slab_reverse_doubling_left {ν : Measure ℂ} {C_E u s y₁ y₂ : ℝ} (hs : 0 < s)
     (hsl : s ≤ y₂ - y₁)
     (hED : ∀ w ∈ rect (u - 2 * s) u y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ s →
       ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2))) :
-    ν (rect u (u + s) y₁ y₂) ≤ ENNReal.ofReal (2 * C_E) * ν (rect (u - 2 * s) u y₁ y₂) := sorry
+    ν (rect u (u + s) y₁ y₂) ≤ ENNReal.ofReal (2 * C_E) * ν (rect (u - 2 * s) u y₁ y₂) := by
+  refine rect_slab_core (v := u - 3 * s / 2) hs hsl ?_ fun η h1 h2 ↦ ⟨?_, ?_⟩
+  · rw [show u + s / 2 - (u - 3 * s / 2) = 2 * s by ring, abs_of_pos (by linarith)]
+  · intro z hz
+    obtain ⟨a1, a2⟩ := rect_abs_lt_of_mem_ball hz
+    rw [abs_lt] at a1 a2
+    exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+  · exact hED _ ⟨⟨by simp; linarith, by simp; linarith⟩, ⟨by simp; linarith, by simp; linarith⟩⟩
+      s hs le_rfl
 
 /-- The coordinate swap `x + iy ↦ y + ix`, used to reduce vertical cuts to horizontal ones. -/
 def swapReIm (z : ℂ) : ℂ := I * conj z
