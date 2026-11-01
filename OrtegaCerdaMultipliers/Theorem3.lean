@@ -881,6 +881,72 @@ theorem lintegral_cexNu_le_one (N : ℕ) (x : ℝ) :
           ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
         rw [mul_one_div_cancel (by exact_mod_cast hN.ne'), ENNReal.ofReal_one]
 
+/-- The Cauchy transform `𝒞₀ = Σ_k s_k e^{s_k} / (π(z - w_k))` of `e^{-H} σ ν`. -/
+def cexP (N : ℕ) (z : ℂ) : ℂ :=
+  ∑ k : Fin N, ((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * cexPole (cexW N k) z
+
+theorem im_cexPole_sub (x₀ s τ : ℝ) (hs : 0 < s) (hτ : 0 < τ) :
+    (cexPole ((x₀ : ℂ) - (s : ℂ) * I) x₀ - cexPole ((x₀ : ℂ) - (s : ℂ) * I) ((x₀ + τ : ℝ) : ℂ)).im =
+      -(Real.pi⁻¹ * (1 / s - s / (τ ^ 2 + s ^ 2))) := by
+  have e1 : (x₀ : ℂ) - ((x₀ : ℂ) - (s : ℂ) * I) = (s : ℂ) * I := by ring
+  have e2 : ((x₀ + τ : ℝ) : ℂ) - ((x₀ : ℂ) - (s : ℂ) * I) = (τ : ℂ) + (s : ℂ) * I := by
+    push_cast; ring
+  rw [cexPole, cexPole, e1, e2, ← mul_sub, ← Complex.ofReal_inv, Complex.im_ofReal_mul,
+    sub_im, Complex.inv_im, Complex.inv_im]
+  simp only [mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero, add_zero, add_im,
+    Complex.normSq_apply, mul_re, sub_zero, zero_add, add_re]
+  have hs' : s ≠ 0 := hs.ne'
+  have h2 : τ ^ 2 + s ^ 2 ≠ 0 := by positivity
+  field_simp
+  ring
+
+/-- **Oscillation of `𝒞₀`**: `|𝒞₀(x₀) - 𝒞₀(x₀ + 1/64)| ≥ N/(2π)`, because each pole
+contributes `≥ 1/(2π)` to the imaginary part, all with the same sign. -/
+theorem cexP_oscillation (N : ℕ) :
+    (N : ℝ) / (2 * Real.pi) ≤ ‖cexP N (cexX0 N) - cexP N ((cexX0 N + 1 / 64 : ℝ) : ℂ)‖ := by
+  set τ : ℝ := 1 / 64
+  have hτ : (0 : ℝ) < τ := by norm_num
+  have hπ := Real.pi_pos
+  have hterm : ∀ k : Fin N, 1 / (2 * Real.pi) ≤
+      -(((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * (cexPole (cexW N k) (cexX0 N) -
+        cexPole (cexW N k) ((cexX0 N + τ : ℝ) : ℂ))).im := by
+    intro k
+    have hs := cexS_pos k
+    have hsτ : cexS k ≤ τ := cexS_le k
+    rw [Complex.im_ofReal_mul, cexW, im_cexPole_sub _ _ _ hs hτ]
+    -- `s e^s π⁻¹ (1/s - s/(τ²+s²)) ≥ π⁻¹ τ²/(τ²+s²) ≥ 1/(2π)`
+    set s := cexS k
+    have hX : 0 ≤ 1 / s - s / (τ ^ 2 + s ^ 2) := by
+      rw [sub_nonneg]
+      rw [div_le_div_iff₀ (by positivity) hs]
+      nlinarith [sq_nonneg τ]
+    have hes : s ≤ s * Real.exp s := le_mul_of_one_le_right hs.le (Real.one_le_exp hs.le)
+    have h1 : s * (1 / s - s / (τ ^ 2 + s ^ 2)) = τ ^ 2 / (τ ^ 2 + s ^ 2) := by
+      field_simp; ring
+    have h2 : 1 / 2 ≤ τ ^ 2 / (τ ^ 2 + s ^ 2) := by
+      rw [div_le_div_iff₀ (by norm_num) (by positivity)]
+      nlinarith
+    calc 1 / (2 * Real.pi) = Real.pi⁻¹ * (1 / 2) := by field_simp
+      _ ≤ Real.pi⁻¹ * (s * (1 / s - s / (τ ^ 2 + s ^ 2))) := by
+          rw [h1]; exact mul_le_mul_of_nonneg_left h2 (by positivity)
+      _ ≤ Real.pi⁻¹ * (s * Real.exp s * (1 / s - s / (τ ^ 2 + s ^ 2))) := by
+          gcongr
+      _ = -(s * Real.exp s * -(Real.pi⁻¹ * (1 / s - s / (τ ^ 2 + s ^ 2)))) := by ring
+  have hdiff : cexP N (cexX0 N) - cexP N ((cexX0 N + τ : ℝ) : ℂ) =
+      ∑ k : Fin N, ((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * (cexPole (cexW N k) (cexX0 N) -
+        cexPole (cexW N k) ((cexX0 N + τ : ℝ) : ℂ)) := by
+    rw [cexP, cexP, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun k _ ↦ by ring
+  calc (N : ℝ) / (2 * Real.pi) = ∑ _k : Fin N, 1 / (2 * Real.pi) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; ring
+    _ ≤ ∑ k : Fin N, -(((cexS k * Real.exp (cexS k) : ℝ) : ℂ) *
+          (cexPole (cexW N k) (cexX0 N) - cexPole (cexW N k) ((cexX0 N + τ : ℝ) : ℂ))).im :=
+        Finset.sum_le_sum fun k _ ↦ hterm k
+    _ = -(cexP N (cexX0 N) - cexP N ((cexX0 N + τ : ℝ) : ℂ)).im := by
+        rw [hdiff, Complex.im_sum, Finset.sum_neg_distrib]
+    _ ≤ |(cexP N (cexX0 N) - cexP N ((cexX0 N + τ : ℝ) : ℂ)).im| := neg_le_abs _
+    _ ≤ ‖cexP N (cexX0 N) - cexP N ((cexX0 N + τ : ℝ) : ℂ)‖ := abs_im_le_norm _
+
 /-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`; hence `theorem3` in
 `comparator/statements.lean` is equivalent to `¬ TheoremOCS`. -/
 theorem not_theorem3_printed :
