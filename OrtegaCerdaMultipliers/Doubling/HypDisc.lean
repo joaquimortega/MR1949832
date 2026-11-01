@@ -242,6 +242,59 @@ theorem massRadiusDisc_eq (μ : Measure ℂ) (a : HDisc) :
 
 /-- Euclidean porosity implies hyperbolic porosity. -/
 theorem IsPorous.preimage_hDisc {E : Set ℂ} (hE : IsPorous E) :
-    IsPorous (HDisc.val ⁻¹' E) := sorry
+    IsPorous (HDisc.val ⁻¹' E) := by
+  obtain ⟨κ, s₀, hκ, hs₀, hpor⟩ := hE
+  refine ⟨min κ 1 / 400, min 1 s₀, by positivity, lt_min one_pos hs₀, fun y hy s hs hss ↦ ?_⟩
+  have hyD : y.1 ∈ 𝔻 := y.2
+  have hyE : y.1 ∈ E := hy
+  have hy1 : ‖y.1‖ < 1 := mem_ball_zero_iff.1 hyD
+  have hδ0 : 0 < 1 - ‖y.1‖ := by linarith
+  have hs1 : s ≤ 1 := hss.trans (min_le_left _ _)
+  have hss₀ : s ≤ s₀ := hss.trans (min_le_right _ _)
+  set e := s * (1 - ‖y.1‖) / 20 with hedef
+  have hsδ : 0 < s * (1 - ‖y.1‖) := mul_pos hs hδ0
+  have he : 0 < e := by positivity
+  have hsδ' : s * (1 - ‖y.1‖) ≤ 1 - ‖y.1‖ := by nlinarith
+  have hes : e ≤ s := by
+    rw [hedef, div_le_iff₀ (by norm_num)]
+    nlinarith [norm_nonneg y.1]
+  obtain ⟨y', hyy', hy'E⟩ := hpor y.1 hyE e he (hes.trans hss₀)
+  have hy'ball : y' ∈ ball y.1 (s * (1 - ‖y.1‖) / 10) := by
+    rw [mem_ball, dist_comm]
+    have : e < s * (1 - ‖y.1‖) / 10 := by rw [hedef]; linarith
+    linarith
+  have hy'hyp : y' ∈ hypBall y.1 s := ball_subset_hypBall hyD hs hs1 hy'ball
+  refine ⟨HDisc.mk y' hy'hyp.1, hy'hyp.2.le, fun e' he' ↦ ?_⟩
+  have he'E : e'.1 ∈ E := he'
+  show min κ 1 / 400 * s ≤ hypDist y' e'.1
+  by_contra hcon
+  rw [not_le] at hcon
+  have hmin1 : min κ 1 ≤ 1 := min_le_right _ _
+  have hmin : min κ 1 ≤ κ := min_le_left _ _
+  have hminpos : 0 < min κ 1 := lt_min hκ one_pos
+  have hκs : 0 < min κ 1 / 400 * s := by positivity
+  have hκs1 : min κ 1 / 400 * s ≤ 1 := by
+    have h := mul_le_mul hmin1 hs1 hs.le zero_le_one
+    nlinarith
+  have hmem : e'.1 ∈ hypBall y' (min κ 1 / 400 * s) := ⟨e'.2, hcon⟩
+  have hball := hypBall_subset_ball hy'hyp.1 hκs hκs1 hmem
+  rw [mem_ball, dist_comm] at hball
+  have hy'1 : 0 ≤ 1 - ‖y'‖ := by linarith [mem_ball_zero_iff.1 hy'hyp.1]
+  have hnorm : 1 - ‖y'‖ ≤ 21 / 20 * (1 - ‖y.1‖) := by
+    have h1 := norm_sub_norm_le y.1 y'
+    have h2 : ‖y.1 - y'‖ ≤ e := by rw [← dist_eq_norm]; exact hyy'
+    have h3 : e ≤ (1 - ‖y.1‖) / 20 := by rw [hedef]; linarith
+    linarith
+  have h1 := hy'E e'.1 he'E
+  have h2 : 18 * (min κ 1 / 400 * s) * (1 - ‖y'‖) ≤
+      18 * (κ / 400 * s) * (21 / 20 * (1 - ‖y.1‖)) := by
+    apply mul_le_mul _ hnorm hy'1 (by positivity)
+    have : min κ 1 / 400 * s ≤ κ / 400 * s := by gcongr
+    linarith
+  have h3 : 18 * (κ / 400 * s) * (21 / 20 * (1 - ‖y.1‖)) < κ * e := by
+    rw [hedef]
+    have := mul_pos hκ hsδ
+    nlinarith
+  linarith
 
 end OC
