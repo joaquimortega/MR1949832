@@ -385,14 +385,51 @@ theorem abs_cellPot_le_disc_far (A B R₀ M₀ : ℝ) (N : ℕ) (hA : 0 < A) (hB
 
 /-! ### The non-near part is uniformly bounded (§3.7) -/
 
-theorem nonNear_sum_le_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
-    (hB : 0 ≤ B) :
-    ∃ K₀ C : ℝ, 2 * (A + B) ≤ K₀ ∧ 0 ≤ C ∧ ∀ (ν : Measure ℂ) (R : ℕ → Set ℂ) (c : ℕ → ℂ)
-      (m : ℕ → ℕ) (Λ : ℕ → Multiset ℂ), MeasClassPlane ν Cd R₀ →
-      IsCells univ dist (massRadius ν) ν N η A R c →
-      IsNodes univ dist (massRadius ν) ν N B R c m Λ → (∀ i, 3 ≤ m i) →
-      ∀ z : ℂ, ∀ F : Finset ℕ, (∀ i ∈ F, K₀ * massRadius ν (c i) ≤ dist z (c i)) →
-        ∑ i ∈ F, |cellPot kerPlane ν R Λ i z| ≤ C := sorry
+/-- (C4) for the disc: a non-near cell is at distance `≥ δ ρ(z)` from `z`. -/
+theorem claim1_nonNear_disc (Cd : ℝ≥0) (R₀ K₀ : ℝ) (hK₀ : 1 ≤ K₀) :
+    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ → ∀ z ∈ 𝔻, ∀ w ∈ 𝔻,
+      K₀ * massRadiusDisc ν w ≤ hypDist z w → δ * massRadiusDisc ν z ≤ hypDist z w := by
+  obtain ⟨C₁, hC₁, hcl⟩ := claim1_disc_quant Cd R₀ K₀
+  refine ⟨min 1 (K₀ / C₁), lt_min one_pos (by positivity), min_le_left _ _, ?_⟩
+  intro ν hν z hz w hw hK
+  by_contra hlt
+  push Not at hlt
+  obtain ⟨hρz, -, h1⟩ := hcl ν hν z hz w hw
+  have hlt1 : hypDist z w < massRadiusDisc ν z :=
+    hlt.trans_le (by nlinarith [min_le_left 1 (K₀ / C₁)])
+  have hle : hypDist z w ≤ K₀ * max (massRadiusDisc ν z) (massRadiusDisc ν w) :=
+    hlt1.le.trans (by nlinarith [le_max_left (massRadiusDisc ν z) (massRadiusDisc ν w)])
+  have h2 := h1 hle
+  have h3 : K₀ / C₁ * massRadiusDisc ν z ≤ hypDist z w := by
+    calc K₀ / C₁ * massRadiusDisc ν z ≤ K₀ / C₁ * (C₁ * massRadiusDisc ν w) := by gcongr
+      _ = K₀ * massRadiusDisc ν w := by field_simp
+      _ ≤ hypDist z w := hK
+  have h4 : min 1 (K₀ / C₁) * massRadiusDisc ν z ≤ K₀ / C₁ * massRadiusDisc ν z :=
+    mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
+  linarith
+
+/-- (C4) for the plane. -/
+theorem claim1_nonNear_plane (Cd : ℝ≥0) (R₀ K₀ : ℝ) (hK₀ : 1 ≤ K₀) :
+    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ → ∀ z w : ℂ,
+      K₀ * massRadius ν w ≤ dist z w → δ * massRadius ν z ≤ dist z w := by
+  obtain ⟨C₁, hC₁, hcl⟩ := claim1_plane_quant Cd R₀ K₀
+  refine ⟨min 1 (K₀ / C₁), lt_min one_pos (by positivity), min_le_left _ _, ?_⟩
+  intro ν hν z w hK
+  by_contra hlt
+  push Not at hlt
+  obtain ⟨hρz, -, h1⟩ := hcl ν hν z w
+  have hlt1 : dist z w < massRadius ν z :=
+    hlt.trans_le (by nlinarith [min_le_left 1 (K₀ / C₁)])
+  have hle : dist z w ≤ K₀ * max (massRadius ν z) (massRadius ν w) :=
+    hlt1.le.trans (by nlinarith [le_max_left (massRadius ν z) (massRadius ν w)])
+  have h2 := h1 hle
+  have h3 : K₀ / C₁ * massRadius ν z ≤ dist z w := by
+    calc K₀ / C₁ * massRadius ν z ≤ K₀ / C₁ * (C₁ * massRadius ν w) := by gcongr
+      _ = K₀ * massRadius ν w := by field_simp
+      _ ≤ dist z w := hK
+  have h4 : min 1 (K₀ / C₁) * massRadius ν z ≤ K₀ / C₁ * massRadius ν z :=
+    mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
+  linarith
 
 theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
     (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) :
@@ -402,7 +439,118 @@ theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
       IsNodes 𝔻 hypDist (massRadiusDisc ν) ν N B R c m Λ → (∀ i, 2 ≤ m i) →
       (∀ i, massRadiusDisc ν (c i) ≤ ρ₀ → 3 ≤ m i) →
       ∀ z ∈ 𝔻, ∀ F : Finset ℕ, (∀ i ∈ F, K₀ * massRadiusDisc ν (c i) ≤ hypDist z (c i)) →
-        ∑ i ∈ F, |cellPot kerDisc ν R Λ i z| ≤ C := sorry
+        ∑ i ∈ F, |cellPot kerDisc ν R Λ i z| ≤ C := by
+  set K₀ := 64 * (A + B + 1) with hK₀
+  have hK₀1 : 1 ≤ K₀ := by rw [hK₀]; nlinarith
+  set ρ₀' := min ρ₀ (1 / (8 * (A + B + 1))) with hρ₀'
+  have hρ₀'pos : 0 < ρ₀' := lt_min hρ₀ (by positivity)
+  set M₀ := min (1 / 4) (K₀ * ρ₀') with hM₀def
+  have hM₀ : 0 < M₀ := lt_min (by norm_num) (by positivity)
+  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_disc Cd R₀ K₀ hK₀1
+  obtain ⟨C₁, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
+  obtain ⟨Cn, hCn⟩ := nearField_sum_le_disc Cd R₀ η A δ hη hδ
+  obtain ⟨CD, hCD0, hCD⟩ := abs_cellPot_le_disc_far A B R₀ M₀ N hA hB hM₀
+  obtain ⟨Cf, hCf⟩ := farField_sum_le_disc Cd R₀ η A M₀ hη hM₀
+  set Cnear : ℝ := 8 * N * (14 * (A + B)) ^ 3
+  refine ⟨K₀, Cnear * max Cn 0 + CD * max Cf 0, by rw [hK₀]; nlinarith, by positivity, ?_⟩
+  intro ν R c m Λ hν hC hN hm2 hm3 z hz F hF
+  rw [← Finset.sum_filter_add_sum_filter_not F (fun i ↦ hypDist z (c i) < M₀)]
+  have hci := hC.center_mem'
+  have hρ : ∀ i, 0 < massRadiusDisc ν (c i) ∧ massRadiusDisc ν (c i) ≤ R₀ := fun i ↦
+    ⟨(hcl ν hν (c i) (hci i) (c i) (hci i)).1, (hcl ν hν (c i) (hci i) (c i) (hci i)).2.1⟩
+  have h1 : ∑ i ∈ F.filter (fun i ↦ hypDist z (c i) < M₀), |cellPot kerDisc ν R Λ i z| ≤
+      Cnear * max Cn 0 := by
+    have hcond : ∀ i ∈ F.filter (fun i ↦ hypDist z (c i) < M₀),
+        massRadiusDisc ν (c i) < ρ₀' ∧ hypDist z (c i) ≤ 1 / 4 := by
+      intro i hi
+      rw [Finset.mem_filter] at hi
+      have hK := hF i hi.1
+      refine ⟨?_, (hi.2.trans_le (min_le_left _ _)).le⟩
+      have : K₀ * massRadiusDisc ν (c i) < K₀ * ρ₀' :=
+        hK.trans_lt (hi.2.trans_le (min_le_right _ _))
+      exact lt_of_mul_lt_mul_left this (by linarith)
+    calc _ ≤ ∑ i ∈ F.filter (fun i ↦ hypDist z (c i) < M₀),
+          Cnear * (massRadiusDisc ν (c i) / hypDist z (c i)) ^ 3 := by
+          refine Finset.sum_le_sum fun i hi ↦ ?_
+          obtain ⟨hρi, hβi⟩ := hcond i hi
+          have hK := hF i (Finset.mem_filter.1 hi).1
+          have hρ₀le : massRadiusDisc ν (c i) ≤ ρ₀ := hρi.le.trans (min_le_left _ _)
+          have hs : (A + B) * massRadiusDisc ν (c i) ≤ 1 / 8 := by
+            have h8 : massRadiusDisc ν (c i) ≤ 1 / (8 * (A + B + 1)) :=
+              hρi.le.trans (min_le_right _ _)
+            rw [le_div_iff₀ (by positivity)] at h8
+            nlinarith [(hρ i).1]
+          exact abs_cellPot_le_disc_near hC hN hA hB (hm3 i hρ₀le) hz
+            (integrableOn_kerDisc_cell hν hC i hz) (hρ i).1 hs hβi
+            (le_trans (by rw [hK₀]; nlinarith [(hρ i).1]) hK)
+      _ = Cnear * ∑ i ∈ F.filter (fun i ↦ hypDist z (c i) < M₀),
+          (massRadiusDisc ν (c i) / hypDist z (c i)) ^ 3 := by rw [Finset.mul_sum]
+      _ ≤ Cnear * max Cn 0 := by
+          gcongr
+          refine (hCn ν N R c hν hC z hz _ fun i hi ↦ ?_).trans (le_max_left _ _)
+          have hK := hF i (Finset.mem_filter.1 hi).1
+          refine ⟨hδK ν hν z hz (c i) (hci i) hK, (hcond i hi).2, ?_⟩
+          exact le_trans (by rw [hK₀]; nlinarith [(hρ i).1]) hK
+  have h2 : ∑ i ∈ F.filter (fun i ↦ ¬ hypDist z (c i) < M₀), |cellPot kerDisc ν R Λ i z| ≤
+      CD * max Cf 0 := by
+    calc _ ≤ ∑ i ∈ F.filter (fun i ↦ ¬ hypDist z (c i) < M₀),
+          CD * ((1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+            ‖1 - conj z * c i‖ ^ 3) := by
+          refine Finset.sum_le_sum fun i hi ↦ ?_
+          rw [Finset.mem_filter, not_lt] at hi
+          have hK := hF i hi.1
+          exact hCD ν η R c m Λ hC hN i (hm2 i) z hz (integrableOn_kerDisc_cell hν hC i hz)
+            (hρ i).1.le (hρ i).2 hi.2 (le_trans (by rw [hK₀]; nlinarith [(hρ i).1]) hK)
+      _ = CD * ∑ i ∈ F.filter (fun i ↦ ¬ hypDist z (c i) < M₀),
+          ((1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+            ‖1 - conj z * c i‖ ^ 3) := by rw [Finset.mul_sum]
+      _ ≤ CD * max Cf 0 := by
+          gcongr
+          refine (hCf ν N R c hν hC z hz _ fun i hi ↦ ?_).trans (le_max_left _ _)
+          rw [Finset.mem_filter, not_lt] at hi
+          exact hi.2
+  linarith
+
+theorem nonNear_sum_le_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
+    (hB : 0 ≤ B) :
+    ∃ K₀ C : ℝ, 2 * (A + B) ≤ K₀ ∧ 0 ≤ C ∧ ∀ (ν : Measure ℂ) (R : ℕ → Set ℂ) (c : ℕ → ℂ)
+      (m : ℕ → ℕ) (Λ : ℕ → Multiset ℂ), MeasClassPlane ν Cd R₀ →
+      IsCells univ dist (massRadius ν) ν N η A R c →
+      IsNodes univ dist (massRadius ν) ν N B R c m Λ → (∀ i, 3 ≤ m i) →
+      ∀ z : ℂ, ∀ F : Finset ℕ, (∀ i ∈ F, K₀ * massRadius ν (c i) ≤ dist z (c i)) →
+        ∑ i ∈ F, |cellPot kerPlane ν R Λ i z| ≤ C := by
+  set K₀ := 2 * (A + B) + 1 with hK₀
+  have hK₀1 : 1 ≤ K₀ := by rw [hK₀]; linarith
+  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_plane Cd R₀ K₀ hK₀1
+  obtain ⟨C₁, -, hcl⟩ := claim1_plane_quant Cd R₀ 0
+  obtain ⟨Cn, hCn⟩ := nearField_sum_le_plane Cd R₀ η A δ hη hδ
+  obtain ⟨Cf, hCf⟩ := farField_sum_le_plane Cd R₀ η A (1 / 4) hη (by norm_num)
+  set Cc : ℝ := 4 * N * (A + B) ^ 3
+  refine ⟨K₀, Cc * (max Cn 0 + max Cf 0), by rw [hK₀]; linarith, by positivity, ?_⟩
+  intro ν R c m Λ hν hC hN hm z F hF
+  have hρ : ∀ i, 0 < massRadius ν (c i) := fun i ↦ (hcl ν hν (c i) (c i)).1
+  have hfar : ∀ i ∈ F, 2 * (A + B) * massRadius ν (c i) ≤ dist z (c i) := fun i hi ↦
+    le_trans (by rw [hK₀]; nlinarith [hρ i]) (hF i hi)
+  have hA' : ∀ i ∈ F, 2 * A * massRadius ν (c i) ≤ dist z (c i) := fun i hi ↦
+    le_trans (by nlinarith [hρ i]) (hfar i hi)
+  calc ∑ i ∈ F, |cellPot kerPlane ν R Λ i z|
+      ≤ ∑ i ∈ F, Cc * (massRadius ν (c i) / dist z (c i)) ^ 3 :=
+        Finset.sum_le_sum fun i hi ↦ abs_cellPot_le_plane hC hN hA hB (hm i)
+          (integrableOn_kerPlane_cell hν hC i z) (hρ i) (hfar i hi)
+    _ = Cc * (∑ i ∈ F.filter (fun i ↦ dist z (c i) ≤ 1 / 4),
+          (massRadius ν (c i) / dist z (c i)) ^ 3 +
+        ∑ i ∈ F.filter (fun i ↦ ¬ dist z (c i) ≤ 1 / 4),
+          (massRadius ν (c i) / dist z (c i)) ^ 3) := by
+        rw [Finset.sum_filter_add_sum_filter_not, Finset.mul_sum]
+    _ ≤ Cc * (max Cn 0 + max Cf 0) := by
+        gcongr
+        · refine (hCn ν N R c hν hC z _ fun i hi ↦ ?_).trans (le_max_left _ _)
+          rw [Finset.mem_filter] at hi
+          exact ⟨hδK ν hν z (c i) (hF i hi.1), hi.2,
+            le_trans (by nlinarith [hρ i]) (hfar i hi.1)⟩
+        · refine (hCf ν N R c hν hC z _ fun i hi ↦ ?_).trans (le_max_left _ _)
+          rw [Finset.mem_filter, not_le] at hi
+          exact ⟨hi.2.le, hA' i hi.1⟩
 
 /-! ### Summability of `cellPot` -/
 
@@ -411,7 +559,25 @@ theorem summable_cellPot_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N
     (hν : MeasClassPlane ν Cd R₀) (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B)
     (hC : IsCells univ dist (massRadius ν) ν N η A R c)
     (hN : IsNodes univ dist (massRadius ν) ν N B R c m Λ) (hm : ∀ i, 3 ≤ m i) (z : ℂ) :
-    Summable fun i ↦ |cellPot kerPlane ν R Λ i z| := sorry
+    Summable fun i ↦ |cellPot kerPlane ν R Λ i z| := by
+  obtain ⟨K₀, C, -, -, hK⟩ := nonNear_sum_le_plane Cd R₀ η A B N hη hA hB
+  obtain ⟨C₁, -, hcl⟩ := claim1_plane_quant Cd R₀ 0
+  have hfin : {i | dist z (c i) < K₀ * massRadius ν (c i)}.Finite := by
+    refine (finite_cells_plane hν hη hC {z} Bornology.isBounded_singleton
+      (|K₀| * R₀ + 1)).subset fun i hi ↦ ⟨z, rfl, ?_⟩
+    obtain ⟨hp, hle, -⟩ := hcl ν hν (c i) (c i)
+    calc dist z (c i) < K₀ * massRadius ν (c i) := hi
+      _ ≤ |K₀| * massRadius ν (c i) := mul_le_mul_of_nonneg_right (le_abs_self _) hp.le
+      _ ≤ |K₀| * R₀ := mul_le_mul_of_nonneg_left hle (abs_nonneg _)
+      _ < |K₀| * R₀ + 1 := lt_add_one _
+  refine summable_of_sum_le (fun i ↦ abs_nonneg _)
+    (c := ∑ i ∈ hfin.toFinset, |cellPot kerPlane ν R Λ i z| + C) fun u ↦ ?_
+  rw [← Finset.sum_filter_add_sum_filter_not u (· ∈ hfin.toFinset)]
+  refine add_le_add (Finset.sum_le_sum_of_subset_of_nonneg (fun i hi ↦ (Finset.mem_filter.1 hi).2)
+    fun i _ _ ↦ abs_nonneg _) (hK ν R c m Λ hν hC hN hm z _ fun i hi ↦ ?_)
+  have := (Finset.mem_filter.1 hi).2
+  rw [Set.Finite.mem_toFinset, Set.mem_setOf_eq, not_lt] at this
+  exact this
 
 theorem summable_cellPot_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A B ρ₀ : ℝ}
     {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
@@ -419,6 +585,24 @@ theorem summable_cellPot_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N 
     (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c)
     (hN : IsNodes 𝔻 hypDist (massRadiusDisc ν) ν N B R c m Λ) (hm2 : ∀ i, 2 ≤ m i)
     (hm3 : ∀ i, massRadiusDisc ν (c i) ≤ ρ₀ → 3 ≤ m i) {z : ℂ} (hz : z ∈ 𝔻) :
-    Summable fun i ↦ |cellPot kerDisc ν R Λ i z| := sorry
+    Summable fun i ↦ |cellPot kerDisc ν R Λ i z| := by
+  obtain ⟨K₀, C, -, -, hK⟩ := nonNear_sum_le_disc Cd R₀ η A B ρ₀ N hη hA hB hρ₀
+  obtain ⟨C₁, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
+  have hfin : {i | hypDist z (c i) < K₀ * massRadiusDisc ν (c i)}.Finite := by
+    refine (finite_cells_disc hν hη hC {z} (singleton_subset_iff.2 hz) isCompact_singleton
+      (|K₀| * R₀ + 1)).subset fun i hi ↦ ⟨z, rfl, ?_⟩
+    obtain ⟨hp, hle, -⟩ := hcl ν hν (c i) (hC.center_mem' i) (c i) (hC.center_mem' i)
+    calc hypDist z (c i) < K₀ * massRadiusDisc ν (c i) := hi
+      _ ≤ |K₀| * massRadiusDisc ν (c i) := mul_le_mul_of_nonneg_right (le_abs_self _) hp.le
+      _ ≤ |K₀| * R₀ := mul_le_mul_of_nonneg_left hle (abs_nonneg _)
+      _ < |K₀| * R₀ + 1 := lt_add_one _
+  refine summable_of_sum_le (fun i ↦ abs_nonneg _)
+    (c := ∑ i ∈ hfin.toFinset, |cellPot kerDisc ν R Λ i z| + C) fun u ↦ ?_
+  rw [← Finset.sum_filter_add_sum_filter_not u (· ∈ hfin.toFinset)]
+  refine add_le_add (Finset.sum_le_sum_of_subset_of_nonneg (fun i hi ↦ (Finset.mem_filter.1 hi).2)
+    fun i _ _ ↦ abs_nonneg _) (hK ν R c m Λ hν hC hN hm2 hm3 z hz _ fun i hi ↦ ?_)
+  have := (Finset.mem_filter.1 hi).2
+  rw [Set.Finite.mem_toFinset, Set.mem_setOf_eq, not_lt] at this
+  exact this
 
 end OC
