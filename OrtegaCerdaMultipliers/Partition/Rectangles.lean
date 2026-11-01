@@ -151,13 +151,175 @@ theorem continuous_measure_rect_right {ν : Measure ℂ} (hre : ∀ x : ℝ, ν 
     filter_upwards [Iio_mem_nhds (show t < t + 1 / ((n : ℝ) + 1) by linarith)] with s hs
     exact (hmono (le_of_lt hs)).trans_lt hn
 
+/-- The real-valued mass of `rect a t` is continuous in `t`. -/
+theorem rect_continuous_toReal {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
+    {a y₁ y₂ : ℝ} (hfin : ∀ b, ν (rect a b y₁ y₂) < ∞) :
+    Continuous fun t : ℝ ↦ (ν (rect a t y₁ y₂)).toReal :=
+  ENNReal.continuousOn_toReal.comp_continuous (continuous_measure_rect_right hre hfin)
+    fun t ↦ (hfin t).ne
+
+theorem rect_toReal_add_x (ν : Measure ℂ) {a b c y₁ y₂ : ℝ} (hab : a ≤ b) (hbc : b ≤ c)
+    (hfin : ν (rect a c y₁ y₂) < ∞) :
+    (ν (rect a c y₁ y₂)).toReal = (ν (rect a b y₁ y₂)).toReal + (ν (rect b c y₁ y₂)).toReal := by
+  have h := measure_rect_add_x ν (y₁ := y₁) (y₂ := y₂) hab hbc
+  rw [h] at hfin ⊢
+  exact ENNReal.toReal_add (ENNReal.add_lt_top.1 hfin).1.ne (ENNReal.add_lt_top.1 hfin).2.ne
+
+theorem rect_eq_natCast_of_toReal {ν : Measure ℂ} {S : Set ℂ} (hS : ν S < ∞) {n : ℕ}
+    (h : (ν S).toReal = n) : ν S = n := by
+  rw [← ENNReal.ofReal_toReal hS.ne, h, ENNReal.ofReal_natCast]
+
+theorem rect_strip_step_right {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
+    {y₁ y₂ h : ℝ} (hh : 0 < h) (hfin : ∀ a b : ℝ, ν (rect a b y₁ y₂) < ∞)
+    (hmass : ∀ a : ℝ, 1 ≤ ν (rect a (a + h) y₁ y₂)) (a : ℝ) :
+    ∃ t, a + h ≤ t ∧ t ≤ a + 2 * h ∧ ∃ n : ℕ, 1 ≤ n ∧ ν (rect a t y₁ y₂) = n := by
+  set F : ℝ → ℝ := fun t ↦ (ν (rect a t y₁ y₂)).toReal with hF
+  have hc : Continuous F := rect_continuous_toReal hre (hfin a)
+  have h1 : 1 ≤ F (a + h) := by
+    have := ENNReal.toReal_mono (hfin _ _).ne (hmass a)
+    simpa using this
+  have h2 : F (a + h) + 1 ≤ F (a + 2 * h) := by
+    simp only [hF]
+    rw [rect_toReal_add_x ν (show a ≤ a + h by linarith) (show a + h ≤ a + 2 * h by linarith)
+      (hfin _ _)]
+    have := ENNReal.toReal_mono (hfin _ _).ne (hmass (a + h))
+    rw [show a + h + h = a + 2 * h by ring] at this
+    simp only [ENNReal.toReal_one] at this
+    linarith
+  set m := ⌈F (a + h)⌉₊
+  have hm1 : F (a + h) ≤ m := Nat.le_ceil _
+  have hm2 : (m : ℝ) < F (a + h) + 1 := Nat.ceil_lt_add_one (by linarith)
+  obtain ⟨t, ⟨ht1, ht2⟩, hFt⟩ := intermediate_value_Icc (show a + h ≤ a + 2 * h by linarith)
+    hc.continuousOn ⟨hm1, by linarith⟩
+  refine ⟨t, ht1, ht2, m, Nat.one_le_ceil_iff.2 (by linarith), ?_⟩
+  exact rect_eq_natCast_of_toReal (hfin _ _) hFt
+
+theorem rect_strip_step_left {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
+    {y₁ y₂ h : ℝ} (hh : 0 < h) (hfin : ∀ a b : ℝ, ν (rect a b y₁ y₂) < ∞)
+    (hmass : ∀ a : ℝ, 1 ≤ ν (rect a (a + h) y₁ y₂)) (b : ℝ) :
+    ∃ t, b - 2 * h ≤ t ∧ t ≤ b - h ∧ ∃ n : ℕ, 1 ≤ n ∧ ν (rect t b y₁ y₂) = n := by
+  set c := b - 2 * h
+  set G : ℝ → ℝ := fun t ↦ (ν (rect c b y₁ y₂)).toReal - (ν (rect c t y₁ y₂)).toReal with hG
+  have hc : Continuous G := continuous_const.sub (rect_continuous_toReal hre (hfin c))
+  have hGt : ∀ t, c ≤ t → t ≤ b → G t = (ν (rect t b y₁ y₂)).toReal := by
+    intro t h1 h2
+    simp only [hG]
+    rw [rect_toReal_add_x ν h1 h2 (hfin _ _)]
+    ring
+  have h1 : 1 ≤ G (b - h) := by
+    rw [hGt _ (by simp only [c]; linarith) (by linarith)]
+    have := ENNReal.toReal_mono (hfin _ _).ne (hmass (b - h))
+    rw [show b - h + h = b by ring] at this
+    simpa using this
+  have h2 : G (b - h) + 1 ≤ G c := by
+    rw [hGt _ (by simp only [c]; linarith) (by linarith), hGt _ le_rfl (by simp only [c]; linarith),
+      rect_toReal_add_x ν (show c ≤ b - h by simp only [c]; linarith) (show b - h ≤ b by linarith)
+      (hfin _ _)]
+    have := ENNReal.toReal_mono (hfin _ _).ne (hmass c)
+    rw [show c + h = b - h by simp only [c]; ring] at this
+    simp only [ENNReal.toReal_one] at this
+    linarith
+  set m := ⌈G (b - h)⌉₊
+  have hm1 : G (b - h) ≤ m := Nat.le_ceil _
+  have hm2 : (m : ℝ) < G (b - h) + 1 := Nat.ceil_lt_add_one (by linarith)
+  obtain ⟨t, ⟨ht1, ht2⟩, hGt'⟩ := intermediate_value_Icc' (show c ≤ b - h by simp only [c]; linarith)
+    hc.continuousOn ⟨hm1, by linarith⟩
+  refine ⟨t, ht1, ht2, m, Nat.one_le_ceil_iff.2 (by linarith), ?_⟩
+  rw [hGt t ht1 (by linarith)] at hGt'
+  exact rect_eq_natCast_of_toReal (hfin _ _) hGt'
+
+/-- A strictly monotone sequence on `ℤ` with gaps `≥ h > 0` covers `ℝ` by its intervals. -/
+theorem rect_exists_Ico_of_gap {x : ℤ → ℝ} {h : ℝ} (hh : 0 < h)
+    (hgap : ∀ k, h ≤ x (k + 1) - x k) (t : ℝ) : ∃ k, t ∈ Ico (x k) (x (k + 1)) := by
+  have hmono : StrictMono x := strictMono_int_of_lt_succ fun k ↦ by linarith [hgap k]
+  have hup : ∀ n : ℕ, x 0 + n * h ≤ x n := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have := hgap n
+      push_cast at this ⊢
+      linarith
+  have hdown : ∀ n : ℕ, x (-n) ≤ x 0 - n * h := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have := hgap (-(n + 1 : ℕ))
+      rw [show (-((n + 1 : ℕ) : ℤ) + 1) = -(n : ℤ) by push_cast; ring] at this
+      push_cast at this ⊢
+      linarith
+  obtain ⟨N, hN⟩ := exists_nat_gt ((|t| + |x 0|) / h)
+  have hNh : |t| + |x 0| < N * h := by rwa [div_lt_iff₀ hh] at hN
+  obtain ⟨k, hk, hmax⟩ := Int.exists_greatest_of_bdd (P := fun k ↦ x k ≤ t)
+    ⟨N, fun k hk ↦ by
+      by_contra hlt
+      push_neg at hlt
+      have := hmono.monotone hlt.le
+      have := hup N
+      have := le_abs_self t
+      have := neg_abs_le (x 0)
+      linarith⟩
+    ⟨-N, by
+      have := hdown N
+      have := neg_abs_le t
+      have := le_abs_self (x 0)
+      linarith⟩
+  refine ⟨k, hk, ?_⟩
+  by_contra hle
+  push_neg at hle
+  have := hmax (k + 1) hle
+  omega
+
 /-- Coarse step: slicing a horizontal strip into blocks of integer mass and width in `[h, 2h]`. -/
 theorem exists_strip_cuts {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
     {y₁ y₂ h : ℝ} (hh : 0 < h) (hfin : ∀ a b : ℝ, ν (rect a b y₁ y₂) < ∞)
     (hmass : ∀ a : ℝ, 1 ≤ ν (rect a (a + h) y₁ y₂)) :
     ∃ x : ℤ → ℝ, StrictMono x ∧ (∀ k, h ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * h) ∧
       (∀ t : ℝ, ∃ k, t ∈ Ico (x k) (x (k + 1))) ∧
-      ∀ k, ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := sorry
+      ∀ k, ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := by
+  choose fR hfR using rect_strip_step_right hre hh hfin hmass
+  choose fL hfL using rect_strip_step_left hre hh hfin hmass
+  set x : ℤ → ℝ := fun k ↦ if 0 ≤ k then fR^[k.toNat] 0 else fL^[(-k).toNat] 0 with hx
+  have hxpos : ∀ n : ℕ, x n = fR^[n] 0 := by
+    intro n; simp [hx]
+  have hxneg : ∀ n : ℕ, x (-(n : ℤ)) = fL^[n] 0 := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp [hx]
+    · have : ¬ (0 ≤ -(n : ℤ)) := by omega
+      simp only [hx, this, if_false, neg_neg, Int.toNat_natCast]
+  -- each block is a step of `fR` or of `fL`
+  have hblock : ∀ k : ℤ, h ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * h ∧
+      ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := by
+    intro k
+    rcases Int.eq_nat_or_neg k with ⟨n, rfl | rfl⟩
+    · have e : x ((n : ℤ) + 1) = fR (x n) := by
+        rw [show ((n : ℤ) + 1) = ((n + 1 : ℕ) : ℤ) by push_cast; ring, hxpos, hxpos,
+          Function.iterate_succ_apply']
+      obtain ⟨h1, h2, hn⟩ := hfR (x n)
+      rw [e]
+      exact ⟨by linarith, by linarith, hn⟩
+    · rcases Nat.eq_zero_or_pos n with rfl | hn
+      · have e : x ((0 : ℤ) + 1) = fR (x 0) := by
+          have := hxpos 1
+          simp only [Nat.cast_one, Function.iterate_one] at this
+          rw [zero_add, this]
+          congr 1
+        simp only [Nat.cast_zero, neg_zero]
+        obtain ⟨h1, h2, hn⟩ := hfR (x 0)
+        rw [e]
+        exact ⟨by linarith, by linarith, hn⟩
+      · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
+        have e1 : -((0 + m + 1 : ℕ) : ℤ) + 1 = -(m : ℤ) := by push_cast; ring
+        have e2 : x (-((0 + m + 1 : ℕ) : ℤ)) = fL (x (-(m : ℤ))) := by
+          rw [hxneg, hxneg, show 0 + m + 1 = m + 1 by ring, Function.iterate_succ_apply']
+        rw [e1, e2]
+        obtain ⟨h1, h2, hn⟩ := hfL (x (-(m : ℤ)))
+        exact ⟨by linarith, by linarith, hn⟩
+  refine ⟨x, strictMono_int_of_lt_succ fun k ↦ by linarith [(hblock k).1],
+    fun k ↦ ⟨(hblock k).1, (hblock k).2.1⟩, rect_exists_Ico_of_gap hh (fun k ↦ (hblock k).1),
+    fun k ↦ (hblock k).2.2⟩
 
 /-- Slab reverse doubling (the missing argument behind "we use Lemma 1", p. 365): a vertical slab
 of width `s` in a rectangle has a neighbouring slab of comparable mass, provided `s` is at most
