@@ -122,7 +122,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
             have hxt0 : 0 < |t - x| := abs_pos.2 (sub_ne_zero.2 htx)
             have hy0 : 0 < ‖z - t‖ := hxt0.trans_le hxt
             rcases le_total δ ‖z - t‖ with h | h
-            · rw [max_eq_left h, sub_self, norm_zero, ENNReal.ofReal_zero]; exact zero_le _
+            · rw [max_eq_left h, sub_self, norm_zero, ENNReal.ofReal_zero]; exact bot_le
             · rw [max_eq_right h]
               by_cases hlt : ‖z - t‖ < δ
               · have hmem : t ∈ Ioo (x - δ) (x + δ) := by
@@ -134,7 +134,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
                   linarith [Real.log_le_log hy0 h]), Real.log_div hδ.ne' hxt0.ne']
                 linarith [Real.log_le_log hxt0 hxt]
               · have : ‖z - t‖ = δ := le_antisymm h (not_lt.1 hlt)
-                rw [this, sub_self, norm_zero, ENNReal.ofReal_zero]; exact zero_le _
+                rw [this, sub_self, norm_zero, ENNReal.ofReal_zero]; exact bot_le
         _ ≤ ∫⁻ t, (Ioo (x - δ) (x + δ)).indicator
               (fun t ↦ ENNReal.ofReal (Real.log (δ / |t - x|))) t ∂linePull μ :=
             setLIntegral_le_lintegral _ _
