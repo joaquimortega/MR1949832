@@ -489,20 +489,220 @@ theorem IsPorous.mono {E F : Set X} (hF : IsPorous F) (hEF : E ⊆ F) : IsPorous
   exact ⟨κ, s₀, hκ, hs₀, fun y hy s hs hss ↦ (h y (hEF hy) s hs hss).imp
     fun _ hy' ↦ ⟨hy'.1, fun e he ↦ hy'.2 e (hEF he)⟩⟩
 
+/-- One scale of Lemma 2: a porous set inside `ball x₀ R₀` has mass at most `D^k` times the mass
+of the points of `ball x₀ (R₀ + 1)` at distance in `(0, 2s)` from it. -/
+theorem measure_le_of_isPorous_scale [TopologicalSpace.SeparableSpace X] {μ : Measure X}
+    {D : ℝ≥0} (hD1 : 1 ≤ D)
+    (hD : ∀ x : X, ∀ r : ℝ, 0 < r → r ≤ 1 / 4 → μ (ball x (2 * r)) ≤ D * μ (ball x r))
+    {E : Set X} {κ s : ℝ} (hκ : 0 < κ) (hκ1 : κ ≤ 1) (hs : 0 < s) (hs1 : s ≤ 1 / 20)
+    (hpor : ∀ y ∈ E, ∃ y', dist y y' ≤ s ∧ ∀ e ∈ E, κ * s ≤ dist y' e)
+    {k : ℕ} (hk : 10 ≤ 2 ^ k * κ) (x₀ : X) {R₀ : ℝ} (hEb : E ⊆ ball x₀ R₀) :
+    μ E ≤ D ^ k * μ (ball x₀ (R₀ + 1) ∩ (fun ζ ↦ infDist ζ E) ⁻¹' Ioo 0 (2 * s)) := by
+  rcases E.eq_empty_or_nonempty with hE0 | hEne
+  · simp [hE0]
+  choose! f hf1 hf2 using hpor
+  obtain ⟨u, huE, hudisj, hucov⟩ := Vitali.exists_disjoint_subfamily_covering_enlargement
+    (fun y ↦ ball y (2 * s)) E (fun _ ↦ 2 * s) 2 one_lt_two (fun _ _ ↦ by positivity) (2 * s)
+    (fun _ _ ↦ le_rfl) (fun y _ ↦ ⟨y, mem_ball_self (by positivity)⟩)
+  have hucount : u.Countable := hudisj.countable_of_isOpen (fun _ _ ↦ isOpen_ball)
+    (fun y _ ↦ ⟨y, mem_ball_self (by positivity)⟩)
+  set hole : X → Set X := fun y ↦ ball (f y) (κ * s / 2) with hholedef
+  have hκs : κ * s ≤ s := by nlinarith
+  have hhole_sub : ∀ y ∈ E, hole y ⊆ ball y (2 * s) := by
+    intro y hy z hz
+    simp only [hole, mem_ball] at hz ⊢
+    have h1 := dist_triangle z (f y) y
+    rw [dist_comm (f y) y] at h1
+    have h2 := hf1 y hy
+    linarith
+  have hholedisj : u.PairwiseDisjoint hole :=
+    hudisj.mono_on fun y hy ↦ hhole_sub y (huE hy)
+  have hEcov : E ⊆ ⋃ b ∈ u, ball b (4 * s) := by
+    intro a ha
+    obtain ⟨b, hb, ⟨z, hz1, hz2⟩, _⟩ := hucov a ha
+    refine mem_iUnion₂.2 ⟨b, hb, ?_⟩
+    simp only [mem_ball] at hz1 hz2 ⊢
+    have := dist_triangle a z b
+    rw [dist_comm a z] at this
+    linarith
+  have hball : ∀ b ∈ u, μ (ball b (4 * s)) ≤ (D : ℝ≥0∞) ^ k * μ (hole b) := by
+    intro b hb
+    have hsub : ball b (4 * s) ⊆ ball (f b) (5 * s) := by
+      intro z hz
+      rw [mem_ball] at hz ⊢
+      have h1 := dist_triangle z b (f b)
+      have h2 := hf1 b (huE hb)
+      linarith
+    have hks : 5 * s ≤ 2 ^ k * (κ * s / 2) := by
+      have := mul_le_mul_of_nonneg_right hk hs.le
+      have e : (2 : ℝ) ^ k * (κ * s / 2) = 2 ^ k * κ * s / 2 := by ring
+      rw [e]
+      linarith
+    calc μ (ball b (4 * s)) ≤ μ (ball (f b) (5 * s)) := measure_mono hsub
+      _ ≤ (D : ℝ≥0∞) ^ k * μ (ball (f b) (κ * s / 2)) :=
+        measure_ball_le_pow_aux hD1 hD k (f b) (κ * s / 2) (5 * s) (by positivity) hks
+          (by linarith)
+  have hhole_shell : ∀ b ∈ u,
+      hole b ⊆ ball x₀ (R₀ + 1) ∩ (fun ζ ↦ infDist ζ E) ⁻¹' Ioo 0 (2 * s) := by
+    intro b hb ζ hζ
+    have hbE := huE hb
+    simp only [hole, mem_ball] at hζ
+    have hfb := hf1 b hbE
+    have hlow : κ * s / 2 ≤ infDist ζ E := by
+      refine (le_infDist hEne).2 fun e he ↦ ?_
+      have h1 := hf2 b hbE e he
+      have h2 := dist_triangle (f b) ζ e
+      rw [dist_comm (f b) ζ] at h2
+      linarith
+    have hup : infDist ζ E ≤ dist ζ b := infDist_le_dist_of_mem hbE
+    have h3 := dist_triangle ζ (f b) b
+    rw [dist_comm (f b) b] at h3
+    have hb0 := hEb hbE
+    rw [mem_ball] at hb0
+    refine ⟨?_, ?_⟩
+    · rw [mem_ball]
+      have := dist_triangle ζ b x₀
+      linarith
+    · rw [mem_preimage, mem_Ioo]
+      have : 0 < κ * s / 2 := by positivity
+      constructor <;> linarith
+  calc μ E ≤ μ (⋃ b ∈ u, ball b (4 * s)) := measure_mono hEcov
+    _ ≤ ∑' b : u, μ (ball b (4 * s)) := measure_biUnion_le μ hucount _
+    _ ≤ ∑' b : u, (D : ℝ≥0∞) ^ k * μ (hole b) := ENNReal.tsum_le_tsum fun b ↦ hball b b.2
+    _ = (D : ℝ≥0∞) ^ k * ∑' b : u, μ (hole b) := ENNReal.tsum_mul_left
+    _ = (D : ℝ≥0∞) ^ k * μ (⋃ b ∈ u, hole b) := by
+        rw [measure_biUnion hucount hholedisj (fun _ _ ↦ measurableSet_ball)]
+    _ ≤ _ := by gcongr; exact iUnion₂_subset hhole_shell
+
+/-- Lemma 2 for a bounded porous set. -/
+theorem measure_eq_zero_of_isPorous_of_subset_ball [TopologicalSpace.SeparableSpace X]
+    {μ : Measure X} {D : ℝ≥0} (hD1 : 1 ≤ D)
+    (hD : ∀ x : X, ∀ r : ℝ, 0 < r → r ≤ 1 / 4 → μ (ball x (2 * r)) ≤ D * μ (ball x r))
+    (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞) {E : Set X} (hE : IsPorous E) (x₀ : X)
+    {R₀ : ℝ} (hEb : E ⊆ ball x₀ R₀) : μ E = 0 := by
+  rcases E.eq_empty_or_nonempty with hE0 | ⟨y₀, hy₀⟩
+  · simp [hE0]
+  obtain ⟨κ, s₀, hκ, hs₀, hpor⟩ := hE
+  have hκ1 : κ ≤ 1 := by
+    obtain ⟨y', h1, h2⟩ := hpor y₀ hy₀ s₀ hs₀ le_rfl
+    have h3 := h2 y₀ hy₀
+    rw [dist_comm] at h3
+    by_contra hcon
+    push Not at hcon
+    nlinarith
+  obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (10 / κ) (by norm_num : (1 : ℝ) < 2)
+  have hk' : 10 ≤ 2 ^ k * κ := by rw [div_lt_iff₀ hκ] at hk; linarith
+  set s₁ := min s₀ (1 / 20) with hs₁def
+  have hs₁ : 0 < s₁ := lt_min hs₀ (by norm_num)
+  set a : ℕ → ℝ := fun n ↦ s₁ / (n + 1) with hadef
+  have ha : ∀ n, 0 < a n := fun n ↦ by positivity
+  have ha1 : ∀ n, a n ≤ s₁ := fun n ↦ div_le_self hs₁.le (by
+    have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
+    linarith)
+  set U : ℕ → Set X := fun n ↦ ball x₀ (R₀ + 1) ∩ (fun ζ ↦ infDist ζ E) ⁻¹' Ioo 0 (2 * a n)
+    with hUdef
+  have hbound : ∀ n, μ E ≤ (D : ℝ≥0∞) ^ k * μ (U n) := fun n ↦
+    measure_le_of_isPorous_scale hD1 hD hκ hκ1 (ha n) ((ha1 n).trans (min_le_right _ _))
+      (fun y hy ↦ hpor y hy (a n) (ha n) ((ha1 n).trans (min_le_left _ _))) hk' x₀ hEb
+  have hmeas : ∀ n, MeasurableSet (U n) := fun n ↦
+    measurableSet_ball.inter ((continuous_infDist_pt E).measurable measurableSet_Ioo)
+  have hanti : Antitone U := by
+    intro n m hnm ζ hζ
+    refine ⟨hζ.1, ?_⟩
+    have h2 := hζ.2
+    rw [mem_preimage, mem_Ioo] at h2 ⊢
+    have : a m ≤ a n := by
+      simp only [hadef]
+      gcongr
+    constructor <;> linarith [h2.1, h2.2]
+  have hinter : ⋂ n, U n = ∅ := by
+    ext ζ
+    simp only [mem_iInter, mem_empty_iff_false, iff_false, not_forall]
+    by_cases hζ : 0 < infDist ζ E
+    · obtain ⟨n, hn⟩ := exists_nat_gt (2 * s₁ / infDist ζ E)
+      refine ⟨n, fun h ↦ ?_⟩
+      have h2 := h.2
+      rw [mem_preimage, mem_Ioo] at h2
+      have hlt : 2 * a n < infDist ζ E := by
+        simp only [hadef]
+        rw [div_lt_iff₀ hζ] at hn
+        rw [← mul_div_assoc, div_lt_iff₀ (by positivity)]
+        nlinarith
+      linarith [h2.2]
+    · refine ⟨0, fun h ↦ hζ ?_⟩
+      have h2 := h.2
+      rw [mem_preimage, mem_Ioo] at h2
+      exact h2.1
+  have hU0 : μ (U 0) ≠ ∞ :=
+    ((measure_mono inter_subset_left).trans_lt (hfin x₀ (R₀ + 1))).ne
+  have htend := tendsto_measure_iInter_atTop (fun n ↦ (hmeas n).nullMeasurableSet) hanti ⟨0, hU0⟩
+  rw [hinter, measure_empty] at htend
+  have htend2 : Filter.Tendsto (fun n ↦ (D : ℝ≥0∞) ^ k * μ (U n)) Filter.atTop (nhds 0) := by
+    have := ENNReal.Tendsto.const_mul htend
+      (Or.inr (ENNReal.pow_ne_top ENNReal.coe_ne_top) : (0 : ℝ≥0∞) ≠ 0 ∨ (D : ℝ≥0∞) ^ k ≠ ∞)
+    simpa [Function.comp_def] using this
+  exact le_antisymm (ge_of_tendsto' htend2 hbound) zero_le
+
 /-- **Lemma 2 (abstract)**: porous sets are null. -/
 theorem IsLocDoublingM.measure_eq_zero_of_isPorous [TopologicalSpace.SeparableSpace X]
     {μ : Measure X} (hd : IsLocDoublingM μ) (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞)
-    {E : Set X} (hE : IsPorous E) : μ E = 0 := sorry
+    {E : Set X} (hE : IsPorous E) : μ E = 0 := by
+  obtain ⟨D, hD1, hD⟩ := hd.exists_const_quarter
+  rcases E.eq_empty_or_nonempty with hE0 | ⟨x₀, _⟩
+  · rw [hE0, measure_empty]
+  have hcov : E = ⋃ n : ℕ, E ∩ ball x₀ n := by
+    ext z
+    simp only [mem_iUnion, mem_inter_iff, mem_ball]
+    constructor
+    · intro hz
+      obtain ⟨n, hn⟩ := exists_nat_gt (dist z x₀)
+      exact ⟨n, hz, hn⟩
+    · rintro ⟨n, hz, _⟩
+      exact hz
+  rw [hcov]
+  exact measure_iUnion_null fun n ↦ measure_eq_zero_of_isPorous_of_subset_ball hD1 hD hfin
+    (hE.mono inter_subset_left) x₀ inter_subset_right
 
-theorem isPorous_sphere [BallGeometry X] (x : X) (r : ℝ) : IsPorous (sphere x r) := sorry
+theorem isPorous_sphere [BallGeometry X] (x : X) (r : ℝ) : IsPorous (sphere x r) := by
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · refine ⟨1, 1, one_pos, one_pos, fun y hy ↦ ?_⟩
+    rw [mem_sphere] at hy
+    exact absurd hy (by linarith [dist_nonneg (x := y) (y := x)])
+  · refine ⟨1, 1, one_pos, one_pos, fun y hy s hs _ ↦ ?_⟩
+    rw [mem_sphere, dist_eq_zero] at hy
+    subst hy
+    obtain ⟨y', hy'⟩ := exists_dist_eq y hs.le
+    refine ⟨y', hy'.le, fun e he ↦ ?_⟩
+    rw [mem_sphere, dist_eq_zero] at he
+    subst he
+    rw [dist_comm, hy', one_mul]
+  · refine ⟨1, r, one_pos, hr, fun y hy s hs hsr ↦ ?_⟩
+    rw [mem_sphere] at hy
+    obtain ⟨y', h1, h2⟩ := BallGeometry.exists_between y x s hs.le (by rw [hy]; exact hsr)
+    refine ⟨y', h1, fun e he ↦ ?_⟩
+    rw [mem_sphere] at he
+    have := dist_triangle e y' x
+    rw [hy] at h2
+    rw [one_mul, dist_comm]
+    linarith
 
 theorem IsLocDoublingM.measure_sphere [BallGeometry X] [TopologicalSpace.SeparableSpace X]
     {μ : Measure X} (hd : IsLocDoublingM μ) (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞)
-    (x : X) (r : ℝ) : μ (sphere x r) = 0 := sorry
+    (x : X) (r : ℝ) : μ (sphere x r) = 0 :=
+  hd.measure_eq_zero_of_isPorous hfin (isPorous_sphere x r)
 
 theorem IsLocDoublingM.measure_closedBall [BallGeometry X] [TopologicalSpace.SeparableSpace X]
     {μ : Measure X} (hd : IsLocDoublingM μ) (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞)
-    (x : X) (r : ℝ) : μ (closedBall x r) = μ (ball x r) := sorry
+    (x : X) (r : ℝ) : μ (closedBall x r) = μ (ball x r) := by
+  refine le_antisymm ?_ (measure_mono ball_subset_closedBall)
+  calc μ (closedBall x r) ≤ μ (ball x r ∪ sphere x r) := by
+        refine measure_mono fun z hz ↦ ?_
+        rw [mem_closedBall] at hz
+        rcases hz.lt_or_eq with h | h
+        · exact Or.inl h
+        · exact Or.inr h
+    _ ≤ μ (ball x r) + μ (sphere x r) := measure_union_le _ _
+    _ = μ (ball x r) := by rw [hd.measure_sphere hfin, add_zero]
 
 theorem IsLocDoublingM.continuous_measure_ball [BallGeometry X]
     [TopologicalSpace.SeparableSpace X] {μ : Measure X} (hd : IsLocDoublingM μ)
