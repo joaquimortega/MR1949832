@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Partition.Rectangles
 /-!
 # M05 (Partition) — Cayley coordinates and horocyclic boxes in `𝔻`
 
-See `blueprint/M05_Partition.md` §2.2.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M05_Partition.md` §2.2.  Proofs complete (they use the upstream M01/M03 interfaces).
 -/
 
 open MeasureTheory Metric Set Complex

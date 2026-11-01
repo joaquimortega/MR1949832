@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Partition.Lemma4
 /-!
 # M05 (Partition) — Claim 2 and the properties of the partitions used later
 
-See `blueprint/M05_Partition.md` §2.4.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M05_Partition.md` §2.4.  Proofs complete (they use the upstream M01/M03 interfaces).
 -/
 
 open MeasureTheory Metric Set Complex

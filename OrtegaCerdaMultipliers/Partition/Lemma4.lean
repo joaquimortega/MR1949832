@@ -5,7 +5,7 @@ import OrtegaCerdaMultipliers.Partition.LineCuts
 /-!
 # M05 (Partition) — Lemma 4: partitions into pieces of mass `N`
 
-See `blueprint/M05_Partition.md` §2.3.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M05_Partition.md` §2.3.  Proofs complete (they use the upstream M01/M03 interfaces).
 
 `IsMassPartition`, `lemma4_plane`, `lemma4_disc` (horocyclic boxes), `lemma4_line`, and the
 quantitative forms `lemma4_plane_quant`, `lemma4_disc_quant` requested by M08 §4.1 (constants

@@ -3,7 +3,7 @@ import OrtegaCerdaMultipliers.Doubling.Export
 /-!
 # M05 (Partition) — Rectangle combinatorics for a measure on `ℂ`
 
-See `blueprint/M05_Partition.md` §2.1.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M05_Partition.md` §2.1.  Proofs complete (they use the upstream M01/M03 interfaces).
 
 Coordinate rectangles, the middle third, strip cuts, slab reverse doubling (the gap behind
 "we use Lemma 1", p. 365), and the bisection-and-slicing core `exists_rect_partition`.
