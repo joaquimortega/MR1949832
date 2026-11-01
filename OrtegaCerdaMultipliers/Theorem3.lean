@@ -421,9 +421,57 @@ def cexWeight (z : ℂ) : ℝ := |z.im| + z.re * z.im
 /-- `μ₀ = 2 · (Lebesgue measure on ℝ)`. -/
 def cexMeasure : Measure ℂ := (2 : ℝ≥0∞) • (volume : Measure ℝ).map (fun t : ℝ ↦ (t : ℂ))
 
-theorem cex_isSubharmonicWeight : IsSubharmonicWeight univ cexWeight cexMeasure := sorry
-theorem cex_doubling : IsLocallyDoublingLine cexMeasure := sorry
-theorem cex_mass : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < cexMeasure (lineInterval x r) := sorry
+theorem measurableEmbedding_ofReal_complex : MeasurableEmbedding ((↑) : ℝ → ℂ) :=
+  Complex.isometry_ofReal.isClosedEmbedding.measurableEmbedding
+
+theorem cexMeasure_apply (s : Set ℂ) : cexMeasure s = 2 * volume (((↑) : ℝ → ℂ) ⁻¹' s) := by
+  rw [cexMeasure, Measure.smul_apply, measurableEmbedding_ofReal_complex.map_apply, smul_eq_mul]
+
+theorem cexMeasure_lineInterval (x r : ℝ) :
+    cexMeasure (lineInterval x r) = 2 * ENNReal.ofReal (2 * r) := by
+  rw [cexMeasure_apply, lineInterval, preimage_image_eq _ Complex.ofReal_injective,
+    Real.volume_Ioo]
+  congr 2
+  ring
+
+/-- `|Im z|` is a subharmonic weight with Laplacian `2 dx` on `ℝ` (M13, 13.7). -/
+theorem isSubharmonicWeight_abs_im : IsSubharmonicWeight univ (fun z : ℂ ↦ |z.im|) cexMeasure := by
+  refine ⟨(continuous_abs.comp continuous_im).continuousOn, fun K _ hK ↦ ?_, by simp,
+    fun χ hχ hc _ ↦ ?_⟩
+  · rw [cexMeasure_apply]
+    exact ENNReal.mul_lt_top (by simp)
+      (Complex.isometry_ofReal.isClosedEmbedding.isCompact_preimage hK).measure_lt_top
+  · rw [integral_abs_im_mul_laplacian χ hχ hc, cexMeasure, integral_smul_measure,
+      measurableEmbedding_ofReal_complex.integral_map]
+    simp
+
+/-- `Re z · Im z = Im (z²/2)` is harmonic. -/
+theorem harmonicOnNhd_re_mul_im :
+    InnerProductSpace.HarmonicOnNhd (fun z : ℂ ↦ z.re * z.im) univ := by
+  intro z _
+  have hd : Differentiable ℂ fun w : ℂ ↦ w ^ 2 / 2 := by fun_prop
+  have h := (hd.analyticAt z).harmonicAt_im
+  have he : (fun w : ℂ ↦ (w ^ 2 / 2).im) = fun w : ℂ ↦ w.re * w.im := by
+    ext w
+    simp only [sq, Complex.div_ofNat_im, Complex.mul_im]
+    ring
+  rwa [he] at h
+
+theorem cex_isSubharmonicWeight : IsSubharmonicWeight univ cexWeight cexMeasure :=
+  isSubharmonicWeight_abs_im.add_harmonic isOpen_univ harmonicOnNhd_re_mul_im
+
+theorem cex_doubling : IsLocallyDoublingLine cexMeasure := by
+  refine ⟨?_, 2, fun x r hr _ ↦ ?_⟩
+  · have : ((↑) : ℝ → ℂ) ⁻¹' {z : ℂ | z.im ≠ 0} = ∅ := by ext t; simp
+    rw [cexMeasure_apply, this, measure_empty, mul_zero]
+  · rw [cexMeasure_lineInterval, cexMeasure_lineInterval,
+      ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    exact le_of_eq (by push_cast; rfl)
+
+theorem cex_mass : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < cexMeasure (lineInterval x r) := by
+  refine ⟨1, one_pos, fun x ↦ ?_⟩
+  rw [cexMeasure_lineInterval, mul_one, ENNReal.ofReal_ofNat]
+  norm_num
 
 /-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`; hence `theorem3` in
 `comparator/statements.lean` is equivalent to `¬ TheoremOCS`. -/
