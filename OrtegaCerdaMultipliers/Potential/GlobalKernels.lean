@@ -28,7 +28,38 @@ def kDisc (z ζ : ℂ) : ℝ :=
 
 theorem kDisc_eq {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) :
     kDisc z ζ = (4 * Real.pi)⁻¹ * (Real.log (pseudoHyp ζ z ^ 2) + (1 - pseudoHyp ζ z ^ 2) +
-      ‖z‖ ^ 2 * (1 - ‖ζ‖ ^ 2) ^ 2 / ‖1 - conj ζ * z‖ ^ 2) := sorry
+      ‖z‖ ^ 2 * (1 - ‖ζ‖ ^ 2) ^ 2 / ‖1 - conj ζ * z‖ ^ 2) := by
+  have hD : 1 - conj ζ * z ≠ 0 := one_sub_conj_mul_ne_zero_of_mem hζ hz
+  set v : ℂ := z * conj ζ with hv
+  have hu : 1 - conj ζ * z = 1 - v := by rw [hv, mul_comm]
+  have hu' : 1 - conj z * ζ = conj (1 - v) := by rw [hv]; simp [mul_comm]
+  have hDv : 1 - v ≠ 0 := hu ▸ hD
+  have hN : Complex.normSq (1 - v) ≠ 0 := (Complex.normSq_pos.2 hDv).ne'
+  have hX : (1 / (1 - conj z * ζ) + 1 / (1 - z * conj ζ) - 1).re =
+      (1 - Complex.normSq v) / Complex.normSq (1 - v) := by
+    rw [hu', ← hv]
+    have e : 1 / conj (1 - v) = conj (1 / (1 - v)) := by simp
+    rw [e, Complex.sub_re, Complex.add_re, Complex.conj_re, Complex.one_re, one_div,
+      Complex.inv_re]
+    have hn2 : Complex.normSq (1 - v) = (1 - v.re) ^ 2 + v.im ^ 2 := by
+      rw [Complex.normSq_apply]; simp; ring
+    rw [hn2] at hN ⊢
+    rw [Complex.normSq_apply]
+    simp only [Complex.sub_re, Complex.one_re]
+    field_simp
+    ring
+  have hvn : Complex.normSq v = ‖z‖ ^ 2 * ‖ζ‖ ^ 2 := by
+    rw [hv, ← Complex.sq_norm, norm_mul, Complex.norm_conj, mul_pow]
+  have hNn : Complex.normSq (1 - v) = ‖1 - conj ζ * z‖ ^ 2 := by
+    rw [hu, Complex.sq_norm]
+  have key := norm_one_sub_conj_mul_sq_sub ζ z
+  unfold kDisc
+  rw [add_assoc]
+  congr 2
+  rw [pseudoHyp, div_pow, hX, hvn, hNn]
+  have hN' : ‖1 - conj ζ * z‖ ^ 2 ≠ 0 := by rw [← hNn]; exact hN
+  field_simp
+  linear_combination -key
 
 /-- **Andersson–Pascuas estimate** with explicit constant `4/π`. -/
 theorem abs_kDisc_le {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) (hne : z ≠ ζ) :
