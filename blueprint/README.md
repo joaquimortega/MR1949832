@@ -9,6 +9,12 @@
 
 ## 0. Plan and status
 
+**Status (2026-11-01):**
+- **All modules proved.** All 14 modules M01–M14 are proved: 53 Lean files, with no `sorry` and no axioms beyond `propext`, `Classical.choice` and `Quot.sound`.
+- **Main results accepted.** comparator accepts the 13 main results (`comparator/last_run.log`).
+- **Statements frozen.** `scripts/check_statements.py` confirms that no statement of the reviewed scaffold changed, except two false helper statements removed with approval (NOTEBOOK I-01, I-03).
+
+
 This follows the same workflow as the companion BOC project (`../1995ReineAngewMath`):
 1. Blueprint: one Markdown file per module, with a detailed proof, the Lean statements and explicit dependencies.
 2. Scaffold: all statements compiled, proofs `sorry`.
@@ -107,7 +113,7 @@ Priority: the disc path M01–M11 comes first, since it is what BOC needs. Then 
    - Consequence: M03 and M05 must export uniform versions, with constants chosen after `(C_d, R₀)` and before the measure.
 7. **Proposition 2 (statement).** Includes the Theorem-4 bounds for each multiplier, as the paper says, and the disjoint exceptional sets.
 8. **Theorem 3.**
-   - **Suspected false as printed.** The M14 writer gives a counterexample (to be checked in review). The integral needs the weight: `∫ e^{-φ(z)} d|μ|(z) / |x − z|`. A corrected statement `theorem3_weighted` is proposed.
+   - **False as printed.** The M14 writer gave a counterexample, two referees confirmed it, and it is proved in Lean (`theorem3_printed_false`). The integral needs the weight: `∫ e^{-φ(z)} d|μ|(z) / |x − z|`; the corrected statement `theorem3_weighted` is proved.
    - **`TheoremOCS`.** It is the version quoted on p. 375, with `limsup = 0`. The published [OCS99] lemma states `limsup < ∞`; `= 0` follows from its proof. This is to be recorded in the yaml.
    - **Multipliers.** Theorem 3 needs multipliers for the signed measure `μ − 2α dx`. M13 builds them; Theorem 5 is the case `α = 0`.
 9. **Shared definitions.** `hypArea = dm/(1 − |z|²)²` on 𝔻 is defined once, in M01, and used by M04, M08, M10 and M11.

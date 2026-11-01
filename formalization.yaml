@@ -93,6 +93,7 @@ status:
   scope: >-
     The whole article.
       - Proved: Theorems 1, 2, 4, 5 and Propositions 1, 2 (with Lemmas 1–8, Claims 1–2).
+      - Refuted in Lean: Theorem 3 as printed (OC.theorem3_printed_false).
       - Proved conditionally: Theorem 3, in corrected form, on the quoted Ortega-Cerdà–Seip
         theorem (OC.TheoremOCS), as in the article.
       - Not formalized: Berndtsson's Example (p. 356), whose weight takes the value −∞, and the
@@ -176,6 +177,12 @@ status:
       literature_dependencies:
         - statement: "The Ortega-Cerdà–Seip ∂̄-estimate for compactly supported measures with e^{-α|Im z|}d|μ| two-sided Carleson, as quoted on p. 375 (limsup = 0 version); formalized as the hypothesis OC.TheoremOCS"
           source: "Multipliers for entire functions and an interpolation problem of Beurling"
+    - declaration: "OC.theorem3_printed_false"
+      file: "OrtegaCerdaMultipliers/Theorem3.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/config.json"
+      literature_dependencies: []
 
 automation:
   methods:
@@ -195,7 +202,7 @@ automation:
         Foundation files were copied (not imported) from the companion BOC project, which itself
         will depend on this project. Verification: comparator, run under systemd-run.
       cost:
-        wall_time: "2026-11-01, 12:40 CET onwards (interrupted once by a usage limit)"
+        wall_time: "about 6.5 hours (2026-11-01, 12:40–19:10 CET, including a pause of about 1 h for a usage limit)"
         hardware: "API-only models; local workstation (16 cores, 31 GB RAM) for Lean builds"
       prompting_notes: >-
         The user asked for "a full formalization as the previous project", with its own git
@@ -325,6 +332,11 @@ alignment:
       module: "OrtegaCerdaMultipliers/Theorem3.lean"
       status: "literature-dependency"
       note: "conditional on OC.TheoremOCS, the [OCS99] theorem as quoted on p. 375; the printed statement is false (NOTEBOOK N-01)"
+    - source: "Theorem 3 as printed (p. 358)"
+      lean: "OC.theorem3_printed_false, OC.not_theorem3_printed"
+      module: "OrtegaCerdaMultipliers/Theorem3.lean"
+      status: "proved"
+      note: "the printed statement is refuted in Lean (counterexample φ = |Im z| + Re z·Im z, finitely many point masses); no use of TheoremOCS"
     - source: "Holomorphic functions with prescribed log-modulus (p. 366, implicit)"
       lean: "OC.exists_analytic_norm_eq_exp"
       module: "OrtegaCerdaMultipliers/LogModulus.lean"
