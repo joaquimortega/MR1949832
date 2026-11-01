@@ -474,12 +474,59 @@ theorem IsSubharmonicWeight.add_harmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ H 
     h.laplacian_eq χ hχ hc hs, integral_mul_laplacian_eq_zero_of_harmonicOnNhd hΩ hH hχ2 hc hs,
     add_zero]
 
+theorem continuousOn_laplacian_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → ℝ}
+    (hu : ContDiffOn ℝ 2 u Ω) : ContinuousOn (Laplacian.laplacian u) Ω :=
+  (continuousOn_const.mul (continuousOn_lap hΩ hu)).congr fun z _ ↦
+    laplacian_eq_four_mul_lap u z
+
+theorem measurable_indicator_ofReal_laplacian {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → ℝ}
+    (hu : ContDiffOn ℝ 2 u Ω) :
+    Measurable (Ω.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z)) := by
+  classical
+  have e : (Ω.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z)) =
+      Ω.piecewise (fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z)) (fun _ ↦ 0) := by
+    ext z
+    by_cases hz : z ∈ Ω <;> simp [hz]
+  rw [e]
+  exact ContinuousOn.measurable_piecewise
+    (ENNReal.continuous_ofReal.comp_continuousOn (continuousOn_laplacian_of_contDiffOn hΩ hu))
+    continuousOn_const hΩ.measurableSet
+
 /-- A `C²` function with `Δu ≥ 0` is a weight, with Laplacian `Δu dm` on `Ω`. -/
 theorem isSubharmonicWeight_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → ℝ}
     (hu : ContDiffOn ℝ 2 u Ω) (hpos : ∀ z ∈ Ω, 0 ≤ Laplacian.laplacian u z) :
     IsSubharmonicWeight Ω u
-      (volume.withDensity (Ω.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z))) :=
-  sorry
+      (volume.withDensity (Ω.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z))) := by
+  set g : ℂ → ℝ≥0∞ := Ω.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z) with hg
+  have hΔcont := continuousOn_laplacian_of_contDiffOn hΩ hu
+  have hgm : Measurable g := measurable_indicator_ofReal_laplacian hΩ hu
+  refine ⟨hu.continuousOn, fun K hKΩ hK ↦ ?_, ?_, fun χ hχ hc hs ↦ ?_⟩
+  · rw [withDensity_apply _ hK.measurableSet]
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hΔcont.mono hKΩ)
+    calc ∫⁻ x in K, g x ≤ ∫⁻ _ in K, ENNReal.ofReal C :=
+          setLIntegral_mono measurable_const fun x hx ↦ by
+            rw [hg, indicator_of_mem (hKΩ hx)]
+            exact ENNReal.ofReal_le_ofReal ((le_abs_self _).trans (hC x hx))
+      _ = ENNReal.ofReal C * volume K := setLIntegral_const _ _
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top hK.measure_lt_top
+  · rw [withDensity_apply _ hΩ.measurableSet.compl]
+    have : ∫⁻ x in Ωᶜ, g x = ∫⁻ _ in Ωᶜ, 0 :=
+      setLIntegral_congr_fun hΩ.measurableSet.compl fun x hx ↦ indicator_of_notMem hx _
+    rw [this, lintegral_zero]
+  · have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (WithTop.coe_le_coe.2 le_top)
+    rw [integral_mul_laplacian_of_contDiffOn hΩ hu hχ2 hc hs,
+      integral_withDensity_eq_integral_toReal_smul hgm
+        (Eventually.of_forall fun z ↦ by
+          rw [hg]
+          by_cases hz : z ∈ Ω
+          · rw [indicator_of_mem hz]; exact ENNReal.ofReal_lt_top
+          · rw [indicator_of_notMem hz]; exact ENNReal.zero_lt_top)]
+    congr 1; ext z
+    rw [smul_eq_mul, hg]
+    by_cases hz : z ∈ Ω
+    · rw [indicator_of_mem hz, ENNReal.toReal_ofReal (hpos z hz)]
+    · rw [indicator_of_notMem hz, image_eq_zero_of_notMem_tsupport fun h' ↦ hz (hs h')]
+      simp
 
 /-- Subtracting a `C²` function whose Laplacian is dominated by the absolutely continuous part
 of the Laplacian (used for `ψ + c log(1−|z|²)` in M11 and `ψ − c|z|²` in M12). -/
