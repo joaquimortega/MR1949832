@@ -31,6 +31,35 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
     (a b : ℝ) :
     Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ := sorry
 
+/-! ### Helpers for `lineMultipliers` -/
+
+theorem lineZeroCount_eq_zero_iff (μ : Measure ℂ) (α s : ℝ) (z : ℂ) :
+    lineZeroCount μ α s z = 0 ↔ z ∉ lineZeroSet μ α s := by
+  unfold lineZeroCount lineZeroSet
+  by_cases h1 : z ∈ lineNodeSet μ α s true <;> by_cases h2 : z ∈ lineNodeSet μ α s false <;>
+    simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2]
+
+theorem ofReal_mem_lineZeroSet {μ : Measure ℂ} {α s x : ℝ} :
+    (x : ℂ) ∈ lineZeroSet μ α s ↔ ∃ (k : ℤ) (b : Bool), x = lineNode μ α s k b := by
+  unfold lineZeroSet lineNodeSet
+  simp only [mem_union, mem_range, ofReal_inj]
+  constructor
+  · rintro (⟨k, hk⟩ | ⟨k, hk⟩)
+    · exact ⟨k, true, hk.symm⟩
+    · exact ⟨k, false, hk.symm⟩
+  · rintro ⟨k, b, rfl⟩
+    cases b
+    · exact Or.inr ⟨k, rfl⟩
+    · exact Or.inl ⟨k, rfl⟩
+
+theorem im_eq_zero_of_mem_lineZeroSet {μ : Measure ℂ} {α s : ℝ} {z : ℂ}
+    (hz : z ∈ lineZeroSet μ α s) : z.im = 0 := by
+  rcases hz with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> simp
+
+theorem eq_ofReal_re_of_mem_lineZeroSet {μ : Measure ℂ} {α s : ℝ} {z : ℂ}
+    (hz : z ∈ lineZeroSet μ α s) : z = (z.re : ℂ) :=
+  Complex.ext (by simp) (by simp [im_eq_zero_of_mem_lineZeroSet hz])
+
 /-! ### Helpers for 13.9 -/
 
 theorem continuous_logPotential_volume (a b : ℝ) :
@@ -205,42 +234,303 @@ theorem decomp {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs :
 
 end LineConsts
 
+theorem hasCompactSupport_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
+    (hc : HasCompactSupport χ) : HasCompactSupport (Laplacian.laplacian χ) :=
+  IsCompact.of_isClosed_subset hc (isClosed_tsupport _) (laplacian_testFunction hχ).2
+
+/-- The weak Laplacian of the potential of a piece `(ν|_{(a,b]})` of a line measure. -/
+theorem IsLineMeasure.integral_logPotential_Ioc_mul_laplacian {ν : Measure ℂ}
+    (hν : IsLineMeasure ν) {a b : ℝ} (hab : a ≤ b) (χ : ℂ → ℝ)
+    (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) :
+    ∫ z : ℂ, (∫ t in Ioc a b, Real.log ‖z - (t : ℂ)‖ ∂linePull ν) * Laplacian.laplacian χ z =
+      2 * Real.pi * ∫ t in Ioc a b, χ t ∂linePull ν := by
+  have := hν.isFiniteMeasure_restrict_Ioc a b
+  set m := Measure.map (fun t : ℝ ↦ (t : ℂ)) ((linePull ν).restrict (Ioc a b))
+  have hL : IsCompact ((fun t : ℝ ↦ (t : ℂ)) '' Icc a b) := isCompact_Icc.image continuous_ofReal
+  have hmL : m ((fun t : ℝ ↦ (t : ℂ)) '' Icc a b)ᶜ = 0 := by
+    rw [Measure.map_apply continuous_ofReal.measurable hL.isClosed.measurableSet.compl,
+      Measure.restrict_apply (hL.isClosed.measurableSet.compl.preimage
+        continuous_ofReal.measurable)]
+    convert measure_empty (μ := linePull ν)
+    ext t
+    simp only [mem_inter_iff, mem_preimage, mem_compl_iff, mem_empty_iff_false, iff_false]
+    rintro ⟨h, ht⟩
+    exact h (mem_image_of_mem _ (Ioc_subset_Icc_self ht))
+  have e1 : ∀ z : ℂ, ∫ ζ, Real.log ‖z - ζ‖ ∂m = ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull ν :=
+    fun z ↦ measurableEmbedding_ofReal'.integral_map _
+  have e2 : ∫ ζ, χ ζ ∂m = ∫ t in Ioc a b, χ t ∂linePull ν :=
+    measurableEmbedding_ofReal'.integral_map _
+  have H := integral_logPotential_mul_laplacian m hL hmL χ hχ hc
+  simp_rw [e1, e2] at H
+  exact H
+
+/-- The weak Laplacian of one term: `Δ T_k = 2π(δ_{ν₊} + δ_{ν₋}) − σ_α|_{I_k}`. -/
+theorem IsLineMeasure.integral_lineTerm_mul_laplacian {μ : Measure ℂ} (hμ : IsLineMeasure μ)
+    {α s : ℝ} (k : ℤ) (hab : lineKnot μ α k ≤ lineKnot μ α (k + 1)) (χ : ℂ → ℝ)
+    (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) :
+    ∫ z, lineTerm μ α s k z * Laplacian.laplacian χ z =
+      2 * Real.pi * (χ (lineNode μ α s k true) + χ (lineNode μ α s k false)) -
+        (∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t ∂linePull μ) +
+        2 * α * ∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t := by
+  set a := lineKnot μ α k
+  set b := lineKnot μ α (k + 1)
+  obtain ⟨hΔc, -⟩ := laplacian_testFunction hχ
+  have hΔs := hasCompactSupport_laplacian hχ hc
+  set Δχ := Laplacian.laplacian χ
+  set νp : ℂ := (lineNode μ α s k true : ℂ)
+  set νm : ℂ := (lineNode μ α s k false : ℂ)
+  set Pμ : ℂ → ℝ := fun z ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ
+  set Pv : ℂ → ℝ := fun z ↦ ∫ t in Ioc a b, Real.log ‖z - t‖
+  have hPμ : Continuous Pμ := hμ.continuous_logPotential_Ioc a b
+  have hPv : Continuous Pv := by
+    have := isLineMeasure_lebLine.continuous_logPotential_Ioc a b
+    rwa [linePull_lebLine] at this
+  have i1 : Integrable fun z ↦ Real.log ‖z - νp‖ * Δχ z :=
+    (logKernel νp).1.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have i2 : Integrable fun z ↦ Real.log ‖z - νm‖ * Δχ z :=
+    (logKernel νm).1.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have i3 : Integrable fun z ↦ Pμ z * Δχ z :=
+    hPμ.locallyIntegrable.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have i4 : Integrable fun z ↦ Pv z * Δχ z :=
+    hPv.locallyIntegrable.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have hT : ∀ z, lineTerm μ α s k z * Δχ z = Real.log ‖z - νp‖ * Δχ z +
+      Real.log ‖z - νm‖ * Δχ z - (1 / (2 * Real.pi)) * (Pμ z * Δχ z - 2 * α * (Pv z * Δχ z)) := by
+    intro z
+    simp only [lineTerm, Pμ, Pv, νp, νm, a, b]
+    rw [intervalIntegral.integral_of_le hab]
+    ring
+  have H1 := (logKernel νp).2 χ hχ hc
+  have H2 := (logKernel νm).2 χ hχ hc
+  have H3 := hμ.integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
+  have H4 := isLineMeasure_lebLine.integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
+  rw [linePull_lebLine] at H4
+  have ia : Integrable fun z ↦ Real.log ‖z - νp‖ * Δχ z + Real.log ‖z - νm‖ * Δχ z := i1.add i2
+  have ic : Integrable fun z ↦ 2 * α * (Pv z * Δχ z) := i4.const_mul _
+  have ib : Integrable fun z ↦ (1 / (2 * Real.pi)) * (Pμ z * Δχ z - 2 * α * (Pv z * Δχ z)) :=
+    (i3.sub ic).const_mul _
+  rw [integral_congr_ae (Eventually.of_forall hT), integral_sub ia ib, integral_add i1 i2,
+    integral_const_mul, integral_sub i3 ic, integral_const_mul]
+  simp only [Pμ, Pv] at H3 H4 ⊢
+  rw [H1, H2, H3, H4]
+  have hπ := Real.pi_pos
+  field_simp
+  ring
+
+/-- The counting function of the zeros, summed against a test function. -/
+theorem LineConsts.finsum_lineZeroCount {μ : Measure ℂ} {r C₂ c₀ α₁ : ℝ}
+    (hc : LineConsts μ r C₂ c₀ α₁) {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (hs : 0 ≤ s)
+    (hs' : s ≤ c₀ / 2) (χ : ℂ → ℝ) (G : Finset ℤ)
+    (hG : ∀ k ∉ G, ∀ b : Bool, χ (lineNode μ α s k b) = 0) :
+    ∑ᶠ ζ, (lineZeroCount μ α s ζ : ℝ) * χ ζ =
+      ∑ k ∈ G, (χ (lineNode μ α s k true) + χ (lineNode μ α s k false)) := by
+  have hb : ∀ b : Bool, ∑ᶠ ζ, (lineNodeSet μ α s b).indicator χ ζ =
+      ∑ k ∈ G, χ (lineNode μ α s k b) := by
+    intro b
+    rw [← finsum_mem_def, lineNodeSet, finsum_mem_range (hc.node_injective hα hα' hs hs' b)]
+    refine finsum_eq_sum_of_support_subset _ (fun k hk ↦ ?_)
+    by_contra hkG
+    exact hk (hG k hkG b)
+  have hfin : ∀ b : Bool, (Function.support ((lineNodeSet μ α s b).indicator χ)).Finite := by
+    intro b
+    refine ((G.finite_toSet).image fun k ↦ ((lineNode μ α s k b : ℝ) : ℂ)).subset
+      (fun ζ hζ ↦ ?_)
+    rw [Function.mem_support] at hζ
+    have hmem : ζ ∈ lineNodeSet μ α s b := by
+      by_contra h; exact hζ (indicator_of_notMem h _)
+    have hmem' := hmem
+    simp only [lineNodeSet, mem_range] at hmem'
+    obtain ⟨k, rfl⟩ := hmem'
+    refine ⟨k, ?_, rfl⟩
+    by_contra hkG
+    rw [indicator_of_mem hmem] at hζ
+    exact hζ (hG k hkG b)
+  have hpt : ∀ ζ, (lineZeroCount μ α s ζ : ℝ) * χ ζ =
+      (lineNodeSet μ α s true).indicator χ ζ + (lineNodeSet μ α s false).indicator χ ζ := by
+    intro ζ
+    unfold lineZeroCount
+    by_cases h1 : ζ ∈ lineNodeSet μ α s true <;> by_cases h2 : ζ ∈ lineNodeSet μ α s false <;>
+      simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2] <;> ring
+  rw [finsum_congr hpt, finsum_add_distrib (hfin true) (hfin false), hb true, hb false,
+    Finset.sum_add_distrib]
+
 /-! 13.9 `φ − α|Im z| + S` is the log-modulus of an entire function (M07 weak entry) -/
 theorem isWeakLogModulus_linePotential {φ : ℂ → ℝ} {μ : Measure ℂ}
     (hφ : IsSubharmonicWeight univ φ μ) (hμ : IsLineMeasure μ) :
     ∃ α₁ s₁ : ℝ, 0 < α₁ ∧ 0 < s₁ ∧ s₁ ≤ 1 / 8 ∧ ∀ α : ℝ, 0 ≤ α → α ≤ α₁ →
       ∀ s : ℝ, 0 ≤ s → s ≤ s₁ →
       IsWeakLogModulus univ (lineZeroCount μ α s)
-        (fun z ↦ φ z - α * |z.im| + linePotential μ α s z) := sorry
-
-/-! ### Helpers for `lineMultipliers` -/
-
-theorem lineZeroCount_eq_zero_iff (μ : Measure ℂ) (α s : ℝ) (z : ℂ) :
-    lineZeroCount μ α s z = 0 ↔ z ∉ lineZeroSet μ α s := by
-  unfold lineZeroCount lineZeroSet
-  by_cases h1 : z ∈ lineNodeSet μ α s true <;> by_cases h2 : z ∈ lineNodeSet μ α s false <;>
-    simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2]
-
-theorem ofReal_mem_lineZeroSet {μ : Measure ℂ} {α s x : ℝ} :
-    (x : ℂ) ∈ lineZeroSet μ α s ↔ ∃ (k : ℤ) (b : Bool), x = lineNode μ α s k b := by
-  unfold lineZeroSet lineNodeSet
-  simp only [mem_union, mem_range, ofReal_inj]
-  constructor
-  · rintro (⟨k, hk⟩ | ⟨k, hk⟩)
-    · exact ⟨k, true, hk.symm⟩
-    · exact ⟨k, false, hk.symm⟩
-  · rintro ⟨k, b, rfl⟩
+        (fun z ↦ φ z - α * |z.im| + linePotential μ α s z) := by
+  obtain ⟨r, C₂, c₀, α₁, hc⟩ := hμ.exists_lineConsts
+  refine ⟨α₁, c₀ / 2, hc.hα₁, by linarith [hc.hc₀], by linarith [hc.hc₀'],
+    fun α hα hα' s hs hs' ↦ ?_⟩
+  have hl := hc.hyp hα hα'
+  have hs2 : s ≤ 1 / 2 := by linarith [hc.hc₀']
+  have hφc : Continuous φ := continuousOn_univ.1 hφ.continuousOn
+  have him : Continuous fun z : ℂ ↦ α * |z.im| := continuous_const.mul continuous_im.abs
+  have hsupp : Function.support (lineZeroCount μ α s) = lineZeroSet μ α s := by
+    ext z
+    rw [Function.mem_support, Ne, lineZeroCount_eq_zero_iff, not_not]
+  have hZ : ∀ ζ ∈ lineZeroSet μ α s, ∃ (k : ℤ) (b : Bool), ζ = (lineNode μ α s k b : ℂ) := by
+    rintro ζ (⟨k, rfl⟩ | ⟨k, rfl⟩)
+    · exact ⟨k, true, rfl⟩
+    · exact ⟨k, false, rfl⟩
+  have hZ' : ∀ (k : ℤ) (b : Bool), ((lineNode μ α s k b : ℝ) : ℂ) ∈ lineZeroSet μ α s := by
+    intro k b
     cases b
     · exact Or.inr ⟨k, rfl⟩
     · exact Or.inl ⟨k, rfl⟩
-
-theorem im_eq_zero_of_mem_lineZeroSet {μ : Measure ℂ} {α s : ℝ} {z : ℂ}
-    (hz : z ∈ lineZeroSet μ α s) : z.im = 0 := by
-  rcases hz with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> simp
-
-theorem eq_ofReal_re_of_mem_lineZeroSet {μ : Measure ℂ} {α s : ℝ} {z : ℂ}
-    (hz : z ∈ lineZeroSet μ α s) : z = (z.re : ℂ) :=
-  Complex.ext (by simp) (by simp [im_eq_zero_of_mem_lineZeroSet hz])
+  -- cells meeting a ball
+  have hcells : ∀ R : ℝ, ∃ G : Finset ℤ, ∀ k ∉ G, ∀ t ∈ Icc (lineKnot μ α k) (lineKnot μ α (k + 1)),
+      R < |t| := by
+    intro R
+    obtain ⟨K₀, K₁, hK⟩ := hl.cells_meeting_subset (-R - 1) (R + 1)
+    refine ⟨Finset.Icc K₀ K₁, fun k hk t ht ↦ ?_⟩
+    by_contra hcon
+    push Not at hcon
+    rw [abs_le] at hcon
+    exact hk (Finset.mem_Icc.2 (hK k (by linarith [ht.2]) (by linarith [ht.1])))
+  -- local integrability of the series
+  have hS : LocallyIntegrable (linePotential μ α s) := by
+    refine locallyIntegrable_iff.2 fun K hK ↦ ?_
+    obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+    obtain ⟨F, -, hcont, -, hdec⟩ := hc.decomp hα hα' hs hs2 (le_max_right R 0)
+    have h1 : IntegrableOn (fun z ↦ ∑ k ∈ F, lineTerm μ α s k z) (closedBall 0 (max R 0)) :=
+      (locallyIntegrable_finsetSum F fun k _ ↦ hμ.locallyIntegrable_lineTerm α s k).integrableOn_isCompact
+        (isCompact_closedBall 0 _)
+    have h2 := ContinuousOn.integrableOn_compact (μ := volume) (isCompact_closedBall 0 (max R 0))
+      hcont
+    refine ((h1.add h2).congr_fun (fun z _ ↦ (hdec z).symm) measurableSet_closedBall).mono_set
+      (hR.trans (closedBall_subset_closedBall (le_max_left _ _)))
+  refine ⟨fun K _ hK ↦ ?_, ?_, ?_, ?_⟩
+  · -- finite support
+    obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+    obtain ⟨G, hG⟩ := hcells R
+    rw [hsupp]
+    refine (((G.finite_toSet).prod (Set.finite_univ (α := Bool))).image
+      fun p : ℤ × Bool ↦ ((lineNode μ α s p.1 p.2 : ℝ) : ℂ)).subset (fun ζ hζ ↦ ?_)
+    obtain ⟨k, b, rfl⟩ := hZ ζ hζ.2
+    refine ⟨(k, b), ⟨?_, mem_univ _⟩, rfl⟩
+    by_contra hkG
+    have h1 := hG k hkG _ (Ioc_subset_Icc_self (hc.node_mem_Ioc hα hα' hs hs' k b))
+    have h2 := hR hζ.1
+    rw [mem_closedBall, dist_zero_right, norm_real, Real.norm_eq_abs] at h2
+    linarith
+  · -- local integrability
+    rw [locallyIntegrableOn_univ]
+    exact (hφc.locallyIntegrable.sub him.locallyIntegrable).add hS
+  · -- continuity off the zeros
+    intro z₀ hz₀
+    have hz₀Z : z₀ ∉ lineZeroSet μ α s := by rw [← hsupp]; exact hz₀.2
+    obtain ⟨F, -, hcont, -, hdec⟩ := hc.decomp hα hα' hs hs2 (by positivity : 0 ≤ ‖z₀‖ + 1)
+    have hsum : ContinuousAt (fun z ↦ ∑ k ∈ F, lineTerm μ α s k z) z₀ :=
+      tendsto_finsetSum F fun k _ ↦ hμ.continuousAt_lineTerm fun b hb ↦ hz₀Z (hb ▸ hZ' k b)
+    have htail : ContinuousAt (fun z ↦ ∑' k, if k ∈ F then 0 else lineTerm μ α s k z) z₀ :=
+      hcont.continuousAt (closedBall_mem_nhds_of_mem (by
+        rw [mem_ball, dist_zero_right]; linarith))
+    have hSc : ContinuousAt (linePotential μ α s) z₀ :=
+      (hsum.add htail).congr (Eventually.of_forall fun z ↦ (hdec z).symm)
+    exact ((hφc.continuousAt.sub him.continuousAt).add hSc).continuousWithinAt
+  · -- the weak Laplacian
+    intro χ hχ hcχ _
+    beta_reduce
+    obtain ⟨hΔc, -⟩ := laplacian_testFunction hχ
+    have hΔs := hasCompactSupport_laplacian hχ hcχ
+    set Δχ := Laplacian.laplacian χ
+    obtain ⟨R₀, hR₀⟩ := hcχ.isBounded.subset_closedBall 0
+    set R := max R₀ 0
+    have hR : tsupport χ ⊆ closedBall 0 R :=
+      hR₀.trans (closedBall_subset_closedBall (le_max_left _ _))
+    have hχ0 : ∀ z, R < ‖z‖ → χ z = 0 := fun z hz ↦ image_eq_zero_of_notMem_tsupport
+      (fun h ↦ by have := hR h; rw [mem_closedBall, dist_zero_right] at this; linarith)
+    have hΔ0 : ∀ z, R < ‖z‖ → Δχ z = 0 := fun z hz ↦ image_eq_zero_of_notMem_tsupport
+      (fun h ↦ by
+        have := hR ((laplacian_testFunction hχ).2 h)
+        rw [mem_closedBall, dist_zero_right] at this; linarith)
+    -- integrability
+    have iφ : Integrable fun z ↦ φ z * Δχ z :=
+      hφc.locallyIntegrable.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+    have iim : Integrable fun z ↦ α * |z.im| * Δχ z :=
+      him.locallyIntegrable.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+    have iS : Integrable fun z ↦ linePotential μ α s z * Δχ z :=
+      hS.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+    have hsplit : ∫ z, (φ z - α * |z.im| + linePotential μ α s z) * Δχ z =
+        (∫ z, φ z * Δχ z) - α * (∫ z, |z.im| * Δχ z) + ∫ z, linePotential μ α s z * Δχ z := by
+      have iim' : Integrable fun z ↦ α * (|z.im| * Δχ z) := by simpa only [mul_assoc] using iim
+      have e : (fun z ↦ (φ z - α * |z.im| + linePotential μ α s z) * Δχ z) =
+          fun z ↦ (φ z * Δχ z - α * (|z.im| * Δχ z)) + linePotential μ α s z * Δχ z := by
+        funext z; ring
+      have isub : Integrable fun z ↦ φ z * Δχ z - α * (|z.im| * Δχ z) := iφ.sub iim'
+      rw [e, integral_add isub iS, integral_sub iφ iim', integral_const_mul]
+    -- the series
+    obtain ⟨F, u, hu, hu0, hFu⟩ := hc.uniform_tail hα hα' hs hs2 (le_max_right R₀ 0)
+    have iT : ∀ k, Integrable fun z ↦ lineTerm μ α s k z * Δχ z := fun k ↦
+      (hμ.locallyIntegrable_lineTerm α s k).integrable_smul_right_of_hasCompactSupport hΔc hΔs
+    have hbound : ∀ k ∉ F, ∫ z, ‖lineTerm μ α s k z * Δχ z‖ ≤ u k * ∫ z, ‖Δχ z‖ := by
+      intro k hk
+      rw [← integral_const_mul]
+      refine integral_mono (iT k).norm ((hΔc.norm.integrable_of_hasCompactSupport
+        hΔs.norm).const_mul _) (fun z ↦ ?_)
+      by_cases hz : z ∈ closedBall (0 : ℂ) R
+      · rw [norm_mul, Real.norm_eq_abs]
+        exact mul_le_mul_of_nonneg_right ((hFu k hk).1 z hz) (norm_nonneg _)
+      · rw [mem_closedBall, dist_zero_right, not_le] at hz
+        rw [hΔ0 z hz]; simp
+    have hsumm : Summable fun k ↦ ∫ z, ‖lineTerm μ α s k z * Δχ z‖ := by
+      refine Summable.of_nonneg_of_le (fun k ↦ integral_nonneg fun z ↦ norm_nonneg _)
+        (fun k ↦ ?_) ((summable_of_ne_finset_zero (s := F) (f := fun k ↦
+          if k ∈ F then ∫ z, ‖lineTerm μ α s k z * Δχ z‖ else 0)
+          (fun k hk ↦ by simp [hk])).add (hu.mul_right (∫ z, ‖Δχ z‖)))
+      by_cases hk : k ∈ F
+      · simp only [hk, if_true]
+        have : 0 ≤ u k * ∫ z, ‖Δχ z‖ := mul_nonneg (hu0 k) (integral_nonneg fun z ↦ norm_nonneg _)
+        linarith
+      · simp only [hk, if_false, zero_add]; exact hbound k hk
+    have hSΔ : ∫ z, linePotential μ α s z * Δχ z = ∑' k, ∫ z, lineTerm μ α s k z * Δχ z := by
+      rw [integral_tsum_of_summable_integral_norm iT hsumm]
+      congr 1; ext z
+      rw [linePotential, tsum_mul_right]
+    -- per cell, and the reduction to finitely many cells
+    obtain ⟨G, hG⟩ := hcells R
+    have hχcell : ∀ k ∉ G, ∀ t ∈ Icc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t = 0 :=
+      fun k hk t ht ↦ hχ0 _ (by rw [norm_real, Real.norm_eq_abs]; exact hG k hk t ht)
+    have hnodeG : ∀ k ∉ G, ∀ b : Bool, χ (lineNode μ α s k b) = 0 := fun k hk b ↦
+      hχcell k hk _ (Ioc_subset_Icc_self (hc.node_mem_Ioc hα hα' hs hs' k b))
+    have hcellI : ∀ k ∉ G, ∀ m₀ : Measure ℝ,
+        ∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t ∂m₀ = 0 := by
+      intro k hk m₀
+      exact setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hχcell k hk t (Ioc_subset_Icc_self ht)
+    have hcellsum : ∑' k, ∫ z, lineTerm μ α s k z * Δχ z =
+        ∑ k ∈ G, (2 * Real.pi * (χ (lineNode μ α s k true) + χ (lineNode μ α s k false)) -
+          (∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t ∂linePull μ) +
+          2 * α * ∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t) := by
+      rw [tsum_eq_sum (s := G)]
+      · exact Finset.sum_congr rfl fun k _ ↦
+          hμ.integral_lineTerm_mul_laplacian k (hl.lineKnot_le k) χ hχ hcχ
+      · intro k hk
+        rw [hμ.integral_lineTerm_mul_laplacian k (hl.lineKnot_le k) χ hχ hcχ, hnodeG k hk true,
+          hnodeG k hk false, hcellI k hk, hcellI k hk]
+        ring
+    -- the cells cover the support
+    have hcover : ∀ m₀ : Measure ℝ, (∀ k, IntegrableOn (fun t : ℝ ↦ χ t)
+        (Ioc (lineKnot μ α k) (lineKnot μ α (k + 1))) m₀) →
+        ∑ k ∈ G, ∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)), χ t ∂m₀ =
+          ∫ t, χ t ∂m₀ := by
+      intro m₀ hint
+      rw [← integral_biUnion_finset G (fun _ _ ↦ measurableSet_Ioc)
+        (fun k _ k' _ hkk' ↦ hl.cells_disjoint hkk') (fun k _ ↦ hint k)]
+      refine setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ ?_
+      obtain ⟨k, hk, -⟩ := hl.existsUnique_mem t
+      have hkG : k ∉ G := fun hkG ↦ ht (mem_biUnion hkG hk)
+      exact hχcell k hkG t (Ioc_subset_Icc_self hk)
+    have hχc : Continuous fun t : ℝ ↦ χ t := hχ.continuous.comp continuous_ofReal
+    have hμI := hcover (linePull μ) fun k ↦ by
+      have := hμ.isFiniteMeasureOnCompacts'
+      exact (hχc.integrableOn_Icc).mono_set Ioc_subset_Icc_self
+    have hvI := hcover volume fun k ↦ (hχc.integrableOn_Icc).mono_set Ioc_subset_Icc_self
+    rw [hsplit, hφ.laplacian_eq χ hχ hcχ (subset_univ _), integral_abs_im_mul_laplacian χ hχ hcχ,
+      hSΔ, hcellsum, hc.finsum_lineZeroCount hα hα' hs hs' χ G hnodeG, hμ.integral_eq,
+      Finset.sum_add_distrib, Finset.sum_sub_distrib, hμI, ← Finset.mul_sum, ← Finset.mul_sum, hvI]
+    ring
 
 /-- Nodes with a positive offset are never centres. -/
 theorem LineConsts.node_ne_centre {μ : Measure ℂ} {r C₂ c₀ α₁ : ℝ}
