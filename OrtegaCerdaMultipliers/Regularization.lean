@@ -174,6 +174,170 @@ theorem add_le_max_mul {a b x y : ℝ≥0∞} {A B : ℝ≥0} (ha : a ≤ A * x)
   · exact ha.trans (by gcongr; exact le_max_left _ _)
   · exact hb.trans (by gcongr; exact le_max_right _ _)
 
+/-! #### Disc geometry -/
+
+/-- `r₁ = artanh (1/9)`, so `hypBall x r₁ = pB(x, 1/9)`. -/
+def r₁ : ℝ := Real.artanh (1 / 9)
+/-- `r₂ = artanh (1/2)`, so `hypBall x r₂ = pB(x, 1/2)`. -/
+def r₂ : ℝ := Real.artanh (1 / 2)
+
+theorem r₁_pos : 0 < r₁ := Real.artanh_pos ⟨by norm_num, by norm_num⟩
+theorem r₂_pos : 0 < r₂ := Real.artanh_pos ⟨by norm_num, by norm_num⟩
+theorem tanh_r₁ : Real.tanh r₁ = 1 / 9 := Real.tanh_artanh ⟨by norm_num, by norm_num⟩
+theorem tanh_r₂ : Real.tanh r₂ = 1 / 2 := Real.tanh_artanh ⟨by norm_num, by norm_num⟩
+
+/-- `artanh t ≤ 2 t` for `0 ≤ t ≤ 1/2`. -/
+theorem artanh_le_two_mul {t : ℝ} (h0 : 0 ≤ t) (h1 : t ≤ 1 / 2) : Real.artanh t ≤ 2 * t := by
+  rw [Real.artanh_eq_half_log ⟨by linarith, by linarith⟩]
+  have hpos : 0 < (1 + t) / (1 - t) := div_pos (by linarith) (by linarith)
+  have h := Real.log_le_sub_one_of_pos hpos
+  have e : (1 + t) / (1 - t) - 1 = 2 * t / (1 - t) := by
+    rw [div_sub_one (by linarith)]
+    congr 1
+    ring
+  have h2 : 2 * t / (1 - t) ≤ 4 * t := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith
+  linarith
+
+theorem r₂_le_one : r₂ ≤ 1 := by
+  have := artanh_le_two_mul (t := 1 / 2) (by norm_num) le_rfl
+  unfold r₂
+  linarith
+
+theorem mem_hypBall_iff_pseudoHyp {x ζ : ℂ} (hx : x ∈ 𝔻) {r : ℝ} :
+    ζ ∈ hypBall x r ↔ ζ ∈ 𝔻 ∧ pseudoHyp x ζ < Real.tanh r := by
+  rw [hypBall_eq_pseudoBall hx]
+  rfl
+
+theorem discRadius_pos {ζ : ℂ} (hζ : ζ ∈ 𝔻) : 0 < discRadius ζ := by
+  have := one_sub_normSq_pos hζ
+  unfold discRadius
+  linarith
+
+/-- (D1) `ball ζ (s ζ) ⊆ 𝔻`. -/
+theorem ball_discRadius_subset {ζ : ℂ} (hζ : ζ ∈ 𝔻) : ball ζ (discRadius ζ) ⊆ 𝔻 := by
+  intro x hx
+  have h := ball_subset_pseudoBall hζ (s := 1 / 2) (by norm_num) (by norm_num)
+  refine (h ?_).1
+  rw [mem_ball] at hx ⊢
+  unfold discRadius at hx
+  linarith
+
+/-- (D3) If `|x − ζ| < s(ζ)` then `ζ ∈ D(x, r₂)` and `1 − |ζ|² ≥ (1 − |x|²)/3`. -/
+theorem near_of_lt_discRadius {x ζ : ℂ} (hx : x ∈ 𝔻) (hζ : ζ ∈ 𝔻)
+    (h : ‖x - ζ‖ < discRadius ζ) :
+    ζ ∈ hypBall x r₂ ∧ (1 - ‖x‖ ^ 2) / 3 ≤ 1 - ‖ζ‖ ^ 2 := by
+  have hb : x ∈ ball ζ (1 / 2 * (1 - ‖ζ‖ ^ 2) / 2) := by
+    rw [mem_ball, dist_eq_norm]
+    unfold discRadius at h
+    linarith
+  have hρ' := (ball_subset_pseudoBall hζ (s := 1 / 2) (by norm_num) (by norm_num) hb).2
+  have hρ : pseudoHyp x ζ < 1 / 2 := by rw [pseudoHyp_comm]; exact hρ'
+  refine ⟨(mem_hypBall_iff_pseudoHyp hx).2 ⟨hζ, by rw [tanh_r₂]; exact hρ⟩, ?_⟩
+  have := (one_sub_normSq_comparable hx hζ (s := 1 / 2) (by norm_num) hρ).1
+  norm_num at this
+  linarith
+
+/-- (D4) If `ζ ∈ D(x, r₁)` then `|x − ζ| < s(ζ)/2` and `1 − |ζ|² ≤ (5/4)(1 − |x|²)`. -/
+theorem close_of_mem_hypBall_r₁ {x ζ : ℂ} (hx : x ∈ 𝔻) (hζ : ζ ∈ hypBall x r₁) :
+    ‖x - ζ‖ < discRadius ζ / 2 ∧ 1 - ‖ζ‖ ^ 2 ≤ 5 / 4 * (1 - ‖x‖ ^ 2) := by
+  obtain ⟨hζ𝔻, hρ⟩ := (mem_hypBall_iff_pseudoHyp hx).1 hζ
+  rw [tanh_r₁] at hρ
+  have hρ' : pseudoHyp ζ x < 1 / 9 := by rw [pseudoHyp_comm]; exact hρ
+  have hb := pseudoBall_subset_ball hζ𝔻 (s := 1 / 9) (by norm_num) (by norm_num) ⟨hx, hρ'⟩
+  rw [mem_ball, dist_eq_norm] at hb
+  refine ⟨?_, ?_⟩
+  · have e : 1 / 9 * (1 - ‖ζ‖ ^ 2) / (1 - 1 / 9) = discRadius ζ / 2 := by
+      unfold discRadius
+      ring
+    linarith
+  · have := (one_sub_normSq_comparable hx hζ𝔻 (s := 1 / 9) (by norm_num) hρ).2
+    norm_num at this
+    linarith
+
+/-- The logarithm in the local potential, bounded by the hyperbolic one. -/
+theorem log_discRadius_sq_le {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ hypBall z r₂) :
+    Real.log (discRadius ζ ^ 2 / ‖z - ζ‖ ^ 2) ≤
+      2 * Real.log (r₂ / hypDist z ζ) + 2 * Real.log (1 / r₂) := by
+  have hlog1 : 0 ≤ Real.log (1 / r₂) :=
+    Real.log_nonneg (by rw [le_div_iff₀ r₂_pos]; linarith [r₂_le_one])
+  obtain ⟨hζ𝔻, hρ⟩ := (mem_hypBall_iff_pseudoHyp hz).1 hζ
+  rw [tanh_r₂] at hρ
+  by_cases hzζ : z = ζ
+  · subst hzζ
+    simp only [sub_self, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+      div_zero, Real.log_zero, hypDist_self]
+    linarith
+  have hd : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hzζ)
+  have hD := norm_one_sub_conj_mul_pos hz hζ𝔻
+  have hρdef : pseudoHyp z ζ * ‖1 - conj z * ζ‖ = ‖z - ζ‖ := by
+    unfold pseudoHyp
+    exact div_mul_cancel₀ _ hD.ne'
+  have hρ0 : 0 < pseudoHyp z ζ := div_pos hd hD
+  have hβ : hypDist z ζ ≤ 2 * pseudoHyp z ζ := artanh_le_two_mul hρ0.le hρ.le
+  have hβpos : 0 < hypDist z ζ := Real.artanh_pos ⟨hρ0, by linarith⟩
+  have hz1 := norm_lt_one_of_mem_disc hz
+  have hζ1 := norm_lt_one_of_mem_disc hζ𝔻
+  have hs : discRadius ζ ≤ ‖1 - conj z * ζ‖ / 2 := by
+    have h1 := one_sub_mul_le_norm_one_sub_conj_mul z ζ
+    have h2 : ‖z‖ * ‖ζ‖ ≤ ‖ζ‖ := mul_le_of_le_one_left (norm_nonneg ζ) hz1.le
+    unfold discRadius
+    nlinarith [norm_nonneg ζ]
+  have hspos := discRadius_pos hζ𝔻
+  have key : discRadius ζ / ‖z - ζ‖ ≤ 1 / hypDist z ζ := by
+    rw [div_le_div_iff₀ hd hβpos, one_mul]
+    calc discRadius ζ * hypDist z ζ ≤ ‖1 - conj z * ζ‖ / 2 * (2 * pseudoHyp z ζ) := by
+          gcongr
+      _ = ‖z - ζ‖ := by rw [← hρdef]; ring
+  have e1 : Real.log (discRadius ζ ^ 2 / ‖z - ζ‖ ^ 2) = 2 * Real.log (discRadius ζ / ‖z - ζ‖) := by
+    rw [← div_pow, Real.log_pow]
+    norm_num
+  have e2 : Real.log (1 / hypDist z ζ) = Real.log (r₂ / hypDist z ζ) + Real.log (1 / r₂) := by
+    rw [← Real.log_mul (div_pos r₂_pos hβpos).ne' (div_pos one_pos r₂_pos).ne']
+    congr 1
+    field_simp
+    exact (div_self r₂_pos.ne').symm
+  have h3 := Real.log_le_log (div_pos hspos hd) key
+  linarith
+
+theorem hypBall_subset_hypBall_add {x ζ : ℂ} (hx : x ∈ 𝔻) {a b : ℝ} (hζ : ζ ∈ hypBall x a) :
+    hypBall ζ b ⊆ hypBall x (a + b) := by
+  intro w hw
+  refine ⟨hw.1, ?_⟩
+  have := hypDist_triangle hx hζ.1 hw.1
+  linarith [hζ.2, hw.2]
+
+theorem hypBall_subset_hypBall_two_mul {x ζ : ℂ} (hx : x ∈ 𝔻) {a : ℝ} (hζ : ζ ∈ hypBall x a) :
+    hypBall x a ⊆ hypBall ζ (2 * a) := by
+  intro w hw
+  refine ⟨hw.1, ?_⟩
+  have := hypDist_triangle hζ.1 hx hw.1
+  rw [hypDist_comm ζ x] at this
+  linarith [hζ.2, hw.2]
+
+theorem hypBall_mono {z : ℂ} {r r' : ℝ} (h : r ≤ r') : hypBall z r ⊆ hypBall z r' :=
+  fun _ hw ↦ ⟨hw.1, hw.2.trans_le h⟩
+
+/-! #### The weight -/
+
+theorem massWeightDisc_le {μ : Measure ℂ} {R : ℝ} (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) {ζ : ℂ}
+    (hζ : ζ ∈ 𝔻) : massWeightDisc μ R ζ ≤ 2⁻¹ := by
+  unfold massWeightDisc
+  apply ENNReal.inv_le_inv.2
+  calc (2 : ℝ≥0∞) = 2 * 1 := (mul_one 2).symm
+    _ ≤ 2 * μ (hypBall ζ R) := by gcongr; exact hm ζ hζ
+
+theorem ae_massWeightDisc_le {μ : Measure ℂ} (hc : μ 𝔻ᶜ = 0) {R : ℝ}
+    (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) : ∀ᵐ ζ ∂μ, massWeightDisc μ R ζ ≤ 2⁻¹ := by
+  filter_upwards [ae_mem_of_carried hc] with ζ hζ
+  exact massWeightDisc_le hm hζ
+
+theorem ae_massWeightDisc_le_one {μ : Measure ℂ} (hc : μ 𝔻ᶜ = 0) {R : ℝ}
+    (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) : ∀ᵐ ζ ∂μ, massWeightDisc μ R ζ ≤ 1 := by
+  filter_upwards [ae_massWeightDisc_le hc hm] with ζ hζ
+  exact hζ.trans (ENNReal.inv_le_one.2 one_le_two)
+
 end Reg
 
 theorem measurable_massWeight {μ : Measure ℂ} [SFinite μ] (R : ℝ) :
@@ -203,7 +367,44 @@ theorem isLocalPotData_plane {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubh
 
 theorem isLocalPotData_disc {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight 𝔻 φ μ)
     (hd : IsLocallyDoublingDisc μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
-    IsLocalPotData 𝔻 (μ.withDensity (massWeightDisc μ R)) discRadius := sorry
+    IsLocalPotData 𝔻 (μ.withDensity (massWeightDisc μ R)) discRadius := by
+  have : SigmaFinite μ := hφ.sigmaFinite isOpen_ball
+  have hle : μ.withDensity (massWeightDisc μ R) ≤ μ :=
+    Reg.withDensity_le_self (Reg.ae_massWeightDisc_le_one hφ.carried hm)
+  have hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞ := fun z hz r ↦ hφ.measure_hypBall_lt_top hz r
+  refine ⟨isOpen_ball, ?_, fun ζ hζ ↦ Reg.discRadius_pos hζ, ⟨1 / 4, ?_⟩,
+    fun ζ hζ ↦ Reg.ball_discRadius_subset hζ, withDensity_absolutelyContinuous μ _ hφ.carried,
+    inferInstance, ?_, ?_, ?_⟩
+  · unfold discRadius
+    fun_prop
+  · intro ζ
+    unfold discRadius
+    nlinarith [norm_nonneg ζ]
+  · intro z
+    refine le_antisymm ((Measure.le_iff'.1 hle {z}).trans ?_) bot_le
+    by_cases hz : z ∈ 𝔻
+    · rw [measure_singleton_disc hd hfin hz]
+    · exact (measure_mono (by simpa using hz : ({z} : Set ℂ) ⊆ 𝔻ᶜ)).trans hφ.carried.le
+  · intro K hK hKc
+    obtain ⟨ρ, hρ1, hKρ⟩ := exists_lt_subset_ball hKc.isClosed hK
+    have hsub : {ζ | ∃ z ∈ K, dist z ζ < discRadius ζ} ⊆ closedBall 0 ((1 + 2 * ρ) / 3) := by
+      rintro ζ ⟨z, hzK, hzζ⟩
+      have hzρ : ‖z‖ < ρ := by simpa using hKρ hzK
+      rw [mem_closedBall, dist_zero_right]
+      rw [dist_eq_norm] at hzζ
+      unfold discRadius at hzζ
+      have h1 : ‖ζ‖ ≤ ‖z‖ + ‖z - ζ‖ := by
+        calc ‖ζ‖ = ‖z - (z - ζ)‖ := by ring_nf
+          _ ≤ ‖z‖ + ‖z - ζ‖ := norm_sub_le _ _
+      nlinarith [norm_nonneg ζ, norm_nonneg (z - ζ)]
+    have hcl : closedBall (0 : ℂ) ((1 + 2 * ρ) / 3) ⊆ 𝔻 := closedBall_subset_ball (by linarith)
+    calc _ ≤ μ {ζ | ∃ z ∈ K, dist z ζ < discRadius ζ} := Measure.le_iff'.1 hle _
+      _ ≤ μ (closedBall 0 ((1 + 2 * ρ) / 3)) := measure_mono hsub
+      _ < ∞ := hφ.finite_of_compact _ hcl (isCompact_closedBall _ _)
+  · intro K hK hKc η hη
+    obtain ⟨δ, hδ, hδ1, hδK⟩ := logSmall_disc hd hφ.finite_of_compact hK hKc hη
+    exact ⟨δ, hδ, hδ1, fun z hz ↦
+      (lintegral_mono' (Measure.restrict_mono subset_rfl hle) le_rfl).trans (hδK z hz)⟩
 
 theorem smoothedDensity_plane_bounds {φ : ℂ → ℝ} {μ : Measure ℂ}
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoubling μ) {R : ℝ} (hR : 0 < R)
