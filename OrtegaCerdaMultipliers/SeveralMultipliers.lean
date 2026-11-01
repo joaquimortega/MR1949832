@@ -3,10 +3,20 @@ import OrtegaCerdaMultipliers.Multiplier.Theorem4
 /-!
 # M09 (SeveralMultipliers) — Proposition 2: several multipliers with disjoint exceptional sets
 
-See `blueprint/M09_SeveralMultipliers.md`.  Scaffold: statements, proofs `sorry`; `colorSel` is a
-real definition.  The comparator statements `prop2_disc`, `prop2_plane` (verbatim from
-`comparator/statements.lean`, which now contain the Theorem-4 bounds for each multiplier) and the
-forms `prop2_*_full` consumed by M11/M12 are proved from `prop2_*_quant`.
+See `blueprint/M09_SeveralMultipliers.md`.  **Status: sorry-free**, modulo the upstream
+interface (M03: `claim1_*_quant`, `measure_*_massRadius_quant`, `massRadius*_lapNorm_quant`,
+`MeasClass*.lapNorm`; M05: `lemma4_*_quant`; M08: `IsMassPartition.exists_cells`,
+`exists_nodes_*`, `multiplier_of_nodes_*`; M01: `hypArea_hypBall`).  The comparator statements
+`prop2_disc`, `prop2_plane` (verbatim from `comparator/statements.lean`, which now contain the
+Theorem-4 bounds for each multiplier) and the forms `prop2_*_full` consumed by M11/M12 are proved
+from `prop2_*_quant`.
+
+Proof outline (blueprint §3): greedy colouring of the bounded-degree conflict graph of the cells
+(`exists_coloring_nat`; the degree bound counts disjoint cells of mass `N ≥ 1` inside a ball of
+radius `≃ ρ(c_i)`, `Prop2.sepColoring_generic`); for each colour, the M08 multiplier with the
+alternative nodes on the cells of that colour and their neighbours (`colorSel`); the key
+separation lemma `nodes_far_of_color_*` (`Prop2.nodesFar_generic`, one proof for both
+geometries); the two-sided bound on the good set from `Thm4Bounds*`.  Helpers live in `OC.Prop2`.
 
 Reconciliation: the former `prop2_*_strong` coincide with the comparator `prop2_*` (up to the order
 of the existential binders) and are dropped; the former weak `prop2_*` are corollaries of
@@ -485,7 +495,7 @@ theorem thm4BoundsDisc_mono {ψ : ℂ → ℝ} {μ : Measure ℂ} {h : ℂ → �
   exact ⟨le_trans (by gcongr) h1, h2.trans (by gcongr), h3.trans (by gcongr)⟩
 
 /-- Upper bound `|h| ≤ C² e^ψ` from the Theorem-4 upper bound and the Remark `d ≤ C ρ`. -/
-theorem upper_of_bounds {D : ℝ≥0∞} {ρ x ψ : ℝ} {C : ℝ≥0} (hx : 0 ≤ x)
+theorem upper_of_bounds {D : ℝ≥0∞} {ρ x ψ : ℝ} {C : ℝ≥0}
     (h1 : ENNReal.ofReal (x * Real.exp (-ψ)) ≤ C * (D / ENNReal.ofReal ρ))
     (h2 : D ≤ C * ENNReal.ofReal ρ) : x ≤ (C : ℝ) ^ 2 * Real.exp ψ := by
   have h3 : D / ENNReal.ofReal ρ ≤ C := ENNReal.div_le_of_le_mul h2
@@ -610,7 +620,7 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
     exact hfar' i hi z hz j w hj
   choose h hhd hh0 hhb hhfar using hl
   have hupper : ∀ l, ∀ z, ‖h l z‖ ≤ (C : ℝ) ^ 2 * Real.exp (ψ z) := fun l z ↦
-    Prop2.upper_of_bounds (norm_nonneg _) (hhb l z).2.1 (hhb l z).2.2
+    Prop2.upper_of_bounds (hhb l z).2.1 (hhb l z).2.2
   refine ⟨h, hhd, hh0, fun l ↦ Prop2.thm4BoundsPlane_mono hC0 hCCP (hhb l), ?_, ?_, ?_⟩
   · -- every point is good for the colour of its cell
     intro z
@@ -728,7 +738,7 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
     exact hfar' i hi z hz j w hj
   choose h hhd hh0 hhb hhfar using hl
   have hupper : ∀ l, ∀ z ∈ 𝔻, ‖h l z‖ ≤ (C : ℝ) ^ 2 * Real.exp (ψ z) := fun l z hz ↦
-    Prop2.upper_of_bounds (norm_nonneg _) (hhb l z hz).2.1 (hhb l z hz).2.2
+    Prop2.upper_of_bounds (hhb l z hz).2.1 (hhb l z hz).2.2
   refine ⟨h, hhd, hh0, fun l ↦ Prop2.thm4BoundsDisc_mono hC0 hCCP (hhb l), ?_, ?_, ?_⟩
   · -- every point is good for the colour of its cell
     intro z hz
@@ -898,6 +908,153 @@ theorem exists_measurable_partition {X : Type*} [MeasurableSpace X] {n : ℕ} {S
       · exact h.symm
       · exact absurd (hmin j hjG) (not_le.2 h)
 
+namespace Prop2
+
+/-- The good set of a multiplier in `𝔻` is measurable (copied from `Theorem2.lean`, which
+imports this file). -/
+theorem measurableSet_goodSet_disc (Z : Set ℂ) (ρ : ℂ → ℝ) (ε : ℝ) :
+    MeasurableSet {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} := by
+  have hU : IsOpen (⋃ w ∈ Z ∩ 𝔻, 𝔻 ∩ pseudoHyp w ⁻¹' Iio (Real.tanh (ε * ρ w))) :=
+    isOpen_biUnion fun w hw ↦
+      (continuousOn_pseudoHyp hw.2).isOpen_inter_preimage isOpen_ball isOpen_Iio
+  have heq : {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} =
+      𝔻 \ ⋃ w ∈ Z ∩ 𝔻, 𝔻 ∩ pseudoHyp w ⁻¹' Iio (Real.tanh (ε * ρ w)) := by
+    ext z
+    simp only [mem_ofPred_eq, mem_sdiff, mem_iUnion, mem_inter_iff, mem_preimage, mem_Iio,
+      exists_prop, not_exists, not_and]
+    constructor
+    · rintro ⟨hz, h⟩
+      refine ⟨hz, fun w ⟨hwZ, hwD⟩ _ hlt ↦ ?_⟩
+      rw [pseudoHyp_comm, ← hypDist_lt_iff hz hwD] at hlt
+      exact absurd (h w hwZ hwD) (not_le.2 hlt)
+    · rintro ⟨hz, h⟩
+      refine ⟨hz, fun w hwZ hwD ↦ not_lt.1 fun hlt ↦ h w ⟨hwZ, hwD⟩ hz ?_⟩
+      rw [pseudoHyp_comm, ← hypDist_lt_iff hz hwD]
+      exact hlt
+  rw [heq]
+  exact measurableSet_ball.diff hU.measurableSet
+
+/-- The good set of a multiplier in `ℂ` is closed, hence measurable. -/
+theorem measurableSet_goodSet_plane (Z : Set ℂ) (ρ : ℂ → ℝ) (ε : ℝ) :
+    MeasurableSet {z | ∀ w ∈ Z, ε * ρ w ≤ dist z w} := by
+  have : {z | ∀ w ∈ Z, ε * ρ w ≤ dist z w} = ⋂ w ∈ Z, {z | ε * ρ w ≤ dist z w} := by
+    ext z; simp
+  rw [this]
+  exact (isClosed_biInter fun w _ ↦
+    isClosed_le continuous_const (continuous_id.dist continuous_const)).measurableSet
+
+/-- From the good-set cover to a measurable partition. -/
+theorem partition_of_cover {n : ℕ} {S : Set ℂ} (hS : MeasurableSet S) (G : Fin n → Set ℂ)
+    (hG : ∀ i, MeasurableSet (G i)) (hcov : ∀ z ∈ S, ∃ i, z ∈ G i) :
+    ∃ Ω : Fin n → Set ℂ, (∀ i, MeasurableSet (Ω i)) ∧ (∀ i, Ω i ⊆ G i ∩ S) ∧
+      Pairwise (Function.onFun Disjoint Ω) ∧ (⋃ i, Ω i) = S := by
+  obtain ⟨Ω, hΩm, hΩG, hΩu⟩ := exists_measurable_partition hS G hG hcov
+  refine ⟨Ω, hΩm, hΩG, fun i j hij ↦ ?_, ?_⟩
+  · rw [Function.onFun, Set.disjoint_left]
+    intro z hzi hzj
+    exact hij ((hΩu z (hΩG i hzi).2).unique hzi hzj)
+  · apply Subset.antisymm
+    · exact iUnion_subset fun i ↦ (hΩG i).trans inter_subset_right
+    · intro z hz
+      obtain ⟨i, hi, -⟩ := hΩu z hz
+      exact mem_iUnion.2 ⟨i, hi⟩
+
+theorem cosh_le_two_of_le_one {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) : Real.cosh r ≤ 2 := by
+  have h1 := Real.abs_exp_sub_one_sub_id_le (x := r) (by rw [abs_of_nonneg hr0]; exact hr1)
+  have h2 : Real.exp (-r) ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
+  rw [Real.cosh_eq]
+  have h3 := (abs_le.1 h1).2
+  nlinarith
+
+/-- `hypArea` is locally doubling with constant `16` (copied from `Theorem2.lean`). -/
+theorem isLocallyDoublingDiscWith_hypArea : IsLocallyDoublingDiscWith hypArea 16 := by
+  intro z hz s hs h2s
+  rw [hypArea_hypBall hz (by linarith), hypArea_hypBall hz hs.le, Real.sinh_two_mul]
+  have hc := cosh_le_two_of_le_one hs.le (by linarith)
+  have hc0 := Real.cosh_pos s
+  have : Real.pi * (2 * Real.sinh s * Real.cosh s) ^ 2 ≤ 16 * (Real.pi * Real.sinh s ^ 2) := by
+    have : (2 * Real.sinh s * Real.cosh s) ^ 2 = 4 * Real.sinh s ^ 2 * Real.cosh s ^ 2 := by ring
+    rw [this]
+    have hcs : Real.cosh s ^ 2 ≤ 4 := by nlinarith
+    have := sq_nonneg (Real.sinh s)
+    have := Real.pi_pos
+    nlinarith [mul_le_mul_of_nonneg_left hcs (mul_nonneg this.le (sq_nonneg (Real.sinh s)))]
+  calc ENNReal.ofReal (Real.pi * (2 * Real.sinh s * Real.cosh s) ^ 2)
+      ≤ ENNReal.ofReal (16 * (Real.pi * Real.sinh s ^ 2)) := ENNReal.ofReal_le_ofReal this
+    _ = ((16 : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (Real.pi * Real.sinh s ^ 2) := by
+        rw [ENNReal.ofReal_mul (by norm_num)]; simp
+
+/-- Transfer of local doubling along `a • μ ≤ ν ≤ b • μ` (copied from `Theorem2.lean`). -/
+theorem isLocallyDoublingDiscWith_of_le_of_le {μ ν : Measure ℂ} {Cd : ℝ≥0}
+    (hμ : IsLocallyDoublingDiscWith μ Cd) {a b : ℝ≥0} (ha : a ≠ 0)
+    (h₁ : (a : ℝ≥0∞) • μ ≤ ν) (h₂ : ν ≤ (b : ℝ≥0∞) • μ) :
+    IsLocallyDoublingDiscWith ν (b * Cd / a) := by
+  intro z hz s hs h2s
+  calc ν (hypBall z (2 * s)) ≤ b * μ (hypBall z (2 * s)) := h₂ _
+    _ ≤ b * (Cd * μ (hypBall z s)) := by gcongr; exact hμ z hz s hs h2s
+    _ = ((b * Cd / a : ℝ≥0) : ℝ≥0∞) * (a * μ (hypBall z s)) := by
+        symm
+        rw [← mul_assoc, ← ENNReal.coe_mul, div_mul_cancel₀ _ ha, ENNReal.coe_mul, mul_assoc]
+    _ ≤ ((b * Cd / a : ℝ≥0) : ℝ≥0∞) * ν (hypBall z s) := by gcongr; exact h₁ _
+
+/-- `hypArea` is finite on compact subsets of `𝔻` (copied from `Theorem2.lean`). -/
+theorem hypArea_lt_top_of_isCompact {K : Set ℂ} (hK : K ⊆ 𝔻) (hKc : IsCompact K) :
+    hypArea K < ∞ := by
+  obtain ⟨r', hr'1, hKr'⟩ := exists_lt_subset_ball hKc.isClosed hK
+  calc hypArea K ≤ hypArea (ball 0 r') := measure_mono hKr'
+    _ = ∫⁻ z in ball 0 r' ∩ 𝔻, ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2) := by
+        rw [hypArea, withDensity_apply _ measurableSet_ball, Measure.restrict_restrict
+          measurableSet_ball]
+    _ ≤ ∫⁻ _ in ball 0 r' ∩ 𝔻, ENNReal.ofReal ((1 - r' ^ 2)⁻¹ ^ 2) := by
+        apply setLIntegral_mono measurable_const
+        intro z hz
+        apply ENNReal.ofReal_le_ofReal
+        have hz' : ‖z‖ < r' := by simpa using hz.1
+        have hz0 := norm_nonneg z
+        have h1 : 0 < 1 - r' ^ 2 := by nlinarith
+        have h2 : 1 - r' ^ 2 ≤ 1 - ‖z‖ ^ 2 := by nlinarith
+        have h3 : 0 ≤ (1 - ‖z‖ ^ 2)⁻¹ := inv_nonneg.2 (by linarith)
+        gcongr
+    _ = ENNReal.ofReal ((1 - r' ^ 2)⁻¹ ^ 2) * volume (ball 0 r' ∩ 𝔻) := setLIntegral_const _ _
+    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+        ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top)
+
+/-- `measClassDisc_of_hypArea` (stated here so that `prop2_disc_unif` can use it). -/
+theorem measClassDisc_of_hypArea_aux {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    ∃ (Cd : ℝ≥0) (R₀ : ℝ), 0 < R₀ ∧ ∀ μ : Measure ℂ, μ 𝔻ᶜ = 0 →
+      ENNReal.ofReal a • hypArea ≤ μ → μ ≤ ENNReal.ofReal b • hypArea →
+      MeasClassDisc μ Cd R₀ := by
+  have hb : 0 < b := ha.trans_le hab
+  have hapi : 0 < a * Real.pi := mul_pos ha Real.pi_pos
+  set R₀ := 1 + (a * Real.pi)⁻¹ with hR₀_def
+  have hR₀1 : 1 ≤ R₀ := by have := inv_pos.2 hapi; linarith
+  have ha0 : Real.toNNReal a ≠ 0 := by simpa using ha
+  refine ⟨Real.toNNReal b * 16 / Real.toNNReal a, R₀, by linarith, fun μ _ h₁ h₂ ↦ ⟨?_, ?_, ?_⟩⟩
+  · exact isLocallyDoublingDiscWith_of_le_of_le isLocallyDoublingDiscWith_hypArea
+      ha0 h₁ h₂
+  · intro z hz
+    have hsinh : R₀ ≤ Real.sinh R₀ := Real.self_le_sinh_iff.2 (by linarith)
+    have hkey : 1 < a * (Real.pi * Real.sinh R₀ ^ 2) := by
+      have h1 : R₀ ≤ Real.sinh R₀ ^ 2 := by nlinarith
+      have h2 : a * Real.pi * R₀ = a * Real.pi + 1 := by
+        rw [hR₀_def, mul_add, mul_one, mul_inv_cancel₀ hapi.ne']
+      have h3 : a * Real.pi * R₀ ≤ a * Real.pi * Real.sinh R₀ ^ 2 :=
+        mul_le_mul_of_nonneg_left h1 hapi.le
+      nlinarith
+    calc (1 : ℝ≥0∞) < ENNReal.ofReal (a * (Real.pi * Real.sinh R₀ ^ 2)) := by
+          rw [← ENNReal.ofReal_one]
+          exact (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 hkey
+      _ = (ENNReal.ofReal a • hypArea) (hypBall z R₀) := by
+          rw [Measure.smul_apply, hypArea_hypBall hz (by linarith), smul_eq_mul,
+            ENNReal.ofReal_mul ha.le]
+      _ ≤ μ (hypBall z R₀) := h₁ _
+  · intro K hK hKc
+    calc μ K ≤ (ENNReal.ofReal b • hypArea) K := h₂ K
+      _ = ENNReal.ofReal b * hypArea K := by rw [Measure.smul_apply, smul_eq_mul]
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hypArea_lt_top_of_isCompact hK hKc)
+
+end Prop2
+
 /-- The partition form used by M11 (disc). -/
 theorem prop2_disc_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
     (hd : IsLocallyDoublingDisc μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z R)) :
@@ -905,7 +1062,26 @@ theorem prop2_disc_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubh
       (∀ i, DifferentiableOn ℂ (h i) 𝔻) ∧ (∀ i, MeasurableSet (Ω i)) ∧
       Pairwise (Function.onFun Disjoint Ω) ∧ (⋃ i, Ω i) = 𝔻 ∧
       (∀ i, ∀ z ∈ Ω i, h i z ≠ 0 ∧ C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖) ∧
-      (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) := sorry
+      (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) := by
+  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨Cd, hCd⟩ := hd
+  have hw : WeightClassDisc ψ μ Cd R :=
+    ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R hR
+  obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
+  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
+  obtain ⟨Ω, hΩm, hΩG, hdisj, hU⟩ := Prop2.partition_of_cover measurableSet_ball
+    (fun i ↦ {z | z ∈ 𝔻 ∧ ∀ w ∈ {w | h i w = 0}, w ∈ 𝔻 → ε * massRadiusDisc μ w ≤ hypDist z w})
+    (fun i ↦ Prop2.measurableSet_goodSet_disc _ _ _) (fun z hz ↦ by
+      obtain ⟨i, hi⟩ := hcov z hz
+      exact ⟨i, hz, fun w hw0 hwD ↦ hi w hwD hw0⟩)
+  refine ⟨n, h, Ω, C, hC0, hh, hΩm, hdisj, hU, fun i z hz ↦ ?_, hup⟩
+  obtain ⟨⟨hzD, hzG⟩, -⟩ := hΩG i hz
+  have hl := (hgood i z hzD (fun w hwD hw0 ↦ hzG w hw0 hwD)).1
+  refine ⟨fun h0 ↦ ?_, hl⟩
+  rw [h0, norm_zero] at hl
+  have : 0 < (C : ℝ)⁻¹ * Real.exp (ψ z) := by positivity
+  linarith
 
 /-- The partition form used by M12 (plane). -/
 theorem prop2_plane_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight univ ψ μ)
@@ -914,7 +1090,27 @@ theorem prop2_plane_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSub
       (∀ i, Differentiable ℂ (h i)) ∧ (∀ i, MeasurableSet (Ω i)) ∧
       Pairwise (Function.onFun Disjoint Ω) ∧ (⋃ i, Ω i) = univ ∧
       (∀ i, ∀ z ∈ Ω i, h i z ≠ 0 ∧ C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖) ∧
-      (∀ i z, ‖h i z‖ ≤ C * Real.exp (ψ z)) := sorry
+      (∀ i z, ‖h i z‖ ≤ C * Real.exp (ψ z)) := by
+  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨Cd, hCd⟩ := hd
+  have hw : WeightClassPlane ψ μ Cd R :=
+    ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
+      fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R hR
+  obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
+  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
+  obtain ⟨Ω, hΩm, hΩG, hdisj, hU⟩ := Prop2.partition_of_cover MeasurableSet.univ
+    (fun i ↦ {z | ∀ w ∈ {w | h i w = 0}, ε * massRadius μ w ≤ dist z w})
+    (fun i ↦ Prop2.measurableSet_goodSet_plane _ _ _) (fun z _ ↦ by
+      obtain ⟨i, hi⟩ := hcov z
+      exact ⟨i, fun w hw0 ↦ hi w hw0⟩)
+  refine ⟨n, h, Ω, C, hC0, hh, hΩm, hdisj, hU, fun i z hz ↦ ?_, hup⟩
+  obtain ⟨hzG, -⟩ := hΩG i hz
+  have hl := (hgood i z (fun w hw0 ↦ hzG w hw0)).1
+  refine ⟨fun h0 ↦ ?_, hl⟩
+  rw [h0, norm_zero] at hl
+  have : 0 < (C : ℝ)⁻¹ * Real.exp (ψ z) := by positivity
+  linarith
 
 /-- Uniform version for BOC (M11 §8.3): constants depend only on `a ≤ b`. -/
 theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
@@ -925,12 +1121,19 @@ theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
         (∀ z ∈ 𝔻, ∃ i, ∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) ∧
         (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
         ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
-          C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ := sorry
+          C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ := by
+  obtain ⟨Cd, R₀, hR₀, hcl⟩ := Prop2.measClassDisc_of_hypArea_aux ha hab
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R₀ hR₀
+  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
+  refine ⟨n, ε, C, hε, hC0, fun ψ μ hψ h₁ h₂ ↦ ?_⟩
+  obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ ⟨hψ, hcl μ hψ.carried h₁ h₂⟩
+  exact ⟨h, hh, hcov, hup, fun i z hz hg ↦ (hgood i z hz hg).1⟩
 
 /-- Class membership of hyperbolic-area-comparable measures (used for `prop2_disc_unif`). -/
 theorem measClassDisc_of_hypArea {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     ∃ (Cd : ℝ≥0) (R₀ : ℝ), 0 < R₀ ∧ ∀ μ : Measure ℂ, μ 𝔻ᶜ = 0 →
       ENNReal.ofReal a • hypArea ≤ μ → μ ≤ ENNReal.ofReal b • hypArea →
-      MeasClassDisc μ Cd R₀ := sorry
+      MeasClassDisc μ Cd R₀ :=
+  Prop2.measClassDisc_of_hypArea_aux ha hab
 
 end OC
