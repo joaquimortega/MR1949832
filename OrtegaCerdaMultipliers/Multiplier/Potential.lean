@@ -445,6 +445,104 @@ theorem continuousAt_nodes_kerDisc {L : Multiset ℂ} (hL : ∀ w ∈ L, w ∈ �
     simp only [Multiset.map_cons, Multiset.sum_cons]
     exact this
 
+theorem local_structure_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N : ℕ} {η A B : ℝ}
+    {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
+    (hν : MeasClassDisc ν Cd R₁) (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B)
+    (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c)
+    (hN : IsNodes 𝔻 hypDist (massRadiusDisc ν) ν N B R c m Λ) (hm2 : ∀ i, 2 ≤ m i)
+    {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    ∃ G : Finset ℕ, (∀ i ∉ G, ∀ w ∈ R i, w ∉ closedBall (0 : ℂ) r) ∧
+      (∀ i ∉ G, ∀ w ∈ Λ i, w ∉ closedBall (0 : ℂ) r) ∧
+      ∃ u : ℕ → ℝ, (∀ i, 0 ≤ u i) ∧ Summable u ∧
+        ∀ i ∉ G, ∀ z ∈ closedBall (0 : ℂ) r, |cellPot kerDisc ν R Λ i z| ≤ u i := by
+  obtain ⟨C1, -, hcl⟩ := claim1_disc_quant Cd R₁ 0
+  have hci := hC.center_mem'
+  have hρ : ∀ i, 0 < massRadiusDisc ν (c i) := fun i ↦ (hcl ν hν _ (hci i) _ (hci i)).1
+  have hρR : ∀ i, massRadiusDisc ν (c i) ≤ R₁ := fun i ↦ (hcl ν hν _ (hci i) _ (hci i)).2.1
+  obtain ⟨CD, hCD0, hCD⟩ := abs_cellPot_le_disc_far A B R₁ 1 N hA hB one_pos
+  set L := (2 * (A + B) + 1) * max R₁ 0 + 2 with hL
+  have hL0 : 0 < L := by positivity
+  obtain ⟨Cf, hCf⟩ := farField_sum_le_disc Cd R₁ η A L hη hL0
+  have hK𝔻 : closedBall (0 : ℂ) r ⊆ 𝔻 := closedBall_subset_ball hr1
+  have hGfin := finite_cells_disc hν hη hC (closedBall 0 r) hK𝔻 (isCompact_closedBall _ _) L
+  set G := hGfin.toFinset with hGdef
+  have hfar : ∀ i ∉ G, ∀ z ∈ closedBall (0 : ℂ) r, L ≤ hypDist z (c i) := by
+    intro i hi z hz
+    by_contra h; push Not at h
+    exact hi ((Set.Finite.mem_toFinset _).2 ⟨z, hz, h⟩)
+  have hR₁ : ∀ i, massRadiusDisc ν (c i) ≤ max R₁ 0 := fun i ↦ (hρR i).trans (le_max_left _ _)
+  have hAB : ∀ i, 2 * (A + B) * massRadiusDisc ν (c i) + 1 ≤ L := fun i ↦ by
+    have := mul_le_mul_of_nonneg_left (hR₁ i) (by positivity : (0:ℝ) ≤ 2 * (A + B))
+    have h2 : 0 ≤ max R₁ 0 := le_max_right _ _
+    rw [hL]; nlinarith
+  refine ⟨G, ?_, ?_, ?_⟩
+  · intro i hi w hw hwK
+    have h1 := hfar i hi w hwK
+    rw [hypDist_comm] at h1
+    have h2 := hC.subset i w hw
+    have := hAB i
+    nlinarith [hρ i]
+  · intro i hi w hw hwK
+    have h1 := hfar i hi w hwK
+    rw [hypDist_comm] at h1
+    have h2 := hN.near i w hw
+    have := hAB i
+    nlinarith [hρ i]
+  · set u : ℕ → ℝ := fun i ↦ if i ∈ G then 0 else
+      CD * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / (1 - r) ^ 3 with hu
+    have hr' : 0 < 1 - r := by linarith
+    have hu0 : ∀ i, 0 ≤ u i := fun i ↦ by
+      simp only [hu]; split_ifs
+      · exact le_rfl
+      · have := one_sub_normSq_pos (hci i); positivity
+    refine ⟨u, hu0, ?_, ?_⟩
+    · refine summable_of_sum_le hu0 (c := CD * max Cf 0 / (1 - r) ^ 3) fun F ↦ ?_
+      have h0 : (0 : ℂ) ∈ closedBall (0 : ℂ) r := mem_closedBall_self hr0
+      have hFG := hCf ν N R c hν hC 0 (mem_ball_self one_pos) (F.filter (· ∉ G))
+        fun i hi ↦ hfar i (Finset.mem_filter.1 hi).2 0 h0
+      have hsimp : ∀ i, (1 - ‖(0 : ℂ)‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+          ‖1 - conj (0 : ℂ) * c i‖ ^ 3 = ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 := by
+        intro i; simp
+      simp_rw [hsimp] at hFG
+      rw [← Finset.sum_filter_add_sum_filter_not F (· ∈ G)]
+      have e1 : ∑ i ∈ F.filter (· ∈ G), u i = 0 :=
+        Finset.sum_eq_zero fun i hi ↦ by simp [hu, (Finset.mem_filter.1 hi).2]
+      have e2 : ∑ i ∈ F.filter (· ∉ G), u i = CD / (1 - r) ^ 3 *
+          ∑ i ∈ F.filter (· ∉ G), ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i hi ↦ by
+          simp only [hu, (Finset.mem_filter.1 hi).2, ite_false]; ring
+      rw [e1, e2, zero_add]
+      calc CD / (1 - r) ^ 3 *
+            ∑ i ∈ F.filter (· ∉ G), ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2
+          ≤ CD / (1 - r) ^ 3 * max Cf 0 := by gcongr; exact hFG.trans (le_max_left _ _)
+        _ = CD * max Cf 0 / (1 - r) ^ 3 := by ring
+    · intro i hi z hz
+      have hz𝔻 := hK𝔻 hz
+      have hzr : ‖z‖ ≤ r := by rw [mem_closedBall, dist_zero_right] at hz; exact hz
+      have hβ := hfar i hi z hz
+      have hpos : 0 ≤ 2 * (A + B) * massRadiusDisc ν (c i) := by have := hρ i; positivity
+      have hABi := hAB i
+      have hb := hCD ν η R c m Λ hC hN i (hm2 i) z hz𝔻 (integrableOn_kerDisc_cell hν hC i hz𝔻)
+        (hρ i).le (hρR i) (by linarith) (by linarith)
+      simp only [hu, if_neg hi]
+      refine hb.trans ?_
+      have hc1 := norm_lt_one_of_mem_disc (hci i)
+      have hD : 1 - r ≤ ‖1 - conj z * c i‖ := by
+        have := one_sub_mul_le_norm_one_sub_conj_mul z (c i)
+        nlinarith [norm_nonneg z, norm_nonneg (c i)]
+      have hX : 0 ≤ ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 := sq_nonneg _
+      have hz2 : 0 ≤ 1 - ‖z‖ ^ 2 := (one_sub_normSq_pos hz𝔻).le
+      have h1 : (1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+          ‖1 - conj z * c i‖ ^ 3 ≤ ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / (1 - r) ^ 3 :=
+        div_le_div₀ hX (by nlinarith [norm_nonneg z]) (pow_pos hr' 3)
+          (pow_le_pow_left₀ hr'.le hD 3)
+      calc CD * ((1 - ‖z‖ ^ 2) * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 /
+            ‖1 - conj z * c i‖ ^ 3)
+          ≤ CD * (((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / (1 - r) ^ 3) :=
+            mul_le_mul_of_nonneg_left h1 hCD0
+        _ = CD * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / (1 - r) ^ 3 := by ring
+
 /-- `S` is a weak log-modulus datum (M07 `IsWeakLogModulus` fields), plane. -/
 theorem multPot_props_plane {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ}
     {η A B : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
@@ -475,6 +573,208 @@ theorem multPot_props_disc {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} 
       (𝔻 \ Function.support (nodeCount Λ)) ∧
     ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ 𝔻 →
       ∫ z, (ψ z + multPot kerDisc (lapNorm μ) R Λ z) * Laplacian.laplacian χ z =
-        2 * Real.pi * ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ := sorry
+        2 * Real.pi * ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ := by
+  set ν := lapNorm μ with hνdef
+  have hν : MeasClassDisc ν Cd (15 * R₀) := hw.meas.lapNorm
+  obtain ⟨C1, -, hcl⟩ := claim1_disc_quant Cd (15 * R₀) 0
+  have hci := hC.center_mem'
+  have hρ : ∀ i, 0 < massRadiusDisc ν (c i) := fun i ↦ (hcl ν hν _ (hci i) _ (hci i)).1
+  have hA : 0 < A := lt_of_lt_of_le (half_pos hη) (hC.half_le_A_disc (i := 0) (hρ 0) hη)
+  have hN0 := hN.mono_B (B' := max B 0) (fun i ↦ (hρ i).le) (le_max_left _ _)
+  have hB0 : 0 ≤ max B 0 := le_max_right _ _
+  have hfinI : ∀ w ∈ 𝔻, {i | w ∈ Λ i}.Finite := fun w hw ↦
+    (finite_nodeIdx_disc hν hη hC hN0 (K := {w}) (singleton_subset_iff.2 hw)
+      isCompact_singleton).subset fun i hi ↦ ⟨w, hi, rfl⟩
+  have hnc : ∀ w ∈ 𝔻, nodeCount Λ w ≠ 0 ↔ w ∈ nodeSet Λ := fun w hw ↦
+    nodeCount_ne_zero_iff (hfinI w hw)
+  have hΛ𝔻 : ∀ i, ∀ w ∈ Λ i, w ∈ 𝔻 := hN.mem
+  have hR𝔻 : ∀ i, R i ⊆ 𝔻 := hC.subset_univ
+  have hsumm : ∀ z ∈ 𝔻, Summable fun i ↦ cellPot kerDisc ν R Λ i z := fun z hz ↦
+    (summable_cellPot_disc hν hη hA hB0 hρ₀ hC hN0 hm2 hm3 hz).of_abs
+  -- continuity of the tail and of the single cells
+  have hUcont : ∀ i, ContinuousOn (fun z ↦ ∫ ζ in R i, kerDisc z ζ ∂ν) 𝔻 := fun i ↦
+    continuousOn_setIntegral_kerDisc hν (hC.measurableSet i) (hR𝔻 i) (hC.measure_lt_top i)
+  have hcellAt : ∀ i, ∀ z ∈ 𝔻, z ∉ Λ i → ContinuousAt (cellPot kerDisc ν R Λ i) z := by
+    intro i z hz hzΛ
+    have h1 := continuousAt_nodes_kerDisc (hΛ𝔻 i) hz hzΛ
+    have h2 := (hUcont i).continuousAt (isOpen_ball.mem_nhds hz)
+    exact h1.sub h2
+  have hloc : ∀ r : ℝ, 0 ≤ r → r < 1 → ∃ G : Finset ℕ,
+      (∀ i ∉ G, ∀ w ∈ R i, w ∉ closedBall (0 : ℂ) r) ∧
+      (∀ i ∉ G, ∀ w ∈ Λ i, w ∉ closedBall (0 : ℂ) r) ∧
+      ∃ u : ℕ → ℝ, (∀ i, 0 ≤ u i) ∧ Summable u ∧
+        (∀ i ∉ G, ∀ z ∈ closedBall (0 : ℂ) r, |cellPot kerDisc ν R Λ i z| ≤ u i) ∧
+        ContinuousOn (fun z ↦ ∑' i, if i ∈ G then 0 else cellPot kerDisc ν R Λ i z)
+          (closedBall 0 r) := by
+    intro r hr0 hr1
+    obtain ⟨G, hGR, hGΛ, u, hu0, hus, hub⟩ :=
+      local_structure_disc hν hη hA hB0 hC hN0 hm2 hr0 hr1
+    refine ⟨G, hGR, hGΛ, u, hu0, hus, hub, ?_⟩
+    refine continuousOn_tsum (u := u) (fun i ↦ ?_) hus fun i z hz ↦ ?_
+    · by_cases hi : i ∈ G
+      · simp only [hi, ite_true]; exact continuousOn_const
+      · simp only [hi, ite_false]
+        intro z hz
+        exact (hcellAt i z (closedBall_subset_ball hr1 hz)
+          (fun h ↦ hGΛ i hi z h hz)).continuousWithinAt
+    · by_cases hi : i ∈ G
+      · simp only [hi, ite_true, norm_zero]; exact hu0 i
+      · simp only [hi, ite_false, Real.norm_eq_abs]; exact hub i hi z hz
+  -- decomposition of `S` on `𝔻`
+  have hdec : ∀ (G : Finset ℕ), ∀ z ∈ 𝔻, multPot kerDisc ν R Λ z =
+      ∑ i ∈ G, cellPot kerDisc ν R Λ i z +
+        ∑' i, (if i ∈ G then 0 else cellPot kerDisc ν R Λ i z) := fun G z hz ↦
+    tsum_eq_sum_add_tsum_ite (hsumm z hz) G
+  -- radius for a compact set
+  have hrad : ∀ K ⊆ 𝔻, IsCompact K → ∃ r, 0 ≤ r ∧ r < 1 ∧ K ⊆ closedBall 0 r := by
+    intro K hK hKc
+    obtain ⟨r, hr1, hKr⟩ := exists_lt_subset_ball hKc.isClosed hK
+    exact ⟨max r 0, le_max_right _ _, max_lt hr1 one_pos,
+      hKr.trans ((ball_subset_closedBall).trans (closedBall_subset_closedBall (le_max_left _ _)))⟩
+  have hSK : ∀ K ⊆ 𝔻, IsCompact K → IntegrableOn (fun z ↦ multPot kerDisc ν R Λ z) K := by
+    intro K hK hKc
+    obtain ⟨r, hr0, hr1, hKr⟩ := hrad K hK hKc
+    obtain ⟨G, -, -, u, -, -, -, hT⟩ := hloc r hr0 hr1
+    have hT' : IntegrableOn (fun z ↦ ∑' i, if i ∈ G then 0 else cellPot kerDisc ν R Λ i z) K :=
+      (hT.mono hKr).integrableOn_compact hKc
+    have hcells : IntegrableOn (fun z ↦ ∑ i ∈ G, cellPot kerDisc ν R Λ i z) K :=
+      integrable_finsetSum G fun i _ ↦ (integrableOn_nodes_kerDisc (hΛ𝔻 i) hKc hK).sub
+        (((hUcont i).mono hK).integrableOn_compact hKc)
+    refine (hcells.add hT').congr_fun (fun z hz ↦ ?_) hKc.measurableSet
+    simp only [Pi.add_apply]
+    rw [hdec G z (hK hz)]
+  refine ⟨?_, hsumm, ?_, ?_, ?_⟩
+  · -- (1) local finiteness of the nodes
+    intro K hK hKc
+    have hF := finite_nodeIdx_disc hν hη hC hN0 hK hKc
+    refine (hF.biUnion fun i _ ↦ (Λ i).finite_toSet).subset ?_
+    rintro w ⟨hwK, hw⟩
+    obtain ⟨i, hi⟩ := (hnc w (hK hwK)).1 hw
+    exact mem_biUnion ⟨w, hi, hwK⟩ hi
+  · -- (3) local integrability
+    refine (locallyIntegrableOn_iff isOpen_ball.isLocallyClosed).2 fun K hK hKc ↦ ?_
+    exact ((hw.weight.continuousOn.mono hK).integrableOn_compact hKc).add (hSK K hK hKc)
+  · -- (4) continuity off the nodes
+    intro z₀ hz₀
+    obtain ⟨hz₀𝔻, hz₀n⟩ := hz₀
+    have hz₀N : z₀ ∉ nodeSet Λ := fun h ↦ hz₀n ((hnc z₀ hz₀𝔻).2 h)
+    have hz1 := norm_lt_one_of_mem_disc hz₀𝔻
+    set r := (‖z₀‖ + 1) / 2 with hr
+    have hr0 : 0 ≤ r := by positivity
+    have hr1 : r < 1 := by rw [hr]; linarith
+    have hz₀r : z₀ ∈ ball (0 : ℂ) r := by rw [mem_ball, dist_zero_right, hr]; linarith
+    obtain ⟨G, -, -, u, -, -, -, hT⟩ := hloc r hr0 hr1
+    have hTat := (hT.mono ball_subset_closedBall).continuousAt (isOpen_ball.mem_nhds hz₀r)
+    have hψat := hw.weight.continuousOn.continuousAt (isOpen_ball.mem_nhds hz₀𝔻)
+    have hGat : ContinuousAt (fun z ↦ ∑ i ∈ G, cellPot kerDisc ν R Λ i z) z₀ :=
+      tendsto_finsetSum _ fun i _ ↦ hcellAt i z₀ hz₀𝔻 fun h ↦ hz₀N ⟨i, h⟩
+    have hsum := hψat.add (hGat.add hTat)
+    refine (hsum.congr ?_).continuousWithinAt
+    filter_upwards [isOpen_ball.mem_nhds hz₀𝔻] with z hz
+    rw [hdec G z hz]; rfl
+  · -- (5) the Laplacian
+    intro χ hχ hc hs
+    obtain ⟨hΔc, hKc, hΔ0, -⟩ := testFunction_facts hχ hc hs
+    obtain ⟨r, hr0, hr1, hKr⟩ := hrad (tsupport χ) hs hKc
+    obtain ⟨G, hGR, hGΛ, u, hu0, hus, hub, -⟩ := hloc r hr0 hr1
+    have hχ0 : ∀ w, w ∉ closedBall (0 : ℂ) r → χ w = 0 := fun w hw ↦
+      image_eq_zero_of_notMem_tsupport fun h ↦ hw (hKr h)
+    have hcellΔ := fun i ↦ integral_cellPot_kerDisc_mul_laplacian hν (hC.measurableSet i)
+      (hR𝔻 i) (hC.measure_lt_top i) (hΛ𝔻 i) hχ hc hs
+    -- interchange of sum and integral
+    have hΔint : Integrable fun z ↦ |Laplacian.laplacian χ z| :=
+      (hΔc.integrable_of_hasCompactSupport (hc.mono' (fun z hz ↦ ?_))).abs
+    swap
+    · exact by
+        by_contra h
+        exact hz (by simpa [Function.mem_support] using hΔ0 z h)
+    have hbound : ∀ i ∉ G, ∀ z, ‖cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z‖ ≤ u i * |Laplacian.laplacian χ z| := by
+      intro i hi z
+      by_cases hz : z ∈ tsupport χ
+      · rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+        exact mul_le_mul_of_nonneg_right (hub i hi z (hKr hz)) (abs_nonneg _)
+      · simp [hΔ0 z hz]
+    set w : ℕ → ℝ := fun i ↦ if i ∈ G then ∫ z, ‖cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z‖
+      else u i * ∫ z, |Laplacian.laplacian χ z| with hw'
+    have hw0 : ∀ i, 0 ≤ w i := fun i ↦ by
+      simp only [hw']; split_ifs
+      · exact integral_nonneg fun _ ↦ norm_nonneg _
+      · exact mul_nonneg (hu0 i) (integral_nonneg fun _ ↦ abs_nonneg _)
+    have hws : Summable w := by
+      have h1 : Summable fun i ↦ u i * ∫ z, |Laplacian.laplacian χ z| := hus.mul_right _
+      have h2 : Summable fun i ↦ if i ∈ G then ∫ z, ‖cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z‖ else 0 :=
+        summable_of_ne_finset_zero (s := G) fun i hi ↦ by simp [hi]
+      refine (h1.add h2).of_nonneg_of_le hw0 fun i ↦ ?_
+      simp only [hw']
+      split_ifs with hi
+      · have := mul_nonneg (hu0 i)
+          (integral_nonneg (μ := volume) fun z ↦ abs_nonneg (Laplacian.laplacian χ z))
+        linarith
+      · simp
+    have hlint : ∀ i, ∫⁻ z, ‖cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z‖ₑ ≤ ENNReal.ofReal (w i) := by
+      intro i
+      by_cases hi : i ∈ G
+      · simp only [hw', hi, ite_true]
+        rw [ofReal_integral_norm_eq_lintegral_enorm (hcellΔ i).1]
+      · simp only [hw', hi, ite_false]
+        rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hΔint.const_mul (u i))
+          (Eventually.of_forall fun z ↦ mul_nonneg (hu0 i) (abs_nonneg _))]
+        refine lintegral_mono fun z ↦ ?_
+        rw [← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (hbound i hi z)
+    have htsum_ne : ∑' i, ∫⁻ z, ‖cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z‖ₑ ≠ ∞ := by
+      refine ne_top_of_le_ne_top ?_ (ENNReal.tsum_le_tsum hlint)
+      rw [← ENNReal.ofReal_tsum_of_nonneg hw0 hws]
+      exact ENNReal.ofReal_ne_top
+    have hint_tsum := integral_tsum (fun i ↦ (hcellΔ i).1.aestronglyMeasurable) htsum_ne
+    have hSΔ : ∀ z, multPot kerDisc ν R Λ z * Laplacian.laplacian χ z = ∑' i, cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z :=
+      fun z ↦ by rw [multPot, tsum_mul_right]
+    have hterm : ∀ i ∉ G, ∫ z, cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z = 0 := by
+      intro i hi
+      rw [(hcellΔ i).2]
+      have h1 : ((Λ i).map χ).sum = 0 := Multiset.sum_eq_zero fun x hx ↦ by
+        obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hx
+        exact hχ0 w (hGΛ i hi w hw)
+      have h2 : ∫ ζ in R i, χ ζ ∂ν = 0 :=
+        setIntegral_eq_zero_of_forall_eq_zero fun ζ hζ ↦ hχ0 ζ (hGR i hi ζ hζ)
+      rw [h1, h2]; ring
+    have hS_int : ∫ z, multPot kerDisc ν R Λ z * Laplacian.laplacian χ z =
+        ∑ i ∈ G, 2 * Real.pi * (((Λ i).map χ).sum - ∫ ζ in R i, χ ζ ∂ν) := by
+      simp_rw [hSΔ]
+      rw [hint_tsum, tsum_eq_sum (s := G) fun i hi ↦ hterm i hi]
+      exact Finset.sum_congr rfl fun i _ ↦ (hcellΔ i).2
+    -- the weight part
+    have hψint : Integrable fun z ↦ ψ z * Laplacian.laplacian χ z :=
+      integrable_mul_laplacian hχ hc ((hw.weight.continuousOn.mono hs).integrableOn_compact hKc)
+    have hψΔ : ∫ z, ψ z * Laplacian.laplacian χ z = 2 * Real.pi * ∫ ζ, χ ζ ∂ν := by
+      rw [hw.weight.laplacian_eq χ hχ hc hs, hνdef, lapNorm, integral_smul_measure]
+      rw [ENNReal.toReal_inv, ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+      field_simp
+    have hSint : Integrable fun z ↦ multPot kerDisc ν R Λ z * Laplacian.laplacian χ z :=
+      integrable_mul_laplacian hχ hc (hSK _ hs hKc)
+    -- integral of `χ` against `ν` as a sum over the cells
+    have hχν : ∫ ζ, χ ζ ∂ν = ∑ i ∈ G, ∫ ζ in R i, χ ζ ∂ν := by
+      have hχint : Integrable χ ν := by
+        obtain ⟨Dχ, hDχ⟩ := hχ.continuous.bounded_above_of_compact_support hc
+        have hfinK : ν (tsupport χ) < ∞ := hν.finite _ hs hKc
+        refine (IntegrableOn.of_bound hfinK hχ.continuous.aestronglyMeasurable.restrict Dχ
+          (Eventually.of_forall fun z ↦ hDχ z)).integrable_of_forall_notMem_eq_zero
+          fun z hz ↦ image_eq_zero_of_notMem_tsupport hz
+      rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := 𝔻) fun z hz ↦
+        image_eq_zero_of_notMem_tsupport fun h ↦ hz (hs h)]
+      rw [← hC.iUnion_eq, integral_iUnion hC.measurableSet hC.pairwise_disjoint
+        (by rw [hC.iUnion_eq]; exact hχint.integrableOn)]
+      exact tsum_eq_sum fun i hi ↦
+        setIntegral_eq_zero_of_forall_eq_zero fun ζ hζ ↦ hχ0 ζ (hGR i hi ζ hζ)
+    have hfin : ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ = ∑ i ∈ G, ((Λ i).map χ).sum :=
+      finsum_nodeCount_mul fun i hi w hw ↦ hχ0 w (hGΛ i hi w hw)
+    have hsplit : ∫ z, (ψ z + multPot kerDisc ν R Λ z) * Laplacian.laplacian χ z =
+        (∫ z, ψ z * Laplacian.laplacian χ z) +
+          ∫ z, multPot kerDisc ν R Λ z * Laplacian.laplacian χ z := by
+      have h := integral_add hψint hSint
+      refine Eq.trans ?_ h
+      congr 1; ext z; ring
+    rw [hsplit, hψΔ, hS_int, hχν, hfin, ← Finset.mul_sum, Finset.sum_sub_distrib]
+    ring
 
 end OC
