@@ -187,25 +187,35 @@ theorem theorem4_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmoni
         ENNReal.ofReal (‖h z‖ * Real.exp (-ψ z)) ≤
           C * (edistSet z {w | h w = 0} / ENNReal.ofReal (massRadius μ z)) := sorry
 
-/-- **Proposition 2 (disc)** (paper, p. 369): finitely many multipliers whose exceptional sets
+/-- **Proposition 2 (disc)** (paper, p. 369): finitely many multipliers `h₁, …, h_n`, each
+satisfying the conclusion of Theorem 4, whose exceptional sets
 `E_{h_i} = ⋃_{λ ∈ Z(h_i)} D(λ, ε ρ(λ))` have empty intersection; outside `E_{h_i}`,
-`|h_i| ≃ e^ψ`. -/
+`|h_i| ≃ e^ψ` (the remark after Theorem 4). -/
 theorem prop2_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight 𝔻 ψ μ)
     (hd : IsLocallyDoublingDisc μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z R)) :
-    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (ε : ℝ) (C : ℝ), 0 < ε ∧ 0 < C ∧
-      (∀ i, DifferentiableOn ℂ (h i) 𝔻) ∧
+    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (M : ℕ) (ε : ℝ) (C : ℝ≥0), 0 < ε ∧ 0 < C ∧
+      (∀ i, DifferentiableOn ℂ (h i) 𝔻 ∧ (∃ z₀ ∈ 𝔻, h i z₀ ≠ 0) ∧ ∀ z ∈ 𝔻,
+        C⁻¹ * (hypDistSet z {w | w ∈ 𝔻 ∧ h i w = 0} /
+            ENNReal.ofReal (massRadiusDisc μ z)) ^ M ≤
+          ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ∧
+        ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ≤
+          C * (hypDistSet z {w | w ∈ 𝔻 ∧ h i w = 0} / ENNReal.ofReal (massRadiusDisc μ z))) ∧
       (∀ z ∈ 𝔻, ∃ i, ∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) ∧
       ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
-        C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := sorry
+        (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := sorry
 
 /-- **Proposition 2 (plane)** (paper, p. 369). -/
 theorem prop2_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWeight univ ψ μ)
     (hd : IsLocallyDoubling μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z : ℂ, 1 < μ (ball z R)) :
-    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (ε : ℝ) (C : ℝ), 0 < ε ∧ 0 < C ∧
-      (∀ i, Differentiable ℂ (h i)) ∧
+    ∃ (n : ℕ) (h : Fin n → ℂ → ℂ) (M : ℕ) (ε : ℝ) (C : ℝ≥0), 0 < ε ∧ 0 < C ∧
+      (∀ i, Differentiable ℂ (h i) ∧ (∃ z₀, h i z₀ ≠ 0) ∧ ∀ z : ℂ,
+        C⁻¹ * (edistSet z {w | h i w = 0} / ENNReal.ofReal (massRadius μ z)) ^ M ≤
+          ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ∧
+        ENNReal.ofReal (‖h i z‖ * Real.exp (-ψ z)) ≤
+          C * (edistSet z {w | h i w = 0} / ENNReal.ofReal (massRadius μ z))) ∧
       (∀ z : ℂ, ∃ i, ∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) ∧
       ∀ i, ∀ z : ℂ, (∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) →
-        C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := sorry
+        (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := sorry
 
 /-- **Theorem 2** (paper, p. 357), in the normalisation that its proof gives (NOTEBOOK): one
 solution `u` of `∂̄u = f` in `𝔻` satisfies, for every `p ∈ [1, ∞]`,
@@ -214,6 +224,20 @@ solution `u` of `∂̄u = f` in `𝔻` satisfies, for every `p ∈ [1, ∞]`,
 theorem theorem2 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
     (hd : IsLocallyDoublingDisc μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < μ (hypBall z r)) :
     ∃ C : ℝ≥0, ∀ f : ℂ → ℂ, AEStronglyMeasurable f (volume.restrict 𝔻) →
+      (∃ p : ℝ≥0∞, 1 ≤ p ∧
+        eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure < ∞) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSol 𝔻 u f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
+        eLpNorm (fun z ↦ u z * (Real.exp (-φ z) : ℝ)) p discMeasure ≤
+          C * eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure := sorry
+
+/-- **Theorem 2, uniform form**: the constant depends only on the doubling constant `Cd` and the
+radius `r` of the mass condition (this is what the proof gives, and what the companion BOC
+project needs: one constant for a whole family of weights). -/
+theorem theorem2_uniform (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
+    ∃ C : ℝ≥0, ∀ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight 𝔻 φ μ →
+      (∀ z ∈ 𝔻, ∀ s : ℝ, 0 < s → 2 * s < 1 → μ (hypBall z (2 * s)) ≤ Cd * μ (hypBall z s)) →
+      (∀ z ∈ 𝔻, 1 < μ (hypBall z r)) →
+      ∀ f : ℂ → ℂ, AEStronglyMeasurable f (volume.restrict 𝔻) →
       (∃ p : ℝ≥0∞, 1 ≤ p ∧
         eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-φ z) : ℝ)) p discMeasure < ∞) →
       ∃ u : ℂ → ℂ, IsWeakDbarSol 𝔻 u f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
