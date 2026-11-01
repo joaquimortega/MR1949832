@@ -414,6 +414,258 @@ theorem decay_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀ : ℝ) :
         rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num),
           ← Real.rpow_mul (by norm_num), mul_comm]
 
+/-! #### Lemma 3, uniform (§3.14): real algebra, fine part, coarse part -/
+
+/-- Pointwise bound on an annulus (§3.14 (F), steps 1–2). -/
+theorem lemma3_pt {ρz t D V CU s : ℝ} {m : ℕ} (hρz : 0 < ρz) (ht : 0 < t) (htD : t ≤ D)
+    (hV : 0 < V) (hCU : 0 < CU) (hs : 0 < s) (hup : V ≤ CU * (5 * t / ρz) ^ s) :
+    (ρz / D) ^ m ≤ 5 ^ m * (CU / V) ^ ((m : ℝ) / s) := by
+  have hpos : 0 < (ρz / (5 * t)) ^ s := by positivity
+  have h1 : (ρz / (5 * t)) ^ s ≤ CU / V := by
+    have e : (5 * t / ρz) ^ s = ((ρz / (5 * t)) ^ s)⁻¹ := by
+      rw [← Real.inv_rpow (by positivity), inv_div]
+    rw [e, ← div_eq_mul_inv, le_div_iff₀ hpos] at hup
+    rw [le_div_iff₀ hV]
+    linarith [mul_comm V ((ρz / (5 * t)) ^ s)]
+  have h2 : ρz / (5 * t) ≤ (CU / V) ^ (1 / s) :=
+    le_rpow_one_div_of_rpow_le (by positivity) hs h1
+  have h3 : ρz / D ≤ 5 * (CU / V) ^ (1 / s) := by
+    calc ρz / D ≤ ρz / t := div_le_div_of_nonneg_left hρz.le ht htD
+      _ = 5 * (ρz / (5 * t)) := by field_simp
+      _ ≤ 5 * (CU / V) ^ (1 / s) := by gcongr
+  calc (ρz / D) ^ m ≤ (5 * (CU / V) ^ (1 / s)) ^ m :=
+        pow_le_pow_left₀ (div_nonneg hρz.le (ht.le.trans htD)) h3 m
+    _ = 5 ^ m * (CU / V) ^ ((m : ℝ) / s) := by
+        rw [mul_pow, ← Real.rpow_natCast ((CU / V) ^ (1 / s)), ← Real.rpow_mul (by positivity)]
+        congr 2
+        ring
+
+/-- Summation bound on an annulus (§3.14 (F), steps 3–5). -/
+theorem lemma3_sum {V CU c s δr : ℝ} {m n : ℕ} (hs : 0 < s) (hms : s < m) (hc : 0 < c)
+    (hCU : 0 < CU) (hL : c * ((2 : ℝ) ^ n) ^ δr ≤ V) :
+    5 ^ m * (CU / V) ^ ((m : ℝ) / s) * V ≤
+      5 ^ m * CU ^ ((m : ℝ) / s) * c ^ (1 - (m : ℝ) / s) *
+        ((2 : ℝ) ^ (δr * (1 - (m : ℝ) / s))) ^ n := by
+  have hLpos : 0 < c * ((2 : ℝ) ^ n) ^ δr := by positivity
+  have hV : 0 < V := hLpos.trans_le hL
+  have he : 1 - (m : ℝ) / s ≤ 0 := by
+    rw [sub_nonpos, le_div_iff₀ hs]; linarith
+  have e1 : 5 ^ m * (CU / V) ^ ((m : ℝ) / s) * V =
+      5 ^ m * CU ^ ((m : ℝ) / s) * V ^ (1 - (m : ℝ) / s) := by
+    rw [Real.div_rpow hCU.le hV.le, Real.rpow_sub hV, Real.rpow_one]
+    field_simp
+  have h2 : V ^ (1 - (m : ℝ) / s) ≤ (c * ((2 : ℝ) ^ n) ^ δr) ^ (1 - (m : ℝ) / s) :=
+    Real.rpow_le_rpow_of_nonpos hLpos hL he
+  have e2 : (c * ((2 : ℝ) ^ n) ^ δr) ^ (1 - (m : ℝ) / s) =
+      c ^ (1 - (m : ℝ) / s) * ((2 : ℝ) ^ (δr * (1 - (m : ℝ) / s))) ^ n := by
+    rw [Real.mul_rpow hc.le (by positivity), ← Real.rpow_mul (by positivity),
+      ← Real.rpow_natCast (2 : ℝ) n, ← Real.rpow_mul (by norm_num),
+      ← Real.rpow_natCast ((2 : ℝ) ^ (δr * (1 - (m : ℝ) / s))) n, ← Real.rpow_mul (by norm_num)]
+    congr 2
+    ring
+  rw [e1, mul_assoc (5 ^ m * CU ^ ((m : ℝ) / s)), ← e2]
+  gcongr
+
+/-- **Lemma 3, fine part** (§3.14 (F)), uniform: the integral over `B(w, 1/40)`. -/
+theorem lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
+    (hm : Real.logb 2 ((max Cd 2 : ℝ≥0) : ℝ) < m) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ B : ℝ≥0∞, B ≠ ∞ ∧ ∀ μ : Measure X, MeasClassM μ Cd R₀ → ∀ w : X,
+      ∫⁻ z in ball w (1 / 40),
+        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤ B := by
+  obtain ⟨C₀, hC₀def⟩ : ∃ C₀ : ℝ≥0, C₀ = max Cd 2 := ⟨_, rfl⟩
+  rw [← hC₀def] at hm
+  have hC₀1 : (1 : ℝ≥0) ≤ C₀ := by rw [hC₀def]; exact le_trans (by norm_num) (le_max_right _ _)
+  have hC₀2 : (2 : ℝ) ≤ C₀ := by rw [hC₀def]; exact_mod_cast le_max_right Cd 2
+  have hC₀pos : (0 : ℝ) < C₀ := by linarith
+  obtain ⟨s, hsdef⟩ : ∃ s : ℝ, s = Real.logb 2 (C₀ : ℝ) := ⟨_, rfl⟩
+  rw [← hsdef] at hm
+  have hs : 0 < s := by rw [hsdef]; exact Real.logb_pos (by norm_num) (by linarith)
+  obtain ⟨CU, hCUdef⟩ : ∃ CU : ℝ, CU = (C₀ : ℝ) ^ 2 := ⟨_, rfl⟩
+  have hCU : 0 < CU := by rw [hCUdef]; positivity
+  obtain ⟨c, hcdef⟩ : ∃ c : ℝ, c = 1 / ((C₀ : ℝ) * (1 + ((C₀ : ℝ) ^ 3)⁻¹)) := ⟨_, rfl⟩
+  have hc : 0 < c := by rw [hcdef]; positivity
+  obtain ⟨δr, hδrdef⟩ : ∃ δr : ℝ, δr = Real.logb 2 (1 + ((C₀ : ℝ) ^ 3)⁻¹) := ⟨_, rfl⟩
+  have hδr : 0 < δr := by
+    rw [hδrdef]
+    exact Real.logb_pos (by norm_num) (by have := inv_pos.2 (pow_pos hC₀pos 3); linarith)
+  obtain ⟨e, hedef⟩ : ∃ e : ℝ, e = 1 - (m : ℝ) / s := ⟨_, rfl⟩
+  have he : e < 0 := by
+    rw [hedef, sub_neg, lt_div_iff₀ hs]; linarith
+  obtain ⟨q, hqdef⟩ : ∃ q : ℝ, q = (2 : ℝ) ^ (δr * e) := ⟨_, rfl⟩
+  have hq0 : 0 ≤ q := by rw [hqdef]; positivity
+  have hq1 : q < 1 := by
+    rw [hqdef]; exact Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (mul_neg_of_pos_of_neg hδr he)
+  obtain ⟨K₁, hK₁def⟩ : ∃ K₁ : ℝ, K₁ = 5 ^ m * CU ^ ((m : ℝ) / s) * c ^ e := ⟨_, rfl⟩
+  have hK₁ : 0 ≤ K₁ := by rw [hK₁def]; positivity
+  have hq1' : ENNReal.ofReal q < 1 := ENNReal.ofReal_lt_one.2 hq1
+  refine ⟨ENNReal.ofReal ((2 / δ) ^ m) + ENNReal.ofReal K₁ * (1 - ENNReal.ofReal q)⁻¹,
+    ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      (ENNReal.inv_ne_top.2 (tsub_pos_iff_lt.2 hq1').ne')⟩, fun μ h w ↦ ?_⟩
+  have hD : DoublingUpTo μ C₀ (1 / 4) := by
+    rw [hC₀def]
+    exact (doublingUpTo_of_local h.doubling (by norm_num)).mono
+      (max_le_max le_rfl one_le_two) le_rfl
+  have hD' : DoublingUpTo μ C₀ (2 * (1 / 8)) := hD.mono le_rfl (by norm_num)
+  have hρw := h.massRadiusM_pos w
+  -- inner part
+  have hinner : ∫⁻ z in ball w (massRadiusM μ w),
+      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
+      ENNReal.ofReal ((2 / δ) ^ m) := by
+    have hpt : ∀ z ∈ ball w (massRadiusM μ w),
+        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
+          ENNReal.ofReal ((2 / δ) ^ m) := by
+      intro z hz
+      rw [mem_ball] at hz
+      have hρz := h.massRadiusM_pos z
+      have hlip := h.le_add_dist w z
+      rw [dist_comm] at hlip
+      have hδρ : 0 < δ * massRadiusM μ w := mul_pos hδ hρw
+      apply ENNReal.ofReal_le_ofReal
+      apply pow_le_pow_left₀ (div_nonneg hρz.le (hδρ.le.trans (le_max_right _ _)))
+      calc massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)
+          ≤ massRadiusM μ z / (δ * massRadiusM μ w) :=
+            div_le_div_of_nonneg_left hρz.le hδρ (le_max_right _ _)
+        _ ≤ 2 / δ := by
+            rw [div_le_div_iff₀ hδρ hδ]
+            nlinarith
+    calc ∫⁻ z in ball w (massRadiusM μ w),
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
+        ≤ ∫⁻ _z in ball w (massRadiusM μ w), ENNReal.ofReal ((2 / δ) ^ m) ∂μ :=
+          setLIntegral_mono' measurableSet_ball hpt
+      _ = ENNReal.ofReal ((2 / δ) ^ m) * μ (ball w (massRadiusM μ w)) := setLIntegral_const _ _
+      _ ≤ ENNReal.ofReal ((2 / δ) ^ m) * 1 := by
+          gcongr; exact measure_ball_massRadiusM_le_one μ w
+      _ = _ := mul_one _
+  -- annuli
+  set A : ℕ → Set X := fun n ↦
+    (ball w (2 ^ (n + 1) * massRadiusM μ w) ∩ ball w (1 / 40)) \
+      ball w (2 ^ n * massRadiusM μ w) with hA
+  have hcover : ball w (1 / 40) ⊆ ball w (massRadiusM μ w) ∪ ⋃ n, A n := by
+    intro z hz
+    by_cases hzw : dist z w < massRadiusM μ w
+    · exact Or.inl hzw
+    right
+    replace hzw := not_lt.1 hzw
+    have hex : ∃ n : ℕ, dist z w < 2 ^ (n + 1) * massRadiusM μ w := by
+      obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (dist z w / massRadiusM μ w)
+        (by norm_num : (1 : ℝ) < 2)
+      refine ⟨k, ?_⟩
+      rw [div_lt_iff₀ hρw] at hk
+      have : (2 : ℝ) ^ k ≤ 2 ^ (k + 1) := pow_le_pow_right₀ (by norm_num) (Nat.le_succ k)
+      nlinarith
+    classical
+    have hn1 := Nat.find_spec hex
+    have hn2 : 2 ^ (Nat.find hex) * massRadiusM μ w ≤ dist z w := by
+      rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
+      · rw [h0, pow_zero, one_mul]; exact hzw
+      · have := Nat.find_min hex (Nat.sub_lt hpos one_pos)
+        rw [not_lt, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
+        exact this
+    exact mem_iUnion.2 ⟨Nat.find hex, ⟨mem_ball.2 hn1, hz⟩, fun h' ↦ not_lt.2 hn2 (mem_ball.1 h')⟩
+  have hAn : ∀ n : ℕ, ∫⁻ z in A n,
+      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
+      ENNReal.ofReal (K₁ * q ^ n) := by
+    intro n
+    by_cases ht : 2 ^ n * massRadiusM μ w < 1 / 40
+    swap
+    · have hempty : A n = ∅ := by
+        ext z
+        simp only [mem_empty_iff_false, iff_false]
+        intro hz
+        have h1 : dist z w < 1 / 40 := hz.1.2
+        have h2 : ¬ dist z w < 2 ^ n * massRadiusM μ w := hz.2
+        exact h2 (by linarith [not_lt.1 ht])
+      rw [hempty, Measure.restrict_empty, lintegral_zero_measure]
+      positivity
+    set t := 2 ^ n * massRadiusM μ w with htdef
+    have ht0 : 0 < t := by positivity
+    have h2n : (1 : ℝ) ≤ 2 ^ n := one_le_pow₀ (by norm_num)
+    have hVfin := h.finite w (5 * t)
+    set V := (μ (ball w (5 * t))).toReal with hVdef
+    have hVlow : c * ((2 : ℝ) ^ n) ^ δr ≤ V := by
+      have key := hD'.rpow_le_measure_ball hC₀1 w w (r := 5 * t) (r' := 2 * massRadiusM μ w)
+        (by positivity) (by rw [htdef]; nlinarith) (by linarith) (by rw [dist_self]; positivity)
+      rw [← hcdef, ← hδrdef] at key
+      have h1 : ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) ≤ μ (ball w (5 * t)) :=
+        le_trans (by
+          calc ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr)
+              = ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) * 1 := (mul_one _).symm
+            _ ≤ _ := by gcongr; exact h.one_le_two w) key
+      have h2 := (ENNReal.ofReal_le_iff_le_toReal hVfin.ne).1 h1
+      have h3 : ((2 : ℝ) ^ n) ^ δr ≤ (5 * t / (2 * massRadiusM μ w)) ^ δr := by
+        apply Real.rpow_le_rpow (by positivity) _ hδr.le
+        rw [htdef, le_div_iff₀ (by positivity)]
+        nlinarith
+      calc c * ((2 : ℝ) ^ n) ^ δr ≤ c * (5 * t / (2 * massRadiusM μ w)) ^ δr := by gcongr
+        _ ≤ V := h2
+    have hV0 : 0 < V := lt_of_lt_of_le (by positivity) hVlow
+    have hpt : ∀ z ∈ A n,
+        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
+          ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) := by
+      intro z hz
+      have hz1 : dist z w < 2 * t := by
+        have := hz.1.1; rw [mem_ball, pow_succ] at this; rw [htdef]; linarith
+      have hz2 : t ≤ dist z w := not_lt.1 fun h' ↦ hz.2 (mem_ball.2 h')
+      have hρz := h.massRadiusM_pos z
+      have hlip := h.le_add_dist w z
+      rw [dist_comm] at hlip
+      have hρwt : massRadiusM μ w ≤ t := by rw [htdef]; nlinarith
+      have hup := hD.measure_ball_le_rpow hC₀1 w z (r := 5 * t) (r' := massRadiusM μ z) hρz
+        (by linarith) (by linarith) (by rw [dist_comm]; linarith)
+      rw [← hCUdef, ← hsdef] at hup
+      have hup2 : μ (ball w (5 * t)) ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) := by
+        calc μ (ball w (5 * t)) ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) *
+              μ (ball z (massRadiusM μ z)) := hup
+          _ ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) * 1 := by
+              gcongr; exact measure_ball_massRadiusM_le_one μ z
+          _ = _ := mul_one _
+      have hup3 : V ≤ CU * (5 * t / massRadiusM μ z) ^ s :=
+        ENNReal.toReal_le_of_le_ofReal (by positivity) hup2
+      exact ENNReal.ofReal_le_ofReal
+        (lemma3_pt hρz ht0 (le_max_of_le_left hz2) hV0 hCU hs hup3)
+    have hμA : μ (A n) ≤ ENNReal.ofReal V := by
+      rw [hVdef, ENNReal.ofReal_toReal hVfin.ne]
+      refine measure_mono fun z hz ↦ ?_
+      have := hz.1.1
+      rw [mem_ball, pow_succ] at this
+      rw [mem_ball, htdef]
+      nlinarith
+    have hmeasA : MeasurableSet (A n) :=
+      (measurableSet_ball.inter measurableSet_ball).diff measurableSet_ball
+    calc ∫⁻ z in A n,
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
+        ≤ ∫⁻ _z in A n, ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) ∂μ :=
+          setLIntegral_mono' hmeasA hpt
+      _ = ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) * μ (A n) := setLIntegral_const _ _
+      _ ≤ ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) * ENNReal.ofReal V := by gcongr
+      _ = ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s) * V) :=
+          (ENNReal.ofReal_mul (by positivity)).symm
+      _ ≤ ENNReal.ofReal (K₁ * q ^ n) := by
+          apply ENNReal.ofReal_le_ofReal
+          rw [hK₁def, hqdef, hedef]
+          exact lemma3_sum hs hm hc hCU hVlow
+  calc ∫⁻ z in ball w (1 / 40),
+        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
+      ≤ ∫⁻ z in ball w (massRadiusM μ w) ∪ ⋃ n, A n,
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ :=
+        lintegral_mono_set hcover
+    _ ≤ ∫⁻ z in ball w (massRadiusM μ w),
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ +
+        ∫⁻ z in ⋃ n, A n,
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ :=
+        lintegral_union_le _ _ _
+    _ ≤ ENNReal.ofReal ((2 / δ) ^ m) + ∑' n, ∫⁻ z in A n,
+          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ :=
+        add_le_add hinner (lintegral_iUnion_le _ _)
+    _ ≤ ENNReal.ofReal ((2 / δ) ^ m) + ∑' n : ℕ, ENNReal.ofReal (K₁ * q ^ n) :=
+        add_le_add le_rfl (ENNReal.tsum_le_tsum hAn)
+    _ = ENNReal.ofReal ((2 / δ) ^ m) + ENNReal.ofReal K₁ * (1 - ENNReal.ofReal q)⁻¹ := by
+        congr 1
+        rw [← ENNReal.tsum_geometric, ← ENNReal.tsum_mul_left]
+        congr 1
+        funext n
+        rw [ENNReal.ofReal_mul hK₁, ENNReal.ofReal_pow hq0]
+
 /-- **Lemma 3**, truncated form, uniform. -/
 theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0,
