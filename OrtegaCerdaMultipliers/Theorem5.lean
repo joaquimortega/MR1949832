@@ -29,7 +29,167 @@ theorem integral_abs_im_mul_laplacian (χ : ℂ → ℝ) (hχ : ContDiff ℝ (�
 /-! 13.8 continuity of the logarithmic potential of a piece of `μ` -/
 theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLineMeasure μ)
     (a b : ℝ) :
-    Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ := sorry
+    Continuous fun z : ℂ ↦ ∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ := by
+  have hfin := hμ.isFiniteMeasure_restrict_Ioc a b
+  have hmeas : ∀ δ : ℝ, ∀ z : ℂ, Measurable fun t : ℝ ↦ Real.log (max ‖z - t‖ δ) := fun δ z ↦
+    Real.measurable_log.comp ((continuous_const.sub continuous_ofReal).norm.max
+      continuous_const).measurable
+  -- the truncated potentials are continuous
+  have hFδ : ∀ δ : ℝ, 0 < δ → Continuous fun z : ℂ ↦
+      ∫ t in Ioc a b, Real.log (max ‖z - t‖ δ) ∂linePull μ := by
+    intro δ hδ
+    rw [continuous_iff_continuousAt]
+    intro z₀
+    set D := ‖z₀‖ + 1 + |a| + |b|
+    refine MeasureTheory.continuousAt_of_dominated
+      (bound := fun _ ↦ |Real.log δ| + |Real.log (D + δ)|)
+      (Eventually.of_forall fun z ↦ (hmeas δ z).aestronglyMeasurable) ?_ (integrable_const _)
+      (Eventually.of_forall fun t ↦ ?_)
+    · filter_upwards [ball_mem_nhds z₀ one_pos] with z hz
+      filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+      have hy1 : δ ≤ max ‖z - t‖ δ := le_max_right _ _
+      have hD : 0 ≤ D := by positivity
+      have hy2 : max ‖z - t‖ δ ≤ D + δ := by
+        refine max_le ?_ (by linarith)
+        have h1 : ‖z - t‖ ≤ ‖z‖ + |t| := by
+          have := norm_sub_le z (t : ℂ); rwa [norm_real, Real.norm_eq_abs] at this
+        have h2 : ‖z‖ ≤ ‖z₀‖ + 1 := by
+          have := norm_le_norm_add_norm_sub' z z₀
+          rw [mem_ball, dist_eq_norm] at hz; linarith
+        have h3 : |t| ≤ |a| + |b| := by
+          rcases le_total 0 t with h | h
+          · rw [abs_of_nonneg h]; linarith [ht.2, le_abs_self b, abs_nonneg a]
+          · rw [abs_of_nonpos h]; linarith [ht.1, neg_abs_le a, abs_nonneg b]
+        linarith
+      rw [Real.norm_eq_abs]
+      have hy0 : 0 < max ‖z - t‖ δ := hδ.trans_le hy1
+      rcases le_total 1 (max ‖z - t‖ δ) with h1 | h1
+      · rw [abs_of_nonneg (Real.log_nonneg h1)]
+        have := Real.log_le_log hy0 hy2
+        linarith [le_abs_self (Real.log (D + δ)), abs_nonneg (Real.log δ)]
+      · rw [abs_of_nonpos (Real.log_nonpos hy0.le h1)]
+        have := Real.log_le_log hδ hy1
+        linarith [neg_abs_le (Real.log δ), abs_nonneg (Real.log (D + δ))]
+    · exact (((continuous_id.sub continuous_const).norm.max continuous_const).continuousAt).log
+        (ne_of_gt (hδ.trans_le (le_max_right _ _)))
+  -- (L8) at scale 1
+  obtain ⟨CL, hCL⟩ := hμ.lintegral_log_line one_pos
+  -- the error of the truncation
+  have herr : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ z : ℂ,
+      |(∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ) -
+        ∫ t in Ioc a b, Real.log (max ‖z - t‖ δ) ∂linePull μ| ≤
+        if z.re ∈ Icc (a - 1) (b + 1) then CL * (μ (lineInterval z.re δ)).toReal else 0 := by
+    intro δ hδ hδ1 z
+    set x := z.re
+    have hint1 := hμ.integrableOn_log z a b
+    have hint2 : IntegrableOn (fun t : ℝ ↦ Real.log (max ‖z - t‖ δ)) (Ioc a b) (linePull μ) := by
+      refine Integrable.of_bound (hmeas δ z).aestronglyMeasurable
+        (|Real.log δ| + |Real.log (‖z‖ + |a| + |b| + δ)|) ?_
+      filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+      have hy1 : δ ≤ max ‖z - t‖ δ := le_max_right _ _
+      have hD : 0 ≤ ‖z‖ + |a| + |b| := by positivity
+      have hy2 : max ‖z - t‖ δ ≤ ‖z‖ + |a| + |b| + δ := by
+        refine max_le ?_ (by linarith)
+        have h1 : ‖z - t‖ ≤ ‖z‖ + |t| := by
+          have := norm_sub_le z (t : ℂ); rwa [norm_real, Real.norm_eq_abs] at this
+        have h3 : |t| ≤ |a| + |b| := by
+          rcases le_total 0 t with h | h
+          · rw [abs_of_nonneg h]; linarith [ht.2, le_abs_self b, abs_nonneg a]
+          · rw [abs_of_nonpos h]; linarith [ht.1, neg_abs_le a, abs_nonneg b]
+        linarith
+      rw [Real.norm_eq_abs]
+      have hy0 : 0 < max ‖z - t‖ δ := hδ.trans_le hy1
+      rcases le_total 1 (max ‖z - t‖ δ) with h1 | h1
+      · rw [abs_of_nonneg (Real.log_nonneg h1)]
+        have := Real.log_le_log hy0 hy2
+        linarith [le_abs_self (Real.log (‖z‖ + |a| + |b| + δ)), abs_nonneg (Real.log δ)]
+      · rw [abs_of_nonpos (Real.log_nonpos hy0.le h1)]
+        have := Real.log_le_log hδ hy1
+        linarith [neg_abs_le (Real.log δ), abs_nonneg (Real.log (‖z‖ + |a| + |b| + δ))]
+    split_ifs with hx
+    · rw [← integral_sub hint1 hint2, ← Real.norm_eq_abs]
+      refine (norm_integral_le_lintegral_norm _).trans ?_
+      rw [← ENNReal.coe_toReal CL, ← ENNReal.toReal_mul]
+      refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
+        (hμ.lineInterval_lt_top x δ).ne) ?_
+      calc ∫⁻ t in Ioc a b, ENNReal.ofReal ‖Real.log ‖z - t‖ - Real.log (max ‖z - t‖ δ)‖
+            ∂linePull μ
+          ≤ ∫⁻ t in Ioc a b, (Ioo (x - δ) (x + δ)).indicator
+              (fun t ↦ ENNReal.ofReal (Real.log (δ / |t - x|))) t ∂linePull μ := by
+            refine setLIntegral_mono_ae' measurableSet_Ioc ?_
+            filter_upwards [hμ.ae_ne x] with t htx _
+            have hxt : |t - x| ≤ ‖z - t‖ := norm_sub_ofReal_ge z t
+            have hxt0 : 0 < |t - x| := abs_pos.2 (sub_ne_zero.2 htx)
+            have hy0 : 0 < ‖z - t‖ := hxt0.trans_le hxt
+            rcases le_total δ ‖z - t‖ with h | h
+            · rw [max_eq_left h, sub_self, norm_zero, ENNReal.ofReal_zero]; exact zero_le _
+            · rw [max_eq_right h]
+              by_cases hlt : ‖z - t‖ < δ
+              · have hmem : t ∈ Ioo (x - δ) (x + δ) := by
+                  have := abs_lt.1 (hxt.trans_lt hlt)
+                  constructor <;> linarith [this.1, this.2]
+                rw [indicator_of_mem hmem]
+                apply ENNReal.ofReal_le_ofReal
+                rw [Real.norm_eq_abs, abs_sub_comm, abs_of_nonneg (by
+                  linarith [Real.log_le_log hy0 h]), Real.log_div hδ.ne' hxt0.ne']
+                linarith [Real.log_le_log hxt0 hxt]
+              · have : ‖z - t‖ = δ := le_antisymm h (not_lt.1 hlt)
+                rw [this, sub_self, norm_zero, ENNReal.ofReal_zero]; exact zero_le _
+        _ ≤ ∫⁻ t, (Ioo (x - δ) (x + δ)).indicator
+              (fun t ↦ ENNReal.ofReal (Real.log (δ / |t - x|))) t ∂linePull μ :=
+            setLIntegral_le_lintegral _ _
+        _ = ∫⁻ t in Ioo (x - δ) (x + δ), ENNReal.ofReal (Real.log (δ / |t - x|)) ∂linePull μ :=
+            lintegral_indicator measurableSet_Ioo _
+        _ ≤ CL * μ (lineInterval x δ) := hCL x δ hδ hδ1
+    · have : (∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ) =
+          ∫ t in Ioc a b, Real.log (max ‖z - t‖ δ) ∂linePull μ := by
+        refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
+        have hxt : |t - x| ≤ ‖z - t‖ := norm_sub_ofReal_ge z t
+        have : 1 < |t - x| := by
+          simp only [mem_Icc, not_and_or, not_le] at hx
+          rw [abs_sub_comm]
+          rcases hx with hx | hx
+          · rw [abs_of_neg (by linarith [ht.1])]; linarith [ht.1]
+          · rw [abs_of_pos (by linarith [ht.2])]; linarith [ht.2]
+        rw [max_eq_left (by linarith)]
+      rw [this, sub_self, abs_zero]
+  -- uniform smallness of `μ(I(x, δ))` near `[a, b]`
+  have hsmall : ∀ ε > 0, ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ ∀ x ∈ Icc (a - 1) (b + 1),
+      (μ (lineInterval x δ)).toReal < ε := by
+    intro ε hε
+    have hU := (isCompact_Icc (a := a - 2) (b := b + 2)).uniformContinuousOn_of_continuous
+      (continuous_lineCDF hμ 0).continuousOn
+    obtain ⟨δ₀, hδ₀, hU'⟩ := Metric.uniformContinuousOn_iff.1 hU ε hε
+    refine ⟨min 1 (δ₀ / 3), lt_min one_pos (by positivity), min_le_left _ _, fun x hx ↦ ?_⟩
+    set δ := min 1 (δ₀ / 3)
+    have hδ1 : δ ≤ 1 := min_le_left _ _
+    have hδ3 : δ ≤ δ₀ / 3 := min_le_right _ _
+    have hδ0 : 0 < δ := lt_min one_pos (by positivity)
+    have h1 := hU' (x + δ) ⟨by linarith [hx.1], by linarith [hx.2]⟩ (x - δ)
+      ⟨by linarith [hx.1], by linarith [hx.2]⟩
+      (by rw [Real.dist_eq, abs_of_pos (by linarith)]; linarith)
+    have h2 := lineCDF_sub hμ 0 (show x - δ ≤ x + δ by linarith)
+    rw [Real.dist_eq] at h1
+    have h3 : (μ (lineInterval x δ)).toReal ≤ (linePull μ (Ioc (x - δ) (x + δ))).toReal := by
+      rw [← linePull_Ioo]
+      exact ENNReal.toReal_mono (hμ.linePull_Ioc_lt_top _ _).ne
+        (measure_mono Ioo_subset_Ioc_self)
+    have := le_abs_self (lineCDF μ 0 (x + δ) - lineCDF μ 0 (x - δ))
+    linarith
+  -- conclusion by uniform approximation
+  refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.1 hu
+  have hCL0 : (0 : ℝ) ≤ CL := CL.coe_nonneg
+  obtain ⟨δ, hδ, hδ1, hδs⟩ := hsmall (ε / (CL + 1)) (by positivity)
+  refine ⟨_, hFδ δ hδ, fun z ↦ hεu ?_⟩
+  rw [Real.dist_eq]
+  refine (herr δ hδ hδ1 z).trans_lt ?_
+  split_ifs with hx
+  · calc CL * (μ (lineInterval z.re δ)).toReal ≤ CL * (ε / (CL + 1)) :=
+          mul_le_mul_of_nonneg_left (hδs z.re hx).le hCL0
+      _ < ε := by
+          rw [mul_div_assoc', div_lt_iff₀ (by positivity)]; nlinarith
+  · exact hε
 
 /-! ### Helpers for `lineMultipliers` -/
 
