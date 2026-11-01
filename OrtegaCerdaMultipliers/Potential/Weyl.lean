@@ -335,12 +335,66 @@ theorem harmonicAt_and_ae_eq_integral_bumpKernel {U : Set ℂ} {f : ℂ → ℝ}
     rw [hy hyb]
     exact (hFG y hyb).symm
 
+/-- The `L¹_loc` Weyl lemma (proof of `exists_harmonicOnNhd_ae_eq_of_weakHarmonic`): glue the
+local representatives `∫ k_r(w − y) f(w) dw`, which do not depend on the admissible radius. -/
+theorem exists_harmonicOnNhd_ae_eq_of_weakHarmonic_aux {U : Set ℂ} (hU : IsOpen U) {f : ℂ → ℝ}
+    (hf : LocallyIntegrableOn f U)
+    (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ U →
+      ∫ z, f z * Laplacian.laplacian χ z = 0) :
+    ∃ u : ℂ → ℝ, InnerProductSpace.HarmonicOnNhd u U ∧ ∀ᵐ z ∂(volume.restrict U), f z = u z := by
+  have hrad : ∀ y ∈ U, ∃ r : ℝ, 0 < r ∧ closedBall y r ⊆ U := fun y hy ↦ by
+    obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU y hy
+    exact ⟨ε / 2, half_pos hε, (closedBall_subset_ball (half_lt_self hε)).trans hεU⟩
+  choose! r hr hrU using hrad
+  set u : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel (r y) (w - y) * f w with hu
+  have hsub2 : ∀ z₀ ∈ U, closedBall z₀ (2 * (r z₀ / 2)) ⊆ U := fun z₀ hz₀ ↦ by
+    rw [mul_div_cancel₀ _ two_ne_zero]; exact hrU z₀ hz₀
+  have hloc : ∀ z₀ ∈ U, ∀ y ∈ ball z₀ (r z₀ / 2),
+      u y = ∫ w, bumpKernel (r z₀ / 2) (w - y) * f w := by
+    intro z₀ hz₀ y hy
+    have hyz : closedBall y (r z₀ / 2) ⊆ closedBall z₀ (r z₀) := by
+      intro w hw
+      rw [mem_closedBall] at hw ⊢
+      rw [mem_ball] at hy
+      calc dist w z₀ ≤ dist w y + dist y z₀ := dist_triangle _ _ _
+        _ ≤ r z₀ := by linarith
+    have hyU : y ∈ U := hrU z₀ hz₀ (hyz (mem_closedBall_self (half_pos (hr z₀ hz₀)).le))
+    exact integral_bumpKernel_mul_eq_of_weakHarmonic' hf h (hr y hyU) (half_pos (hr z₀ hz₀))
+      (hrU y hyU) (hyz.trans (hrU z₀ hz₀))
+  refine ⟨u, fun z₀ hz₀ ↦ ?_, ?_⟩
+  · obtain ⟨hharm, -⟩ :=
+      harmonicAt_and_ae_eq_integral_bumpKernel hf h (half_pos (hr z₀ hz₀)) (hsub2 z₀ hz₀)
+    have hev : u =ᶠ[𝓝 z₀] fun y ↦ ∫ w, bumpKernel (r z₀ / 2) (w - y) * f w := by
+      filter_upwards [ball_mem_nhds z₀ (half_pos (hr z₀ hz₀))] with y hy using hloc z₀ hz₀ y hy
+    exact (InnerProductSpace.harmonicAt_congr_nhds hev).2
+      (hharm z₀ (mem_ball_self (half_pos (hr z₀ hz₀))))
+  · have hnull : volume ({y | f y ≠ u y} ∩ U) = 0 := by
+      apply measure_null_of_locally_null
+      intro x hx
+      obtain ⟨-, hae⟩ :=
+        harmonicAt_and_ae_eq_integral_bumpKernel hf h (half_pos (hr x hx.2)) (hsub2 x hx.2)
+      refine ⟨({y | f y ≠ u y} ∩ U) ∩ ball x (r x / 2),
+        inter_mem_nhdsWithin _ (ball_mem_nhds x (half_pos (hr x hx.2))), ?_⟩
+      apply measure_mono_null _ (ae_iff.1 hae)
+      rintro y ⟨⟨hyne, -⟩, hyb⟩
+      simp only [mem_ofPred_eq, not_imp]
+      refine ⟨hyb, fun hfy ↦ hyne ?_⟩
+      rw [hfy, hloc x hx.2 y hyb]
+    rw [ae_iff, Measure.restrict_apply' hU.measurableSet]
+    simpa using hnull
+
 /-- **Weyl's lemma for `Δ`.** A continuous weakly harmonic function is harmonic. -/
 theorem harmonicOnNhd_of_weakHarmonic {Ω : Set ℂ} (hΩ : IsOpen Ω) {φ : ℂ → ℝ}
     (hφ : ContinuousOn φ Ω)
     (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ Ω →
       ∫ z, φ z * Laplacian.laplacian χ z = 0) :
-    InnerProductSpace.HarmonicOnNhd φ Ω := sorry
+    InnerProductSpace.HarmonicOnNhd φ Ω := by
+  obtain ⟨u, hu, hae⟩ := exists_harmonicOnNhd_ae_eq_of_weakHarmonic_aux hΩ
+    (hφ.locallyIntegrableOn hΩ.measurableSet) h
+  have heq : EqOn φ u Ω := Measure.eqOn_open_of_ae_eq hae hΩ hφ hu.contDiffOn.continuousOn
+  intro z hz
+  refine (InnerProductSpace.harmonicAt_congr_nhds ?_).2 (hu z hz)
+  filter_upwards [hΩ.mem_nhds hz] with y hy using heq hy
 
 /-- **Weyl's lemma for `Δ`, `L¹_loc` form** (the body of M07's `WeylLaplacianStmt`): a locally
 integrable weakly harmonic function is a.e. equal to a harmonic function.  (Mollify:
@@ -351,7 +405,7 @@ theorem exists_harmonicOnNhd_ae_eq_of_weakHarmonic {U : Set ℂ} (hU : IsOpen U)
     (h : ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ → tsupport χ ⊆ U →
       ∫ z, f z * Laplacian.laplacian χ z = 0) :
     ∃ u : ℂ → ℝ, InnerProductSpace.HarmonicOnNhd u U ∧ ∀ᵐ z ∂(volume.restrict U), f z = u z :=
-  sorry
+  exists_harmonicOnNhd_ae_eq_of_weakHarmonic_aux hU hf h
 
 /-! ### Weights up to harmonic functions; calculus of weights (§3) -/
 
