@@ -112,9 +112,9 @@ Priority: the disc path M01–M11 comes first, since it is what BOC needs. Then 
    - **Multipliers.** Theorem 3 needs multipliers for the signed measure `μ − 2α dx`. M13 builds them; Theorem 5 is the case `α = 0`.
 9. **Shared definitions.** `hypArea = dm/(1 − |z|²)²` on 𝔻 is defined once, in M01, and used by M04, M08, M10 and M11.
 
-## 4. Known issues in the source (seeds for `NOTEBOOK.md`)
+## 4. Known issues in the source (initial seeds; the verified list is `../NOTEBOOK.md`)
 
-- p. 356, Example: "`∫_D f dm = 0`" should be `≠ 0`; the arXiv version has `≠`.
+- (Withdrawn: the p. 356 Example does print `≠ 0`; OCR dropped the slash.)
 - p. 357, Theorem 2: the printed `L^p` weight `e^{-φ}` is not what the proof gives (see §2.4 above).
 - p. 359, Proposition 1: the lower bound in `|k| ≃ …` fails at the zeros of the multipliers.
 - p. 365, Lemma 5: "inside `R`". Equal-weight (Chebyshev) quadrature with nodes inside `R` is cited from [Gau76, Kor94]; we use nodes near `R`.

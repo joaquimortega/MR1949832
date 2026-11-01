@@ -133,9 +133,11 @@ theorem theorem5 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeigh
         (∀ x : ℝ, f x = 0 → ε * massRadiusLine μ x ≤ ‖z - x‖) →
           C⁻¹ * Real.exp (φ z) ≤ ‖f z‖ ∧ ‖f z‖ ≤ C * Real.exp (φ z) := sorry
 
-/-- **Theorem 3** (paper, p. 358), conditional on the Ortega-Cerdà–Seip theorem [OCS99]
-(`TheoremOCS`), which the paper uses as a black box. -/
-theorem theorem3 (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
+/-- **Theorem 3** (paper, p. 358), corrected and conditional on the Ortega-Cerdà–Seip theorem
+[OCS99] (`TheoremOCS`), which the paper uses as a black box.  As printed (with the unweighted
+integral `∫_{|z-x|<1} d|μ|(z)/|x - z|`) the theorem is false (NOTEBOOK N-01); the integral must
+carry the weight `e^{-φ(z)}`. -/
+theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
     (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) (K : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
@@ -147,4 +149,5 @@ theorem theorem3 (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
         Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
         ∀ x : ℝ, (x : ℂ) ∉ L →
           ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
-            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := sorry
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1,
+              ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) := sorry
