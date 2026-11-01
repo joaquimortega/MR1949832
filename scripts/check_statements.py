@@ -53,6 +53,12 @@ def files_at_ref():
             yield path, txt
 
 
+# Coordinator-approved removals/changes of non-main helper statements found false during
+# implementation (each recorded in NOTEBOOK.md, implementation log).
+APPROVED = {
+    "lintegral_FR_near": "false for s > 1, unused; replaced by lintegral_FR_near_of_le_one (NOTEBOOK I-01)",
+}
+
 bad = 0
 for path, old in files_at_ref():
     new_path = target / path
@@ -62,6 +68,10 @@ for path, old in files_at_ref():
         continue
     olds, news = statements(old), statements(new_path.read_text())
     for name, st in olds.items():
+        if name in APPROVED:
+            if name not in news or news[name] != st:
+                print(f"approved change {path}: {name} ({APPROVED[name]})")
+            continue
         if name not in news:
             print(f"REMOVED {path}: {name}")
             bad += 1
