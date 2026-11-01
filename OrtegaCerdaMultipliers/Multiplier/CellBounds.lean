@@ -63,6 +63,50 @@ theorem IsNodes.mono_B {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → �
   ⟨hN.card, hN.mem,
     fun i w hw ↦ (hN.near i w hw).trans (mul_le_mul_of_nonneg_right hB (hρ i)), hN.moments⟩
 
+/-! ### Local finiteness of the nodes -/
+
+theorem nodeCount_ne_zero_iff {Λ : ℕ → Multiset ℂ} {w : ℂ} (hfin : {i | w ∈ Λ i}.Finite) :
+    nodeCount Λ w ≠ 0 ↔ w ∈ nodeSet Λ := by
+  have hsupp : Function.support (fun i ↦ (Λ i).count w) ⊆ hfin.toFinset := by
+    intro i hi; simpa [Multiset.count_ne_zero] using hi
+  rw [nodeCount, finsum_eq_sum_of_support_subset _ hsupp, Ne, Finset.sum_eq_zero_iff]
+  simp [nodeSet, Multiset.count_eq_zero]
+
+theorem finite_nodeIdx_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A B : ℝ}
+    {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
+    (hν : MeasClassDisc ν Cd R₀) (hη : 0 < η)
+    (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c)
+    (hN : IsNodes 𝔻 hypDist (massRadiusDisc ν) ν N B R c m Λ) {K : Set ℂ} (hK𝔻 : K ⊆ 𝔻)
+    (hK : IsCompact K) : {i | ∃ w ∈ Λ i, w ∈ K}.Finite := by
+  obtain ⟨C1, -, h1⟩ := claim1_disc_quant Cd R₀ 0
+  refine (finite_cells_disc hν hη hC K hK𝔻 hK (|B| * R₀ + 1)).subset ?_
+  rintro i ⟨w, hwΛ, hwK⟩
+  have hci := hC.center_mem' i
+  obtain ⟨hpos, hle, -⟩ := h1 ν hν (c i) hci (c i) hci
+  refine ⟨w, hwK, ?_⟩
+  rw [hypDist_comm]
+  calc hypDist (c i) w ≤ B * massRadiusDisc ν (c i) := hN.near i w hwΛ
+    _ ≤ |B| * massRadiusDisc ν (c i) := mul_le_mul_of_nonneg_right (le_abs_self B) hpos.le
+    _ ≤ |B| * R₀ := mul_le_mul_of_nonneg_left hle (abs_nonneg B)
+    _ < |B| * R₀ + 1 := lt_add_one _
+
+theorem finite_nodeIdx_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A B : ℝ}
+    {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
+    (hν : MeasClassPlane ν Cd R₀) (hη : 0 < η)
+    (hC : IsCells univ dist (massRadius ν) ν N η A R c)
+    (hN : IsNodes univ dist (massRadius ν) ν N B R c m Λ) {K : Set ℂ}
+    (hK : Bornology.IsBounded K) : {i | ∃ w ∈ Λ i, w ∈ K}.Finite := by
+  obtain ⟨C1, -, h1⟩ := claim1_plane_quant Cd R₀ 0
+  refine (finite_cells_plane hν hη hC K hK (|B| * R₀ + 1)).subset ?_
+  rintro i ⟨w, hwΛ, hwK⟩
+  obtain ⟨hpos, hle, -⟩ := h1 ν hν (c i) (c i)
+  refine ⟨w, hwK, ?_⟩
+  rw [dist_comm]
+  calc dist (c i) w ≤ B * massRadius ν (c i) := hN.near i w hwΛ
+    _ ≤ |B| * massRadius ν (c i) := mul_le_mul_of_nonneg_right (le_abs_self B) hpos.le
+    _ ≤ |B| * R₀ := mul_le_mul_of_nonneg_left hle (abs_nonneg B)
+    _ < |B| * R₀ + 1 := lt_add_one _
+
 /-! ### Integrability of the kernels on cells -/
 
 theorem integrableOn_kerPlane_cell {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A : ℝ}

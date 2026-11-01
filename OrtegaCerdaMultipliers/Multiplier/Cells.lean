@@ -1,3 +1,4 @@
+import OrtegaCerdaMultipliers.Multiplier.Basic
 import OrtegaCerdaMultipliers.Multiplier.Defs
 import OrtegaCerdaMultipliers.Partition.Lemma4
 
@@ -17,7 +18,10 @@ namespace OC
 /-- From M05's partition to cells (`c i` = centre of the inner ball). -/
 theorem IsMassPartition.exists_cells {ν : Measure ℂ} {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ}
     {N : ℕ} {a A : ℝ} {R : ℕ → Set ℂ} (hP : IsMassPartition ν Ω d ρ N a A R) :
-    ∃ c : ℕ → ℂ, IsCells Ω d ρ ν N a A R c := sorry
+    ∃ c : ℕ → ℂ, IsCells Ω d ρ ν N a A R c := by
+  choose c hc hin using hP.inner
+  exact ⟨c, hP.measurableSet, hP.pairwise_disjoint, hP.iUnion_eq, hc,
+    fun i w hw ↦ hP.dist_le i (c i) (hc i) w hw, hin, hP.measure_eq⟩
 
 /-- Bounded number of near cells, near/far dichotomy for nodes (plane). -/
 theorem cells_near_plane (Cd : ℝ≥0) (R₀ η A B K₀ : ℝ) (hη : 0 < η) (hK₀ : 2 * (A + B) ≤ K₀) :
