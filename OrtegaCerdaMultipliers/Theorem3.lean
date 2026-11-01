@@ -667,6 +667,220 @@ theorem isWeakDbarSol_mul_sub_poles {ι : Type*} [Fintype ι] (w : ι → ℂ) (
         rw [neg_sub_left, ← Finset.sum_add_distrib, neg_eq_zero]
         exact Finset.sum_eq_zero fun k _ ↦ by ring
 
+/-- Weak holomorphy on `ℂ` plus continuity off a closed set `L`: an entire representative that
+agrees with `g` on `Lᶜ` (Weyl). -/
+theorem exists_entire_eqOn_compl {g : ℂ → ℂ} {L : Set ℂ} (hL : IsClosed L)
+    (hg : IsWeakDbarSol univ g 0) (hgc : ContinuousOn g Lᶜ) :
+    ∃ G : ℂ → ℂ, Differentiable ℂ G ∧ EqOn g G Lᶜ := by
+  obtain ⟨G, hGd, hae⟩ := hg.exists_holomorphic isOpen_univ
+  have hGd' : Differentiable ℂ G := fun z ↦ (hGd z trivial).differentiableAt Filter.univ_mem
+  refine ⟨G, hGd', ?_⟩
+  rw [Measure.restrict_univ] at hae
+  exact Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae hae) hL.isOpen_compl hgc
+    hGd'.continuous.continuousOn
+
+/-- A dyadic tail bound: `Σ_{k ∈ S, a 2^{-k} < r} a 2^{-k} ≤ 2r`. -/
+theorem sum_filter_geom_le (S : Finset ℕ) {a r : ℝ} (ha : 0 ≤ a) (hr : 0 < r) :
+    ∑ k ∈ S.filter (fun k ↦ a * (1 / 2 : ℝ) ^ k < r), a * (1 / 2 : ℝ) ^ k ≤ 2 * r := by
+  set T := S.filter (fun k ↦ a * (1 / 2 : ℝ) ^ k < r) with hTdef
+  rcases T.eq_empty_or_nonempty with hT | hT
+  · rw [hT, Finset.sum_empty]; positivity
+  set k₀ := T.min' hT
+  have hk₀ : a * (1 / 2 : ℝ) ^ k₀ < r := (Finset.mem_filter.1 (T.min'_mem hT)).2
+  set K := T.max' hT + 1
+  have hsub : T ⊆ Finset.Ico k₀ K := fun k hk ↦
+    Finset.mem_Ico.2 ⟨T.min'_le k hk, Nat.lt_succ_of_le (T.le_max' k hk)⟩
+  calc ∑ k ∈ T, a * (1 / 2 : ℝ) ^ k ≤ ∑ k ∈ Finset.Ico k₀ K, a * (1 / 2 : ℝ) ^ k :=
+        Finset.sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ ↦ by positivity
+    _ = ∑ i ∈ Finset.range (K - k₀), a * (1 / 2 : ℝ) ^ (k₀ + i) :=
+        Finset.sum_Ico_eq_sum_range _ _ _
+    _ = a * (1 / 2 : ℝ) ^ k₀ * ∑ i ∈ Finset.range (K - k₀), (1 / 2 : ℝ) ^ i := by
+        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ ↦ by rw [pow_add]; ring
+    _ ≤ a * (1 / 2 : ℝ) ^ k₀ * 2 :=
+        mul_le_mul_of_nonneg_left (sum_geometric_two_le _) (by positivity)
+    _ ≤ 2 * r := by linarith
+
+/-! The data of the counterexample: `N` point masses at `w_k = x₀ - i 2^{-(k+6)}`. -/
+
+/-- The heights `s_k = 2^{-(k+6)}`. -/
+def cexS (k : ℕ) : ℝ := (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ k
+/-- The abscissa `x₀ = 1 + N 2^{N+6}`. -/
+def cexX0 (N : ℕ) : ℝ := 1 + N * 2 ^ (N + 6)
+/-- The points `w_k = x₀ - i s_k`. -/
+def cexW (N k : ℕ) : ℂ := (cexX0 N : ℂ) - (cexS k : ℂ) * I
+/-- The masses `m_k = s_k e^{φ₀(w_k)}`, so that `e^{-φ₀} m_k = s_k`. -/
+def cexM (N k : ℕ) : ℝ := cexS k * Real.exp (cexWeight (cexW N k))
+/-- `ν = Σ_k m_k δ_{w_k}`. -/
+def cexNu (N : ℕ) : Measure ℂ :=
+  ∑ k : Fin N, ENNReal.ofReal (cexM N k) • Measure.dirac (cexW N k)
+/-- The support `L = {w_k}`. -/
+def cexL (N : ℕ) : Set ℂ := Set.range fun k : Fin N ↦ cexW N k
+/-- `H(z) = -(i/2) z²`, with `Re H = Re z · Im z`. -/
+def cexH (z : ℂ) : ℂ := -(I / 2) * z ^ 2
+/-- The phase `σ = e^{i Im H}`. -/
+def cexSigma (z : ℂ) : ℂ := Complex.exp (((cexH z).im : ℂ) * I)
+/-- The entire factor `E = e^{-H}`. -/
+def cexE (z : ℂ) : ℂ := Complex.exp (-cexH z)
+
+theorem cexS_pos (k : ℕ) : 0 < cexS k := by unfold cexS; positivity
+
+theorem cexS_le (k : ℕ) : cexS k ≤ 1 / 64 := by
+  unfold cexS
+  have : (1 / 2 : ℝ) ^ k ≤ 1 := pow_le_one₀ (by norm_num) (by norm_num)
+  nlinarith
+
+theorem cexH_re (z : ℂ) : (cexH z).re = z.re * z.im := by
+  simp [cexH, sq]; ring
+
+theorem cexWeight_eq (z : ℂ) : cexWeight z = |z.im| + (cexH z).re := by
+  rw [cexH_re]; rfl
+
+theorem norm_cexE (z : ℂ) : ‖cexE z‖ = Real.exp (-(z.re * z.im)) := by
+  rw [cexE, Complex.norm_exp, neg_re, cexH_re]
+
+theorem norm_cexSigma (z : ℂ) : ‖cexSigma z‖ = 1 := Complex.norm_exp_ofReal_mul_I _
+
+theorem continuous_cexH : Continuous cexH := by unfold cexH; fun_prop
+
+theorem continuous_cexSigma : Continuous cexSigma := by
+  unfold cexSigma
+  exact Complex.continuous_exp.comp
+    ((Complex.continuous_ofReal.comp (continuous_im.comp continuous_cexH)).mul continuous_const)
+
+theorem differentiable_cexE : Differentiable ℂ cexE := by unfold cexE cexH; fun_prop
+
+theorem cexE_mul_cexSigma (z : ℂ) :
+    cexE z * cexSigma z = (Real.exp (-(z.re * z.im)) : ℂ) := by
+  rw [cexE, cexSigma, ← Complex.exp_add, Complex.ofReal_exp, ← cexH_re]
+  congr 1
+  apply Complex.ext <;> simp
+
+theorem cexW_re (N k : ℕ) : (cexW N k).re = cexX0 N := by simp [cexW]
+theorem cexW_im (N k : ℕ) : (cexW N k).im = -cexS k := by simp [cexW]
+
+theorem cexWeight_cexW (N k : ℕ) : cexWeight (cexW N k) = cexS k * (1 - cexX0 N) := by
+  rw [cexWeight, cexW_re, cexW_im, abs_neg, abs_of_pos (cexS_pos k)]; ring
+
+theorem cexM_pos (N k : ℕ) : 0 < cexM N k := by unfold cexM; have := cexS_pos k; positivity
+
+/-- The residues `E(w_k) σ(w_k) m_k = s_k e^{s_k}` are real and positive. -/
+theorem cexE_mul_cexSigma_mul_cexM (N k : ℕ) :
+    cexE (cexW N k) * cexSigma (cexW N k) * (cexM N k : ℂ) =
+      ((cexS k * Real.exp (cexS k) : ℝ) : ℂ) := by
+  rw [cexE_mul_cexSigma, cexM, cexWeight_cexW, cexW_re, cexW_im, ← Complex.ofReal_mul]
+  congr 1
+  rw [mul_comm (Real.exp _), mul_assoc, ← Real.exp_add]
+  congr 2; ring
+
+theorem isFiniteMeasure_cexNu (N : ℕ) : IsFiniteMeasure (cexNu N) := by
+  constructor
+  simp only [cexNu, Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply,
+    Measure.dirac_apply_of_mem (mem_univ _), smul_eq_mul, mul_one]
+  exact ENNReal.sum_lt_top.2 fun k _ ↦ ENNReal.ofReal_lt_top
+
+theorem isCompact_cexL (N : ℕ) : IsCompact (cexL N) := (Set.finite_range _).isCompact
+
+theorem cexNu_compl_cexL (N : ℕ) : cexNu N (cexL N)ᶜ = 0 := by
+  have hm : MeasurableSet (cexL N)ᶜ := (isCompact_cexL N).isClosed.measurableSet.compl
+  simp only [cexNu, Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply,
+    Measure.dirac_apply' _ hm, smul_eq_mul]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rw [indicator_of_notMem (by simp [cexL]), mul_zero]
+
+/-- `∫⁻ f dν = Σ_k m_k f(w_k)`. -/
+theorem lintegral_cexNu (N : ℕ) (f : ℂ → ℝ≥0∞) :
+    ∫⁻ z, f z ∂cexNu N = ∑ k : Fin N, ENNReal.ofReal (cexM N k) * f (cexW N k) := by
+  rw [cexNu, lintegral_finsetSum_measure]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+
+/-- **Carleson** for `e^{-φ₀} ν` with constant `2`. -/
+theorem cexNu_carleson (N : ℕ) (x : ℝ) (r : ℝ) (hr : 0 < r) :
+    ((cexNu N).withDensity fun z ↦ ENNReal.ofReal (Real.exp (-cexWeight z))) (ball (x : ℂ) r) ≤
+      (2 : ℝ≥0) * ENNReal.ofReal r := by
+  rw [withDensity_apply _ measurableSet_ball, ← lintegral_indicator measurableSet_ball,
+    lintegral_cexNu]
+  have hk : ∀ k : Fin N, ENNReal.ofReal (cexM N k) * (ball (x : ℂ) r).indicator
+      (fun z ↦ ENNReal.ofReal (Real.exp (-cexWeight z))) (cexW N k) ≤
+      ENNReal.ofReal (if (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ (k : ℕ) < r then cexS k else 0) := by
+    intro k
+    by_cases hw : cexW N k ∈ ball (x : ℂ) r
+    · rw [indicator_of_mem hw, ← ENNReal.ofReal_mul (cexM_pos N k).le]
+      have hs : cexS k < r := by
+        have h1 := abs_im_le_norm (cexW N k - x)
+        rw [sub_im, Complex.ofReal_im, sub_zero, cexW_im, abs_neg, abs_of_pos (cexS_pos k),
+          ← dist_eq] at h1
+        exact h1.trans_lt hw
+      have hs' : (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ (k : ℕ) < r := by simpa [cexS] using hs
+      simp only [hs', ↓reduceIte]
+      rw [cexM, mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+    · rw [indicator_of_notMem hw, mul_zero]; exact zero_le
+  calc ∑ k : Fin N, ENNReal.ofReal (cexM N k) * (ball (x : ℂ) r).indicator
+        (fun z ↦ ENNReal.ofReal (Real.exp (-cexWeight z))) (cexW N k)
+      ≤ ∑ k : Fin N, ENNReal.ofReal
+          (if (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ (k : ℕ) < r then cexS k else 0) :=
+        Finset.sum_le_sum fun k _ ↦ hk k
+    _ = ENNReal.ofReal (∑ k ∈ (Finset.range N).filter
+          (fun k ↦ (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ k < r), (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ k) := by
+        rw [← ENNReal.ofReal_sum_of_nonneg fun k _ ↦ by
+          split_ifs <;> [exact (cexS_pos k).le; exact le_rfl]]
+        congr 1
+        rw [Finset.sum_filter, ← Fin.sum_univ_eq_sum_range
+          (fun k ↦ if (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ k < r then
+            (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ k else 0)]
+        rfl
+    _ ≤ ENNReal.ofReal (2 * r) :=
+        ENNReal.ofReal_le_ofReal (sum_filter_geom_le _ (by positivity) hr)
+    _ = (2 : ℝ≥0) * ENNReal.ofReal r := by
+        rw [ENNReal.ofReal_mul (by norm_num)]; simp
+
+/-- The right-hand side of the printed bound is at most `1` on `ℝ`. -/
+theorem lintegral_cexNu_le_one (N : ℕ) (x : ℝ) :
+    ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂cexNu N ≤ 1 := by
+  refine (setLIntegral_le_lintegral _ _).trans ?_
+  rw [lintegral_cexNu]
+  rcases Nat.eq_zero_or_pos N with hN | hN
+  · subst hN; simp
+  have hk : ∀ k : Fin N, ENNReal.ofReal (cexM N k) * ENNReal.ofReal (1 / ‖(x : ℂ) - cexW N k‖) ≤
+      ENNReal.ofReal (1 / N) := by
+    intro k
+    rw [← ENNReal.ofReal_mul (cexM_pos N k).le]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have hs := cexS_pos k
+    have h1 : cexS k ≤ ‖(x : ℂ) - cexW N k‖ := by
+      have := abs_im_le_norm ((x : ℂ) - cexW N k)
+      rwa [sub_im, Complex.ofReal_im, zero_sub, cexW_im, neg_neg, abs_of_pos hs] at this
+    have h2 : cexM N k * (1 / ‖(x : ℂ) - cexW N k‖) ≤ Real.exp (cexWeight (cexW N k)) := by
+      calc cexM N k * (1 / ‖(x : ℂ) - cexW N k‖) ≤ cexM N k * (1 / cexS k) :=
+            mul_le_mul_of_nonneg_left (one_div_le_one_div_of_le hs h1) (cexM_pos N k).le
+        _ = Real.exp (cexWeight (cexW N k)) := by rw [cexM]; field_simp
+    refine h2.trans ?_
+    -- `s_k (x₀ - 1) ≥ N`, and `e^{-N} ≤ 1/N`
+    have hkN : (k : ℕ) ≤ N := k.isLt.le
+    have h3 : (N : ℝ) ≤ cexS k * (cexX0 N - 1) := by
+      rw [cexX0, cexS, add_sub_cancel_left]
+      have h4 : (1 : ℝ) ≤ (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ (k : ℕ) * 2 ^ (N + 6) := by
+        have e : (2 : ℝ) ^ (N + 6) = 2 ^ 6 * 2 ^ (k : ℕ) * 2 ^ (N - k) := by
+          rw [← pow_add, ← pow_add]; congr 1; omega
+        rw [e, show (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ (k : ℕ) * (2 ^ 6 * 2 ^ (k : ℕ) * 2 ^ (N - k)) =
+          ((1 / 2 : ℝ) * 2) ^ 6 * ((1 / 2 : ℝ) * 2) ^ (k : ℕ) * 2 ^ (N - k) by
+            rw [mul_pow, mul_pow]; ring]
+        norm_num
+        exact one_le_pow₀ (by norm_num)
+      nlinarith [show (0 : ℝ) ≤ N from N.cast_nonneg]
+    rw [cexWeight_cexW]
+    have hNpos : (0 : ℝ) < N := by exact_mod_cast hN
+    calc Real.exp (cexS k * (1 - cexX0 N)) ≤ Real.exp (-N) := Real.exp_le_exp.2 (by linarith)
+      _ ≤ 1 / N := by
+          rw [Real.exp_neg, ← one_div]
+          exact one_div_le_one_div_of_le hNpos (by linarith [Real.add_one_le_exp (N : ℝ)])
+  calc ∑ k : Fin N, ENNReal.ofReal (cexM N k) * ENNReal.ofReal (1 / ‖(x : ℂ) - cexW N k‖)
+      ≤ ∑ _k : Fin N, ENNReal.ofReal (1 / N) := Finset.sum_le_sum fun k _ ↦ hk k
+    _ = 1 := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+          ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
+        rw [mul_one_div_cancel (by exact_mod_cast hN.ne'), ENNReal.ofReal_one]
+
 /-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`; hence `theorem3` in
 `comparator/statements.lean` is equivalent to `¬ TheoremOCS`. -/
 theorem not_theorem3_printed :
