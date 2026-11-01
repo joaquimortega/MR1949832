@@ -959,7 +959,134 @@ theorem not_theorem3_printed :
         Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-cexWeight z)) (Filter.cocompact ℂ) (nhds 0) ∧
         ∀ x : ℝ, (x : ℂ) ∉ L →
           ENNReal.ofReal (‖u x‖ * Real.exp (-cexWeight x)) ≤
-            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := sorry
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := by
+  rintro ⟨C, hC⟩
+  -- `N` point masses, with `N > 52.4 C`
+  set N : ℕ := ⌈(53 : ℝ) * C⌉₊ + 1 with hNdef
+  have hNC : (53 : ℝ) * C + 1 ≤ N := by
+    rw [hNdef]; push_cast; linarith [Nat.le_ceil ((53 : ℝ) * C)]
+  obtain ⟨u, hu1, hu2, hu3, hu4⟩ := hC (cexNu N) cexSigma (cexL N) (isFiniteMeasure_cexNu N)
+    (isCompact_cexL N) (cexNu_compl_cexL N) continuous_cexSigma.measurable norm_cexSigma
+    (cexNu_carleson N)
+  -- real points are off `L`
+  have hreal : ∀ x : ℝ, (x : ℂ) ∉ cexL N := by
+    rintro x ⟨k, hk⟩
+    have h := congrArg Complex.im hk
+    rw [cexW_im, Complex.ofReal_im] at h
+    linarith [cexS_pos k]
+  have hEx : ∀ x : ℝ, ‖cexE x‖ = 1 := fun x ↦ by rw [norm_cexE]; simp
+  -- `|u| ≤ 2C` on `ℝ`
+  have hub : ∀ x : ℝ, ‖u x‖ ≤ 2 * C := by
+    intro x
+    have h := hu4 x (hreal x)
+    have hφ : cexWeight (x : ℂ) = 0 := by simp [cexWeight]
+    rw [hφ, neg_zero, Real.exp_zero, mul_one] at h
+    have h2 : (C : ℝ≥0∞) * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖)
+        ∂cexNu N) ≤ ENNReal.ofReal (2 * C) := by
+      calc _ ≤ (C : ℝ≥0∞) * (1 + 1) := by gcongr; exact lintegral_cexNu_le_one N x
+        _ = ENNReal.ofReal (2 * C) := by
+            rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_ofNat,
+              one_add_one_eq_two, mul_comm]
+    exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (h.trans h2)
+  -- `g = e^{-H} u - 𝒞₀` is weakly holomorphic; its entire representative `G`
+  have hg := isWeakDbarSol_mul_sub_poles (fun k : Fin N ↦ cexW N k) (fun k ↦ cexM N k)
+    (fun k ↦ (cexM_pos N k).le) differentiable_cexE (σ := cexSigma) hu1
+  simp_rw [cexE_mul_cexSigma_mul_cexM] at hg
+  have hg' : IsWeakDbarSol univ (fun z ↦ cexE z * u z - cexP N z) 0 := hg
+  have hgc : ContinuousOn (fun z ↦ cexE z * u z - cexP N z) (cexL N)ᶜ := by
+    refine (differentiable_cexE.continuous.continuousOn.mul hu2.continuousOn).sub ?_
+    unfold cexP cexPole
+    refine continuousOn_finsetSum _ fun k _ ↦ continuousOn_const.mul
+      (continuousOn_const.mul (ContinuousOn.inv₀ (continuousOn_id.sub continuousOn_const)
+        fun z hz ↦ ?_))
+    exact sub_ne_zero.2 fun h ↦ hz ⟨k, h.symm⟩
+  obtain ⟨G, hGd, hGeq⟩ := exists_entire_eqOn_compl (isCompact_cexL N).isClosed hg' hgc
+  have hGx : ∀ z ∉ cexL N, G z = cexE z * u z - cexP N z := fun z hz ↦ (hGeq hz).symm
+  -- `|𝒞₀| ≤ N` on `ℝ`
+  have hPb : ∀ x : ℝ, ‖cexP N x‖ ≤ N := by
+    intro x
+    unfold cexP
+    refine (norm_sum_le _ _).trans ?_
+    calc ∑ k : Fin N, ‖((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * cexPole (cexW N k) x‖
+        ≤ ∑ _k : Fin N, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ ?_
+      _ = N := by simp
+    have hs := cexS_pos k
+    have h1 : cexS k ≤ ‖(x : ℂ) - cexW N k‖ := by
+      have := abs_im_le_norm ((x : ℂ) - cexW N k)
+      rwa [sub_im, Complex.ofReal_im, zero_sub, cexW_im, neg_neg, abs_of_pos hs] at this
+    rw [norm_mul, cexPole, norm_mul, norm_inv, norm_inv, Complex.norm_real, Complex.norm_real,
+      Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg Real.pi_pos.le]
+    have hexp : Real.exp (cexS k) ≤ Real.pi :=
+      (Real.exp_le_exp.2 (by linarith [cexS_le k])).trans
+        (Real.exp_one_lt_three.le.trans Real.pi_gt_three.le)
+    calc cexS k * Real.exp (cexS k) * (Real.pi⁻¹ * ‖(x : ℂ) - cexW N k‖⁻¹)
+        ≤ cexS k * Real.exp (cexS k) * (Real.pi⁻¹ * (cexS k)⁻¹) := by gcongr
+      _ = Real.exp (cexS k) * Real.pi⁻¹ := by field_simp
+      _ ≤ 1 := by rw [mul_inv_le_iff₀ Real.pi_pos]; linarith
+  -- `|G| ≤ 2C + N` on `ℝ`
+  have hGb : ∀ x : ℝ, ‖G x‖ ≤ 2 * C + N := by
+    intro x
+    rw [hGx _ (hreal x)]
+    calc ‖cexE x * u x - cexP N x‖ ≤ ‖cexE x * u x‖ + ‖cexP N x‖ := norm_sub_le _ _
+      _ ≤ 2 * C + N := by rw [norm_mul, hEx, one_mul]; linarith [hub x, hPb x]
+  -- decay of `G`
+  have hP0 : Filter.Tendsto (cexP N) (Filter.cocompact ℂ) (nhds 0) := by
+    rw [← Metric.cobounded_eq_cocompact]
+    have h := tendsto_finsetSum (Finset.univ : Finset (Fin N)) fun k _ ↦
+      ((Filter.tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded (cexW N k))).const_mul
+        (((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * (Real.pi : ℂ)⁻¹))
+    simp only [mul_zero, Finset.sum_const_zero] at h
+    refine h.congr fun z ↦ ?_
+    simp only [cexP, cexPole, Function.comp]
+    exact Finset.sum_congr rfl fun k _ ↦ by ring
+  have hGdec : Filter.Tendsto (fun z ↦ ‖G z‖ * Real.exp (-|z.im|)) (Filter.cocompact ℂ)
+      (nhds 0) := by
+    have hlim : Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-cexWeight z) + ‖cexP N z‖)
+        (Filter.cocompact ℂ) (nhds 0) := by
+      simpa using hu3.add hP0.norm
+    refine squeeze_zero' (Filter.Eventually.of_forall fun z ↦ by positivity) ?_ hlim
+    filter_upwards [(isCompact_cexL N).compl_mem_cocompact] with z hz
+    rw [hGx z hz]
+    have hE : ‖cexE z‖ * Real.exp (-|z.im|) = Real.exp (-cexWeight z) := by
+      rw [norm_cexE, ← Real.exp_add, cexWeight]; congr 1; ring
+    calc ‖cexE z * u z - cexP N z‖ * Real.exp (-|z.im|)
+        ≤ (‖cexE z‖ * ‖u z‖ + ‖cexP N z‖) * Real.exp (-|z.im|) := by
+          gcongr; exact (norm_sub_le _ _).trans (le_of_eq (by rw [norm_mul]))
+      _ = ‖u z‖ * (‖cexE z‖ * Real.exp (-|z.im|)) + ‖cexP N z‖ * Real.exp (-|z.im|) := by ring
+      _ ≤ ‖u z‖ * Real.exp (-cexWeight z) + ‖cexP N z‖ := by
+          rw [hE]
+          gcongr
+          exact mul_le_of_le_one_right (norm_nonneg _)
+            (Real.exp_le_one_iff.2 (neg_nonpos.2 (abs_nonneg _)))
+  -- Phragmén–Lindelöf, Cauchy estimate, mean value theorem
+  have hGexp := norm_le_mul_exp_abs_im_of_entire hGd hGb hGdec
+  have hGosc := norm_sub_le_of_norm_le_mul_exp hGd hGexp (cexX0 N) (cexX0 N + 1 / 64)
+  rw [add_sub_cancel_left, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 64)] at hGosc
+  -- the oscillation of `𝒞₀ = e^{-H} u - G` on `ℝ`
+  have hosc := cexP_oscillation N
+  set x₀ : ℝ := cexX0 N
+  set x₁ : ℝ := cexX0 N + 1 / 64
+  have hP0x : cexP N x₀ = cexE x₀ * u x₀ - G x₀ := by rw [hGx _ (hreal x₀)]; ring
+  have hP1x : cexP N x₁ = cexE x₁ * u x₁ - G x₁ := by rw [hGx _ (hreal x₁)]; ring
+  have hupper : ‖cexP N x₀ - cexP N x₁‖ ≤ 4 * C + (2 * C + N) * Real.exp 1 * (1 / 64) := by
+    rw [hP0x, hP1x]
+    calc ‖cexE x₀ * u x₀ - G x₀ - (cexE x₁ * u x₁ - G x₁)‖
+        = ‖cexE x₀ * u x₀ - cexE x₁ * u x₁ + (G x₁ - G x₀)‖ := by ring_nf
+      _ ≤ ‖cexE x₀ * u x₀‖ + ‖cexE x₁ * u x₁‖ + ‖G x₁ - G x₀‖ :=
+          (norm_add_le _ _).trans (by gcongr; exact norm_sub_le _ _)
+      _ ≤ 2 * C + 2 * C + (2 * C + N) * Real.exp 1 * (1 / 64) := by
+          rw [norm_mul, norm_mul, hEx, hEx, one_mul, one_mul]
+          gcongr
+          all_goals exact hub _
+      _ = 4 * C + (2 * C + N) * Real.exp 1 * (1 / 64) := by ring
+  -- arithmetic: `N/8 ≤ N/(2π) ≤ 4C + (2C + N) e/64` contradicts `N ≥ 53 C + 1`
+  have h1 : (N : ℝ) / 8 ≤ (N : ℝ) / (2 * Real.pi) :=
+    div_le_div_of_nonneg_left (by positivity) (by positivity) (by linarith [Real.pi_le_four])
+  have h2 := h1.trans (hosc.trans hupper)
+  have he := Real.exp_one_lt_three
+  have hC0 : (0 : ℝ) ≤ C := C.coe_nonneg
+  have hN0 : (0 : ℝ) ≤ N := N.cast_nonneg
+  nlinarith
 
 /-! ### The printed Theorem 3 (comparator statement `theorem3`): FALSE, kept out of the build
 
