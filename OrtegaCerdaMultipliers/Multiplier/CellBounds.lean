@@ -21,48 +21,6 @@ noncomputable section
 
 namespace OC
 
-/-! ### Elementary facts on cells -/
-
-theorem IsCells.subset_univ {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ}
-    {η A : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hC : IsCells Ω d ρ ν N η A R c) (i : ℕ) :
-    R i ⊆ Ω := by
-  rw [← hC.iUnion_eq]; exact subset_iUnion R i
-
-theorem IsCells.center_mem' {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ}
-    {η A : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hC : IsCells Ω d ρ ν N η A R c) (i : ℕ) :
-    c i ∈ Ω :=
-  hC.subset_univ i (hC.center_mem i)
-
-theorem IsCells.measure_lt_top {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ}
-    {η A : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hC : IsCells Ω d ρ ν N η A R c) (i : ℕ) :
-    ν (R i) < ∞ := by
-  rw [hC.measure_eq i]; exact ENNReal.natCast_lt_top N
-
-theorem IsCells.isBounded_plane {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ} {η A : ℝ}
-    {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hC : IsCells univ dist ρ ν N η A R c) (i : ℕ) :
-    Bornology.IsBounded (R i) :=
-  (isBounded_closedBall (x := c i) (r := A * ρ (c i))).subset fun w hw ↦ by
-    rw [mem_closedBall, dist_comm]; exact hC.subset i w hw
-
-theorem IsCells.isBounded_disc {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ} {η A : ℝ}
-    {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hC : IsCells 𝔻 hypDist ρ ν N η A R c) (i : ℕ) :
-    Bornology.IsBounded (R i) :=
-  isBounded_ball.subset (hC.subset_univ i)
-
-theorem IsCells.mono_A {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ}
-    {η A A' : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hC : IsCells Ω d ρ ν N η A R c)
-    (hρ : ∀ i, 0 ≤ ρ (c i)) (hA : A ≤ A') : IsCells Ω d ρ ν N η A' R c :=
-  ⟨hC.measurableSet, hC.pairwise_disjoint, hC.iUnion_eq, hC.center_mem,
-    fun i w hw ↦ (hC.subset i w hw).trans (mul_le_mul_of_nonneg_right hA (hρ i)), hC.inner,
-    hC.measure_eq⟩
-
-theorem IsNodes.mono_B {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {ν : Measure ℂ} {N : ℕ}
-    {B B' : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
-    (hN : IsNodes Ω d ρ ν N B R c m Λ) (hρ : ∀ i, 0 ≤ ρ (c i)) (hB : B ≤ B') :
-    IsNodes Ω d ρ ν N B' R c m Λ :=
-  ⟨hN.card, hN.mem,
-    fun i w hw ↦ (hN.near i w hw).trans (mul_le_mul_of_nonneg_right hB (hρ i)), hN.moments⟩
-
 /-! ### Finiteness and no atoms -/
 
 theorem MeasClassDisc.hypBall_lt_top {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
@@ -519,52 +477,6 @@ theorem abs_cellPot_le_disc_far (A B R₀ M₀ : ℝ) (N : ℕ) (hA : 0 < A) (hB
 
 /-! ### The non-near part is uniformly bounded (§3.7) -/
 
-/-- (C4) for the disc: a non-near cell is at distance `≥ δ ρ(z)` from `z`. -/
-theorem claim1_nonNear_disc (Cd : ℝ≥0) (R₀ K₀ : ℝ) (hK₀ : 1 ≤ K₀) :
-    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ ν : Measure ℂ, MeasClassDisc ν Cd R₀ → ∀ z ∈ 𝔻, ∀ w ∈ 𝔻,
-      K₀ * massRadiusDisc ν w ≤ hypDist z w → δ * massRadiusDisc ν z ≤ hypDist z w := by
-  obtain ⟨C₁, hC₁, hcl⟩ := claim1_disc_quant Cd R₀ K₀
-  refine ⟨min 1 (K₀ / C₁), lt_min one_pos (by positivity), min_le_left _ _, ?_⟩
-  intro ν hν z hz w hw hK
-  by_contra hlt
-  push Not at hlt
-  obtain ⟨hρz, -, h1⟩ := hcl ν hν z hz w hw
-  have hlt1 : hypDist z w < massRadiusDisc ν z :=
-    hlt.trans_le (by nlinarith [min_le_left 1 (K₀ / C₁)])
-  have hle : hypDist z w ≤ K₀ * max (massRadiusDisc ν z) (massRadiusDisc ν w) :=
-    hlt1.le.trans (by nlinarith [le_max_left (massRadiusDisc ν z) (massRadiusDisc ν w)])
-  have h2 := h1 hle
-  have h3 : K₀ / C₁ * massRadiusDisc ν z ≤ hypDist z w := by
-    calc K₀ / C₁ * massRadiusDisc ν z ≤ K₀ / C₁ * (C₁ * massRadiusDisc ν w) := by gcongr
-      _ = K₀ * massRadiusDisc ν w := by field_simp
-      _ ≤ hypDist z w := hK
-  have h4 : min 1 (K₀ / C₁) * massRadiusDisc ν z ≤ K₀ / C₁ * massRadiusDisc ν z :=
-    mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
-  linarith
-
-/-- (C4) for the plane. -/
-theorem claim1_nonNear_plane (Cd : ℝ≥0) (R₀ K₀ : ℝ) (hK₀ : 1 ≤ K₀) :
-    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ → ∀ z w : ℂ,
-      K₀ * massRadius ν w ≤ dist z w → δ * massRadius ν z ≤ dist z w := by
-  obtain ⟨C₁, hC₁, hcl⟩ := claim1_plane_quant Cd R₀ K₀
-  refine ⟨min 1 (K₀ / C₁), lt_min one_pos (by positivity), min_le_left _ _, ?_⟩
-  intro ν hν z w hK
-  by_contra hlt
-  push Not at hlt
-  obtain ⟨hρz, -, h1⟩ := hcl ν hν z w
-  have hlt1 : dist z w < massRadius ν z :=
-    hlt.trans_le (by nlinarith [min_le_left 1 (K₀ / C₁)])
-  have hle : dist z w ≤ K₀ * max (massRadius ν z) (massRadius ν w) :=
-    hlt1.le.trans (by nlinarith [le_max_left (massRadius ν z) (massRadius ν w)])
-  have h2 := h1 hle
-  have h3 : K₀ / C₁ * massRadius ν z ≤ dist z w := by
-    calc K₀ / C₁ * massRadius ν z ≤ K₀ / C₁ * (C₁ * massRadius ν w) := by gcongr
-      _ = K₀ * massRadius ν w := by field_simp
-      _ ≤ dist z w := hK
-  have h4 : min 1 (K₀ / C₁) * massRadius ν z ≤ K₀ / C₁ * massRadius ν z :=
-    mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
-  linarith
-
 theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
     (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) :
     ∃ K₀ C : ℝ, 2 * (A + B) ≤ K₀ ∧ 0 ≤ C ∧ ∀ (ν : Measure ℂ) (R : ℕ → Set ℂ) (c : ℕ → ℂ)
@@ -580,7 +492,7 @@ theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
   have hρ₀'pos : 0 < ρ₀' := lt_min hρ₀ (by positivity)
   set M₀ := min (1 / 4) (K₀ * ρ₀') with hM₀def
   have hM₀ : 0 < M₀ := lt_min (by norm_num) (by positivity)
-  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_disc Cd R₀ K₀ hK₀1
+  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_disc Cd R₀ K₀ (by linarith)
   obtain ⟨C₁, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
   obtain ⟨Cn, hCn⟩ := nearField_sum_le_disc Cd R₀ η A δ hη hδ
   obtain ⟨CD, hCD0, hCD⟩ := abs_cellPot_le_disc_far A B R₀ M₀ N hA hB hM₀
@@ -655,7 +567,7 @@ theorem nonNear_sum_le_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
         ∑ i ∈ F, |cellPot kerPlane ν R Λ i z| ≤ C := by
   set K₀ := 2 * (A + B) + 1 with hK₀
   have hK₀1 : 1 ≤ K₀ := by rw [hK₀]; linarith
-  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_plane Cd R₀ K₀ hK₀1
+  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_plane Cd R₀ K₀ (by linarith)
   obtain ⟨C₁, -, hcl⟩ := claim1_plane_quant Cd R₀ 0
   obtain ⟨Cn, hCn⟩ := nearField_sum_le_plane Cd R₀ η A δ hη hδ
   obtain ⟨Cf, hCf⟩ := farField_sum_le_plane Cd R₀ η A (1 / 4) hη (by norm_num)

@@ -134,3 +134,41 @@ theorem mul_le_tanh {S x : ℝ} (hS : 0 < S) (hx : 0 ≤ x) (hxS : x ≤ S) :
       _ ≤ Real.tanh x := tanh_le_tanh h1.le
 
 end OC
+
+namespace OC
+
+theorem sinh_le_mul_exp {x : ℝ} (hx : 0 ≤ x) : Real.sinh x ≤ x * Real.exp x := by
+  have h1 : Real.sinh x = Real.tanh x * Real.cosh x := by
+    rw [Real.tanh_eq_sinh_div_cosh, div_mul_cancel₀ _ (Real.cosh_pos x).ne']
+  have h2 : Real.cosh x ≤ Real.exp x := by
+    rw [Real.cosh_eq]
+    have : Real.exp (-x) ≤ Real.exp x := Real.exp_le_exp.2 (by linarith)
+    linarith
+  rw [h1]
+  calc Real.tanh x * Real.cosh x ≤ x * Real.cosh x :=
+        mul_le_mul_of_nonneg_right (tanh_le_self hx) (Real.cosh_pos x).le
+    _ ≤ x * Real.exp x := mul_le_mul_of_nonneg_left h2 hx
+
+/-- A set all of whose finite subsets have at most `M` elements has `encard ≤ M`. -/
+theorem encard_le_of_forall_finset {α : Type*} {S : Set α} {M : ℕ}
+    (h : ∀ F : Finset α, ↑F ⊆ S → F.card ≤ M) : S.encard ≤ M := by
+  by_cases hS : S.Finite
+  · rw [hS.encard_eq_coe_toFinset_card]
+    exact_mod_cast h hS.toFinset (by simp)
+  · obtain ⟨F, hF, hcard⟩ := Set.Infinite.exists_subset_card_eq hS (M + 1)
+    have := h F hF
+    omega
+
+/-- Area counting: disjoint pieces of measure `≥ f i` inside a set of measure `≤ V`. -/
+theorem sum_le_of_pairwiseDisjoint {μ : Measure ℂ} {F : Finset ℕ} {E : ℕ → Set ℂ} {U : Set ℂ}
+    {f : ℕ → ℝ} {V : ℝ} (hE : ∀ i ∈ F, MeasurableSet (E i))
+    (hdisj : (F : Set ℕ).PairwiseDisjoint E) (hsub : ∀ i ∈ F, E i ⊆ U)
+    (hf0 : ∀ i ∈ F, 0 ≤ f i) (hf : ∀ i ∈ F, ENNReal.ofReal (f i) ≤ μ (E i))
+    (hV : 0 ≤ V) (hU : μ U ≤ ENNReal.ofReal V) : ∑ i ∈ F, f i ≤ V := by
+  rw [← ENNReal.ofReal_le_ofReal_iff hV, ENNReal.ofReal_sum_of_nonneg hf0]
+  calc ∑ i ∈ F, ENNReal.ofReal (f i) ≤ ∑ i ∈ F, μ (E i) := Finset.sum_le_sum hf
+    _ = μ (⋃ i ∈ F, E i) := (measure_biUnion_finset hdisj hE).symm
+    _ ≤ μ U := measure_mono (iUnion₂_subset hsub)
+    _ ≤ ENNReal.ofReal V := hU
+
+end OC
