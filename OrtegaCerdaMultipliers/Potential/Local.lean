@@ -199,15 +199,9 @@ theorem integral_bumpPot_mul_laplacian' {s : ℝ} (hs : 0 < s) {χ : ℂ → ℝ
 
 
 /-- **The smoothed point mass.** `Δ_z G_s(z − ζ) = bumpKernel s (· − ζ) − δ_ζ` weakly. -/
--- FALSE?: the right-hand side parses as `∫ z, (bumpKernel s (z - ζ) * χ z - χ ζ)` (the body of
--- `∫` extends over `- χ ζ`).  That integrand is not integrable when `χ ζ ≠ 0`, so the right side
--- is `0`.  Counterexample: `ζ = 0`, `s = 1`, `χ` a smooth bump with `χ 0 = 1` supported in
--- `ball 0 (1/10)`; then the left side is `∫ k₁ χ - 1 ≤ 4/100 - 1 < 0`.  The intended statement,
--- with parentheses, is `integral_bumpPot_mul_laplacian'` (proved above).
-theorem integral_bumpPot_mul_laplacian {s : ℝ} (hs : 0 < s) {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
-    (hc : HasCompactSupport χ) (ζ : ℂ) :
-    ∫ z, bumpPot s (z - ζ) * Laplacian.laplacian χ z =
-      ∫ z, bumpKernel s (z - ζ) * χ z - χ ζ := sorry
+-- (`integral_bumpPot_mul_laplacian` was removed by the coordinator: as written, `∫ z, a - b`
+-- parses as `∫ z, (a - b)`, which made it false; the intended statement is
+-- `integral_bumpPot_mul_laplacian'`. NOTEBOOK I-03.)
 
 /-- Density of the smoothed measure `σ̃ = ∫ bumpKernel_{s(ζ)}(· − ζ) dσ(ζ)`. -/
 def smoothedDensity (σ : Measure ℂ) (s : ℂ → ℝ) (x : ℂ) : ℝ≥0∞ :=
