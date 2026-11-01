@@ -32,6 +32,8 @@ import OrtegaCerdaMultipliers.LogModulus
 import OrtegaCerdaMultipliers.LogModulusWeak
 import OrtegaCerdaMultipliers.ModelKernels
 import OrtegaCerdaMultipliers.Multiplier.Defs
+import OrtegaCerdaMultipliers.Multiplier.CellBounds
+import OrtegaCerdaMultipliers.Multiplier.Basic
 import OrtegaCerdaMultipliers.Multiplier.Kernel
 import OrtegaCerdaMultipliers.Multiplier.Cells
 import OrtegaCerdaMultipliers.Multiplier.NearField
