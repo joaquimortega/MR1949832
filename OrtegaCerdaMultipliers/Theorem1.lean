@@ -5,10 +5,14 @@ import OrtegaCerdaMultipliers.ModelKernels
 /-!
 # M12 (Theorem1) — Theorem 1 (locally doubling), Christ's Theorem 1, Proposition 1
 
-See `blueprint/M12_Theorem1.md`.  Scaffold: statements, proofs `sorry`; `thm1H` is a real
-definition.  `theorem1`, `theorem1_christ`, `prop1` are verbatim from
-`comparator/statements.lean`; `theorem1_christ` is proved from `theorem1` and M03's
-`IsDoubling.isLocallyDoubling`.
+See `blueprint/M12_Theorem1.md`.  All proofs complete (modulo upstream lemmas).
+`theorem1`, `theorem1_christ`, `prop1` are verbatim from `comparator/statements.lean`.
+`theorem1` and `prop1` are proved from the kernel `exists_plane_solution_kernel` and M10's
+`plane_kernel_operator`; `theorem1_christ` from `theorem1` and M03's
+`IsDoubling.isLocallyDoubling`.  The kernel uses the auxiliary weight `ψ = φ' − (ε/8)|z|²`
+(`exists_aux_weight_plane`, from M04's `lemma6_plane_volume`) and the Lemma 8 factor
+`e^{2c(ζ̄z − |ζ|²)}` with `c = ε/8`, matching `ψ` (NOTEBOOK N-23: the printed exponent `2ε` is
+wrong).
 
 Reconciliation (consumed from upstream): `lemma6_plane_volume` (M04, corollary of
 `lemma6_plane`), `prop2_plane_full`, `exists_measurable_partition` (M09),
@@ -192,7 +196,88 @@ theorem exists_plane_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hm : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 ≤ μ (ball z r)) :
     ∃ (H : ℂ → ℂ → ℂ) (c A : ℝ), 0 < c ∧ 0 ≤ A ∧ Measurable (Function.uncurry H) ∧
       (∀ ζ, Differentiable ℂ (fun z ↦ H z ζ)) ∧ (∀ ζ, H ζ ζ = 1) ∧
-      ∀ z ζ, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2) := sorry
+      ∀ z ζ, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2) := by
+  classical
+  obtain ⟨ψ, μψ, c, B, hc0, hB, hψ, hdψ, hmψ, hψφ⟩ := exists_aux_weight_plane φ μ hφ hd hm
+  obtain ⟨n, h, εP, C, -, hC0, hh, hcov, hup, hgood⟩ := prop2_plane_full ψ μψ hψ hdψ hmψ
+  -- the good sets and the partition
+  let G : Fin n → Set ℂ := fun i ↦
+    {z | ∀ w ∈ {w | h i w = 0}, εP * massRadius μψ w ≤ dist z w}
+  obtain ⟨Ω, hΩm, hΩG, hΩu⟩ := exists_measurable_partition MeasurableSet.univ G
+    (fun i ↦ (isClosed_goodSet_plane _ _ _).measurableSet) (fun z _ ↦ by
+      obtain ⟨i, hi⟩ := hcov z
+      exact ⟨i, fun w hw ↦ hi w hw⟩)
+  have hform : ∀ ζ, ∃ i, ζ ∈ Ω i ∧ ∀ z, thm1H h Ω c z ζ =
+      h i z / h i ζ * Complex.exp (2 * c * (conj ζ * z - ((‖ζ‖ ^ 2 : ℝ) : ℂ))) := by
+    intro ζ
+    obtain ⟨i, hi, huniq⟩ := hΩu ζ (mem_univ _)
+    refine ⟨i, hi, fun z ↦ ?_⟩
+    unfold thm1H
+    rw [Finset.sum_eq_single i (fun j _ hji ↦ indicator_of_notMem (fun hj ↦ hji (huniq j hj)) _)
+      (by simp), indicator_of_mem hi]
+  have hne : ∀ i, ∀ ζ ∈ Ω i, h i ζ ≠ 0 ∧ C⁻¹ * Real.exp (ψ ζ) ≤ ‖h i ζ‖ := by
+    intro i ζ hζ
+    have hl := hgood i ζ (fun w hw0 ↦ (hΩG i hζ).1 w hw0)
+    refine ⟨fun h0 ↦ ?_, hl⟩
+    rw [h0, norm_zero] at hl
+    have : 0 < C⁻¹ * Real.exp (ψ ζ) := by positivity
+    linarith
+  refine ⟨thm1H h Ω c, c, C ^ 2 * Real.exp (2 * B), hc0, by positivity, ?_, ?_, ?_, ?_⟩
+  · -- measurability
+    have hfun : Function.uncurry (thm1H h Ω c) = fun p : ℂ × ℂ ↦
+        (∑ i, (Prod.snd ⁻¹' Ω i).indicator (fun q : ℂ × ℂ ↦ h i q.1 / h i q.2) p) *
+          Complex.exp (2 * c * (conj p.2 * p.1 - ((‖p.2‖ ^ 2 : ℝ) : ℂ))) := by
+      ext p
+      simp only [Function.uncurry, thm1H, indicator, mem_preimage]
+    rw [hfun]
+    have hhm : ∀ i, Measurable (h i) := fun i ↦ (hh i).continuous.measurable
+    refine Measurable.mul (Finset.measurable_sum _ fun i _ ↦ ?_) ?_
+    · exact (((hhm i).comp measurable_fst).div ((hhm i).comp measurable_snd)).indicator
+        (measurable_snd (hΩm i))
+    · exact Continuous.measurable (by fun_prop)
+  · -- holomorphy in `z`
+    intro ζ
+    obtain ⟨i, -, hfor⟩ := hform ζ
+    rw [show (fun z ↦ thm1H h Ω c z ζ) = fun z ↦ h i z / h i ζ *
+      Complex.exp (2 * c * (conj ζ * z - ((‖ζ‖ ^ 2 : ℝ) : ℂ))) from funext hfor]
+    exact ((hh i).div_const _).mul
+      (((differentiable_const _).mul ((differentiable_const _).mul differentiable_id |>.sub
+        (differentiable_const _))).cexp)
+  · -- diagonal
+    intro ζ
+    obtain ⟨i, hi, hfor⟩ := hform ζ
+    rw [hfor, div_self (hne i ζ hi).1, one_mul, Complex.conj_mul', ← Complex.ofReal_pow, sub_self,
+      mul_zero, Complex.exp_zero]
+  · -- the bound
+    intro z ζ
+    obtain ⟨i, hi, hfor⟩ := hform ζ
+    have hlow := (hne i ζ hi).2
+    have hupz := hup i z
+    rw [hfor, norm_mul, norm_div, norm_exp_planeKernel_num]
+    have hratio : ‖h i z‖ / ‖h i ζ‖ ≤ C ^ 2 * Real.exp (ψ z - ψ ζ) := by
+      have hpos : 0 < C⁻¹ * Real.exp (ψ ζ) := by positivity
+      calc ‖h i z‖ / ‖h i ζ‖ ≤ (C * Real.exp (ψ z)) / (C⁻¹ * Real.exp (ψ ζ)) := by
+            gcongr
+        _ = C ^ 2 * Real.exp (ψ z - ψ ζ) := by
+            rw [Real.exp_sub]; field_simp
+    have hψ' : Real.exp (ψ z - ψ ζ) * Real.exp (c * ‖z‖ ^ 2 - c * ‖ζ‖ ^ 2) ≤
+        Real.exp (2 * B) * Real.exp (φ z - φ ζ) := by
+      rw [← Real.exp_add, ← Real.exp_add]
+      apply Real.exp_le_exp.2
+      have h1 := abs_le.1 (hψφ z)
+      have h2 := abs_le.1 (hψφ ζ)
+      linarith
+    calc ‖h i z‖ / ‖h i ζ‖ *
+          (Real.exp (c * ‖z‖ ^ 2 - c * ‖ζ‖ ^ 2) * Real.exp (-c * ‖z - ζ‖ ^ 2))
+        ≤ C ^ 2 * Real.exp (ψ z - ψ ζ) *
+          (Real.exp (c * ‖z‖ ^ 2 - c * ‖ζ‖ ^ 2) * Real.exp (-c * ‖z - ζ‖ ^ 2)) := by
+          gcongr
+      _ = C ^ 2 * (Real.exp (ψ z - ψ ζ) * Real.exp (c * ‖z‖ ^ 2 - c * ‖ζ‖ ^ 2)) *
+          Real.exp (-c * ‖z - ζ‖ ^ 2) := by ring
+      _ ≤ C ^ 2 * (Real.exp (2 * B) * Real.exp (φ z - φ ζ)) *
+          Real.exp (-c * ‖z - ζ‖ ^ 2) := by gcongr
+      _ = C ^ 2 * Real.exp (2 * B) * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2) := by
+          ring
 
 /-- **Theorem 1** (paper, p. 356; Christ's theorem), in the locally doubling form that the
 paper's proof gives (p. 357): one solution `u` of `∂̄u = f` with
@@ -203,7 +288,12 @@ theorem theorem1 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeigh
       (∃ p : ℝ≥0∞, 1 ≤ p ∧ eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume < ∞) →
       ∃ u : ℂ → ℂ, IsWeakDbarSol univ u f ∧ ∀ p : ℝ≥0∞, 1 ≤ p →
         eLpNorm (fun z ↦ u z * (Real.exp (-φ z) : ℝ)) p volume ≤
-          C * eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume := sorry
+          C * eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume := by
+  obtain ⟨H, c, A, hc0, -, hHm, hHd, hH1, hHb⟩ := exists_plane_solution_kernel φ μ hφ hd hm
+  refine ⟨(A * Real.sqrt (Real.pi / c)).toNNReal, fun f hf hadm ↦ ?_⟩
+  obtain ⟨hsol, hest⟩ := plane_kernel_operator (continuousOn_univ.1 hφ.continuousOn) hc0 hHm hHd
+    hH1 hHb f hf hadm
+  exact ⟨_, hsol, hest⟩
 
 /-- **Theorem 1** as stated in the paper (Christ, [Chr91]): `Δφ` doubling. -/
 theorem theorem1_christ (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
@@ -225,7 +315,50 @@ theorem prop1 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight u
       ∀ f : ℂ → ℂ, AEStronglyMeasurable f volume →
         (∃ p : ℝ≥0∞, 1 ≤ p ∧ eLpNorm (fun z ↦ f z * (Real.exp (-φ z) : ℝ)) p volume < ∞) →
         IsWeakDbarSol univ
-          (fun z ↦ ∫ ζ, (Real.exp (φ z - φ ζ) : ℂ) * k z ζ * f ζ) f := sorry
+          (fun z ↦ ∫ ζ, (Real.exp (φ z - φ ζ) : ℂ) * k z ζ * f ζ) f := by
+  obtain ⟨H, c, A, hc0, -, hHm, hHd, hH1, hHb⟩ := exists_plane_solution_kernel φ μ hφ hd hm
+  have hφc : Continuous φ := continuousOn_univ.1 hφ.continuousOn
+  set k : ℂ → ℂ → ℂ := fun z ζ ↦
+    (Real.exp (φ ζ - φ z) : ℂ) * (H z ζ / ((Real.pi : ℂ) * (z - ζ))) with hk
+  refine ⟨k, c, A / Real.pi, hc0, ?_, ?_, fun f hf hadm ↦ ?_⟩
+  · -- measurability
+    have hfun : Function.uncurry k = fun p : ℂ × ℂ ↦ (Real.exp (φ p.2 - φ p.1) : ℂ) *
+        (Function.uncurry H p / ((Real.pi : ℂ) * (p.1 - p.2))) := rfl
+    rw [hfun]
+    refine Measurable.mul ?_ (hHm.div ?_)
+    · exact Continuous.measurable (by fun_prop)
+    · exact Continuous.measurable (by fun_prop)
+  · -- the upper bound
+    intro z ζ hzζ
+    have hpos : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hzζ)
+    have hpi := Real.pi_pos
+    simp only [hk]
+    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, norm_div, norm_mul,
+      Complex.norm_real, Real.norm_of_nonneg hpi.le]
+    calc Real.exp (φ ζ - φ z) * (‖H z ζ‖ / (Real.pi * ‖z - ζ‖))
+        ≤ Real.exp (φ ζ - φ z) *
+          (A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2) / (Real.pi * ‖z - ζ‖)) := by
+          gcongr
+          exact hHb z ζ
+      _ = A / Real.pi * Real.exp (-c * ‖z - ζ‖ ^ 2) / ‖z - ζ‖ := by
+          have he : Real.exp (φ ζ - φ z) * Real.exp (φ z - φ ζ) = 1 := by
+            rw [← Real.exp_add, show φ ζ - φ z + (φ z - φ ζ) = 0 by ring, Real.exp_zero]
+          rw [show Real.exp (φ ζ - φ z) * (A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2) /
+              (Real.pi * ‖z - ζ‖)) = (Real.exp (φ ζ - φ z) * Real.exp (φ z - φ ζ)) *
+              (A * Real.exp (-c * ‖z - ζ‖ ^ 2) / (Real.pi * ‖z - ζ‖)) by ring, he, one_mul]
+          ring
+  · -- the solution
+    obtain ⟨hsol, -⟩ := plane_kernel_operator hφc hc0 hHm hHd hH1 hHb f hf hadm
+    have heq : (fun z ↦ ∫ ζ, (Real.exp (φ z - φ ζ) : ℂ) * k z ζ * f ζ) =
+        fun z ↦ ∫ ζ, H z ζ / ((Real.pi : ℂ) * (z - ζ)) * f ζ := by
+      funext z
+      congr 1
+      funext ζ
+      simp only [hk]
+      rw [← mul_assoc, ← Complex.ofReal_mul, ← Real.exp_add,
+        show φ z - φ ζ + (φ ζ - φ z) = 0 by ring, Real.exp_zero, Complex.ofReal_one, one_mul]
+    rw [heq]
+    exact hsol
 
 /-- The kernel of the construction vanishes at the zeros of the multipliers: the printed
 lower bound `|k| ≳ e^{-ε|z-ζ|²}/|z-ζ|` fails for it. -/
