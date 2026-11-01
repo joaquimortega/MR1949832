@@ -114,14 +114,126 @@ theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 <
 
 theorem norm_sub_le_of_hypDist_le {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {s : ℝ}
     (hs : hypDist c w ≤ s) (hs1 : Real.tanh s < 1) :
-    ‖w - c‖ ≤ Real.tanh s / (1 - Real.tanh s) * (1 - ‖c‖ ^ 2) := sorry
+    ‖w - c‖ ≤ Real.tanh s / (1 - Real.tanh s) * (1 - ‖c‖ ^ 2) := by
+  have hρ : pseudoHyp c w ≤ Real.tanh s := (hypDist_le_iff hc hw s).1 hs
+  set t := Real.tanh s
+  obtain ⟨v, hv_def⟩ : ∃ v, v = mobius c w := ⟨_, rfl⟩
+  have hv : v ∈ 𝔻 := hv_def ▸ mobius_mem_disc hc hw
+  have hvn : ‖v‖ ≤ t := by rw [hv_def, ← pseudoHyp_eq_norm_mobius]; exact hρ
+  have hwv : w = mobius c v := by rw [hv_def, mobius_mobius hc hw]
+  have hDv := one_sub_conj_mul_ne_zero_of_mem hc hv
+  have e : ‖w - c‖ * ‖1 - conj c * v‖ = ‖v‖ * (1 - ‖c‖ ^ 2) := by
+    rw [hwv, mobius_sub_self hDv, norm_div, norm_neg, norm_mul, norm_one_sub_conj_mul_self hc,
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hDv)]
+  have hD := one_sub_mul_le_norm_one_sub_conj_mul c v
+  have hc1 := norm_lt_one_of_mem_disc hc
+  have hcv : ‖c‖ * ‖v‖ ≤ ‖v‖ := mul_le_of_le_one_left (norm_nonneg v) hc1.le
+  have hD' : 1 - t ≤ ‖1 - conj c * v‖ := by linarith
+  have h1r := one_sub_normSq_pos hc
+  have ht1 : 0 < 1 - t := by linarith
+  rw [div_mul_eq_mul_div, le_div_iff₀ ht1]
+  calc ‖w - c‖ * (1 - t) ≤ ‖w - c‖ * ‖1 - conj c * v‖ :=
+        mul_le_mul_of_nonneg_left hD' (norm_nonneg _)
+    _ = ‖v‖ * (1 - ‖c‖ ^ 2) := e
+    _ ≤ t * (1 - ‖c‖ ^ 2) := mul_le_mul_of_nonneg_right hvn h1r.le
+
+/-- `(1 + tanh s) / (1 - tanh s) = e^{2s}`. -/
+theorem one_add_tanh_div_one_sub_tanh (s : ℝ) :
+    (1 + Real.tanh s) / (1 - Real.tanh s) = Real.exp (2 * s) := by
+  have hE := Real.exp_pos (2 * s)
+  rw [tanh_eq_exp_two_mul]
+  field_simp
+  ring
+
+/-- One half of `norm_one_sub_conj_mul_comparable`. -/
+theorem norm_one_sub_conj_mul_le_exp {z a b : ℂ} (hz : z ∈ 𝔻) (ha : a ∈ 𝔻) (hb : b ∈ 𝔻)
+    {s : ℝ} (hs : hypDist a b ≤ s) :
+    ‖1 - conj z * b‖ ≤ Real.exp (2 * s) * ‖1 - conj z * a‖ := by
+  have ht1 := Real.tanh_lt_one s
+  set t := Real.tanh s
+  have hba := norm_sub_le_of_hypDist_le ha hb hs ht1
+  have hs0 : 0 ≤ s := (hypDist_nonneg a b).trans hs
+  have ht0 : 0 ≤ t := tanh_nonneg_of_nonneg hs0
+  have hz1 := norm_lt_one_of_mem_disc hz
+  have ha1 := norm_lt_one_of_mem_disc ha
+  have hza : ‖z‖ * ‖a‖ ≤ ‖a‖ := mul_le_of_le_one_left (norm_nonneg a) hz1.le
+  have hDa := one_sub_mul_le_norm_one_sub_conj_mul z a
+  have hA : 1 - ‖a‖ ^ 2 ≤ 2 * ‖1 - conj z * a‖ := by nlinarith [norm_nonneg a]
+  have htri : ‖1 - conj z * b‖ ≤ ‖1 - conj z * a‖ + ‖b - a‖ := by
+    calc ‖1 - conj z * b‖ = ‖(1 - conj z * a) - conj z * (b - a)‖ := by ring_nf
+      _ ≤ ‖1 - conj z * a‖ + ‖conj z * (b - a)‖ := norm_sub_le _ _
+      _ ≤ ‖1 - conj z * a‖ + ‖b - a‖ := by
+        rw [norm_mul, Complex.norm_conj]
+        gcongr
+        exact mul_le_of_le_one_left (norm_nonneg _) hz1.le
+  have ht1' : 0 < 1 - t := by linarith
+  have hq : 0 ≤ t / (1 - t) := div_nonneg ht0 ht1'.le
+  rw [← one_add_tanh_div_one_sub_tanh]
+  have e : (1 + t) / (1 - t) = 1 + 2 * (t / (1 - t)) := by field_simp; ring
+  rw [e]
+  calc ‖1 - conj z * b‖ ≤ ‖1 - conj z * a‖ + t / (1 - t) * (1 - ‖a‖ ^ 2) := by linarith
+    _ ≤ ‖1 - conj z * a‖ + t / (1 - t) * (2 * ‖1 - conj z * a‖) := by gcongr
+    _ = (1 + 2 * (t / (1 - t))) * ‖1 - conj z * a‖ := by ring
 
 theorem norm_one_sub_conj_mul_comparable {z c ξ : ℂ} (hz : z ∈ 𝔻) (hc : c ∈ 𝔻) (hξ : ξ ∈ 𝔻)
     {s : ℝ} (hs : hypDist c ξ ≤ s) :
     ‖1 - conj z * ξ‖ ≤ Real.exp (2 * s) * ‖1 - conj z * c‖ ∧
-      ‖1 - conj z * c‖ ≤ Real.exp (2 * s) * ‖1 - conj z * ξ‖ := sorry
+      ‖1 - conj z * c‖ ≤ Real.exp (2 * s) * ‖1 - conj z * ξ‖ :=
+  ⟨norm_one_sub_conj_mul_le_exp hz hc hξ hs,
+    norm_one_sub_conj_mul_le_exp hz hξ hc (by rwa [hypDist_comm])⟩
 
 theorem convex_closedHypBall {c : ℂ} (hc : c ∈ 𝔻) (s : ℝ) :
-    Convex ℝ {w | w ∈ 𝔻 ∧ hypDist c w ≤ s} := sorry
+    Convex ℝ {w | w ∈ 𝔻 ∧ hypDist c w ≤ s} := by
+  rcases lt_or_ge s 0 with hs | hs
+  · convert convex_empty (𝕜 := ℝ) (E := ℂ)
+    ext w
+    simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false, not_and, not_le]
+    exact fun _ ↦ hs.trans_le (hypDist_nonneg c w)
+  have ht0 : 0 ≤ Real.tanh s := tanh_nonneg_of_nonneg hs
+  have ht1 := Real.tanh_lt_one s
+  set t := Real.tanh s
+  have hc1 := norm_lt_one_of_mem_disc hc
+  have hA : 0 < 1 - t ^ 2 * ‖c‖ ^ 2 := by
+    have h1 : t ^ 2 < 1 := by nlinarith
+    have h2 : ‖c‖ ^ 2 < 1 := by nlinarith [norm_nonneg c]
+    have : t ^ 2 * ‖c‖ ^ 2 < 1 := by
+      calc t ^ 2 * ‖c‖ ^ 2 ≤ 1 * ‖c‖ ^ 2 := by gcongr
+        _ < 1 := by linarith
+    linarith
+  set c₀ : ℂ := (((1 - t ^ 2) / (1 - t ^ 2 * ‖c‖ ^ 2) : ℝ) : ℂ) * c
+  set R : ℝ := t * (1 - ‖c‖ ^ 2) / (1 - t ^ 2 * ‖c‖ ^ 2)
+  have hR0 : 0 ≤ R := by
+    have := one_sub_normSq_pos hc
+    positivity
+  have key := fun w ↦ norm_sub_sq_sub_sq_mul_norm_one_sub_sq c w t hA.ne'
+  have hset : {w | w ∈ 𝔻 ∧ hypDist c w ≤ s} = 𝔻 ∩ closedBall c₀ R := by
+    ext w
+    simp only [mem_ofPred_eq, mem_inter_iff, mem_closedBall, dist_eq_norm]
+    constructor
+    · rintro ⟨hw, h⟩
+      refine ⟨hw, ?_⟩
+      have h' := (hypDist_le_iff hc hw s).1 h
+      have hD := norm_one_sub_conj_mul_pos hc hw
+      rw [pseudoHyp, div_le_iff₀ hD, norm_sub_rev] at h'
+      have h2 : ‖w - c‖ ^ 2 ≤ (t * ‖1 - conj c * w‖) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) h' 2
+      have h3 : (1 - t ^ 2 * ‖c‖ ^ 2) * (‖w - c₀‖ ^ 2 - R ^ 2) ≤ 0 := by
+        rw [← key w]; nlinarith
+      have h4 : ‖w - c₀‖ ^ 2 ≤ R ^ 2 := by
+        by_contra hcon
+        exact absurd h3 (not_le.2 (mul_pos hA (by linarith)))
+      exact (pow_le_pow_iff_left₀ (norm_nonneg _) hR0 two_ne_zero).1 h4
+    · rintro ⟨hw, h⟩
+      refine ⟨hw, (hypDist_le_iff hc hw s).2 ?_⟩
+      have hD := norm_one_sub_conj_mul_pos hc hw
+      rw [pseudoHyp, div_le_iff₀ hD, norm_sub_rev]
+      have h2 : ‖w - c₀‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
+      have h3 : ‖w - c‖ ^ 2 - t ^ 2 * ‖1 - conj c * w‖ ^ 2 ≤ 0 := by
+        rw [key w]
+        exact mul_nonpos_of_nonneg_of_nonpos hA.le (by linarith)
+      have h4 : ‖w - c‖ ^ 2 ≤ (t * ‖1 - conj c * w‖) ^ 2 := by nlinarith
+      exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 h4
+  rw [hset]
+  exact (convex_ball 0 1).inter (convex_closedBall c₀ R)
 
 end OC
