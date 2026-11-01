@@ -6,7 +6,7 @@ import OrtegaCerdaMultipliers.Multiplier.NearField
 /-!
 # M08 (Multiplier) — The corrected estimates (2), (3) for `S`
 
-See `blueprint/M08_Multiplier.md` §2.6.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M08_Multiplier.md` §2.6, §3.9.
 -/
 
 open MeasureTheory Metric Set Complex
@@ -112,6 +112,7 @@ theorem sum_multiset_le_of_distinguished {G : Finset ℕ} {Λ : ℕ → Multiset
   nlinarith
 
 
+set_option maxHeartbeats 800000 in
 /-- Estimate (2), corrected: `M log(d/ρ) − C ≤ S(z) ≤ log(d/ρ) + C` off the nodes, and
 `d(z, Λ) ≤ C ρ(z)` everywhere.  Here `ρ = massRadius (lapNorm μ)`. -/
 theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
@@ -124,7 +125,243 @@ theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
       ∀ z, z ∉ nodeSet Λ → ∀ d : ℝ, (∀ w ∈ nodeSet Λ, d ≤ dist z w) →
         (∃ w ∈ nodeSet Λ, dist z w ≤ d) →
         M * Real.log (d / massRadius (lapNorm μ) z) - C ≤ multPot kerPlane (lapNorm μ) R Λ z ∧
-        multPot kerPlane (lapNorm μ) R Λ z ≤ Real.log (d / massRadius (lapNorm μ) z) + C := sorry
+        multPot kerPlane (lapNorm μ) R Λ z ≤ Real.log (d / massRadius (lapNorm μ) z) + C := by
+  set R₁ := 15 * R₀
+  obtain ⟨K₀, Cnf, hK₀, hCnf0, hnn⟩ := nonNear_sum_le_plane Cd R₁ η A B N hη hA hB
+  obtain ⟨Mc, δ, C₃, hδ, hC₃, hcn⟩ := cells_near_plane Cd R₁ η A B K₀ hη hK₀
+  obtain ⟨C1, -, hcl⟩ := claim1_plane_quant Cd R₁ 0
+  set Smax := 2 * C₃ * max R₁ 0 + 1 with hSmaxdef
+  have hSmax : 0 < Smax := by positivity
+  obtain ⟨Cχ, hχ⟩ := christ_plane_quant Cd R₁ Smax
+  obtain ⟨CB, hCB⟩ := measure_ball_massRadius_quant Cd R₁ (2 * C₃)
+  set P := max (Real.log C₃) 0 with hPdef
+  have hP : 0 ≤ P := le_max_right _ _
+  set c₀ := Real.log (2 * C₃) with hc₀
+  set M := N * Mc + 1 with hMdef
+  set C := |Real.log (δ / 2)| + (Mc + 1) * N * P + Mc * ((Cχ : ℝ) * CB + |c₀| * N) + Cnf +
+    M * P + Mc * N * P + C₃ + 1 with hCdef
+  refine ⟨M, C, by omega, by positivity, ?_⟩
+  intro μ R c m Λ hμ hC hNd hm
+  have hν : MeasClassPlane (lapNorm μ) Cd R₁ := hμ.lapNorm
+  set ν := lapNorm μ with hνdef
+  set ρ := massRadius ν with hρdef
+  have hcnz := fun z ↦ hcn ν N R c m Λ hν hN hC hNd z
+  have hcard_pos : ∀ i, ∃ w, w ∈ Λ i := by
+    intro i
+    have : Multiset.card (Λ i) ≠ 0 := by rw [hNd.card i]; omega
+    obtain ⟨w, hw⟩ := Multiset.card_pos_iff_exists_mem.1 (Nat.pos_of_ne_zero this)
+    exact ⟨w, hw⟩
+  have hC3C : C₃ ≤ C := by
+    have h1 : 0 ≤ |Real.log (δ / 2)| + (Mc + 1) * N * P + Mc * ((Cχ : ℝ) * CB + |c₀| * N) + Cnf +
+        M * P + Mc * N * P := by positivity
+    linarith
+  constructor
+  · intro z
+    obtain ⟨-, hC3, -, ⟨i₀, -, hnear⟩⟩ := hcnz z
+    obtain ⟨w, hw⟩ := hcard_pos i₀
+    have hρz : 0 < ρ z := (hcl ν hν z z).1
+    exact ⟨w, ⟨i₀, hw⟩, (hC3 i₀ hnear w (Or.inr hw)).trans
+      (mul_le_mul_of_nonneg_right hC3C hρz.le)⟩
+  intro z hzN d hdle hdex
+  obtain ⟨hcnt, hC3, hC4, -⟩ := hcnz z
+  have hρz : 0 < ρ z := (hcl ν hν z z).1
+  have hρzR : ρ z ≤ R₁ := (hcl ν hν z z).2.1
+  set G0 := {i | dist z (c i) < K₀ * ρ (c i)} with hG0
+  have hG0fin : G0.Finite := Set.finite_of_encard_le_coe hcnt
+  set G := hG0fin.toFinset with hGdef
+  have hGcard : G.card ≤ Mc := by
+    have := hG0fin.encard_eq_coe_toFinset_card; rw [this] at hcnt; exact_mod_cast hcnt
+  have hmemG : ∀ i, i ∈ G ↔ dist z (c i) < K₀ * ρ (c i) := fun i ↦ Set.Finite.mem_toFinset _
+  set L := Real.log (ρ z) with hL
+  set S := multPot kerPlane ν R Λ z with hS
+  have hsum := summable_cellPot_plane hν hη hA hB hC hNd hm z
+  have htail : |S - ∑ i ∈ G, cellPot kerPlane ν R Λ i z| ≤ Cnf :=
+    abs_tsum_sub_sum_le hsum G fun u hu ↦ hnn ν R c m Λ hν hC hNd hm z u fun i hi ↦ by
+      have := hu i hi; rw [hmemG, not_lt] at this; exact this
+  have hint := fun i ↦ integrableOn_kerPlane_cell hν hC i z
+  set T₁ := ∑ i ∈ G, ((Λ i).map fun w ↦ kerPlane z w - L).sum with hT₁
+  set T₂ := ∑ i ∈ G, ∫ ζ in R i, (kerPlane z ζ - L) ∂ν with hT₂
+  have hSG : ∑ i ∈ G, cellPot kerPlane ν R Λ i z = T₁ - T₂ := by
+    rw [hT₁, hT₂, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦
+      cellPot_eq_sub_const (hNd.card i) (hC.measure_eq i) (hint i) L
+  have hβpos : ∀ w, w ≠ z → 0 < dist z w := fun w hwz ↦ dist_pos.2 (Ne.symm hwz)
+  have hkeq : ∀ w, w ≠ z → kerPlane z w - L = Real.log (dist z w / ρ z) := fun w hwz ↦ by
+    rw [kerPlane, ← dist_eq_norm, hL, Real.log_div (hβpos w hwz).ne' hρz.ne']
+  have hup : ∀ w, w ≠ z → dist z w ≤ C₃ * ρ z →
+      kerPlane z w - L ≤ Real.log (dist z w / ρ z) ∧ Real.log (dist z w / ρ z) ≤ P := by
+    intro w hwz hβ
+    refine ⟨(hkeq w hwz).le, le_trans ?_ (le_max_left _ _)⟩
+    apply Real.log_le_log (div_pos (hβpos w hwz) hρz)
+    rw [div_le_iff₀ hρz]; exact hβ
+  set ℓ := Real.log (d / ρ z) with hℓ
+  have hdpos : 0 < d := by
+    obtain ⟨w, ⟨i, hw⟩, hwd⟩ := hdex
+    have hwz : w ≠ z := fun e ↦ hzN (e ▸ ⟨i, hw⟩)
+    exact (hβpos w hwz).trans_le hwd
+  have hdC₃ : d ≤ C₃ * ρ z := by
+    obtain ⟨-, -, -, ⟨i₀, -, hnear⟩⟩ := hcnz z
+    obtain ⟨w, hw⟩ := hcard_pos i₀
+    exact (hdle w ⟨i₀, hw⟩).trans (hC3 i₀ hnear w (Or.inr hw))
+  have hℓP : ℓ ≤ P := by
+    refine le_trans ?_ (le_max_left _ _)
+    apply Real.log_le_log (by positivity)
+    rw [div_le_iff₀ hρz]; exact hdC₃
+  have hnode : ∀ i ∈ G, ∀ w ∈ Λ i, w ≠ z ∧ dist z w ≤ C₃ * ρ z ∧ d ≤ dist z w :=
+    fun i hi w hw ↦ ⟨fun e ↦ hzN (e ▸ ⟨i, hw⟩),
+      hC3 i ((hmemG i).1 hi) w (Or.inr hw), hdle w ⟨i, hw⟩⟩
+  have hT₁up : T₁ ≤ ℓ + |Real.log (δ / 2)| + (Mc + 1) * N * P := by
+    have hfP : ∀ i ∈ G, ∀ w ∈ Λ i, kerPlane z w - L ≤ P := fun i hi w hw ↦ by
+      obtain ⟨h2, h3, -⟩ := hnode i hi w hw
+      exact (hup w h2 h3).1.trans (hup w h2 h3).2
+    have hGc : ((G.card : ℝ) + 1) * N * P ≤ (Mc + 1) * N * P := by
+      have : (G.card : ℝ) ≤ Mc := by exact_mod_cast hGcard
+      gcongr
+    by_cases hd2 : d < δ / 2 * ρ z
+    · obtain ⟨w₀, ⟨i₀, hw₀⟩, hw₀d⟩ := hdex
+      have hi₀ : i₀ ∈ G := by
+        by_contra hi₀
+        rw [hmemG, not_lt] at hi₀
+        have := (hC4 i₀ hi₀).2 w₀ hw₀
+        nlinarith
+      have hw₀z : w₀ ≠ z := fun e ↦ hzN (e ▸ ⟨i₀, hw₀⟩)
+      have h1 := sum_multiset_le_of_distinguished hNd.card hP hfP hi₀ hw₀
+      have h2 : kerPlane z w₀ - L ≤ ℓ := by
+        rw [hkeq w₀ hw₀z]
+        apply Real.log_le_log (div_pos (hβpos w₀ hw₀z) hρz)
+        exact div_le_div_of_nonneg_right hw₀d hρz.le
+      have h3 := abs_nonneg (Real.log (δ / 2))
+      linarith
+    · push Not at hd2
+      have h1 : T₁ ≤ (G.card + 1) * N * P := by
+        calc T₁ ≤ ∑ i ∈ G, (N * P : ℝ) := Finset.sum_le_sum fun i hi ↦ by
+              calc ((Λ i).map fun w ↦ kerPlane z w - L).sum ≤ ((Λ i).map fun _ ↦ P).sum :=
+                    Multiset.sum_map_le_sum_map _ _ fun w hw ↦ hfP i hi w hw
+                _ = N * P := by simp [Multiset.map_const', Multiset.sum_replicate, hNd.card i]
+          _ = G.card * N * P := by rw [Finset.sum_const, nsmul_eq_mul]; ring
+          _ ≤ (G.card + 1) * N * P := by
+              have := mul_nonneg (Nat.cast_nonneg N : (0:ℝ) ≤ N) hP
+              nlinarith
+      have h2 : Real.log (δ / 2) ≤ ℓ := by
+        apply Real.log_le_log (by positivity)
+        rw [le_div_iff₀ hρz]; linarith
+      have h3 := neg_abs_le (Real.log (δ / 2))
+      linarith
+  have hT₁low : M * ℓ - M * P ≤ T₁ := by
+    have h1 : (G.card * N : ℝ) * ℓ ≤ T₁ := by
+      calc (G.card * N : ℝ) * ℓ = ∑ i ∈ G, (N * ℓ : ℝ) := by
+            rw [Finset.sum_const, nsmul_eq_mul]; ring
+        _ ≤ T₁ := Finset.sum_le_sum fun i hi ↦ by
+            calc (N * ℓ : ℝ) = ((Λ i).map fun _ ↦ ℓ).sum := by
+                  rw [Multiset.map_const', Multiset.sum_replicate, hNd.card i, nsmul_eq_mul]
+              _ ≤ ((Λ i).map fun w ↦ kerPlane z w - L).sum :=
+                  Multiset.sum_map_le_sum_map _ _ fun w hw ↦ by
+                    obtain ⟨h2, h3, h4⟩ := hnode i hi w hw
+                    rw [hkeq w h2]
+                    exact Real.log_le_log (div_pos hdpos hρz)
+                      (div_le_div_of_nonneg_right h4 hρz.le)
+    have hGM : (G.card : ℝ) ≤ Mc := by exact_mod_cast hGcard
+    have hN0 : (0 : ℝ) ≤ N := Nat.cast_nonneg N
+    have hn : (G.card * N : ℝ) ≤ Mc * N := mul_le_mul_of_nonneg_right hGM hN0
+    have hMc : (M : ℝ) = (N : ℝ) * Mc + 1 := by
+      simp only [hMdef, Nat.cast_add, Nat.cast_mul, Nat.cast_one]
+    have hnM : (G.card * N : ℝ) ≤ M := by
+      rw [hMc]; linarith [mul_comm (Mc : ℝ) N]
+    have hn0 : (0 : ℝ) ≤ G.card * N := mul_nonneg (Nat.cast_nonneg _) hN0
+    have hM0 : (0 : ℝ) ≤ M := Nat.cast_nonneg _
+    by_cases hℓ0 : ℓ ≤ 0
+    · have := mul_le_mul_of_nonpos_right hnM hℓ0
+      have := mul_nonneg hM0 hP
+      linarith
+    · push Not at hℓ0
+      have := mul_nonneg hn0 hℓ0.le
+      have := mul_le_mul_of_nonneg_left hℓP hM0
+      linarith
+  have hae : ∀ i, ∀ᵐ ζ ∂ν.restrict (R i), ζ ∈ R i ∧ ζ ≠ z := by
+    intro i
+    have h1 : ∀ᵐ ζ ∂ν, ζ ≠ z := by
+      rw [ae_iff]; simpa using hν.measure_singleton z
+    filter_upwards [ae_restrict_mem (hC.measurableSet i), ae_restrict_of_ae h1] with ζ h1 h2
+    exact ⟨h1, h2⟩
+  have hRpt : ∀ i ∈ G, ∀ ζ ∈ R i, dist z ζ ≤ C₃ * ρ z := fun i hi ζ hζ ↦
+    hC3 i ((hmemG i).1 hi) ζ (Or.inl hζ)
+  have hNreal : ∀ i, ν.real (R i) = N := fun i ↦ by simp [Measure.real, hC.measure_eq i]
+  have hT₂up : T₂ ≤ Mc * N * P := by
+    calc T₂ ≤ ∑ i ∈ G, P * (N : ℝ) := Finset.sum_le_sum fun i hi ↦ by
+          rw [← hNreal i]
+          refine setIntegral_le_const_mul ((hint i).sub (integrableOn_const
+            (hC.measure_lt_top i).ne)) (hC.measure_lt_top i) ?_
+          filter_upwards [hae i] with ζ hζ
+          have h2 := hRpt i hi ζ hζ.1
+          exact (hup ζ hζ.2 h2).1.trans (hup ζ hζ.2 h2).2
+      _ = G.card * N * P := by rw [Finset.sum_const, nsmul_eq_mul]; ring
+      _ ≤ Mc * N * P := by
+          have : (G.card : ℝ) ≤ Mc := by exact_mod_cast hGcard
+          gcongr
+  have hT₂low : -(Mc * ((Cχ : ℝ) * CB + |c₀| * N)) ≤ T₂ := by
+    set s := 2 * C₃ * ρ z with hs
+    have hs0 : 0 < s := by positivity
+    have hsS : s ≤ Smax := by
+      have : s ≤ 2 * C₃ * max R₁ 0 :=
+        mul_le_mul_of_nonneg_left (hρzR.trans (le_max_left _ _)) (by positivity)
+      linarith
+    have hchr := hχ ν hν z s hs0 hsS
+    have hball := hCB ν hν z
+    have hlint : ∫⁻ ζ in ball z s, ENNReal.ofReal (Real.log (s / dist z ζ)) ∂ν ≤
+        ENNReal.ofReal ((Cχ : ℝ) * CB) := by
+      refine hchr.trans ?_
+      rw [ENNReal.ofReal_mul (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal,
+        ENNReal.ofReal_coe_nnreal]
+      gcongr
+    have hcell : ∀ i ∈ G, c₀ * N - (Cχ : ℝ) * CB ≤ ∫ ζ in R i, (kerPlane z ζ - L) ∂ν := by
+      intro i hi
+      have hsub : R i ⊆ ball z s := fun ζ hζ ↦ by
+        have h2 := hRpt i hi ζ hζ
+        rw [mem_ball, dist_comm]
+        exact h2.trans_lt (by rw [hs]; nlinarith)
+      have hI : IntegrableOn (fun ζ ↦ kerPlane z ζ - L) (R i) ν :=
+        (hint i).sub (integrableOn_const (hC.measure_lt_top i).ne)
+      have hI' : IntegrableOn (fun ζ ↦ kerPlane z ζ - L - c₀) (R i) ν :=
+        hI.sub (integrableOn_const (hC.measure_lt_top i).ne)
+      have h1 := neg_le_setIntegral hI' (g := fun ζ ↦ ENNReal.ofReal (Real.log (s / dist z ζ)))
+        (by positivity) (by
+          filter_upwards [hae i] with ζ hζ
+          apply ENNReal.ofReal_le_ofReal
+          have hb := hβpos ζ hζ.2
+          have e : Real.log (s / dist z ζ) =
+              Real.log (2 * C₃) - Real.log (dist z ζ / ρ z) := by
+            rw [hs, Real.log_div (by positivity) hb.ne', Real.log_div hb.ne' hρz.ne',
+              Real.log_mul (by positivity) hρz.ne']
+            ring
+          rw [e, hkeq ζ hζ.2]
+          linarith [hc₀])
+        ((lintegral_mono_set hsub).trans hlint)
+      have e2 : ∫ ζ in R i, (kerPlane z ζ - L - c₀) ∂ν =
+          ∫ ζ in R i, (kerPlane z ζ - L) ∂ν - c₀ * N := by
+        have := integral_sub (μ := ν.restrict (R i)) (f := fun ζ ↦ kerPlane z ζ - L)
+          (g := fun _ ↦ c₀) hI (integrableOn_const (hC.measure_lt_top i).ne)
+        rw [this, setIntegral_const, hNreal i, smul_eq_mul, mul_comm]
+      rw [e2] at h1
+      linarith
+    calc -(Mc * ((Cχ : ℝ) * CB + |c₀| * N)) ≤ -(G.card * ((Cχ : ℝ) * CB + |c₀| * N)) := by
+          have : (G.card : ℝ) ≤ Mc := by exact_mod_cast hGcard
+          have h0 : 0 ≤ (Cχ : ℝ) * CB + |c₀| * N := by positivity
+          nlinarith
+      _ = ∑ i ∈ G, (-((Cχ : ℝ) * CB + |c₀| * N)) := by
+          rw [Finset.sum_const, nsmul_eq_mul]; ring
+      _ ≤ ∑ i ∈ G, (c₀ * N - (Cχ : ℝ) * CB) := Finset.sum_le_sum fun i _ ↦ by
+          have := neg_abs_le c₀
+          have hN0 : (0 : ℝ) ≤ N := Nat.cast_nonneg N
+          nlinarith
+      _ ≤ T₂ := Finset.sum_le_sum hcell
+  have htail' := abs_le.1 htail
+  rw [hSG] at htail'
+  constructor
+  · have h0 : 0 ≤ |Real.log (δ / 2)| + (Mc + 1) * N * P + C₃ + 1 := by positivity
+    have h1 : 0 ≤ (Mc : ℝ) * ((Cχ : ℝ) * CB + |c₀| * N) := by positivity
+    rw [hCdef]; nlinarith
+  · have h0 : 0 ≤ (M : ℝ) * P + Mc * N * P + C₃ + 1 := by positivity
+    rw [hCdef]; nlinarith
 
 set_option maxHeartbeats 800000 in
 /-- Estimate (3), corrected (disc, hyperbolic distance). -/
