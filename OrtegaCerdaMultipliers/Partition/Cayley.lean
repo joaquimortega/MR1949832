@@ -366,12 +366,176 @@ theorem cay_euclid_doubling (Cd : ℝ≥0) :
     _ = ENNReal.ofReal ((C' : ℝ) ^ 4) * μ (cayleyPre (ball w (r / 2))) := by
         rw [ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_coe_nnreal]; ring
 
+theorem cay_ratio_arith {P Q K y : ℝ} (hy : 0 < y) (hP : 0 ≤ P) (hQ : 0 < Q) (hK : 0 < K)
+    (hQsq : Q ^ 2 ≤ K * y ^ 2) (hdiff : 4 * y ^ 2 ≤ Q ^ 2 - P ^ 2) :
+    P < Q ∧ 2 / K ≤ 1 - P / Q := by
+  have hy2 : 0 < y ^ 2 := by positivity
+  have hsq : P ^ 2 < Q ^ 2 := by linarith
+  have hPQ : P < Q := lt_of_pow_lt_pow_left₀ 2 hQ.le hsq
+  refine ⟨hPQ, ?_⟩
+  have e1 : 1 - P / Q = (Q - P) / Q := by field_simp
+  rw [e1, div_le_div_iff₀ hK hQ]
+  have e2 : 4 * y ^ 2 ≤ (Q - P) * (2 * Q) := by nlinarith
+  have e3 : (Q - P) * Q ^ 2 ≤ (Q - P) * (K * y ^ 2) :=
+    mul_le_mul_of_nonneg_left hQsq (by linarith)
+  have e4 : 2 * y ^ 2 * Q ≤ (Q - P) * Q ^ 2 := by nlinarith
+  by_contra hcon
+  push_neg at hcon
+  nlinarith
+
+theorem cay_outer_arith {τ M K y₁ m L Λ A₀ β : ℝ} (hy₁ : 0 < y₁) (hK : 0 < K) (hτ0 : 0 ≤ τ)
+    (hτ1 : τ < 1) (hτM : τ ≤ M / (2 * y₁)) (h1τ : 2 / K ≤ 1 - τ) (hMm : M ≤ L * m)
+    (hm0 : 0 < m) (hL : 1 ≤ L) (hΛ : 0 < Λ) (hA₀ : A₀ = L * K * (12 + 8 * Λ) / 4)
+    (hβlow : m / ((12 + 8 * Λ) * y₁) ≤ β) (hβ0 : 0 < β) :
+    Real.artanh τ < (2 * A₀ + 1) * β := by
+  have hM0 : 0 ≤ M := by
+    have := hτ0.trans hτM
+    rwa [le_div_iff₀ (by positivity), zero_mul] at this
+  have hA₀0 : 0 < A₀ := by rw [hA₀]; positivity
+  calc Real.artanh τ ≤ τ / (1 - τ) := cay_artanh_le hτ0 hτ1
+    _ ≤ (M / (2 * y₁)) / (2 / K) := div_le_div₀ (by positivity) hτM (by positivity) h1τ
+    _ = M * K / (4 * y₁) := by field_simp; ring
+    _ ≤ L * m * K / (4 * y₁) := by gcongr
+    _ = A₀ * (m / ((12 + 8 * Λ) * y₁)) := by rw [hA₀]; field_simp
+    _ ≤ A₀ * β := by gcongr
+    _ < (2 * A₀ + 1) * β := by
+        have := mul_pos (by linarith : (0 : ℝ) < A₀ + 1) hβ0
+        linarith
+
 /-- Inner/outer hyperbolic balls of an admissible box (`l ≤ Λ y₁`, side ratio `≤ L`). -/
 theorem discBox_inner_outer (Λ L : ℝ) (hΛ : 0 < Λ) (hL : 1 ≤ L) :
     ∃ A D : ℝ, 1 ≤ A ∧ 0 < D ∧ ∀ x₁ x₂ y₁ y₂ : ℝ, IsRectLE L x₁ x₂ y₁ y₂ → 0 < y₁ →
       y₂ - y₁ ≤ Λ * y₁ → ∃ p ∈ 𝔻, ∃ β : ℝ, 0 < β ∧ A * β ≤ D ∧
         hypBall p β ⊆ cayleyPre (midThird x₁ x₂ y₁ y₂) ∧
-        discBox x₁ x₂ y₁ y₂ ⊆ hypBall p (A * β) := sorry
+        discBox x₁ x₂ y₁ y₂ ⊆ hypBall p (A * β) := by
+  set K : ℝ := (L * Λ / 2) ^ 2 + (2 + 3 * Λ / 2) ^ 2 with hK
+  have hK0 : 0 < K := by positivity
+  set A₀ : ℝ := L * K * (12 + 8 * Λ) / 4 with hA₀
+  have hA₀0 : 0 < A₀ := by positivity
+  refine ⟨2 * A₀ + 1, (2 * A₀ + 1) * Λ / 12, by linarith, by positivity,
+    fun x₁ x₂ y₁ y₂ hR hy₁ hl ↦ ?_⟩
+  obtain ⟨hx, hy, hwL, hlL⟩ := hR
+  have hw0 : 0 < x₂ - x₁ := sub_pos.2 hx
+  have hl0 : 0 < y₂ - y₁ := sub_pos.2 hy
+  set m := min (x₂ - x₁) (y₂ - y₁) with hm
+  have hm0 : 0 < m := lt_min hw0 hl0
+  have hmw : m ≤ x₂ - x₁ := min_le_left _ _
+  have hml : m ≤ y₂ - y₁ := min_le_right _ _
+  set M := max (x₂ - x₁) (y₂ - y₁) with hMdef
+  have hMm : M ≤ L * m := by
+    rcases le_total (x₂ - x₁) (y₂ - y₁) with h | h
+    · rw [hMdef, max_eq_right h, hm, min_eq_left h]; exact hlL
+    · rw [hMdef, max_eq_left h, hm, min_eq_right h]; exact hwL
+  set yc := (y₁ + y₂) / 2 with hyc
+  set c : ℂ := ⟨(x₁ + x₂) / 2, yc⟩ with hc_def
+  have hc : 0 < c.im := by simp only [hc_def]; linarith
+  have hcim : c.im = yc := rfl
+  have hyc0 : 0 < yc := by rw [hyc]; linarith
+  have hden : 12 * yc + m ≠ 0 := by positivity
+  set t₁ := m / (12 * yc + m) with ht₁
+  have ht₁0 : 0 < t₁ := by positivity
+  have h1t : 1 - t₁ = 12 * yc / (12 * yc + m) := by rw [ht₁]; field_simp; ring
+  have ht₁1 : t₁ < 1 := by rw [ht₁, div_lt_one (by positivity)]; linarith
+  set β := Real.artanh t₁ with hβ
+  have hβ0 : 0 < β := Real.artanh_pos ⟨ht₁0, ht₁1⟩
+  have htanh : Real.tanh β = t₁ := Real.tanh_artanh ⟨by linarith, ht₁1⟩
+  refine ⟨cayleyInv c, cayleyInv_mem hc, β, hβ0, ?_, ?_, ?_⟩
+  · -- `A β ≤ D`
+    have h1 : β ≤ t₁ / (1 - t₁) := cay_artanh_le ht₁0.le ht₁1
+    have h2 : t₁ / (1 - t₁) = m / (12 * yc) := by
+      rw [h1t, ht₁, div_div_div_cancel_right₀ hden]
+    have h3 : m / (12 * yc) ≤ Λ / 12 := by
+      rw [div_le_div_iff₀ (by positivity) (by norm_num)]
+      nlinarith
+    calc (2 * A₀ + 1) * β ≤ (2 * A₀ + 1) * (Λ / 12) := by gcongr; linarith
+      _ = (2 * A₀ + 1) * Λ / 12 := by ring
+  · -- inner ball
+    rintro z ⟨hz, hzd⟩
+    refine ⟨hz, cay_ball_subset_midThird ?_⟩
+    have h1 := (cay_hypDist_lt_iff hc hz β).1 hzd
+    rw [htanh] at h1
+    have h2 := cay_norm_lt_of_tau_lt hc ht₁1 h1
+    rw [mem_ball, Complex.dist_eq]
+    calc ‖cayley z - c‖ < 2 * t₁ * c.im / (1 - t₁) := h2
+      _ = m / 6 := by
+          rw [hcim, h1t, ht₁]; field_simp; ring
+  · -- outer ball
+    rintro z ⟨hz, hzQ⟩
+    refine ⟨hz, ?_⟩
+    have hv : 0 < (cayley z).im := cayley_im_pos hz
+    obtain ⟨⟨hv1, hv2⟩, ⟨hv3, hv4⟩⟩ := hzQ
+    set v := cayley z with hv_def
+    set P := ‖c - v‖ with hP_def
+    set Q := ‖c - conj v‖ with hQ_def
+    have hP0 : 0 ≤ P := norm_nonneg _
+    have hPM : P ≤ M := by
+      have h0 := Complex.norm_le_abs_re_add_abs_im (c - v)
+      simp only [Complex.sub_re, Complex.sub_im] at h0
+      have : |c.re - v.re| ≤ (x₂ - x₁) / 2 := by
+        rw [abs_le]; simp only [hc_def]; constructor <;> linarith
+      have : |c.im - v.im| ≤ (y₂ - y₁) / 2 := by
+        rw [abs_le, hcim]; constructor <;> linarith
+      linarith [le_max_left (x₂ - x₁) (y₂ - y₁), le_max_right (x₂ - x₁) (y₂ - y₁)]
+    have hQ2 : 2 * y₁ ≤ Q := by
+      have h0 := Complex.abs_im_le_norm (c - conj v)
+      simp only [Complex.sub_im, Complex.conj_im, sub_neg_eq_add] at h0
+      have : c.im + v.im = |c.im + v.im| := (abs_of_pos (by linarith)).symm
+      linarith
+    have hQ0 : 0 < Q := by linarith
+    have hsqP := cay_sq_norm_sub c v
+    have hsqQ := cay_sq_norm_sub_conj c v
+    have hQsq : Q ^ 2 ≤ K * y₁ ^ 2 := by
+      rw [hsqQ]
+      have hre : |c.re - v.re| ≤ L * Λ * y₁ / 2 := by
+        have : |c.re - v.re| ≤ (x₂ - x₁) / 2 := by
+          rw [abs_le]; simp only [hc_def]; constructor <;> linarith
+        have : x₂ - x₁ ≤ L * Λ * y₁ := by nlinarith
+        linarith
+      have him0 : 0 ≤ c.im + v.im := by linarith
+      have him : c.im + v.im ≤ (2 + 3 * Λ / 2) * y₁ := by rw [hcim]; linarith
+      have e1 : (c.re - v.re) ^ 2 ≤ (L * Λ * y₁ / 2) ^ 2 := by
+        rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) hre 2
+      have e2 : (c.im + v.im) ^ 2 ≤ ((2 + 3 * Λ / 2) * y₁) ^ 2 :=
+        pow_le_pow_left₀ him0 him 2
+      calc (c.re - v.re) ^ 2 + (c.im + v.im) ^ 2
+          ≤ (L * Λ * y₁ / 2) ^ 2 + ((2 + 3 * Λ / 2) * y₁) ^ 2 := add_le_add e1 e2
+        _ = K * y₁ ^ 2 := by rw [hK]; ring
+    have hdiff : 4 * y₁ ^ 2 ≤ Q ^ 2 - P ^ 2 := by
+      rw [hsqP, hsqQ, hcim]
+      have e : (c.re - v.re) ^ 2 + (yc + v.im) ^ 2 - ((c.re - v.re) ^ 2 + (yc - v.im) ^ 2) =
+          4 * (yc * v.im) := by ring
+      rw [e]
+      have hyc1 : y₁ ≤ yc := by rw [hyc]; linarith
+      have h1 : y₁ * y₁ ≤ yc * v.im := mul_le_mul hyc1 hv3 hy₁.le hyc0.le
+      rw [sq]; linarith
+    obtain ⟨hPQ, h1τ'⟩ := cay_ratio_arith hy₁ hP0 hQ0 hK0 hQsq hdiff
+    set τ := P / Q with hτ
+    have hτ0 : 0 ≤ τ := by positivity
+    have hτ1 : τ < 1 := by rw [hτ, div_lt_one hQ0]; exact hPQ
+    have h1τ : 2 / K ≤ 1 - τ := h1τ'
+    have hτM : τ ≤ M / (2 * y₁) := by
+      rw [hτ]
+      calc P / Q ≤ M / Q := by gcongr
+        _ ≤ M / (2 * y₁) := by
+            apply div_le_div_of_nonneg_left (by linarith [hPM, hP0]) (by positivity) hQ2
+    have hd : hypDist (cayleyInv c) z = Real.artanh τ := by
+      have e : z = cayleyInv v := (cayleyInv_cayley hz).symm
+      rw [e, hypDist, pseudoHyp_cayleyInv hc (by rw [hv_def]; exact hv)]
+    rw [hd]
+    have hβlow : m / ((12 + 8 * Λ) * y₁) ≤ β := by
+      have h1 := cay_le_artanh ht₁0.le ht₁1
+      have h2 : t₁ / (1 + t₁) = m / (12 * yc + 2 * m) := by
+        have h1p : 1 + t₁ = (12 * yc + 2 * m) / (12 * yc + m) := by
+          rw [ht₁]; field_simp; ring
+        rw [h1p, ht₁, div_div_div_cancel_right₀ hden]
+      have h3 : 12 * yc + 2 * m ≤ (12 + 8 * Λ) * y₁ := by
+        have e : (12 + 8 * Λ) * y₁ = 12 * y₁ + 8 * (Λ * y₁) := by ring
+        rw [hyc, e]; linarith
+      calc m / ((12 + 8 * Λ) * y₁) ≤ m / (12 * yc + 2 * m) :=
+            div_le_div_of_nonneg_left hm0.le (by positivity) h3
+        _ = t₁ / (1 + t₁) := h2.symm
+        _ ≤ β := h1
+    exact cay_outer_arith hy₁ hK0 hτ0 hτ1 hτM h1τ hMm hm0 hL hΛ hA₀ hβlow hβ0
 
 /-- Euclidean doubling of the push-forward `cayley_* (μ|𝔻)` below the scale `Im w / 16`. -/
 theorem euclid_doubling_cayley {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ) :
@@ -402,10 +566,91 @@ theorem euclid_doubling_cayley_quant (Cd : ℝ≥0) :
 `[a, a + (Λc - 1) y₁) × [y₁, Λc y₁)` contains a hyperbolic ball of radius `R`. -/
 theorem exists_hypBall_subset_discBox_row {R : ℝ} (hR : 0 < R) {y₁ : ℝ} (hy : 0 < y₁) (a : ℝ) :
     ∃ p ∈ 𝔻, hypBall p R ⊆
-      discBox a (a + (64 * Real.exp (4 * R) - 1) * y₁) y₁ (64 * Real.exp (4 * R) * y₁) := sorry
+      discBox a (a + (64 * Real.exp (4 * R) - 1) * y₁) y₁ (64 * Real.exp (4 * R) * y₁) := by
+  set u := Real.exp (2 * R) with hu
+  have hu1 : 1 < u := by rw [hu]; exact Real.one_lt_exp_iff.2 (by positivity)
+  have he4 : Real.exp (4 * R) = u ^ 2 := by
+    rw [hu, sq, ← Real.exp_add]; ring_nf
+  rw [he4]
+  set yc := 8 * u * y₁ with hyc
+  set h := (64 * u ^ 2 - 1) * y₁ with hh
+  set c : ℂ := ⟨a + h / 2, yc⟩ with hc_def
+  have hc : 0 < c.im := by simp only [hc_def]; positivity
+  set t := Real.tanh R with ht
+  have htu : t = (u - 1) / (u + 1) := by rw [ht, hu]; exact tanh_eq_exp_two_mul R
+  have ht0 : 0 ≤ t := by rw [htu]; apply div_nonneg <;> linarith
+  have ht1 : t < 1 := Real.tanh_lt_one R
+  refine ⟨cayleyInv c, cayleyInv_mem hc, fun z hz ↦ ⟨hz.1, ?_⟩⟩
+  obtain ⟨hzD, hzd⟩ := hz
+  have h1 := (cay_hypDist_lt_iff hc hzD R).1 hzd
+  rw [← ht] at h1
+  set v := cayley z with hv_def
+  have hv : 0 < v.im := cayley_im_pos hzD
+  have hvert := cay_im_bound ht0 ht1.le hc hv h1
+  have hhor := cay_norm_lt_of_tau_lt hc ht1 h1
+  rw [abs_lt] at hvert
+  have hcim : c.im = yc := rfl
+  rw [hcim] at hvert hhor
+  have hre := (Complex.abs_re_le_norm (v - c)).trans_lt hhor
+  simp only [Complex.sub_re, hc_def] at hre
+  rw [abs_lt] at hre
+  -- `2t/(1-t) = u - 1` and `(1+t)/(1-t) = u`
+  have hk : 2 * t * yc / (1 - t) = (u - 1) * yc := by
+    rw [htu]; field_simp; ring
+  rw [hk] at hre
+  have hvim1 : v.im * (1 - t) < yc * (1 + t) := by linarith
+  have hvim2 : yc * (1 - t) < v.im * (1 + t) := by linarith
+  rw [htu] at hvim1 hvim2
+  have hu0 : 0 < u + 1 := by linarith
+  have hv1 : v.im < u * yc := by
+    have : v.im * 2 < yc * (2 * u) := by
+      have := hvim1; field_simp at this; nlinarith
+    nlinarith
+  have hv2 : yc < u * v.im := by
+    have : yc * 2 < v.im * (2 * u) := by
+      have := hvim2; field_simp at this; nlinarith
+    nlinarith
+  have hy₁yc : y₁ ≤ v.im := by
+    by_contra hcon
+    push_neg at hcon
+    have : u * v.im < u * y₁ := by nlinarith
+    rw [hyc] at hv2
+    nlinarith
+  refine ⟨⟨?_, ?_⟩, ⟨hy₁yc, ?_⟩⟩
+  · have : (u - 1) * yc < h / 2 := by rw [hh, hyc]; nlinarith
+    linarith
+  · have : (u - 1) * yc < h / 2 := by rw [hh, hyc]; nlinarith
+    linarith
+  · rw [hyc] at hv1; nlinarith
 
 /-- A horocyclic box with `0 < y₁` lies in a compact subset of `𝔻`. -/
 theorem exists_isCompact_discBox_subset (x₁ x₂ : ℝ) {y₁ : ℝ} (hy : 0 < y₁) (y₂ : ℝ) :
-    ∃ K : Set ℂ, IsCompact K ∧ K ⊆ 𝔻 ∧ discBox x₁ x₂ y₁ y₂ ⊆ K := sorry
+    ∃ K : Set ℂ, IsCompact K ∧ K ⊆ 𝔻 ∧ discBox x₁ x₂ y₁ y₂ ⊆ K := by
+  set K₀ : Set ℂ := {w | w.re ∈ Icc x₁ x₂ ∧ w.im ∈ Icc y₁ y₂} with hK₀
+  have hK₀c : IsCompact K₀ := by
+    refine Metric.isCompact_of_isClosed_isBounded ?_ ?_
+    · exact (isClosed_Icc.preimage Complex.continuous_re).inter
+        (isClosed_Icc.preimage Complex.continuous_im)
+    · refine (Metric.isBounded_closedBall (x := (0 : ℂ))
+        (r := |x₁| + |x₂| + |y₁| + |y₂|)).subset fun w hw ↦ ?_
+      rw [mem_closedBall_zero_iff]
+      have h0 := Complex.norm_le_abs_re_add_abs_im w
+      have : |w.re| ≤ |x₁| + |x₂| := by
+        rw [abs_le]; constructor <;>
+          linarith [hw.1.1, hw.1.2, neg_abs_le x₁, le_abs_self x₂, abs_nonneg x₁, abs_nonneg x₂]
+      have : |w.im| ≤ |y₁| + |y₂| := by
+        rw [abs_le]; constructor <;>
+          linarith [hw.2.1, hw.2.2, neg_abs_le y₁, le_abs_self y₂, abs_nonneg y₁, abs_nonneg y₂]
+      linarith
+  have hcont : ContinuousOn cayleyInv K₀ := by
+    unfold cayleyInv
+    exact (continuous_id.sub continuous_const).continuousOn.div
+      (continuous_id.add continuous_const).continuousOn
+      fun w hw ↦ cay_add_I_ne_zero (by linarith [hw.2.1])
+  refine ⟨cayleyInv '' K₀, hK₀c.image_of_continuousOn hcont, ?_, ?_⟩
+  · rintro _ ⟨w, hw, rfl⟩
+    exact cayleyInv_mem (by linarith [hw.2.1])
+  · rintro z ⟨hz, ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩⟩
+    exact ⟨cayley z, ⟨⟨h1, h2.le⟩, ⟨h3, h4.le⟩⟩, cayleyInv_cayley hz⟩
 
 end OC
