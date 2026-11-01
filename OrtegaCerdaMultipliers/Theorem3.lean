@@ -384,7 +384,36 @@ theorem theorem3_of_lowerBound (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Meas
         Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
         ∀ x : ℝ, (x : ℂ) ∉ L →
           ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
-            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := sorry
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := by
+  obtain ⟨B, hB⟩ := hlow
+  obtain ⟨C, hC⟩ := theorem3_weighted hOCS φ μ hφ hd hm K
+  refine ⟨C * (1 + (Real.exp B).toNNReal), fun ν σ L hν hL hνL hσ hσ1 hcar ↦ ?_⟩
+  obtain ⟨u, hu1, hu2, hu3, hu4⟩ := hC ν σ L hν hL hνL hσ hσ1 hcar
+  refine ⟨u, hu1, hu2, hu3, fun x hx ↦ ?_⟩
+  set I := ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν
+  -- on `ball x 1`, `|Im z| < 1`, so `e^{-φ(z)} ≤ e^B`
+  have hJ : ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν ≤
+      ENNReal.ofReal (Real.exp B) * I := by
+    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine setLIntegral_mono' measurableSet_ball fun z hz ↦ ?_
+    rw [← ENNReal.ofReal_mul (Real.exp_pos _).le]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have hy : |z.im| < 1 := by
+      have := abs_im_le_norm (z - x)
+      rw [sub_im, Complex.ofReal_im, sub_zero] at this
+      have h2 : ‖z - x‖ < 1 := by rw [← dist_eq]; exact hz
+      linarith
+    have h3 : Real.exp (-φ z) ≤ Real.exp B := Real.exp_le_exp.2 (by linarith [hB z hy])
+    rw [div_eq_mul_one_div]
+    exact mul_le_mul_of_nonneg_right h3 (by positivity)
+  calc ENNReal.ofReal (‖u x‖ * Real.exp (-φ x))
+      ≤ C * (1 + ∫⁻ z in ball (x : ℂ) 1,
+          ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) := hu4 x hx
+    _ ≤ C * (1 + ENNReal.ofReal (Real.exp B) * I) := by gcongr
+    _ ≤ C * ((1 + ENNReal.ofReal (Real.exp B)) * (1 + I)) := by
+        gcongr; exact one_add_mul_le_mul_one_add _ _
+    _ = ((C * (1 + (Real.exp B).toNNReal) : ℝ≥0) : ℝ≥0∞) * (1 + I) := by
+        push_cast; rw [ENNReal.ofReal]; ring
 
 /-! 14.5 the counterexample to the printed Theorem 3 (documentation; optional) -/
 /-- `φ₀(z) = |Im z| + Re z · Im z`. -/
