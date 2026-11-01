@@ -169,12 +169,8 @@ theorem norm_one_sub_conj_mul_le_five_mul {a w : ℂ} (ha : a ∈ 𝔻) (hw : w 
         rw [norm_one_sub_conj_mul_self ha, norm_mul, Complex.norm_conj]
     _ ≤ 5 * ‖a - w‖ := by nlinarith [norm_nonneg a, norm_nonneg (a - w), sq_nonneg (1 - ‖a‖)]
 
--- FALSE?: a = 0, s = 10: LHS = 2π ∫₀^{1/2} (1 - r²)^{-10} dr ≈ 1.84 · 2π > 2π = RHS.
--- The statement needs `s ≤ 1`; see `lintegral_FR_near_of_le_one`, which `lintegral_FR` uses.
-theorem lintegral_FR_near {s : ℝ} (hs0 : 0 < s) {a : ℂ} (ha : a ∈ 𝔻) :
-    ∫⁻ w in ball a ((1 - ‖a‖) / 2),
-        ENNReal.ofReal ((1 - ‖w‖ ^ 2) ^ (-s) / (‖1 - conj a * w‖ * ‖a - w‖)) ≤
-      ENNReal.ofReal (2 * Real.pi * (1 - ‖a‖) ^ (-s)) := sorry
+-- (`lintegral_FR_near` was removed by the coordinator: false for `s > 1`; see NOTEBOOK I-01.
+-- The correct version is `lintegral_FR_near_of_le_one`.)
 
 theorem fr_poisson_integral {w : ℂ} (hw : ‖w‖ < 1) :
     ∫ θ in (0 : ℝ)..2 * Real.pi, (1 - ‖w‖ ^ 2) / ‖circleMap 0 1 θ - w‖ ^ 2 = 2 * Real.pi := by
