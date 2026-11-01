@@ -704,43 +704,184 @@ theorem IsLocDoublingM.measure_closedBall [BallGeometry X] [TopologicalSpace.Sep
     _ ≤ μ (ball x r) + μ (sphere x r) := measure_union_le _ _
     _ = μ (ball x r) := by rw [hd.measure_sphere hfin, add_zero]
 
+theorem monotone_ball_sub (x : X) (r : ℝ) :
+    Monotone fun n : ℕ ↦ ball x (r - 1 / ((n : ℝ) + 1)) := by
+  intro n m hnm
+  apply ball_subset_ball
+  have : (n : ℝ) ≤ m := by exact_mod_cast hnm
+  have h1 : 1 / ((m : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) := by gcongr
+  linarith
+
+theorem iUnion_ball_sub (x : X) (r : ℝ) :
+    ⋃ n : ℕ, ball x (r - 1 / ((n : ℝ) + 1)) = ball x r := by
+  ext z
+  simp only [mem_iUnion, mem_ball]
+  constructor
+  · rintro ⟨n, hn⟩
+    have : 0 < 1 / ((n : ℝ) + 1) := by positivity
+    linarith
+  · intro hz
+    have hpos : 0 < r - dist z x := by linarith
+    obtain ⟨n, hn⟩ := exists_nat_gt (1 / (r - dist z x))
+    refine ⟨n, ?_⟩
+    have h1 : 1 / ((n : ℝ) + 1) < r - dist z x := by
+      rw [div_lt_iff₀ (by positivity)]
+      rw [div_lt_iff₀ hpos] at hn
+      nlinarith
+    linarith
+
+theorem antitone_ball_add (x : X) (r : ℝ) :
+    Antitone fun n : ℕ ↦ ball x (r + 1 / ((n : ℝ) + 1)) := by
+  intro n m hnm
+  apply ball_subset_ball
+  have : (n : ℝ) ≤ m := by exact_mod_cast hnm
+  have h1 : 1 / ((m : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) := by gcongr
+  linarith
+
+theorem iInter_ball_add (x : X) (r : ℝ) :
+    ⋂ n : ℕ, ball x (r + 1 / ((n : ℝ) + 1)) = closedBall x r := by
+  ext z
+  simp only [mem_iInter, mem_ball, mem_closedBall]
+  constructor
+  · intro h
+    by_contra hc
+    rw [not_le] at hc
+    have hpos : 0 < dist z x - r := by linarith
+    obtain ⟨n, hn⟩ := exists_nat_gt (1 / (dist z x - r))
+    have h1 : 1 / ((n : ℝ) + 1) < dist z x - r := by
+      rw [div_lt_iff₀ (by positivity)]
+      rw [div_lt_iff₀ hpos] at hn
+      nlinarith
+    linarith [h n]
+  · intro hz n
+    have : 0 < 1 / ((n : ℝ) + 1) := by positivity
+    linarith
+
 theorem IsLocDoublingM.continuous_measure_ball [BallGeometry X]
     [TopologicalSpace.SeparableSpace X] {μ : Measure X} (hd : IsLocDoublingM μ)
     (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞) (x : X) :
-    Continuous fun r : ℝ ↦ μ (ball x r) := sorry
+    Continuous fun r : ℝ ↦ μ (ball x r) := by
+  rw [continuous_iff_continuousAt]
+  intro r₀
+  have hleft : Filter.Tendsto (fun n : ℕ ↦ μ (ball x (r₀ - 1 / ((n : ℝ) + 1)))) Filter.atTop
+      (nhds (μ (ball x r₀))) := by
+    have := tendsto_measure_iUnion_atTop (μ := μ) (monotone_ball_sub x r₀)
+    rwa [iUnion_ball_sub] at this
+  have hright : Filter.Tendsto (fun n : ℕ ↦ μ (ball x (r₀ + 1 / ((n : ℝ) + 1)))) Filter.atTop
+      (nhds (μ (ball x r₀))) := by
+    have := tendsto_measure_iInter_atTop (μ := μ)
+      (fun n ↦ measurableSet_ball.nullMeasurableSet) (antitone_ball_add x r₀)
+      ⟨0, (hfin x _).ne⟩
+    rwa [iInter_ball_add, hd.measure_closedBall hfin] at this
+  unfold ContinuousAt
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · obtain ⟨n, hn⟩ := (hleft.eventually (lt_mem_nhds ha)).exists
+    have hpos : 0 < 1 / ((n : ℝ) + 1) := by positivity
+    have hev : ∀ᶠ r in nhds r₀, r₀ - 1 / ((n : ℝ) + 1) < r := lt_mem_nhds (by linarith)
+    exact hev.mono fun r hr ↦ hn.trans_le (measure_mono (ball_subset_ball hr.le))
+  · obtain ⟨n, hn⟩ := (hright.eventually (gt_mem_nhds hb)).exists
+    have hpos : 0 < 1 / ((n : ℝ) + 1) := by positivity
+    have hev : ∀ᶠ r in nhds r₀, r < r₀ + 1 / ((n : ℝ) + 1) := gt_mem_nhds (by linarith)
+    exact hev.mono fun r hr ↦ (measure_mono (ball_subset_ball hr.le)).trans_lt hn
 
 /-! ### The mass radius -/
 
 theorem massRadiusM_le {μ : Measure X} {x : X} {R : ℝ} (hR : 0 < R) (h : 1 ≤ μ (ball x R)) :
-    massRadiusM μ x ≤ R := sorry
+    massRadiusM μ x ≤ R :=
+  csInf_le ⟨0, fun _ hr ↦ hr.1.le⟩ ⟨hR, h⟩
 
-theorem massRadiusM_nonneg (μ : Measure X) (x : X) : 0 ≤ massRadiusM μ x := sorry
+theorem massRadiusM_nonneg (μ : Measure X) (x : X) : 0 ≤ massRadiusM μ x :=
+  Real.sInf_nonneg fun _ hr ↦ hr.1.le
+
+theorem measure_ball_lt_one_of_lt_massRadiusM' {μ : Measure X} {x : X} {r : ℝ}
+    (hr : r < massRadiusM μ x) : μ (ball x r) < 1 := by
+  by_cases hr0 : r ≤ 0
+  · rw [ball_eq_empty.2 hr0, measure_empty]
+    exact zero_lt_one
+  rw [not_le] at hr0
+  by_contra h
+  rw [not_lt] at h
+  exact absurd (massRadiusM_le hr0 h) (not_le.2 hr)
 
 theorem measure_ball_massRadiusM_le_one (μ : Measure X) (x : X) :
-    μ (ball x (massRadiusM μ x)) ≤ 1 := sorry
+    μ (ball x (massRadiusM μ x)) ≤ 1 := by
+  have := tendsto_measure_iUnion_atTop (μ := μ) (monotone_ball_sub x (massRadiusM μ x))
+  rw [iUnion_ball_sub] at this
+  refine le_of_tendsto' this fun n ↦ (measure_ball_lt_one_of_lt_massRadiusM' ?_).le
+  have : 0 < 1 / ((n : ℝ) + 1) := by positivity
+  linarith
 
 theorem one_le_measure_ball_of_massRadiusM_lt {μ : Measure X} {x : X}
     (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) {r : ℝ} (hr : massRadiusM μ x < r) :
-    1 ≤ μ (ball x r) := sorry
+    1 ≤ μ (ball x r) := by
+  obtain ⟨r', hr'S, hr'r⟩ := exists_lt_of_csInf_lt (s := {r | 0 < r ∧ 1 ≤ μ (ball x r)}) hne hr
+  exact hr'S.2.trans (measure_mono (ball_subset_ball hr'r.le))
 
 theorem measure_ball_lt_one_of_lt_massRadiusM {μ : Measure X} {x : X} {r : ℝ}
-    (hr : r < massRadiusM μ x) : μ (ball x r) < 1 := sorry
+    (hr : r < massRadiusM μ x) : μ (ball x r) < 1 :=
+  measure_ball_lt_one_of_lt_massRadiusM' hr
 
 theorem one_le_measure_closedBall_massRadiusM {μ : Measure X} {x : X}
     (hfin : ∀ r, μ (ball x r) < ∞) (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) :
-    1 ≤ μ (closedBall x (massRadiusM μ x)) := sorry
+    1 ≤ μ (closedBall x (massRadiusM μ x)) := by
+  have := tendsto_measure_iInter_atTop (μ := μ)
+    (fun n ↦ measurableSet_ball.nullMeasurableSet) (antitone_ball_add x (massRadiusM μ x))
+    ⟨0, (hfin _).ne⟩
+  rw [iInter_ball_add] at this
+  refine ge_of_tendsto' this fun n ↦ one_le_measure_ball_of_massRadiusM_lt hne ?_
+  have : 0 < 1 / ((n : ℝ) + 1) := by positivity
+  linarith
 
 theorem IsLocDoublingM.massRadiusM_pos [BallGeometry X] {μ : Measure X}
     (hd : IsLocDoublingM μ) (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞) {x : X}
-    (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) : 0 < massRadiusM μ x := sorry
+    (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) : 0 < massRadiusM μ x := by
+  have htend := tendsto_measure_iInter_atTop (μ := μ)
+    (fun n ↦ measurableSet_ball.nullMeasurableSet) (antitone_ball_add x 0) ⟨0, (hfin x _).ne⟩
+  rw [iInter_ball_add, closedBall_zero, hd.measure_singleton hfin x] at htend
+  obtain ⟨n, hn⟩ := (htend.eventually (gt_mem_nhds zero_lt_one)).exists
+  simp only [Function.comp_apply, zero_add] at hn
+  have hle : 1 / ((n : ℝ) + 1) ≤ massRadiusM μ x := by
+    refine le_csInf hne fun r hr ↦ ?_
+    by_contra h
+    rw [not_le] at h
+    exact absurd (hr.2.trans (measure_mono (ball_subset_ball h.le))) (not_le.2 hn)
+  have : 0 < 1 / ((n : ℝ) + 1) := by positivity
+  linarith
 
 theorem IsLocDoublingM.measure_ball_massRadiusM [BallGeometry X]
     [TopologicalSpace.SeparableSpace X] {μ : Measure X} (hd : IsLocDoublingM μ)
     (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞) {x : X}
-    (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) : μ (ball x (massRadiusM μ x)) = 1 := sorry
+    (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) : μ (ball x (massRadiusM μ x)) = 1 := by
+  refine le_antisymm (measure_ball_massRadiusM_le_one μ x) ?_
+  rw [← hd.measure_closedBall hfin]
+  exact one_le_measure_closedBall_massRadiusM (hfin x) hne
 
 theorem lipschitzWith_massRadiusM {μ : Measure X} (hne : ∀ x : X, ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) :
-    LipschitzWith 1 (massRadiusM μ) := sorry
+    LipschitzWith 1 (massRadiusM μ) := by
+  have key : ∀ x y, massRadiusM μ y ≤ massRadiusM μ x + dist x y := by
+    intro x y
+    have : massRadiusM μ y - dist x y ≤ massRadiusM μ x := by
+      refine le_csInf (hne x) ?_
+      rintro r ⟨hr, hr1⟩
+      have hsub : ball x r ⊆ ball y (r + dist x y) := by
+        intro z hz
+        rw [mem_ball] at hz ⊢
+        have := dist_triangle z x y
+        linarith
+      have : massRadiusM μ y ≤ r + dist x y :=
+        massRadiusM_le (by positivity) (hr1.trans (measure_mono hsub))
+      linarith
+    linarith
+  exact LipschitzWith.of_le_add fun x y ↦ by
+    have := key y x
+    rwa [dist_comm] at this
+
+/-- `ρ(y) ≤ ρ(x) + d(x,y)`. -/
+theorem massRadiusM_le_add_dist {μ : Measure X} (hne : ∀ x : X, ∃ r, 0 < r ∧ 1 ≤ μ (ball x r))
+    (x y : X) : massRadiusM μ y ≤ massRadiusM μ x + dist x y := by
+  have := (lipschitzWith_massRadiusM hne).dist_le_mul y x
+  rw [NNReal.coe_one, one_mul, Real.dist_eq, dist_comm y x] at this
+  linarith [le_abs_self (massRadiusM μ y - massRadiusM μ x)]
 
 /-- `μ(B(x,r)) ≍ (r/ρ(x))^{s or δ}` for `ρ(x) ≤ r ≤ R₁`. -/
 theorem IsLocDoublingM.measure_ball_massRadiusM_bounds [BallGeometry X]
@@ -750,7 +891,18 @@ theorem IsLocDoublingM.measure_ball_massRadiusM_bounds [BallGeometry X]
     ∃ c C δ s : ℝ, 0 < c ∧ 0 < C ∧ 0 < δ ∧ 0 < s ∧ ∀ (x : X) (r : ℝ),
       massRadiusM μ x ≤ r → r ≤ R₁ →
         ENNReal.ofReal (c * (r / massRadiusM μ x) ^ δ) ≤ μ (ball x r) ∧
-        μ (ball x r) ≤ ENNReal.ofReal (C * (r / massRadiusM μ x) ^ s) := sorry
+        μ (ball x r) ≤ ENNReal.ofReal (C * (r / massRadiusM μ x) ^ s) := by
+  obtain ⟨c, δ, hc, hδ, hlow⟩ := hd.rpow_le_measure_ball R₁
+  obtain ⟨C, s, hC, hs, hup⟩ := hd.measure_ball_le_rpow R₁
+  obtain ⟨R, hR, hRm⟩ := hm
+  refine ⟨c, C, δ, s, hc, hC, hδ, hs, fun x r hρr hrR ↦ ?_⟩
+  have hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r) := ⟨R, hR, hRm x⟩
+  have hρ := hd.massRadiusM_pos hfin hne
+  have h1 := hd.measure_ball_massRadiusM hfin hne
+  have hxx : dist x x ≤ r := by rw [dist_self]; linarith
+  constructor
+  · simpa [h1] using hlow x x r (massRadiusM μ x) hρ hρr hrR hxx
+  · simpa [h1] using hup x x r (massRadiusM μ x) hρ hρr hrR hxx
 
 /-- **Claim 1**. -/
 theorem IsLocDoublingM.claim1 [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM μ)
@@ -758,7 +910,64 @@ theorem IsLocDoublingM.claim1 [BallGeometry X] {μ : Measure X} (hd : IsLocDoubl
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ x y : X,
       dist x y ≤ K * max (massRadiusM μ x) (massRadiusM μ y) →
-        massRadiusM μ x ≤ C * massRadiusM μ y := sorry
+        massRadiusM μ x ≤ C * massRadiusM μ y := by
+  obtain ⟨R, hR, hRm⟩ := hm
+  set K' := max K 0 with hK'def
+  have hK' : 0 ≤ K' := le_max_right _ _
+  obtain ⟨c, δ, hc, hδ, hlow⟩ := hd.rpow_le_measure_ball ((K' + 1) * R)
+  obtain ⟨Cu, s, hCu, hs, hup⟩ := hd.measure_ball_le_rpow ((K' + 1) * R)
+  set C₂ := 2 * (Cu * (K' + 1) ^ s / c) ^ (1 / δ) with hC₂def
+  refine ⟨max 2 C₂, lt_max_of_lt_left two_pos, fun x y hxy ↦ ?_⟩
+  have hnex : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r) := ⟨R, hR, hRm x⟩
+  have hney : ∃ r, 0 < r ∧ 1 ≤ μ (ball y r) := ⟨R, hR, hRm y⟩
+  have hρx := hd.massRadiusM_pos hfin hnex
+  have hρy := hd.massRadiusM_pos hfin hney
+  have hρxR : massRadiusM μ x ≤ R := massRadiusM_le hR (hRm x)
+  set ρx := massRadiusM μ x with hρxdef
+  set ρy := massRadiusM μ y with hρydef
+  by_cases h2 : ρx ≤ 2 * ρy
+  · exact h2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρy.le)
+  rw [not_le] at h2
+  have hmax : max ρx ρy = ρx := max_eq_left (by linarith)
+  have hd' : dist x y ≤ K' * ρx := by
+    rw [hmax] at hxy
+    exact hxy.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρx.le)
+  have hy2 : 1 ≤ μ (ball y (2 * ρy)) := one_le_measure_ball_of_massRadiusM_lt hney (by linarith)
+  have hRK : R ≤ (K' + 1) * R := by nlinarith
+  have hL := hlow y y ρx (2 * ρy) (by positivity) h2.le (hρxR.trans hRK)
+    (by rw [dist_self]; positivity)
+  have hsub : ball y ρx ⊆ ball x ((K' + 1) * ρx) := by
+    intro z hz
+    rw [mem_ball] at hz ⊢
+    have := dist_triangle z y x
+    rw [dist_comm y x] at this
+    linarith
+  have hU := hup x x ((K' + 1) * ρx) ρx hρx (by nlinarith) (by nlinarith)
+    (by rw [dist_self]; positivity)
+  have hx1 : μ (ball x ρx) ≤ 1 := measure_ball_massRadiusM_le_one μ x
+  have hchain : ENNReal.ofReal (c * (ρx / (2 * ρy)) ^ δ) ≤ ENNReal.ofReal (Cu * (K' + 1) ^ s) := by
+    calc ENNReal.ofReal (c * (ρx / (2 * ρy)) ^ δ)
+        ≤ ENNReal.ofReal (c * (ρx / (2 * ρy)) ^ δ) * μ (ball y (2 * ρy)) :=
+          le_mul_of_one_le_right' hy2
+      _ ≤ μ (ball y ρx) := hL
+      _ ≤ μ (ball x ((K' + 1) * ρx)) := measure_mono hsub
+      _ ≤ ENNReal.ofReal (Cu * ((K' + 1) * ρx / ρx) ^ s) * μ (ball x ρx) := hU
+      _ ≤ ENNReal.ofReal (Cu * ((K' + 1) * ρx / ρx) ^ s) * 1 := by gcongr
+      _ = ENNReal.ofReal (Cu * (K' + 1) ^ s) := by
+          rw [mul_one, mul_div_assoc, div_self hρx.ne', mul_one]
+  have hreal : c * (ρx / (2 * ρy)) ^ δ ≤ Cu * (K' + 1) ^ s :=
+    (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 hchain
+  have h3 : ρx / (2 * ρy) ≤ (Cu * (K' + 1) ^ s / c) ^ (1 / δ) := by
+    have h4 : (ρx / (2 * ρy)) ^ δ ≤ Cu * (K' + 1) ^ s / c := by
+      rw [le_div_iff₀ hc]
+      linarith
+    calc ρx / (2 * ρy) = ((ρx / (2 * ρy)) ^ δ) ^ (1 / δ) := by
+          rw [← Real.rpow_mul (by positivity), mul_one_div_cancel hδ.ne', Real.rpow_one]
+      _ ≤ _ := Real.rpow_le_rpow (by positivity) h4 (by positivity)
+  rw [div_le_iff₀ (by positivity)] at h3
+  calc ρx ≤ (Cu * (K' + 1) ^ s / c) ^ (1 / δ) * (2 * ρy) := h3
+    _ = C₂ * ρy := by rw [hC₂def]; ring
+    _ ≤ max 2 C₂ * ρy := mul_le_mul_of_nonneg_right (le_max_right _ _) hρy.le
 
 /-- **Lemma 3**, truncated form (contains the paper's statement on `δρ(w) ≤ d < R₁`). -/
 theorem IsLocDoublingM.lemma3 [BallGeometry X] [TopologicalSpace.SeparableSpace X]
