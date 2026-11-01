@@ -1,3 +1,4 @@
+Resolving dependencies
 Building OCChallenge
 ⚠ [9047/9048] Replayed OCChallenge
 warning: OCChallenge.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
@@ -13,13 +14,14 @@ warning: OCChallenge.lean:272:8: declaration uses `sorry`
 warning: OCChallenge.lean:283:8: declaration uses `sorry`
 warning: OCChallenge.lean:295:8: declaration uses `sorry`
 warning: OCChallenge.lean:306:8: declaration uses `sorry`
-warning: OCChallenge.lean:325:8: declaration uses `sorry`
+warning: OCChallenge.lean:323:8: declaration uses `sorry`
+warning: OCChallenge.lean:342:8: declaration uses `sorry`
 Build completed successfully (9048 jobs).
-Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCChallenge
+Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_weighted_of_theoremOCS, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCChallenge
 Building OCSolution
-⚠ [9047/9102] Replayed OrtegaCerdaMultipliers.Defs
+⚠ [9047/9121] Replayed OrtegaCerdaMultipliers.Defs
 warning: OrtegaCerdaMultipliers/Defs.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
-⚠ [9049/9102] Replayed OrtegaCerdaMultipliers.Foundations.Wirtinger
+⚠ [9049/9121] Replayed OrtegaCerdaMultipliers.Foundations.Wirtinger
 warning: OrtegaCerdaMultipliers/Foundations/Wirtinger.lean:39:53: Variable name `hf` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -32,14 +34,14 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _hφ
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9050/9102] Replayed OrtegaCerdaMultipliers.Foundations.Polar
+⚠ [9050/9121] Replayed OrtegaCerdaMultipliers.Foundations.Polar
 warning: OrtegaCerdaMultipliers/Foundations/Polar.lean:271:53: Variable name `hR` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hR
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9052/9102] Replayed OrtegaCerdaMultipliers.Foundations.Pompeiu
+⚠ [9052/9121] Replayed OrtegaCerdaMultipliers.Foundations.Pompeiu
 warning: OrtegaCerdaMultipliers/Foundations/Pompeiu.lean:375:65: Variable name `hf` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -58,21 +60,21 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _hU
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9055/9102] Replayed OrtegaCerdaMultipliers.Foundations.DiscGeometry
+⚠ [9055/9121] Replayed OrtegaCerdaMultipliers.Foundations.DiscGeometry
 warning: OrtegaCerdaMultipliers/Foundations/DiscGeometry.lean:417:61: Variable name `hs` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hs
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9057/9102] Replayed OrtegaCerdaMultipliers.Foundations.HyperbolicExtra
+⚠ [9057/9121] Replayed OrtegaCerdaMultipliers.Foundations.HyperbolicExtra
 warning: OrtegaCerdaMultipliers/Foundations/HyperbolicExtra.lean:168:30: Variable name `hr` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hr
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9058/9102] Replayed OrtegaCerdaMultipliers.Potential.Radial
+⚠ [9058/9121] Replayed OrtegaCerdaMultipliers.Potential.Radial
 warning: OrtegaCerdaMultipliers/Potential/Radial.lean:61:29: Variable name `hab` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -103,7 +105,7 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _ha
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9069/9102] Replayed OrtegaCerdaMultipliers.Doubling.Quant
+⚠ [9069/9121] Replayed OrtegaCerdaMultipliers.Doubling.Quant
 warning: OrtegaCerdaMultipliers/Doubling/Quant.lean:94:0: automatically included section variable(s) unused in theorem `OC.MeasClassM.R₀_pos_m03b`:
   [OpensMeasurableSpace X]
 consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
@@ -138,7 +140,7 @@ warning: OrtegaCerdaMultipliers/Doubling/Quant.lean:840:60: `Set.diff_subset` ha
 
 Hint: Replace the deprecated name:
   s̲diff_subset
-⚠ [9070/9102] Replayed OrtegaCerdaMultipliers.Doubling.LineMeasure
+⚠ [9070/9121] Replayed OrtegaCerdaMultipliers.Doubling.LineMeasure
 warning: OrtegaCerdaMultipliers/Doubling/LineMeasure.lean:46:82: Variable name `hA` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -157,14 +159,14 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _hA
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9071/9102] Replayed OrtegaCerdaMultipliers.Regularization
+⚠ [9071/9121] Replayed OrtegaCerdaMultipliers.Regularization
 warning: OrtegaCerdaMultipliers/Regularization.lean:418:44: Variable name `hR` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hR
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9072/9102] Replayed OrtegaCerdaMultipliers.Partition.Rectangles
+⚠ [9072/9121] Replayed OrtegaCerdaMultipliers.Partition.Rectangles
 warning: OrtegaCerdaMultipliers/Partition/Rectangles.lean:257:6: `push_neg` has been deprecated. Prefer using `push Not` instead.
 If you'd rather continue using `push_neg` in your project, you can implement it as follows:
 ```
@@ -263,7 +265,7 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _hfin
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9073/9102] Replayed OrtegaCerdaMultipliers.Partition.Cayley
+⚠ [9073/9121] Replayed OrtegaCerdaMultipliers.Partition.Cayley
 warning: OrtegaCerdaMultipliers/Partition/Cayley.lean:137:15: `Set.mem_setOf_eq` has been deprecated: Use `Set.mem_ofPred_eq` instead
 
 Hint: Replace the deprecated name:
@@ -305,7 +307,7 @@ open Lean.Parser.Tactic in
 macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
   `(tactic| push $cfg:optConfig Not $[$loc]?)
 ```
-⚠ [9074/9102] Replayed OrtegaCerdaMultipliers.Partition.LineCuts
+⚠ [9074/9121] Replayed OrtegaCerdaMultipliers.Partition.LineCuts
 warning: OrtegaCerdaMultipliers/Partition/LineCuts.lean:28:64: `MeasureTheory.measure_le_inter_add_diff` has been deprecated: Use `MeasureTheory.measure_le_inter_add_sdiff` instead
 
 Hint: Replace the deprecated name:
@@ -358,7 +360,7 @@ open Lean.Parser.Tactic in
 macro "push_neg" cfg:optConfig loc:(location)? : tactic =>
   `(tactic| push $cfg:optConfig Not $[$loc]?)
 ```
-⚠ [9075/9102] Replayed OrtegaCerdaMultipliers.Partition.Lemma4
+⚠ [9075/9121] Replayed OrtegaCerdaMultipliers.Partition.Lemma4
 warning: OrtegaCerdaMultipliers/Partition/Lemma4.lean:36:61: Variable name `hy` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -435,7 +437,7 @@ warning: OrtegaCerdaMultipliers/Partition/Lemma4.lean:707:68: `Set.mem_setOf_eq`
 
 Hint: Replace the deprecated name:
   m̵e̵m̵_̵s̵e̵t̵O̵f̵_̵e̵q̵m̲e̲m̲_̲o̲f̲P̲r̲e̲d̲_̲e̲q̲
-⚠ [9076/9102] Replayed OrtegaCerdaMultipliers.Partition.Properties
+⚠ [9076/9121] Replayed OrtegaCerdaMultipliers.Partition.Properties
 warning: OrtegaCerdaMultipliers/Partition/Properties.lean:45:2: `push_neg` has been deprecated. Prefer using `push Not` instead.
 If you'd rather continue using `push_neg` in your project, you can implement it as follows:
 ```
@@ -456,23 +458,23 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _hP
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9078/9102] Replayed OrtegaCerdaMultipliers.LogModulus
+⚠ [9078/9121] Replayed OrtegaCerdaMultipliers.LogModulus
 warning: OrtegaCerdaMultipliers/LogModulus.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
-⚠ [9080/9102] Replayed OrtegaCerdaMultipliers.ModelKernels
+⚠ [9080/9121] Replayed OrtegaCerdaMultipliers.ModelKernels
 warning: OrtegaCerdaMultipliers/ModelKernels.lean:161:66: Variable name `hw` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hw
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9082/9102] Replayed OrtegaCerdaMultipliers.Multiplier.Basic
+⚠ [9082/9121] Replayed OrtegaCerdaMultipliers.Multiplier.Basic
 warning: OrtegaCerdaMultipliers/Multiplier/Basic.lean:61:40: Variable name `hs` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hs
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9083/9102] Replayed OrtegaCerdaMultipliers.Multiplier.Kernel
+⚠ [9083/9121] Replayed OrtegaCerdaMultipliers.Multiplier.Kernel
 warning: OrtegaCerdaMultipliers/Multiplier/Kernel.lean:79:42: This simp argument is unused:
   neg_re
 
@@ -488,14 +490,14 @@ warning: OrtegaCerdaMultipliers/Multiplier/Kernel.lean:405:45: `Polynomial.eval_
 
 Hint: Replace the deprecated name:
   e̵v̵a̵l̵_̵f̵i̵n̵s̵e̵t̵_̵s̵u̵m̵e̲v̲a̲l̲_̲f̲i̲n̲s̲e̲t̲S̲u̲m̲
-⚠ [9085/9102] Replayed OrtegaCerdaMultipliers.Multiplier.NearField
+⚠ [9085/9121] Replayed OrtegaCerdaMultipliers.Multiplier.NearField
 warning: OrtegaCerdaMultipliers/Multiplier/NearField.lean:433:70: Variable name `hM₀` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hM₀
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9086/9102] Replayed OrtegaCerdaMultipliers.Multiplier.CellBounds
+⚠ [9086/9121] Replayed OrtegaCerdaMultipliers.Multiplier.CellBounds
 warning: OrtegaCerdaMultipliers/Multiplier/CellBounds.lean:28:20: Variable name `w` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -516,7 +518,7 @@ warning: OrtegaCerdaMultipliers/Multiplier/CellBounds.lean:651:31: `Set.mem_setO
 
 Hint: Replace the deprecated name:
   S̵e̵t̵.̵m̵e̵m̵_̵s̵e̵t̵O̵f̵_̵e̵q̵m̲e̲m̲_̲o̲f̲P̲r̲e̲d̲_̲e̲q̲
-⚠ [9087/9102] Replayed OrtegaCerdaMultipliers.Multiplier.Potential
+⚠ [9087/9121] Replayed OrtegaCerdaMultipliers.Multiplier.Potential
 warning: OrtegaCerdaMultipliers/Multiplier/Potential.lean:300:60: `Set.diff_subset` has been deprecated: Use `Set.sdiff_subset` instead
 
 Hint: Replace the deprecated name:
@@ -533,7 +535,7 @@ warning: OrtegaCerdaMultipliers/Multiplier/Potential.lean:821:25: `if_false` has
 
 Hint: Replace the deprecated name:
   i̵f̵_̵f̵a̵l̵s̵e̵i̲t̲e̲_̲f̲a̲l̲s̲e̲
-⚠ [9089/9102] Replayed OrtegaCerdaMultipliers.Multiplier.Nodes
+⚠ [9089/9121] Replayed OrtegaCerdaMultipliers.Multiplier.Nodes
 warning: OrtegaCerdaMultipliers/Multiplier/Nodes.lean:130:41: Variable name `hτ` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -560,7 +562,7 @@ Hint: Omit it from the simp argument list.
   [apply] simp [Multiset.map_replicate]
 
 Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
-⚠ [9090/9102] Replayed OrtegaCerdaMultipliers.Multiplier.Theorem4
+⚠ [9090/9121] Replayed OrtegaCerdaMultipliers.Multiplier.Theorem4
 warning: OrtegaCerdaMultipliers/Multiplier/Theorem4.lean:25:18: Variable name `hx` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -591,7 +593,7 @@ warning: OrtegaCerdaMultipliers/Multiplier/Theorem4.lean:363:28: `MeasureTheory.
 
 Hint: Replace the deprecated name:
   measure_s̲diff_null
-⚠ [9091/9102] Replayed OrtegaCerdaMultipliers.SeveralMultipliers
+⚠ [9091/9121] Replayed OrtegaCerdaMultipliers.SeveralMultipliers
 warning: OrtegaCerdaMultipliers/SeveralMultipliers.lean:186:67: Variable name `hη` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
@@ -616,14 +618,14 @@ Hint: The binding can be removed (if unused) or named `_` (if used implicitly). 
   [apply] _hη
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9095/9102] Replayed OrtegaCerdaMultipliers.Line.Partition
+⚠ [9095/9121] Replayed OrtegaCerdaMultipliers.Line.Partition
 warning: OrtegaCerdaMultipliers/Line/Partition.lean:119:47: Variable name `hα` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hα
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-⚠ [9097/9102] Replayed OrtegaCerdaMultipliers.Theorem5
+⚠ [9097/9121] Replayed OrtegaCerdaMultipliers.Theorem5
 warning: OrtegaCerdaMultipliers/Theorem5.lean:128:23: This simp argument is unused:
   H
 
@@ -657,21 +659,120 @@ Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus fa
 warning: OrtegaCerdaMultipliers/Theorem5.lean:700:67: Unused tactic linter: `<;>` should be replaced with `;` or be removed.
 
 Note: This linter can be disabled with `set_option linter.unusedTactic false`
-⚠ [9098/9102] Replayed OrtegaCerdaMultipliers.Theorem3
-warning: OrtegaCerdaMultipliers/Theorem3.lean:127:59: Variable name `hφ` is not explicitly referenced.
+⚠ [9098/9121] Replayed OrtegaCerdaSeip.Defs
+warning: OrtegaCerdaSeip/Defs.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
+⚠ [9102/9121] Replayed OrtegaCerdaSeip.Foundations.Wirtinger
+warning: OrtegaCerdaSeip/Foundations/Wirtinger.lean:44:53: Variable name `hf` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hf
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Foundations/Wirtinger.lean:154:54: Variable name `hφ` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hφ
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-warning: OrtegaCerdaMultipliers/Theorem3.lean:172:39: Variable name `hfin` is not explicitly referenced.
+⚠ [9103/9121] Replayed OrtegaCerdaSeip.Foundations.Polar
+warning: OrtegaCerdaSeip/Foundations/Polar.lean:276:53: Variable name `hR` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hR
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [9104/9121] Replayed OrtegaCerdaSeip.Foundations.Pompeiu
+warning: OrtegaCerdaSeip/Foundations/Pompeiu.lean:380:65: Variable name `hf` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hf
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Foundations/Pompeiu.lean:464:5: Variable name `hc` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hc
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Foundations/Pompeiu.lean:464:44: Variable name `hU` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hU
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [9108/9121] Replayed OrtegaCerdaSeip.Lemma4.Kernel
+warning: OrtegaCerdaSeip/Lemma4/Kernel.lean:407:5: Variable name `hθ` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hθ
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Lemma4/Kernel.lean:453:67: Variable name `hS` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hS
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [9110/9121] Replayed OrtegaCerdaSeip.Jones.LayerCake
+warning: OrtegaCerdaSeip/Jones/LayerCake.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
+⚠ [9113/9121] Replayed OrtegaCerdaSeip.Lemma4.Upper
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:231:0: automatically included section variable(s) unused in theorem `OCS.ae_ten_le_im_expImMeasure`:
+  [IsFiniteMeasure ν]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [IsFiniteMeasure ν] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:238:0: automatically included section variable(s) unused in theorem `OCS.integral_upperTheta`:
+  [IsFiniteMeasure ν]
+consider restructuring your `variable` declarations so that the variables are not in scope or explicitly omit them:
+  omit [IsFiniteMeasure ν] in theorem ...
+
+Note: This linter can be disabled with `set_option linter.unusedSectionVars false`
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:238:29: Variable name `hε` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hε
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:238:42: Variable name `hL` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hL
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:239:33: Variable name `hσ` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hσ
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:239:53: Variable name `hσ1` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hσ1
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaSeip/Lemma4/Upper.lean:240:5: Variable name `hβ` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hβ
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [9117/9121] Replayed OrtegaCerdaMultipliers.Theorem3
+warning: OrtegaCerdaMultipliers/Theorem3.lean:130:59: Variable name `hφ` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hφ
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: OrtegaCerdaMultipliers/Theorem3.lean:175:39: Variable name `hfin` is not explicitly referenced.
 
 Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
   [apply] _hfin
 
 Note: This linter can be disabled with `set_option linter.unusedVariables false`
-Build completed successfully (9102 jobs).
-Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCSolution
-Running Lean default kernel on solution.
+Build completed successfully (9121 jobs).
+Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_weighted_of_theoremOCS, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCSolution
+Running Lean default kernel on solution
 Lean default kernel accepts the solution
 Your solution is okay!

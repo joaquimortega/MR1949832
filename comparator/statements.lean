@@ -133,11 +133,28 @@ theorem theorem5 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeigh
         (∀ x : ℝ, f x = 0 → ε * massRadiusLine μ x ≤ ‖z - x‖) →
           C⁻¹ * Real.exp (φ z) ≤ ‖f z‖ ∧ ‖f z‖ ≤ C * Real.exp (φ z) := sorry
 
-/-- **Theorem 3** (paper, p. 358), corrected and conditional on the Ortega-Cerdà–Seip theorem
-[OCS99] (`TheoremOCS`), which the paper uses as a black box.  As printed (with the unweighted
-integral `∫_{|z-x|<1} d|μ|(z)/|x - z|`) the theorem is false (NOTEBOOK N-01); the integral must
-carry the weight `e^{-φ(z)}`. -/
-theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
+/-- **Theorem 3** (paper, p. 358), corrected.  As printed (with the unweighted integral
+`∫_{|z-x|<1} d|μ|(z)/|x - z|`) the theorem is false (NOTEBOOK N-01); the integral must carry the
+weight `e^{-φ(z)}`.  Unconditional: the Ortega-Cerdà–Seip theorem [OCS99] that the paper uses
+(`TheoremOCS`) is proved in the companion project MR1682065. -/
+theorem theorem3_weighted (φ : ℂ → ℝ) (μ : Measure ℂ)
+    (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
+    (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) (K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
+      IsFiniteMeasure ν → IsCompact L → ν Lᶜ = 0 → Measurable σ → (∀ z, ‖σ z‖ = 1) →
+      (∀ x : ℝ, ∀ r : ℝ, 0 < r →
+        (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) (ball (x : ℂ) r) ≤
+          K * ENNReal.ofReal r) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSolMeasure u ν σ ∧ DifferentiableOn ℂ u Lᶜ ∧
+        Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
+        ∀ x : ℝ, (x : ℂ) ∉ L →
+          ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1,
+              ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) := sorry
+
+/-- **Theorem 3** (paper, p. 358), corrected, from the Ortega-Cerdà–Seip theorem [OCS99]
+(`TheoremOCS`), which the paper uses as a black box: the paper's route. -/
+theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
     (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) (K : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
