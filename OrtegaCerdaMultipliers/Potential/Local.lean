@@ -198,7 +198,6 @@ theorem integral_bumpPot_mul_laplacian' {s : ℝ} (hs : 0 < s) {χ : ℂ → ℝ
   ring
 
 
-/-- **The smoothed point mass.** `Δ_z G_s(z − ζ) = bumpKernel s (· − ζ) − δ_ζ` weakly. -/
 -- (`integral_bumpPot_mul_laplacian` was removed by the coordinator: as written, `∫ z, a - b`
 -- parses as `∫ z, (a - b)`, which made it false; the intended statement is
 -- `integral_bumpPot_mul_laplacian'`. NOTEBOOK I-03.)

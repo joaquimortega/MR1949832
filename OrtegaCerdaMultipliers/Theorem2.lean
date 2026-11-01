@@ -288,7 +288,7 @@ theorem isSubharmonicWeight_add_log {φ' : ℂ → ℝ} {ν : Measure ℂ} {ε c
     fun K hK hKc ↦ (hle K).trans_lt (hφ'.finite_of_compact K hK hKc),
     nonpos_iff_eq_zero.1 (hφ'.carried ▸ hle _), fun χ hχ hχc hχs ↦ ?_⟩
   have hL := laplacian_testFunction hχ
-  have hΔc := hasCompactSupport_laplacian hχ hχc
+  have hΔc := Thm2.hasCompactSupport_laplacian hχ hχc
   have hΔs : tsupport (Laplacian.laplacian χ) ⊆ 𝔻 := hL.2.trans hχs
   have i1 := integrable_mul_of_tsupport_subset_real isOpen_ball hφ'.continuousOn hL.1 hΔc hΔs
   have i2 := integrable_mul_of_tsupport_subset_real isOpen_ball
