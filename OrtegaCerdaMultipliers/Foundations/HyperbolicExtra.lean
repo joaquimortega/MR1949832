@@ -34,8 +34,104 @@ def hypArea : Measure ℂ :=
 
 /-- Hyperbolic area of a hyperbolic disc: `hypArea (D(z, r)) = π sinh² r` (Möbius invariance and
 the computation at `0`: `∫_{|w|<t} dm/(1-|w|²)² = π t²/(1 - t²)` with `t = tanh r`). -/
+theorem hypArea_apply_of_subset {S : Set ℂ} (hS : MeasurableSet S) (hS𝔻 : S ⊆ 𝔻) :
+    hypArea S = ∫⁻ w in S, ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2) := by
+  rw [hypArea, withDensity_apply _ hS, Measure.restrict_restrict hS, inter_eq_left.2 hS𝔻]
+
+/-- Möbius invariance of the hyperbolic area density, in lower-integral form. -/
+theorem lintegral_hypBall_eq_lintegral_ball {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
+    ∫⁻ w in hypBall z r, ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2) =
+      ∫⁻ w in ball (0 : ℂ) (Real.tanh r), ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2) := by
+  set t := Real.tanh r
+  have hsub : ball (0 : ℂ) t ⊆ 𝔻 := ball_subset_ball (Real.tanh_lt_one r).le
+  have hderiv : ∀ x ∈ ball (0 : ℂ) t, HasFDerivWithinAt (mobius z)
+      ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (deriv (mobius z) x)).restrictScalars ℝ)
+      (ball 0 t) x := fun x hx ↦
+    ((differentiableAt_mobius hz (hsub hx)).hasDerivAt.hasFDerivAt.restrictScalars
+      ℝ).hasFDerivWithinAt
+  have h := lintegral_image_eq_lintegral_abs_det_fderiv_mul volume measurableSet_ball hderiv
+    ((injOn_mobius hz).mono hsub) (fun w ↦ ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2))
+  rw [← hypBall_eq_image_mobius hz] at h
+  rw [h]
+  refine setLIntegral_congr_fun measurableSet_ball fun x hx ↦ ?_
+  have hx𝔻 := hsub hx
+  simp only [det_smulRight_restrictScalars]
+  rw [abs_of_nonneg (by positivity), ← ENNReal.ofReal_mul (by positivity), norm_deriv_mobius hz hx𝔻]
+  have h1 := one_sub_normSq_pos hx𝔻
+  have h2 := one_sub_normSq_pos (mobius_mem_disc hz hx𝔻)
+  congr 1
+  field_simp
+
+/-- `∫_{|w| < t} dm / (1 - |w|²)² = π t² / (1 - t²)`. -/
+theorem lintegral_ball_zero_hypDensity {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
+    ∫⁻ w in ball (0 : ℂ) t, ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2) =
+      ENNReal.ofReal (Real.pi * (t ^ 2 / (1 - t ^ 2))) := by
+  set T := t ^ 2 with hT
+  have hT0 : 0 ≤ T := by positivity
+  have hT1 : T < 1 := by nlinarith
+  set F : ℝ → ℝ≥0∞ := (Iio T).indicator fun u ↦ ENNReal.ofReal ((1 - u)⁻¹ ^ 2) with hF
+  have hFm : Measurable F := by
+    refine Measurable.indicator ?_ measurableSet_Iio
+    exact ENNReal.measurable_ofReal.comp (by fun_prop)
+  have h := lintegral_comp_normSq_sub 0 hFm
+  have e1 : ∫⁻ z : ℂ, F (‖z - 0‖ ^ 2) =
+      ∫⁻ w in ball (0 : ℂ) t, ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2) := by
+    rw [← lintegral_indicator measurableSet_ball]
+    refine lintegral_congr fun z ↦ ?_
+    simp only [sub_zero, hF]
+    by_cases hz : z ∈ ball (0 : ℂ) t
+    · have hz' : ‖z‖ ^ 2 < T := by
+        rw [mem_ball_zero_iff] at hz
+        exact pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
+      rw [indicator_of_mem hz, indicator_of_mem (show ‖z‖ ^ 2 ∈ Iio T from hz')]
+    · have hz' : ¬ ‖z‖ ^ 2 < T := by
+        rw [mem_ball_zero_iff, not_lt] at hz
+        exact not_lt.2 (pow_le_pow_left₀ ht0 hz 2)
+      rw [indicator_of_notMem hz, indicator_of_notMem (show ‖z‖ ^ 2 ∉ Iio T from hz')]
+  have e2 : ∫⁻ u in Ioi (0 : ℝ), F u = ENNReal.ofReal (T / (1 - T)) := by
+    rw [hF, lintegral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio,
+      show Iio T ∩ Ioi 0 = Ioo 0 T from by ext u; simp [and_comm]]
+    have hcont : ContinuousOn (fun u : ℝ ↦ (1 - u)⁻¹ ^ 2) (Icc 0 T) :=
+      ((continuousOn_const.sub continuousOn_id).inv₀ fun u hu ↦ by
+        have := hu.2; simp only [Pi.sub_apply, id]; intro h; linarith).pow 2
+    have hint : IntegrableOn (fun u : ℝ ↦ (1 - u)⁻¹ ^ 2) (Ioo 0 T) :=
+      (hcont.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
+    rw [← ofReal_integral_eq_lintegral_ofReal hint
+      (Filter.Eventually.of_forall fun u ↦ by positivity)]
+    congr 1
+    rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hT0]
+    have hderiv : ∀ u ∈ uIcc 0 T, HasDerivAt (fun u : ℝ ↦ (1 - u)⁻¹) ((1 - u)⁻¹ ^ 2) u := by
+      intro u hu
+      rw [uIcc_of_le hT0] at hu
+      have hne : (1 - u) ≠ 0 := by have := hu.2; intro h; linarith
+      have := ((hasDerivAt_id u).const_sub 1).inv hne
+      simp only [id] at this
+      convert this using 1
+      field_simp
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv
+      (hcont.intervalIntegrable_of_Icc hT0)]
+    have : (1 - T) ≠ 0 := by linarith
+    field_simp
+    ring
+  rw [← e1, h, e2, ← ENNReal.ofReal_mul Real.pi_pos.le]
+
+/-- `tanh² r / (1 - tanh² r) = sinh² r`. -/
+theorem tanh_sq_div_one_sub_tanh_sq (r : ℝ) :
+    Real.tanh r ^ 2 / (1 - Real.tanh r ^ 2) = Real.sinh r ^ 2 := by
+  have hc := Real.cosh_pos r
+  have hcs := Real.cosh_sq r
+  rw [Real.tanh_eq_sinh_div_cosh]
+  have : Real.cosh r ^ 2 - Real.sinh r ^ 2 = 1 := by linarith
+  field_simp
+  rw [this]
+  ring
+
 theorem hypArea_hypBall {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 ≤ r) :
-    hypArea (hypBall z r) = ENNReal.ofReal (Real.pi * Real.sinh r ^ 2) := sorry
+    hypArea (hypBall z r) = ENNReal.ofReal (Real.pi * Real.sinh r ^ 2) := by
+  rw [hypArea_apply_of_subset (isOpen_hypBall z r).measurableSet (hypBall_subset_disc z r),
+    lintegral_hypBall_eq_lintegral_ball hz r,
+    lintegral_ball_zero_hypDensity (tanh_nonneg_of_nonneg hr) (Real.tanh_lt_one r),
+    tanh_sq_div_one_sub_tanh_sq]
 
 /-! ## Radial distances, the disc at `0`, continuity -/
 
