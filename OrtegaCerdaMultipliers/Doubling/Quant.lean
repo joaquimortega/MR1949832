@@ -425,7 +425,118 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
 /-- **[Chr91, Lemma 2.3]**, uniform form. -/
 theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ (x : X) (R : ℝ), 0 < R → R ≤ R₁ →
-      ∫⁻ y in ball x R, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤ C * μ (ball x R) := sorry
+      ∫⁻ y in ball x R, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤ C * μ (ball x R) := by
+  obtain ⟨C₁, hC₁, hup⟩ := exists_doublingUpTo (X := X) Cd (2 * R₁)
+  have hC0 : (0 : ℝ≥0) < C₁ := zero_lt_one.trans_le hC₁
+  have hη : (0 : ℝ) < (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ) :=
+    NNReal.coe_pos.2 (inv_pos.2 (pow_pos hC0 3))
+  obtain ⟨q, hqdef⟩ : ∃ q : ℝ, q = (1 + (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ))⁻¹ := ⟨_, rfl⟩
+  have hq0 : 0 ≤ q := by rw [hqdef]; positivity
+  have hq1 : q < 1 := by rw [hqdef]; exact inv_lt_one_of_one_lt₀ (by linarith)
+  have hsum : Summable (fun k : ℕ ↦ ((k : ℝ) + 1) * q ^ k) := by
+    have h1 := summable_pow_mul_geometric_of_norm_lt_one 1 (r := q)
+      (by rw [Real.norm_eq_abs, abs_of_nonneg hq0]; exact hq1)
+    have h2 := summable_geometric_of_lt_one hq0 hq1
+    convert h1.add h2 using 1
+    funext k
+    simp only [pow_one]
+    ring
+  have hlog2 : 0 ≤ Real.log 2 := Real.log_nonneg (by norm_num)
+  refine ⟨Real.toNNReal (Real.log 2 * ∑' k : ℕ, ((k : ℝ) + 1) * q ^ k),
+    fun μ hμ x R hR hR1 ↦ ?_⟩
+  have hD := hup μ hμ
+  set A : ℕ → Set X := fun k ↦ ball x (R / 2 ^ k) \ ball x (R / 2 ^ (k + 1)) with hA
+  have hcover : ball x R ⊆ {x} ∪ ⋃ k, A k := by
+    intro y hy
+    by_cases hyx : y = x
+    · left; exact hyx
+    right
+    have hd : 0 < dist y x := dist_pos.2 hyx
+    rw [mem_ball] at hy
+    have hex : ∃ k : ℕ, R / 2 ^ (k + 1) ≤ dist y x := by
+      obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (R / dist y x) (by norm_num : (1 : ℝ) < 2)
+      refine ⟨k, ?_⟩
+      rw [div_le_iff₀ (by positivity)]
+      rw [div_lt_iff₀ hd] at hk
+      have : (2 : ℝ) ^ k ≤ 2 ^ (k + 1) := pow_le_pow_right₀ (by norm_num) (Nat.le_succ k)
+      nlinarith
+    classical
+    have hk1 : R / 2 ^ (Nat.find hex + 1) ≤ dist y x := Nat.find_spec hex
+    have hk2 : dist y x < R / 2 ^ (Nat.find hex) := by
+      rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
+      · rw [h0, pow_zero, div_one]; exact hy
+      · have := Nat.find_min hex (Nat.sub_lt hpos one_pos)
+        rw [not_le, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
+        exact this
+    exact mem_iUnion.2 ⟨Nat.find hex, mem_ball.2 hk2, fun h ↦ not_lt.2 hk1 (mem_ball.1 h)⟩
+  have hsing : ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ = 0 := by
+    have : ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤ ∫⁻ _y in {x}, 0 ∂μ :=
+      setLIntegral_mono' isClosed_singleton.measurableSet fun y hy ↦ by
+        rw [mem_singleton_iff] at hy
+        subst hy
+        simp
+    simpa using this
+  have hAk : ∀ k : ℕ, ∫⁻ y in A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤
+      ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) := by
+    intro k
+    have hpt : ∀ y ∈ A k, ENNReal.ofReal (Real.log (R / dist x y)) ≤
+        ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) := by
+      intro y hy
+      have h1 : R / 2 ^ (k + 1) ≤ dist x y := by
+        rw [dist_comm]; exact not_lt.1 fun h ↦ hy.2 (mem_ball.2 h)
+      have hpos : 0 < dist x y := lt_of_lt_of_le (by positivity) h1
+      apply ENNReal.ofReal_le_ofReal
+      calc Real.log (R / dist x y) ≤ Real.log (2 ^ (k + 1)) := by
+            apply Real.log_le_log (by positivity)
+            rw [div_le_iff₀ hpos]
+            rw [div_le_iff₀ (by positivity)] at h1
+            linarith
+        _ = ((k : ℝ) + 1) * Real.log 2 := by rw [Real.log_pow]; push_cast; ring
+    have hmeas : MeasurableSet (A k) := measurableSet_ball.diff measurableSet_ball
+    have hμA : μ (A k) ≤ ENNReal.ofReal (q ^ k) * μ (ball x R) := by
+      have h2k : (2 : ℝ) ^ k * (R / 2 ^ k) = R := by field_simp
+      have hrev := hD.reverse_pow hC₁ x (by positivity : 0 < R / 2 ^ k) k
+        (by rw [h2k]; linarith)
+      rw [h2k] at hrev
+      have hne0 : ((1 + (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞)) ^ k) ≠ 0 :=
+        pow_ne_zero _ (by positivity)
+      have hnet : ((1 + (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞)) ^ k) ≠ ∞ :=
+        ENNReal.pow_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.one_ne_top, ENNReal.coe_ne_top⟩)
+      have e : ENNReal.ofReal (q ^ k) = ((1 + (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞)) ^ k)⁻¹ := by
+        rw [ENNReal.ofReal_pow hq0, hqdef, ENNReal.ofReal_inv_of_pos (by positivity),
+          ENNReal.ofReal_add zero_le_one (NNReal.coe_nonneg _), ENNReal.ofReal_one,
+          ENNReal.ofReal_coe_nnreal, ENNReal.inv_pow]
+      rw [e]
+      calc μ (A k) ≤ μ (ball x (R / 2 ^ k)) := measure_mono diff_subset
+        _ ≤ ((1 + (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞)) ^ k)⁻¹ * μ (ball x R) :=
+            (ENNReal.mul_le_iff_le_inv hne0 hnet).1 hrev
+    calc ∫⁻ y in A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ
+        ≤ ∫⁻ _y in A k, ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) ∂μ :=
+          setLIntegral_mono' hmeas hpt
+      _ = ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) * μ (A k) := setLIntegral_const _ _
+      _ ≤ ENNReal.ofReal (((k : ℝ) + 1) * Real.log 2) * (ENNReal.ofReal (q ^ k) * μ (ball x R)) := by
+          gcongr
+      _ = ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) := by
+          rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
+          congr 2
+          ring
+  have hnn : ∀ k : ℕ, 0 ≤ Real.log 2 * (((k : ℝ) + 1) * q ^ k) := fun k ↦
+    mul_nonneg hlog2 (mul_nonneg (by positivity) (pow_nonneg hq0 k))
+  calc ∫⁻ y in ball x R, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ
+      ≤ ∫⁻ y in {x} ∪ ⋃ k, A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ :=
+        lintegral_mono_set hcover
+    _ ≤ ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ +
+          ∫⁻ y in ⋃ k, A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ :=
+        lintegral_union_le _ _ _
+    _ ≤ 0 + ∑' k, ∫⁻ y in A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ := by
+        rw [hsing]
+        exact add_le_add le_rfl (lintegral_iUnion_le _ _)
+    _ ≤ 0 + ∑' k : ℕ, ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) :=
+        add_le_add le_rfl (ENNReal.tsum_le_tsum hAk)
+    _ = ENNReal.ofReal (Real.log 2 * ∑' k : ℕ, ((k : ℝ) + 1) * q ^ k) * μ (ball x R) := by
+        rw [zero_add, ENNReal.tsum_mul_right,
+          ← ENNReal.ofReal_tsum_of_nonneg hnn (hsum.mul_left _), tsum_mul_left]
+    _ = _ := rfl
 
 /-- Mass radius of `N⁻¹ μ` versus `μ`, uniform. -/
 theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
