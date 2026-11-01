@@ -582,6 +582,91 @@ theorem norm_sub_le_of_norm_le_mul_exp {G : ℂ → ℂ} (hG : Differentiable �
     obtain ⟨t, -, rfl⟩ := hz
     simp
 
+/-- The normalised Cauchy kernel `1/(π(z - w))`, the fundamental solution of `∂̄`. -/
+def cexPole (w z : ℂ) : ℂ := (Real.pi : ℂ)⁻¹ * (z - w)⁻¹
+
+theorem cexPole_mul_dbar_eq {α : ℂ → ℂ} (w z : ℂ) :
+    cexPole w z * dbar α z = -(Real.pi : ℂ)⁻¹ * (dbar α z / (w - z)) := by
+  rw [cexPole, ← neg_sub w z, inv_neg]
+  ring
+
+theorem integrable_cexPole_mul_dbar {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (hc : HasCompactSupport α)
+    (w : ℂ) : Integrable (fun z ↦ cexPole w z * dbar α z) := by
+  simp_rw [cexPole_mul_dbar_eq]
+  exact (integrable_div_sub (continuous_dbar hα) (hasCompactSupport_dbar hc) w).const_mul _
+
+/-- `∂̄ (1/(π(z - w))) = δ_w` weakly: `∫ ∂̄α /(π(z - w)) = -α(w)`. -/
+theorem integral_cexPole_mul_dbar {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (hc : HasCompactSupport α)
+    (w : ℂ) : ∫ z, cexPole w z * dbar α z = -α w := by
+  simp_rw [cexPole_mul_dbar_eq]
+  rw [integral_const_mul, integral_dbar_div_eq hα hc w]
+  have : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+  field_simp
+
+theorem locallyIntegrable_const_mul_cexPole (c w : ℂ) :
+    LocallyIntegrable (fun z ↦ c * cexPole w z) := by
+  have h := (locallyIntegrable_inv_sub w).continuous_mul
+    (continuous_const (y := c * (Real.pi : ℂ)⁻¹))
+  refine h.congr (Filter.Eventually.of_forall fun z ↦ ?_)
+  simp only [cexPole]; ring
+
+/-- **Point masses.** If `∂̄u = σ ν` with `ν = Σ m_k δ_{w_k}` and `E` is entire, then
+`E u - Σ_k E(w_k) σ(w_k) m_k / (π(z - w_k))` is weakly holomorphic on `ℂ`. -/
+theorem isWeakDbarSol_mul_sub_poles {ι : Type*} [Fintype ι] (w : ι → ℂ) (m : ι → ℝ)
+    (hm : ∀ k, 0 ≤ m k) {σ E u : ℂ → ℂ} (hE : Differentiable ℂ E)
+    (hu : IsWeakDbarSolMeasure u (∑ k, ENNReal.ofReal (m k) • Measure.dirac (w k)) σ) :
+    IsWeakDbarSol univ
+      (fun z ↦ E z * u z - ∑ k, E (w k) * σ (w k) * (m k : ℂ) * cexPole (w k) z) 0 := by
+  refine ⟨?_, locallyIntegrable_zero.locallyIntegrableOn _, fun α hα hc _ ↦ ?_⟩
+  · rw [locallyIntegrableOn_univ]
+    exact (hu.1.continuous_mul hE.continuous).sub
+      (locallyIntegrable_finsetSum _ fun k _ ↦ locallyIntegrable_const_mul_cexPole _ _)
+  have hα1 := contDiff_one_of_top hα
+  -- `∂̄(Eα) = E ∂̄α`
+  have hβ : ContDiff ℝ (⊤ : ℕ∞) (fun z ↦ E z * α z) := (hE.contDiff.restrict_scalars ℝ).mul hα
+  have hβc : HasCompactSupport (fun z ↦ E z * α z) := hc.mul_left
+  have hdβ : ∀ z, dbar (fun z ↦ E z * α z) z = E z * dbar α z := by
+    intro z
+    rw [dbar_mul ((hE z).restrictScalars ℝ) (hα1.differentiable one_ne_zero z),
+      dbar_eq_zero_of_differentiableAt (hE z), zero_mul, zero_add]
+  have h1 := hu.2 _ hβ hβc
+  simp_rw [hdβ] at h1
+  -- the integral against `ν`
+  have hν : ∫ z, E z * α z * σ z ∂(∑ k, ENNReal.ofReal (m k) • Measure.dirac (w k)) =
+      ∑ k, (m k : ℂ) * (E (w k) * α (w k) * σ (w k)) := by
+    rw [integral_finsetSum_measure fun k _ ↦
+      (integrable_dirac enorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal (hm k), Complex.real_smul]
+  have hint1 : Integrable (fun z ↦ u z * (E z * dbar α z)) :=
+    integrable_mul_of_locallyIntegrableOn (hu.1.locallyIntegrableOn univ)
+      (hE.continuous.mul (continuous_dbar hα1)) ((hasCompactSupport_dbar hc).mul_left)
+      (subset_univ _)
+  have hint2 : ∀ k, Integrable (fun z ↦ E (w k) * σ (w k) * (m k : ℂ) * cexPole (w k) z *
+      dbar α z) := fun k ↦
+    ((integrable_cexPole_mul_dbar hα1 hc (w k)).const_mul (E (w k) * σ (w k) * (m k : ℂ))).congr
+      (Filter.Eventually.of_forall fun z ↦ by ring)
+  calc ∫ z, (E z * u z - ∑ k, E (w k) * σ (w k) * (m k : ℂ) * cexPole (w k) z) * dbar α z
+      = ∫ z, (u z * (E z * dbar α z) -
+          ∑ k, E (w k) * σ (w k) * (m k : ℂ) * cexPole (w k) z * dbar α z) := by
+        congr 1; ext z; rw [sub_mul, Finset.sum_mul]; ring
+    _ = (∫ z, u z * (E z * dbar α z)) -
+          ∑ k, ∫ z, E (w k) * σ (w k) * (m k : ℂ) * cexPole (w k) z * dbar α z := by
+        rw [integral_sub hint1 (integrable_finsetSum _ fun k _ ↦ hint2 k),
+          integral_finsetSum _ fun k _ ↦ hint2 k]
+    _ = -∑ k, (m k : ℂ) * (E (w k) * α (w k) * σ (w k)) -
+          ∑ k, E (w k) * σ (w k) * (m k : ℂ) * -α (w k) := by
+        rw [h1, hν]
+        congr 1
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        simp_rw [mul_assoc]
+        rw [integral_const_mul, integral_const_mul, integral_const_mul,
+          integral_cexPole_mul_dbar hα1 hc]
+    _ = -∫ z, (0 : ℂ → ℂ) z * α z := by
+        simp only [Pi.zero_apply, zero_mul, integral_zero, neg_zero]
+        rw [neg_sub_left, ← Finset.sum_add_distrib, neg_eq_zero]
+        exact Finset.sum_eq_zero fun k _ ↦ by ring
+
 /-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`; hence `theorem3` in
 `comparator/statements.lean` is equivalent to `¬ TheoremOCS`. -/
 theorem not_theorem3_printed :
