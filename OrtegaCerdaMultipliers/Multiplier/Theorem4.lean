@@ -5,9 +5,10 @@ import OrtegaCerdaMultipliers.Multiplier.Nodes
 /-!
 # M08 (Multiplier) — Theorem 4: multipliers in `𝔻` and `ℂ`
 
-See `blueprint/M08_Multiplier.md` §2.8.  Scaffold: the core `multiplier_of_nodes_*` and the
-quantitative `theorem4_*_quant` are `sorry`; the comparator statements `theorem4_disc`,
-`theorem4_plane` (verbatim from `comparator/statements.lean`) are proved from them.
+See `blueprint/M08_Multiplier.md` §2.8, §3.11.  The core `multiplier_of_nodes_*` (from the
+estimates of `Estimates.lean`, the M07 data of `Potential.lean` and M07's
+`exists_analytic_norm_eq_exp_of_isWeakLogModulus`), the quantitative `theorem4_*_quant` (M05
+cells + `Nodes.lean`), and the comparator statements `theorem4_disc`, `theorem4_plane`.
 -/
 
 open MeasureTheory Metric Set Complex
