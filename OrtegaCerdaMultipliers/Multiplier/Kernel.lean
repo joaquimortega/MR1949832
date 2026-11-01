@@ -4,7 +4,7 @@ import OrtegaCerdaMultipliers.Multiplier.Defs
 /-!
 # M08 (Multiplier) — Taylor remainders, polynomial form, moment cancellation
 
-See `blueprint/M08_Multiplier.md` §2.2.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M08_Multiplier.md` §2.2, §3.1.
 
 Reconciliation: the disc geometry lemmas of §2.2 (`norm_sub_le_of_hypDist_le`,
 `norm_one_sub_conj_mul_comparable`, `convex_closedHypBall`) are in M01
@@ -179,11 +179,186 @@ theorem abs_kerDisc_sub_taylorDisc_le {m : ℕ} (hm : 1 ≤ m) {z c ζ : ℂ} (h
   field_simp
   ring
 
+/-! ### First-order remainder along segments -/
+
+theorem hasDerivAt_log_norm_affine (α β : ℂ) (t : ℝ) (h : α + t * β ≠ 0) :
+    HasDerivAt (fun s : ℝ ↦ Real.log ‖α + s * β‖) ((β / (α + t * β)).re) t := by
+  set q : ℝ → ℝ := fun s ↦ (α.re + s * β.re) ^ 2 + (α.im + s * β.im) ^ 2 with hq
+  have hqeq : ∀ s : ℝ, ‖α + s * β‖ = Real.sqrt (q s) := by
+    intro s
+    rw [Complex.norm_def, Complex.normSq_apply]
+    simp [hq, sq]
+  have hqpos : 0 < q t := by
+    have : 0 < ‖α + t * β‖ := norm_pos_iff.2 h
+    rw [hqeq] at this
+    exact Real.sqrt_pos.1 this
+  have hlog : ∀ s : ℝ, Real.log ‖α + s * β‖ = Real.log (q s) / 2 := by
+    intro s; rw [hqeq, Real.log_sqrt]
+    have : 0 ≤ q s := by positivity
+    exact this
+  simp_rw [hlog]
+  have hq' : HasDerivAt q (2 * (α.re + t * β.re) * β.re + 2 * (α.im + t * β.im) * β.im) t := by
+    have h1 : HasDerivAt (fun s : ℝ ↦ α.re + s * β.re) β.re t := by
+      simpa using ((hasDerivAt_id t).mul_const β.re).const_add α.re
+    have h2 : HasDerivAt (fun s : ℝ ↦ α.im + s * β.im) β.im t := by
+      simpa using ((hasDerivAt_id t).mul_const β.im).const_add α.im
+    have := (h1.pow 2).add (h2.pow 2)
+    convert this using 1; simp
+  have := (hq'.log hqpos.ne').div_const 2
+  convert this using 1
+  have hn : normSq (α + t * β) = q t := by simp [Complex.normSq_apply, hq, sq]
+  rw [div_re, hn]
+  simp only [add_re, add_im, mul_re, mul_im, ofReal_re, ofReal_im, zero_mul, sub_zero, add_zero]
+  field_simp
+
+/-- `F'(ξ) = -1/(z-ξ) + z̄/(1-z̄ξ)`, the complex gradient of `ξ ↦ kerDisc z ξ`. -/
+def kerDiscGrad (z ξ : ℂ) : ℂ := -(z - ξ)⁻¹ + conj z * (1 - conj z * ξ)⁻¹
+
+theorem hasDerivAt_kerDiscGrad {z ξ : ℂ} (h1 : z - ξ ≠ 0) (h2 : 1 - conj z * ξ ≠ 0) :
+    HasDerivAt (kerDiscGrad z) (-((z - ξ) ^ 2)⁻¹ + conj z ^ 2 * ((1 - conj z * ξ) ^ 2)⁻¹) ξ := by
+  have ha : HasDerivAt (fun x : ℂ ↦ z - x) (-1) ξ := by
+    simpa using (hasDerivAt_id ξ).const_sub z
+  have hb : HasDerivAt (fun x : ℂ ↦ 1 - conj z * x) (-conj z) ξ := by
+    simpa using ((hasDerivAt_id ξ).const_mul (conj z)).const_sub 1
+  have := ((ha.inv h1).neg).add ((hb.inv h2).const_mul (conj z))
+  convert this using 1
+  · funext x; simp [kerDiscGrad]
+  · field_simp
+
+theorem norm_kerDiscGrad_deriv_le {z ξ : ℂ} (hz : z ∈ 𝔻) (hξ : ξ ∈ 𝔻) (h1 : z - ξ ≠ 0) :
+    ‖-((z - ξ) ^ 2)⁻¹ + conj z ^ 2 * ((1 - conj z * ξ) ^ 2)⁻¹‖ ≤
+      2 * (1 - ‖z‖ ^ 2) / (‖z - ξ‖ ^ 2 * ‖1 - conj z * ξ‖) := by
+  have hD := norm_one_sub_conj_mul_pos hz hξ
+  have h2 : 1 - conj z * ξ ≠ 0 := norm_pos_iff.1 hD
+  have hn : 0 < ‖z - ξ‖ := norm_pos_iff.2 h1
+  set a : ℂ := (z - ξ)⁻¹
+  set b : ℂ := conj z * (1 - conj z * ξ)⁻¹
+  have hz1 : ‖z‖ < 1 := norm_lt_one_of_mem_disc hz
+  have hzD : ‖z - ξ‖ ≤ ‖1 - conj z * ξ‖ := by
+    have := norm_one_sub_conj_mul_sq_sub z ξ
+    have h0 : 0 ≤ (1 - ‖z‖ ^ 2) * (1 - ‖ξ‖ ^ 2) :=
+      mul_nonneg (one_sub_normSq_pos hz).le (one_sub_normSq_pos hξ).le
+    nlinarith [norm_nonneg (z - ξ), norm_nonneg (1 - conj z * ξ)]
+  have hba : ‖b‖ ≤ ‖a‖ := by
+    simp only [a, b, norm_mul, norm_inv, Complex.norm_conj]
+    rw [← div_eq_mul_inv, div_le_iff₀ hD, inv_mul_eq_div, le_div_iff₀ hn]
+    nlinarith [norm_nonneg z]
+  have hab : a - b = ((1 - ‖z‖ ^ 2 : ℝ) : ℂ) / ((z - ξ) * (1 - conj z * ξ)) := by
+    have hzz : conj z * z = (‖z‖ : ℂ) ^ 2 := by
+      rw [mul_comm, Complex.mul_conj, Complex.normSq_eq_norm_sq]; push_cast; ring
+    simp only [a, b]
+    rw [inv_eq_one_div, inv_eq_one_div, mul_one_div, div_sub_div _ _ h1 h2]
+    congr 1
+    push_cast
+    linear_combination -hzz
+  have heq : -((z - ξ) ^ 2)⁻¹ + conj z ^ 2 * ((1 - conj z * ξ) ^ 2)⁻¹ = -((a - b) * (a + b)) := by
+    rw [← inv_pow, ← inv_pow]; simp only [a, b]; ring
+  rw [heq, norm_neg, norm_mul]
+  have hab' : ‖a + b‖ ≤ 2 * ‖a‖ := (norm_add_le _ _).trans (by linarith)
+  have hna : ‖a‖ = ‖z - ξ‖⁻¹ := by simp [a]
+  have hnab : ‖a - b‖ = (1 - ‖z‖ ^ 2) / (‖z - ξ‖ * ‖1 - conj z * ξ‖) := by
+    rw [hab, norm_div, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos (one_sub_normSq_pos hz)]
+  calc ‖a - b‖ * ‖a + b‖ ≤ ‖a - b‖ * (2 * ‖a‖) := by gcongr
+    _ = 2 * (1 - ‖z‖ ^ 2) / (‖z - ξ‖ ^ 2 * ‖1 - conj z * ξ‖) := by
+        rw [hnab, hna]; field_simp
+
 /-- First-order remainder along a segment (disc far field, no convergent series needed). -/
 theorem abs_kerDisc_sub_taylorDisc_two_le {z c ζ : ℂ} (hz : z ∈ 𝔻) {Bd : ℝ}
     (hseg : ∀ ξ ∈ segment ℝ c ζ, ξ ∈ 𝔻 ∧ ξ ≠ z)
     (hB : ∀ ξ ∈ segment ℝ c ζ, 2 * (1 - ‖z‖ ^ 2) / (‖z - ξ‖ ^ 2 * ‖1 - conj z * ξ‖) ≤ Bd) :
-    |kerDisc z ζ - taylorDisc 2 z c ζ| ≤ Bd * ‖ζ - c‖ ^ 2 := sorry
+    |kerDisc z ζ - taylorDisc 2 z c ζ| ≤ Bd * ‖ζ - c‖ ^ 2 := by
+  set S := segment ℝ c ζ with hSdef
+  have hcS : c ∈ S := left_mem_segment ℝ c ζ
+  have hζS : ζ ∈ S := right_mem_segment ℝ c ζ
+  have hBd : 0 ≤ Bd := by
+    refine le_trans ?_ (hB c hcS)
+    have := one_sub_normSq_pos hz
+    positivity
+  -- (1) the gradient is `Bd`-Lipschitz along the segment
+  have hgrad : ∀ ξ ∈ S, ‖kerDiscGrad z ξ - kerDiscGrad z c‖ ≤ Bd * ‖ξ - c‖ := by
+    intro ξ hξ
+    refine Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := kerDiscGrad z)
+      (fun x hx ↦ (hasDerivAt_kerDiscGrad (sub_ne_zero.2 (hseg x hx).2.symm)
+        (one_sub_conj_mul_ne_zero_of_mem hz (hseg x hx).1)).hasDerivWithinAt)
+      (fun x hx ↦ (norm_kerDiscGrad_deriv_le hz (hseg x hx).1
+        (sub_ne_zero.2 (hseg x hx).2.symm)).trans (hB x hx))
+      (convex_segment c ζ) hcS hξ
+  -- (2) the one-variable function along the segment
+  set γ : ℝ → ℂ := fun t ↦ c + t * (ζ - c) with hγ
+  have hγS : ∀ t ∈ Icc (0 : ℝ) 1, γ t ∈ S := by
+    intro t ht
+    rw [hSdef, segment_eq_image]
+    refine ⟨t, ht, ?_⟩
+    simp only [γ, real_smul]
+    push_cast; ring
+  set K : ℝ := ((ζ - c) / (z - c) - conj z * (ζ - c) / (1 - conj z * c)).re with hK
+  set φ : ℝ → ℝ := fun t ↦ Real.log ‖(z - c) + t * (-(ζ - c))‖ -
+    Real.log ‖(1 - conj z * c) + t * (-(conj z * (ζ - c)))‖ - Real.log (pseudoHyp c z) +
+      t * K with hφ
+  have hφd : ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt φ
+      (((ζ - c) * (kerDiscGrad z (γ t) - kerDiscGrad z c)).re) (Icc 0 1) t := by
+    intro t ht
+    have hξ := hseg (γ t) (hγS t ht)
+    have ea : (z - c) + t * (-(ζ - c)) = z - γ t := by simp only [γ]; ring
+    have eb : (1 - conj z * c) + t * (-(conj z * (ζ - c))) = 1 - conj z * γ t := by
+      simp only [γ]; ring
+    have ha : (z - c) + t * (-(ζ - c)) ≠ 0 := by rw [ea]; exact sub_ne_zero.2 hξ.2.symm
+    have hb : (1 - conj z * c) + t * (-(conj z * (ζ - c))) ≠ 0 := by
+      rw [eb]; exact one_sub_conj_mul_ne_zero_of_mem hz hξ.1
+    have := (((hasDerivAt_log_norm_affine _ _ t ha).sub
+      (hasDerivAt_log_norm_affine _ _ t hb)).sub_const (Real.log (pseudoHyp c z))).add
+        ((hasDerivAt_id t).mul_const K)
+    refine (this.congr_deriv ?_).hasDerivWithinAt
+    rw [one_mul, hK, ea, eb, ← Complex.sub_re, ← Complex.add_re]
+    congr 1
+    simp only [kerDiscGrad, div_eq_mul_inv]
+    ring
+  have hφb : ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖((ζ - c) * (kerDiscGrad z (γ t) - kerDiscGrad z c)).re‖ ≤ Bd * ‖ζ - c‖ ^ 2 := by
+    intro t ht
+    rw [Real.norm_eq_abs]
+    refine (abs_re_le_norm _).trans ?_
+    rw [norm_mul]
+    have hγc : ‖γ t - c‖ ≤ ‖ζ - c‖ := by
+      simp only [γ, add_sub_cancel_left, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_nonneg ht.1]
+      nlinarith [ht.2, norm_nonneg (ζ - c)]
+    calc ‖ζ - c‖ * ‖kerDiscGrad z (γ t) - kerDiscGrad z c‖ ≤ ‖ζ - c‖ * (Bd * ‖γ t - c‖) := by
+          gcongr; exact hgrad _ (hγS t ht)
+      _ ≤ ‖ζ - c‖ * (Bd * ‖ζ - c‖) := by gcongr
+      _ = Bd * ‖ζ - c‖ ^ 2 := by ring
+  have hmvt := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le hφd hφb (convex_Icc 0 1)
+    (left_mem_Icc.2 zero_le_one) (right_mem_Icc.2 zero_le_one)
+  -- (3) identify `φ 1` and `φ 0`
+  have hcz : c ≠ z := (hseg c hcS).2
+  have hζz : ζ ≠ z := (hseg ζ hζS).2
+  have hζ𝔻 : ζ ∈ 𝔻 := (hseg ζ hζS).1
+  have hc𝔻 : c ∈ 𝔻 := (hseg c hcS).1
+  have hpc : Real.log (pseudoHyp c z) = Real.log ‖z - c‖ - Real.log ‖1 - conj z * c‖ := by
+    have e1 : ‖c - z‖ = ‖z - c‖ := norm_sub_rev _ _
+    have e2 : ‖1 - conj c * z‖ = ‖1 - conj z * c‖ := by
+      rw [← Complex.norm_conj (1 - conj c * z)]; simp [map_sub, mul_comm]
+    rw [pseudoHyp, e1, e2, Real.log_div (norm_ne_zero_iff.2 (sub_ne_zero.2 hcz.symm))
+      (norm_one_sub_conj_mul_pos hz hc𝔻).ne']
+  have hφ0 : φ 0 = 0 := by
+    simp only [φ, ofReal_zero, zero_mul, add_zero, hpc]; ring
+  have hφ1 : φ 1 = kerDisc z ζ - taylorDisc 2 z c ζ := by
+    have hk : kerDisc z ζ = Real.log ‖z - ζ‖ - Real.log ‖1 - conj z * ζ‖ := by
+      have e1 : ‖ζ - z‖ = ‖z - ζ‖ := norm_sub_rev _ _
+      have e2 : ‖1 - conj ζ * z‖ = ‖1 - conj z * ζ‖ := by
+        rw [← Complex.norm_conj (1 - conj ζ * z)]; simp [map_sub, mul_comm]
+      rw [kerDisc, pseudoHyp, e1, e2, Real.log_div (norm_ne_zero_iff.2 (sub_ne_zero.2 hζz.symm))
+        (norm_one_sub_conj_mul_pos hz hζ𝔻).ne']
+    have hI : Finset.Ico 1 2 = {1} := rfl
+    rw [hk, taylorDisc, hI, Finset.sum_singleton]
+    simp only [φ, ofReal_one, one_mul, pow_one, Nat.cast_one, div_one, hK]
+    have e3 : z - c + -(ζ - c) = z - ζ := by ring
+    have e4 : 1 - conj z * c + -(conj z * (ζ - c)) = 1 - conj z * ζ := by ring
+    rw [e3, e4]
+    ring
+  rw [hφ1, hφ0, sub_zero, sub_zero, Real.norm_eq_abs, Real.norm_eq_abs, abs_one, mul_one] at hmvt
+  exact hmvt
 
 theorem natDegree_C_mul_X_sub_C_pow_le (a c : ℂ) (k : ℕ) :
     ((Polynomial.C a * (Polynomial.X - Polynomial.C c)) ^ k).natDegree ≤ k := by
