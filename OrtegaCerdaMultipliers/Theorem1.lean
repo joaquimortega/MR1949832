@@ -71,14 +71,109 @@ theorem two_le_measure_ball_three_mul {μ : Measure ℂ} {r : ℝ} (hr : 0 < r)
 theorem isSubharmonicWeight_sub_normSq {φ' : ℂ → ℝ} {ν : Measure ℂ} {ε c : ℝ} (hc : 0 ≤ c)
     (hcε : 4 * c ≤ ε) (hφ' : IsSubharmonicWeight univ φ' (ν + ENNReal.ofReal ε • volume)) :
     IsSubharmonicWeight univ (fun z ↦ φ' z - c * ‖z‖ ^ 2)
-      (ν + ENNReal.ofReal (ε - 4 * c) • volume) := sorry
+      (ν + ENNReal.ofReal (ε - 4 * c) • volume) := by
+  have hε0 : 0 ≤ ε := by linarith
+  have hle : ν + ENNReal.ofReal (ε - 4 * c) • volume ≤ ν + ENNReal.ofReal ε • volume := by
+    intro s
+    simp only [Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    gcongr
+    linarith
+  refine ⟨hφ'.continuousOn.sub (continuousOn_const.mul (continuous_norm.pow 2).continuousOn),
+    fun K hK hKc ↦ (hle K).trans_lt (hφ'.finite_of_compact K hK hKc), by simp,
+    fun χ hχ hχc _ ↦ ?_⟩
+  have hL := Reg.laplacian_testFunction hχ
+  have hΔc : HasCompactSupport (Laplacian.laplacian χ) :=
+    hχc.mono' ((subset_tsupport _).trans hL.2)
+  have i1 := integrable_mul_of_tsupport_subset_real isOpen_univ hφ'.continuousOn hL.1 hΔc
+    (subset_univ _)
+  have i2 : Integrable (fun z : ℂ ↦ ‖z‖ ^ 2 * Laplacian.laplacian χ z) :=
+    integrable_mul_of_tsupport_subset_real (h := fun z : ℂ ↦ ‖z‖ ^ 2) isOpen_univ
+      (continuous_norm.pow 2).continuousOn hL.1 hΔc (subset_univ _)
+  have hfin : (ν + ENNReal.ofReal ε • (volume : Measure ℂ)) (tsupport χ) < ∞ :=
+    hφ'.finite_of_compact _ (subset_univ _) hχc
+  have iν : Integrable χ ν := Reg.integrable_of_tsupport hχ.continuous hχc
+    ((Measure.le_add_right le_rfl _).trans_lt hfin)
+  have iV : Integrable χ volume := Reg.integrable_of_tsupport hχ.continuous hχc
+    hχc.measure_lt_top
+  have hN : ∫ z, ‖z‖ ^ 2 * Laplacian.laplacian χ z = 4 * ∫ z, χ z := by
+    rw [integral_mul_laplacian_of_contDiffOn isOpen_univ (contDiff_norm_sq ℝ).contDiffOn
+      (hχ.of_le (by norm_cast)) hχc (subset_univ _), ← integral_const_mul]
+    congr 1
+    ext z
+    rw [laplacian_eq_four_mul_lap,
+      show (fun w : ℂ ↦ ‖w‖ ^ 2) = fun w ↦ 1 * ‖w‖ ^ 2 by ext; ring, lap_const_mul_normSq]
+    ring
+  calc ∫ z, (φ' z - c * ‖z‖ ^ 2) * Laplacian.laplacian χ z
+      = (∫ z, φ' z * Laplacian.laplacian χ z) -
+          c * ∫ z, ‖z‖ ^ 2 * Laplacian.laplacian χ z := by
+        rw [← integral_const_mul, ← integral_sub i1 (i2.const_mul c)]
+        congr 1; ext z; ring
+    _ = ((∫ z, χ z ∂ν) + ε * ∫ z, χ z) - c * (4 * ∫ z, χ z) := by
+        rw [hφ'.laplacian_eq χ hχ hχc (subset_univ _), hN,
+          integral_add_measure iν (iV.smul_measure ENNReal.ofReal_ne_top), integral_smul_measure,
+          ENNReal.toReal_ofReal hε0, smul_eq_mul]
+    _ = (∫ z, χ z ∂ν) + (ε - 4 * c) * ∫ z, χ z := by ring
+    _ = ∫ z, χ z ∂(ν + ENNReal.ofReal (ε - 4 * c) • volume) := by
+        rw [integral_add_measure iν (iV.smul_measure ENNReal.ofReal_ne_top), integral_smul_measure,
+          ENNReal.toReal_ofReal (by linarith), smul_eq_mul]
 
 theorem exists_aux_weight_plane (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight univ φ μ)
     (hd : IsLocallyDoubling μ) (hm : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 ≤ μ (ball z r)) :
     ∃ (ψ : ℂ → ℝ) (μψ : Measure ℂ) (c B : ℝ), 0 < c ∧ 0 ≤ B ∧
       IsSubharmonicWeight univ ψ μψ ∧ IsLocallyDoubling μψ ∧
       (∃ R : ℝ, 0 < R ∧ ∀ z : ℂ, 1 < μψ (ball z R)) ∧
-      ∀ z, |ψ z - (φ z - c * ‖z‖ ^ 2)| ≤ B := sorry
+      ∀ z, |ψ z - (φ z - c * ‖z‖ ^ 2)| ≤ B := by
+  obtain ⟨r, hr, hmr⟩ := hm
+  have hm3 : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, 1 < μ (ball z r) :=
+    ⟨3 * r, by positivity, fun z ↦
+      (by norm_num : (1 : ℝ≥0∞) < 2).trans_le (two_le_measure_ball_three_mul hr hmr z)⟩
+  obtain ⟨φ', μ', ε, B, hε, hφ', hd', hεμ', hφφ'⟩ := lemma6_plane_volume φ μ hφ hd hm3
+  have := hφ'.sigmaFinite isOpen_univ
+  obtain ⟨ν, hν⟩ := Measure.exists_add_eq_of_le hεμ'
+  rw [← hν] at hφ'
+  set c := ε / 8 with hc
+  have hc0 : 0 < c := by positivity
+  have hψ := isSubharmonicWeight_sub_normSq hc0.le (by linarith) hφ'
+  set μψ := ν + ENNReal.ofReal (ε - 4 * c) • volume with hμψ
+  have hup : μψ ≤ μ' := by
+    rw [← hν]
+    intro s
+    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    gcongr
+    linarith
+  have hlow : μ' ≤ (2 : ℝ≥0∞) • μψ := by
+    rw [← hν]
+    intro s
+    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul, mul_add, ← mul_assoc]
+    gcongr
+    · exact le_mul_of_one_le_left' one_le_two
+    · rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num)]
+      exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hB : 0 ≤ B := (abs_nonneg _).trans (hφφ' 0)
+  refine ⟨fun z ↦ φ' z - c * ‖z‖ ^ 2, μψ, c, B, hc0, hB, hψ, ?_, ?_, ?_⟩
+  · obtain ⟨Cd, hCd⟩ := hd'
+    refine ⟨2 * Cd, fun z s hs h2s ↦ ?_⟩
+    calc μψ (ball z (2 * s)) ≤ μ' (ball z (2 * s)) := hup _
+      _ ≤ Cd * μ' (ball z s) := hCd z s hs h2s
+      _ ≤ Cd * (2 * μψ (ball z s)) := by gcongr; exact hlow _
+      _ = ((2 * Cd : ℝ≥0) : ℝ≥0∞) * μψ (ball z s) := by
+          rw [ENNReal.coe_mul]; push_cast; ring
+  · have hpi := Real.pi_pos
+    refine ⟨Real.sqrt (4 / (ε * Real.pi)), Real.sqrt_pos.2 (by positivity), fun z ↦ ?_⟩
+    have hR2 : Real.sqrt (4 / (ε * Real.pi)) ^ 2 = 4 / (ε * Real.pi) :=
+      Real.sq_sqrt (by positivity)
+    calc (1 : ℝ≥0∞) < 2 := by norm_num
+      _ = ENNReal.ofReal (ε - 4 * c) * volume (ball z (Real.sqrt (4 / (ε * Real.pi)))) := by
+          rw [volume_ball_complex _ (Real.sqrt_nonneg _), ← ENNReal.ofReal_mul (by linarith),
+            hR2, show (ε - 4 * c) * (Real.pi * (4 / (ε * Real.pi))) = 2 by
+              rw [hc]; field_simp; ring]
+          simp
+      _ ≤ μψ (ball z (Real.sqrt (4 / (ε * Real.pi)))) := by
+          simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+          exact le_add_self
+  · intro z
+    rw [show φ' z - c * ‖z‖ ^ 2 - (φ z - c * ‖z‖ ^ 2) = φ' z - φ z by ring, abs_sub_comm]
+    exact hφφ' z
 
 theorem isClosed_goodSet_plane (Z : Set ℂ) (ρ : ℂ → ℝ) (ε : ℝ) :
     IsClosed {z : ℂ | ∀ w ∈ Z, ε * ρ w ≤ dist z w} := by
