@@ -63,6 +63,25 @@ theorem IsNodes.mono_B {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → �
   ⟨hN.card, hN.mem,
     fun i w hw ↦ (hN.near i w hw).trans (mul_le_mul_of_nonneg_right hB (hρ i)), hN.moments⟩
 
+/-! ### Finiteness and no atoms -/
+
+theorem MeasClassDisc.hypBall_lt_top {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassDisc ν Cd R₀) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : ν (hypBall z r) < ∞ :=
+  (measure_mono fun w hw ↦ closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩).trans_lt
+    (hν.finite _ (closedBall_tanh_subset_disc _) (isCompact_closedBall _ _))
+
+theorem MeasClassDisc.measure_singleton {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassDisc ν Cd R₀) {z : ℂ} (hz : z ∈ 𝔻) : ν {z} = 0 :=
+  measure_singleton_disc ⟨Cd, hν.doubling⟩ (fun _ hw r ↦ hν.hypBall_lt_top hw r) hz
+
+theorem MeasClassPlane.ball_lt_top {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassPlane ν Cd R₀) (z : ℂ) (r : ℝ) : ν (ball z r) < ∞ :=
+  (measure_mono ball_subset_closedBall).trans_lt (hν.finite _ (isCompact_closedBall z r))
+
+theorem MeasClassPlane.measure_singleton {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassPlane ν Cd R₀) (z : ℂ) : ν {z} = 0 :=
+  measure_singleton_plane ⟨Cd, hν.doubling⟩ (fun w r ↦ hν.ball_lt_top w r) z
+
 /-! ### Local finiteness of the nodes -/
 
 theorem nodeCount_ne_zero_iff {Λ : ℕ → Multiset ℂ} {w : ℂ} (hfin : {i | w ∈ Λ i}.Finite) :

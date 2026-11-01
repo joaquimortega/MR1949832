@@ -100,3 +100,37 @@ theorem exp_quarter_le : Real.exp (1 / 4) ≤ 4 / 3 := by
   linarith
 
 end OC
+
+namespace OC
+
+theorem tanh_le_self {x : ℝ} (hx : 0 ≤ x) : Real.tanh x ≤ x := by
+  set t := Real.tanh x
+  have ht0 : 0 ≤ t := tanh_nonneg_of_nonneg hx
+  have ht1 : t < 1 := Real.tanh_lt_one x
+  have habs : |t| < 1 := by rw [abs_of_nonneg ht0]; exact ht1
+  have hs := Real.hasSum_log_sub_log_of_abs_lt_one habs
+  have hle := le_hasSum hs 0 fun j _ ↦ by positivity
+  have hx' : x = Real.artanh t := (Real.artanh_tanh x).symm
+  rw [Real.artanh_eq_half_log ⟨by linarith, ht1.le⟩,
+    Real.log_div (by linarith) (by linarith)] at hx'
+  simp at hle
+  linarith
+
+/-- `tanh x ≥ c x` on `[0, S]`, with `c = min (1/5) (tanh 1 / S)`. -/
+theorem mul_le_tanh {S x : ℝ} (hS : 0 < S) (hx : 0 ≤ x) (hxS : x ≤ S) :
+    min (1 / 5) (Real.tanh 1 / S) * x ≤ Real.tanh x := by
+  by_cases h1 : x ≤ 1
+  · calc min (1 / 5) (Real.tanh 1 / S) * x ≤ 1 / 5 * x :=
+          mul_le_mul_of_nonneg_right (min_le_left _ _) hx
+      _ = x / 5 := by ring
+      _ ≤ Real.tanh x := div_five_le_tanh hx h1
+  · push Not at h1
+    calc min (1 / 5) (Real.tanh 1 / S) * x ≤ Real.tanh 1 / S * x :=
+          mul_le_mul_of_nonneg_right (min_le_right _ _) hx
+      _ ≤ Real.tanh 1 / S * S := by
+          gcongr
+          exact div_nonneg (tanh_pos' one_pos).le hS.le
+      _ = Real.tanh 1 := by field_simp
+      _ ≤ Real.tanh x := tanh_le_tanh h1.le
+
+end OC
