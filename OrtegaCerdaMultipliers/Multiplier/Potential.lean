@@ -295,6 +295,156 @@ theorem integral_setIntegral_kerDisc_mul_laplacian {ν : Measure ℂ} {E : Set �
     _ = 2 * Real.pi * ∫ ζ in E, χ ζ ∂ν := integral_const_mul _ _
 
 
+theorem continuousOn_kerDisc_left {w : ℂ} (hw : w ∈ 𝔻) :
+    ContinuousOn (fun z ↦ kerDisc z w) (𝔻 \ {w}) := by
+  refine ContinuousOn.log ((continuousOn_pseudoHyp hw).mono diff_subset) fun z hz ↦ ?_
+  rw [pseudoHyp]
+  exact (div_pos (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hz.2)))
+    (norm_one_sub_conj_mul_pos hw hz.1)).ne'
+
+theorem integrableOn_kerDisc_left {w : ℂ} (hw : w ∈ 𝔻) {K : Set ℂ} (hK : IsCompact K)
+    (hK𝔻 : K ⊆ 𝔻) : IntegrableOn (fun z ↦ kerDisc z w) K := by
+  have h1 : IntegrableOn (fun z ↦ Real.log ‖z - w‖) K :=
+    (locallyIntegrable_log_norm_sub w).integrableOn_isCompact hK
+  have h2 : ContinuousOn (fun z ↦ Real.log ‖1 - conj w * z‖) K :=
+    ContinuousOn.log (by fun_prop) fun z hz ↦ (norm_one_sub_conj_mul_pos hw (hK𝔻 hz)).ne'
+  refine (h1.sub (h2.integrableOn_compact hK)).congr_fun_ae ?_
+  have hvol : ∀ᵐ z ∂(volume : Measure ℂ), z ≠ w := by rw [ae_iff]; simp
+  filter_upwards [ae_restrict_mem hK.measurableSet, ae_restrict_of_ae hvol] with z hz hzw
+  exact (kerDisc_eq_sub (hK𝔻 hz) hw hzw).symm
+
+/-- Test-function facts packaged. -/
+theorem testFunction_facts {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ)
+    (hs : tsupport χ ⊆ 𝔻) :
+    Continuous (Laplacian.laplacian χ) ∧ IsCompact (tsupport χ) ∧
+      (∀ z, z ∉ tsupport χ → Laplacian.laplacian χ z = 0) ∧
+      ∃ r < 1, tsupport χ ⊆ ball 0 r := by
+  obtain ⟨hΔc, hΔs⟩ := laplacian_testFunction hχ
+  obtain ⟨r, hr1, hKr⟩ := exists_lt_subset_ball (isClosed_tsupport χ) hs
+  exact ⟨hΔc, hc, fun z hz ↦ image_eq_zero_of_notMem_tsupport (fun h ↦ hz (hΔs h)), r, hr1, hKr⟩
+
+/-- Integrability of `f · Δχ` for `f` integrable on `tsupport χ`. -/
+theorem integrable_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
+    (hc : HasCompactSupport χ) {f : ℂ → ℝ} (hf : IntegrableOn f (tsupport χ)) :
+    Integrable fun z ↦ f z * Laplacian.laplacian χ z := by
+  obtain ⟨hΔc, hΔs⟩ := laplacian_testFunction hχ
+  exact (hf.mul_continuousOn hΔc.continuousOn hc).integrable_of_forall_notMem_eq_zero
+    fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport (fun h ↦ hz (hΔs h))]
+
+/-- Laplacian of the node part. -/
+theorem integral_nodes_kerDisc_mul_laplacian {L : Multiset ℂ} (hL : ∀ w ∈ L, w ∈ 𝔻)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) (hs : tsupport χ ⊆ 𝔻) :
+    Integrable (fun z ↦ (L.map (kerDisc z)).sum * Laplacian.laplacian χ z) ∧
+    ∫ z, (L.map (kerDisc z)).sum * Laplacian.laplacian χ z = 2 * Real.pi * (L.map χ).sum := by
+  induction L using Multiset.induction_on with
+  | empty => simp
+  | cons a t ih =>
+    have ha : a ∈ 𝔻 := hL a (Multiset.mem_cons_self a t)
+    obtain ⟨ih1, ih2⟩ := ih fun w hw ↦ hL w (Multiset.mem_cons_of_mem hw)
+    have h1 : Integrable fun z ↦ kerDisc z a * Laplacian.laplacian χ z :=
+      integrable_mul_laplacian hχ hc (integrableOn_kerDisc_left ha hc hs)
+    have e : (fun z ↦ ((a ::ₘ t).map (kerDisc z)).sum * Laplacian.laplacian χ z) =
+        fun z ↦ kerDisc z a * Laplacian.laplacian χ z +
+          (t.map (kerDisc z)).sum * Laplacian.laplacian χ z := by
+      ext z; simp [add_mul]
+    rw [e]
+    refine ⟨h1.add ih1, ?_⟩
+    rw [integral_add h1 ih1, ih2, Multiset.map_cons, Multiset.sum_cons,
+      show ∫ z, kerDisc z a * Laplacian.laplacian χ z = 2 * Real.pi * χ a from
+        integral_log_pseudoHyp_mul_laplacian (hχ.of_le (WithTop.coe_le_coe.2 le_top)) hc hs ha]
+    ring
+
+/-- Laplacian of one cell potential. -/
+theorem integral_cellPot_kerDisc_mul_laplacian {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassDisc ν Cd R₀) {R : ℕ → Set ℂ} {Λ : ℕ → Multiset ℂ} {i : ℕ}
+    (hR : MeasurableSet (R i)) (hR𝔻 : R i ⊆ 𝔻) (hfin : ν (R i) < ∞) (hΛ : ∀ w ∈ Λ i, w ∈ 𝔻)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) (hs : tsupport χ ⊆ 𝔻) :
+    Integrable (fun z ↦ cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z) ∧
+    ∫ z, cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z =
+      2 * Real.pi * (((Λ i).map χ).sum - ∫ ζ in R i, χ ζ ∂ν) := by
+  obtain ⟨h1, h2⟩ := integral_nodes_kerDisc_mul_laplacian hΛ hχ hc hs
+  have hU : Integrable fun z ↦ (∫ ζ in R i, kerDisc z ζ ∂ν) * Laplacian.laplacian χ z :=
+    integrable_mul_laplacian hχ hc
+      (((continuousOn_setIntegral_kerDisc hν hR hR𝔻 hfin).mono hs).integrableOn_compact hc)
+  have e : (fun z ↦ cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z) =
+      fun z ↦ ((Λ i).map (kerDisc z)).sum * Laplacian.laplacian χ z -
+        (∫ ζ in R i, kerDisc z ζ ∂ν) * Laplacian.laplacian χ z := by
+    ext z; simp [cellPot, sub_mul]
+  rw [e]
+  refine ⟨h1.sub hU, ?_⟩
+  rw [integral_sub h1 hU, h2, integral_setIntegral_kerDisc_mul_laplacian hR hR𝔻 hfin hχ hc hs]
+  ring
+
+theorem finsum_nodeCount_mul {Λ : ℕ → Multiset ℂ} {G : Finset ℕ} {χ : ℂ → ℝ}
+    (hG : ∀ i, i ∉ G → ∀ w ∈ Λ i, χ w = 0) :
+    ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ = ∑ i ∈ G, ((Λ i).map χ).sum := by
+  classical
+  set Z := G.biUnion fun i ↦ (Λ i).toFinset with hZ
+  have hcnt : ∀ ζ, χ ζ ≠ 0 → (Function.support fun i ↦ (Λ i).count ζ) ⊆ G := by
+    intro ζ hχ i hi
+    by_contra hiG
+    exact hχ (hG i hiG ζ (Multiset.count_ne_zero.1 hi))
+  have hsupp : (Function.support fun ζ ↦ (nodeCount Λ ζ : ℝ) * χ ζ) ⊆ Z := by
+    intro ζ hζ
+    have hχ : χ ζ ≠ 0 := fun h ↦ hζ (by simp [h])
+    have hn : nodeCount Λ ζ ≠ 0 := fun h ↦ hζ (by simp [h])
+    rw [nodeCount, finsum_eq_sum_of_support_subset _ (hcnt ζ hχ)] at hn
+    obtain ⟨i, hi, hci⟩ := Finset.exists_ne_zero_of_sum_ne_zero hn
+    exact Finset.mem_biUnion.2 ⟨i, hi, Multiset.mem_toFinset.2 (Multiset.count_ne_zero.1 hci)⟩
+  rw [finsum_eq_sum_of_support_subset _ hsupp]
+  have hn : ∀ ζ ∈ Z, (nodeCount Λ ζ : ℝ) * χ ζ = ∑ i ∈ G, ((Λ i).count ζ : ℝ) * χ ζ := by
+    intro ζ _
+    by_cases hχ : χ ζ = 0
+    · simp [hχ]
+    rw [nodeCount, finsum_eq_sum_of_support_subset _ (hcnt ζ hχ), ← Finset.sum_mul]
+    push_cast; rfl
+  rw [Finset.sum_congr rfl hn, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hsub : (Λ i).toFinset ⊆ Z := fun ζ hζ ↦ Finset.mem_biUnion.2 ⟨i, hi, hζ⟩
+  rw [Finset.sum_multiset_map_count (Λ i) χ, Finset.sum_subset hsub (fun ζ _ hζ ↦ by
+    rw [Multiset.mem_toFinset, ← Multiset.count_eq_zero] at hζ; simp [hζ])]
+  exact Finset.sum_congr rfl fun ζ _ ↦ by rw [nsmul_eq_mul]
+
+theorem tsum_eq_sum_add_tsum_ite {f : ℕ → ℝ} (hf : Summable f) (G : Finset ℕ) :
+    ∑' i, f i = ∑ i ∈ G, f i + ∑' i, (if i ∈ G then 0 else f i) := by
+  have hg : Summable fun i ↦ if i ∈ G then f i else 0 :=
+    summable_of_ne_finset_zero (s := G) fun i hi ↦ by simp [hi]
+  have hh : Summable fun i ↦ if i ∈ G then 0 else f i := by
+    have := hf.sub hg
+    refine this.congr fun i ↦ ?_
+    by_cases hi : i ∈ G <;> simp [hi]
+  have e : ∑' i, f i = ∑' i, ((if i ∈ G then f i else 0) + (if i ∈ G then 0 else f i)) := by
+    congr 1; ext i; by_cases hi : i ∈ G <;> simp [hi]
+  rw [e, hg.tsum_add hh, tsum_eq_sum (s := G) (fun i hi ↦ by simp [hi])]
+  congr 1
+  exact Finset.sum_congr rfl fun i hi ↦ by simp [hi]
+
+theorem integrableOn_nodes_kerDisc {L : Multiset ℂ} (hL : ∀ w ∈ L, w ∈ 𝔻) {K : Set ℂ}
+    (hK : IsCompact K) (hK𝔻 : K ⊆ 𝔻) : IntegrableOn (fun z ↦ (L.map (kerDisc z)).sum) K := by
+  induction L using Multiset.induction_on with
+  | empty => simp
+  | cons a t ih =>
+    have := (integrableOn_kerDisc_left (hL a (Multiset.mem_cons_self a t)) hK hK𝔻).add
+      (ih fun w hw ↦ hL w (Multiset.mem_cons_of_mem hw))
+    refine this.congr_fun (fun z _ ↦ ?_) hK.measurableSet
+    simp
+
+theorem continuousAt_nodes_kerDisc {L : Multiset ℂ} (hL : ∀ w ∈ L, w ∈ 𝔻) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ 𝔻) (hz₀L : z₀ ∉ L) : ContinuousAt (fun z ↦ (L.map (kerDisc z)).sum) z₀ := by
+  induction L using Multiset.induction_on with
+  | empty => simp [continuousAt_const]
+  | cons a t ih =>
+    have ha := hL a (Multiset.mem_cons_self a t)
+    have hne : z₀ ≠ a := fun h ↦ hz₀L (h ▸ Multiset.mem_cons_self a t)
+    have h1 : ContinuousAt (fun z ↦ kerDisc z a) z₀ :=
+      (continuousOn_kerDisc_left ha).continuousAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds
+        ⟨hz₀, hne⟩)
+    have h2 := ih (fun w hw ↦ hL w (Multiset.mem_cons_of_mem hw))
+      (fun h ↦ hz₀L (Multiset.mem_cons_of_mem h))
+    have := h1.add h2
+    simp only [Multiset.map_cons, Multiset.sum_cons]
+    exact this
+
 /-- `S` is a weak log-modulus datum (M07 `IsWeakLogModulus` fields), plane. -/
 theorem multPot_props_plane {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ}
     {η A B : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
