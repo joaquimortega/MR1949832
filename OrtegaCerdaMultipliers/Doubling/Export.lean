@@ -21,14 +21,44 @@ namespace OC
 
 /-! ### Finiteness from `IsSubharmonicWeight` -/
 
+theorem dist_ofReal_ofReal (x y : ℝ) : dist (x : ℂ) (y : ℂ) = |x - y| := by
+  rw [Complex.isometry_ofReal.dist_eq, Real.dist_eq]
+
+/-- Hyperbolic balls lie in a Euclidean closed disc of radius `< 1` (hence in a compact subset
+of `𝔻`). -/
+theorem hypBall_subset_closedBall_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
+    hypBall z r ⊆ closedBall 0 (Real.tanh (Real.artanh ‖z‖ + r)) := by
+  intro w hw
+  have hw𝔻 : w ∈ 𝔻 := hw.1
+  have h0 : (0 : ℂ) ∈ 𝔻 := mem_ball_self one_pos
+  have htri := hypDist_triangle h0 hz hw𝔻
+  rw [hypDist_zero_left, hypDist_zero_left] at htri
+  have hlt : Real.artanh ‖w‖ < Real.artanh (Real.tanh (Real.artanh ‖z‖ + r)) := by
+    rw [Real.artanh_tanh]; linarith [hw.2]
+  have hwI : ‖w‖ ∈ Ioo (-1 : ℝ) 1 :=
+    ⟨by linarith [norm_nonneg w], norm_lt_one_of_mem_disc hw𝔻⟩
+  rw [mem_closedBall_zero_iff]
+  exact ((Real.artanh_lt_artanh_iff hwI
+    ⟨Real.neg_one_lt_tanh _, Real.tanh_lt_one _⟩).1 hlt).le
+
 theorem IsSubharmonicWeight.measure_ball_lt_top {φ : ℂ → ℝ} {μ : Measure ℂ}
-    (h : IsSubharmonicWeight univ φ μ) (z : ℂ) (r : ℝ) : μ (ball z r) < ∞ := sorry
+    (h : IsSubharmonicWeight univ φ μ) (z : ℂ) (r : ℝ) : μ (ball z r) < ∞ :=
+  (measure_mono ball_subset_closedBall).trans_lt
+    (h.finite_of_compact _ (subset_univ _) (isCompact_closedBall z r))
 
 theorem IsSubharmonicWeight.measure_hypBall_lt_top {φ : ℂ → ℝ} {μ : Measure ℂ}
-    (h : IsSubharmonicWeight 𝔻 φ μ) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : μ (hypBall z r) < ∞ := sorry
+    (h : IsSubharmonicWeight 𝔻 φ μ) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : μ (hypBall z r) < ∞ := (measure_mono (hypBall_subset_closedBall_tanh hz r)).trans_lt
+    (h.finite_of_compact _ (closedBall_subset_ball (Real.tanh_lt_one _))
+      (isCompact_closedBall _ _))
 
 theorem IsSubharmonicWeight.measure_lineInterval_lt_top {φ : ℂ → ℝ} {μ : Measure ℂ}
-    (h : IsSubharmonicWeight univ φ μ) (x r : ℝ) : μ (lineInterval x r) < ∞ := sorry
+    (h : IsSubharmonicWeight univ φ μ) (x r : ℝ) : μ (lineInterval x r) < ∞ := by
+  refine (measure_mono ?_).trans_lt
+    (h.finite_of_compact _ (subset_univ _) (isCompact_closedBall (x : ℂ) r))
+  rintro _ ⟨t, ht, rfl⟩
+  rw [mem_closedBall, dist_ofReal_ofReal]
+  rw [Set.mem_Ioo] at ht
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 /-! ### Plane -/
 
@@ -40,75 +70,75 @@ theorem lemma1_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
       ∀ (z z' : ℂ) (r r' : ℝ), 0 < r' → r ≤ R₁ → dist z z' + r' ≤ r →
         0 < μ (ball z' r') → μ (ball z r) < ∞ →
         ((μ (ball z r)).toReal / (μ (ball z' r')).toReal) ^ γ ≤ A * (r / r') ∧
-        r / r' ≤ A * ((μ (ball z r)).toReal / (μ (ball z' r')).toReal) ^ (1 / γ) := sorry
+        r / r' ≤ A * ((μ (ball z r)).toReal / (μ (ball z' r')).toReal) ^ (1 / γ) := IsLocDoublingM.lemma1 (μ := μ) hd R₁
 
 theorem doubling_upTo_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ z : ℂ, ∀ r : ℝ, 0 < r → r ≤ R₁ →
-      μ (ball z (2 * r)) ≤ C * μ (ball z r) := sorry
+      μ (ball z (2 * r)) ≤ C * μ (ball z r) := IsLocDoublingM.exists_const_of_le (μ := μ) hd R₁
 
 theorem measure_ball_le_rpow_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ (z z' : ℂ) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ →
-      dist z z' ≤ r → μ (ball z r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (ball z' r') := sorry
+      dist z z' ≤ r → μ (ball z r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (ball z' r') := IsLocDoublingM.measure_ball_le_rpow (μ := μ) hd R₁
 
 theorem rpow_le_measure_ball_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ c δ : ℝ, 0 < c ∧ 0 < δ ∧ ∀ (z z' : ℂ) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ →
-      dist z z' ≤ r → ENNReal.ofReal (c * (r / r') ^ δ) * μ (ball z' r') ≤ μ (ball z r) := sorry
+      dist z z' ≤ r → ENNReal.ofReal (c * (r / r') ^ δ) * μ (ball z' r') ≤ μ (ball z r) := IsLocDoublingM.rpow_le_measure_ball (μ := μ) hd R₁
 
 theorem measure_ball_le_of_dist_le_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ z w : ℂ, ∀ r : ℝ, 0 < r → r ≤ R₁ → dist z w ≤ r →
-      μ (ball w r) ≤ C * μ (ball z r) := sorry
+      μ (ball w r) ≤ C * μ (ball z r) := IsLocDoublingM.measure_ball_le_of_dist_le (μ := μ) hd R₁
 
 /-- **Lemma 2** (plane): porous sets, in particular lines, segments and circles, are null. -/
 theorem measure_eq_zero_of_isPorous_plane (hd : IsLocallyDoubling μ)
-    (hfin : ∀ z r, μ (ball z r) < ∞) {E : Set ℂ} (hE : IsPorous E) : μ E = 0 := sorry
+    (hfin : ∀ z r, μ (ball z r) < ∞) {E : Set ℂ} (hE : IsPorous E) : μ E = 0 := IsLocDoublingM.measure_eq_zero_of_isPorous (μ := μ) hd hfin hE
 
 theorem lemma2_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞) (a b : ℂ) :
-    μ (segment ℝ a b) = 0 := sorry
+    μ (segment ℝ a b) = 0 := measure_eq_zero_of_isPorous_plane hd hfin (isPorous_segment a b)
 
 theorem measure_sphere_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
-    (z : ℂ) (r : ℝ) : μ (sphere z r) = 0 := sorry
+    (z : ℂ) (r : ℝ) : μ (sphere z r) = 0 := IsLocDoublingM.measure_sphere (μ := μ) hd hfin z r
 
 theorem continuous_measure_ball_plane (hd : IsLocallyDoubling μ)
-    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : Continuous fun r : ℝ ↦ μ (ball z r) := sorry
+    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : Continuous fun r : ℝ ↦ μ (ball z r) := IsLocDoublingM.continuous_measure_ball (μ := μ) hd hfin z
 
 theorem massRadius_pos (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
-    (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) : 0 < massRadius μ z := sorry
+    (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) : 0 < massRadius μ z := IsLocDoublingM.massRadiusM_pos (μ := μ) hd hfin (let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩)
 
 theorem massRadius_le {R : ℝ} (hR : 0 < R) (hm : ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) :
-    massRadius μ z ≤ R := sorry
+    massRadius μ z ≤ R := massRadiusM_le hR (hm z)
 
 theorem measure_ball_massRadius (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (z : ℂ) :
-    μ (ball z (massRadius μ z)) = 1 := sorry
+    μ (ball z (massRadius μ z)) = 1 := IsLocDoublingM.measure_ball_massRadiusM (μ := μ) hd hfin (let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩)
 
 theorem lipschitzWith_massRadius (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) :
-    LipschitzWith 1 (massRadius μ) := sorry
+    LipschitzWith 1 (massRadius μ) := lipschitzWith_massRadiusM (μ := μ) fun z ↦ let ⟨R, hR, h⟩ := hm; ⟨R, hR, h z⟩
 
 theorem measure_ball_massRadius_bounds_plane (hd : IsLocallyDoubling μ)
     (hfin : ∀ z r, μ (ball z r) < ∞) (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (R₁ : ℝ) :
     ∃ c C δ s : ℝ, 0 < c ∧ 0 < C ∧ 0 < δ ∧ 0 < s ∧ ∀ (z : ℂ) (r : ℝ),
       massRadius μ z ≤ r → r ≤ R₁ →
         ENNReal.ofReal (c * (r / massRadius μ z) ^ δ) ≤ μ (ball z r) ∧
-        μ (ball z r) ≤ ENNReal.ofReal (C * (r / massRadius μ z) ^ s) := sorry
+        μ (ball z r) ≤ ENNReal.ofReal (C * (r / massRadius μ z) ^ s) := IsLocDoublingM.measure_ball_massRadiusM_bounds (μ := μ) hd hfin hm R₁
 
 theorem claim1_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ z w : ℂ, dist z w ≤ K * max (massRadius μ z) (massRadius μ w) →
-      massRadius μ z ≤ C * massRadius μ w := sorry
+      massRadius μ z ≤ C * massRadius μ w := IsLocDoublingM.claim1 (μ := μ) hd hfin hm K
 
 theorem lemma3_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) :
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0, ∀ w : ℂ,
       ∫⁻ z in ball w R₁,
         ENNReal.ofReal ((massRadius μ z / max (dist z w) (δ * massRadius μ w)) ^ m) ∂μ ≤ C :=
-  sorry
+  IsLocDoublingM.lemma3 (μ := μ) hd hfin hm
 
 theorem christ_lemma23_plane (hd : IsLocallyDoubling μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ (z : ℂ) (R : ℝ), 0 < R → R ≤ R₁ →
-      ∫⁻ ζ in ball z R, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂μ ≤ C * μ (ball z R) := sorry
+      ∫⁻ ζ in ball z R, ENNReal.ofReal (Real.log (R / dist z ζ)) ∂μ ≤ C * μ (ball z R) := IsLocDoublingM.christ_lemma23 (μ := μ) hd R₁
 
 theorem exists_radius_lt_measure_ball_plane (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R))
-    (p : ℝ≥0) : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, (p : ℝ≥0∞) < μ (ball z r) := sorry
+    (p : ℝ≥0) : ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, (p : ℝ≥0∞) < μ (ball z r) := exists_radius_lt_measure_ball hm p
 
 end Plane
 
@@ -294,7 +324,7 @@ theorem decay_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ) (hfin : ∀ z
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ z, 1 ≤ μ (ball z R)) (M₀ : ℝ) :
     ∃ C θ : ℝ, 0 < C ∧ 0 < θ ∧ θ < 1 ∧ ∀ (z ζ : ℂ) (n : ℕ),
       2 ^ n * massRadius μ z ≤ dist z ζ → dist z ζ ≤ M₀ →
-        massRadius μ ζ / dist z ζ ≤ C * θ ^ n := sorry
+        massRadius μ ζ / dist z ζ ≤ C * θ ^ n := IsLocDoublingM.decay (μ := μ) hd hfin hm M₀
 
 theorem decay_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞)
@@ -327,7 +357,7 @@ theorem encard_le_of_disjoint_disc (a b D : ℝ) (ha : 0 < a) :
 theorem encard_le_of_disjoint_plane (a b D : ℝ) (ha : 0 < a) :
     ∃ M : ℕ, ∀ {ι : Type*} (E : ι → Set ℂ) (c : ι → ℂ) (z : ℂ),
       Pairwise (Function.onFun Disjoint E) → (∀ i, ball (c i) a ⊆ E i) →
-      (∀ i, E i ⊆ ball (c i) D) → {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := sorry
+      (∀ i, E i ⊆ ball (c i) D) → {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := BallGeometry.encard_le_of_disjoint a b D ha
 
 theorem lineInterval_eq (x r : ℝ) :
     lineInterval x r = ball (x : ℂ) r ∩ range fun t : ℝ ↦ (t : ℂ) := sorry
@@ -336,7 +366,7 @@ theorem lineInterval_eq (x r : ℝ) :
 
 /-- No atoms, plane (M04's (A4)). -/
 theorem measure_singleton_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
-    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : μ {z} = 0 := sorry
+    (hfin : ∀ z r, μ (ball z r) < ∞) (z : ℂ) : μ {z} = 0 := IsLocDoublingM.measure_singleton (μ := μ) hd hfin z
 
 /-- No atoms, disc (M04's (A4')). -/
 theorem measure_singleton_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
