@@ -733,13 +733,119 @@ theorem exists_hypBall_measure_gt {μ : Measure ℂ} {r m₀ : ℝ} (hr : 0 < r)
     ∃ R : ℝ, 0 < R ∧ ∀ z ∈ 𝔻, ENNReal.ofReal M < μ (hypBall z R) :=
   ⟨(2 * ⌈M / m₀⌉₊ + 1) * r, by positivity, fun _ hz ↦ ofReal_lt_measure_hypBall hr hm₀ h M hz⟩
 
+section LogSmall
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+
+/-- Uniform smallness of `∫_{B(z,δ)} (A + log(1/d(z,ζ))) dμ` over a compact set, abstract form
+(Christ's lemma at scale `1` plus the lower Lemma 1 bound `μ(B(z,δ)) ≲ δ^a μ(B(z,1))`). -/
+theorem IsLocDoublingM.logSmall_aux [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM μ)
+    (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞) {K : Set X} (hK : IsCompact K) {A η : ℝ}
+    (hA : 0 ≤ A) (hη : 0 < η) :
+    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
+      ∫⁻ ζ in ball z δ, ENNReal.ofReal (A + Real.log (1 / dist z ζ)) ∂μ ≤ ENNReal.ofReal η := by
+  rcases K.eq_empty_or_nonempty with hKe | ⟨x₀, hx₀⟩
+  · exact ⟨1, one_pos, le_rfl, fun z hz ↦ by simp [hKe] at hz⟩
+  obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_closedBall x₀).1 hK.isBounded
+  set M := (μ (ball x₀ (R + 2))).toReal with hM
+  have hM0 : 0 ≤ M := ENNReal.toReal_nonneg
+  have hball : ∀ z ∈ K, μ (ball z 1) ≤ ENNReal.ofReal M := fun z hz ↦ by
+    rw [hM, ENNReal.ofReal_toReal (hfin x₀ (R + 2)).ne]
+    apply measure_mono
+    intro w hw
+    rw [mem_ball] at hw ⊢
+    have := hR hz
+    rw [mem_closedBall] at this
+    linarith [dist_triangle w z x₀]
+  obtain ⟨Cc, hCc⟩ := hd.christ_lemma23 1
+  obtain ⟨c, a, hc, ha, hlow⟩ := hd.rpow_le_measure_ball 1
+  have hlim : Filter.Tendsto (fun δ : ℝ ↦ (A + Real.log (1 / δ) + Cc) * δ ^ a)
+      (nhdsWithin 0 (Ioi 0)) (nhds 0) := by
+    have h1 : Filter.Tendsto (fun δ : ℝ ↦ δ ^ a) (nhdsWithin 0 (Ioi 0)) (nhds 0) := by
+      have := (Real.continuousAt_rpow_const 0 a (Or.inr ha.le)).tendsto
+      rw [Real.zero_rpow ha.ne'] at this
+      exact this.mono_left nhdsWithin_le_nhds
+    have h2 := tendsto_log_mul_rpow_nhdsGT_zero ha
+    have h3 := (h1.const_mul (A + Cc)).sub h2
+    rw [mul_zero, sub_zero] at h3
+    refine h3.congr fun δ ↦ ?_
+    rw [one_div, Real.log_inv]
+    ring
+  set η' := η * c / (M + 1) with hη'
+  have hη'0 : 0 < η' := by positivity
+  obtain ⟨δ, hδ1, hδ2⟩ :=
+    ((hlim.eventually (gt_mem_nhds hη'0)).and (Ioo_mem_nhdsGT one_pos)).exists
+  have hδ0 : 0 < δ := hδ2.1
+  have hδle : δ ≤ 1 := hδ2.2.le
+  refine ⟨δ, hδ0, hδle, fun z hz ↦ ?_⟩
+  have hlogδ : 0 ≤ Real.log (1 / δ) := Real.log_nonneg (one_le_one_div hδ0 hδle)
+  set P := A + Real.log (1 / δ) + Cc with hP
+  have hP0 : 0 ≤ P := by positivity
+  -- pointwise splitting of the integrand
+  have hpt : ∀ ζ ∈ ball z δ, ENNReal.ofReal (A + Real.log (1 / dist z ζ)) ≤
+      ENNReal.ofReal (A + Real.log (1 / δ)) + ENNReal.ofReal (Real.log (δ / dist z ζ)) := by
+    intro ζ hζ
+    rw [mem_ball, dist_comm] at hζ
+    rcases (dist_nonneg (x := z) (y := ζ)).eq_or_lt with hd0 | hd0
+    · rw [← hd0, div_zero, Real.log_zero, add_zero]
+      exact le_add_right (ENNReal.ofReal_le_ofReal (by linarith))
+    · have hsplit : Real.log (1 / dist z ζ) = Real.log (1 / δ) + Real.log (δ / dist z ζ) := by
+        rw [← Real.log_mul (by positivity) (by positivity)]
+        congr 1
+        field_simp
+      have hl2 : 0 ≤ Real.log (δ / dist z ζ) :=
+        Real.log_nonneg ((one_le_div hd0).2 hζ.le)
+      rw [hsplit, ← add_assoc, ENNReal.ofReal_add (by linarith) hl2]
+  -- mass of the small ball
+  have hμB : μ (ball z δ) ≤ ENNReal.ofReal (δ ^ a / c) * ENNReal.ofReal M := by
+    have h1 := hlow z z 1 δ hδ0 hδle le_rfl (by rw [dist_self]; norm_num)
+    have hone : ENNReal.ofReal (δ ^ a / c) * ENNReal.ofReal (c * (1 / δ) ^ a) = 1 := by
+      rw [← ENNReal.ofReal_mul (by positivity)]
+      have : δ ^ a / c * (c * (1 / δ) ^ a) = (δ * (1 / δ)) ^ a := by
+        rw [Real.mul_rpow hδ0.le (by positivity)]
+        field_simp
+      rw [this, mul_one_div_cancel hδ0.ne', Real.one_rpow, ENNReal.ofReal_one]
+    calc μ (ball z δ) = ENNReal.ofReal (δ ^ a / c) *
+          (ENNReal.ofReal (c * (1 / δ) ^ a) * μ (ball z δ)) := by
+          rw [← mul_assoc, hone, one_mul]
+      _ ≤ ENNReal.ofReal (δ ^ a / c) * ENNReal.ofReal M := by
+          gcongr
+          exact h1.trans (hball z hz)
+  calc ∫⁻ ζ in ball z δ, ENNReal.ofReal (A + Real.log (1 / dist z ζ)) ∂μ
+      ≤ ∫⁻ ζ in ball z δ, (ENNReal.ofReal (A + Real.log (1 / δ)) +
+          ENNReal.ofReal (Real.log (δ / dist z ζ))) ∂μ := setLIntegral_mono' measurableSet_ball hpt
+    _ = ENNReal.ofReal (A + Real.log (1 / δ)) * μ (ball z δ) +
+          ∫⁻ ζ in ball z δ, ENNReal.ofReal (Real.log (δ / dist z ζ)) ∂μ := by
+        rw [lintegral_add_left measurable_const, setLIntegral_const]
+    _ ≤ ENNReal.ofReal (A + Real.log (1 / δ)) * μ (ball z δ) + Cc * μ (ball z δ) := by
+        gcongr; exact hCc z δ hδ0 hδle
+    _ = ENNReal.ofReal P * μ (ball z δ) := by
+        rw [← add_mul, hP, ENNReal.ofReal_add (by linarith) (NNReal.coe_nonneg Cc),
+          ENNReal.ofReal_coe_nnreal]
+    _ ≤ ENNReal.ofReal P * (ENNReal.ofReal (δ ^ a / c) * ENNReal.ofReal M) := by gcongr
+    _ = ENNReal.ofReal (P * δ ^ a / c * M) := by
+        rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hP0]; ring_nf
+    _ ≤ ENNReal.ofReal η := by
+        apply ENNReal.ofReal_le_ofReal
+        have h1 : P * δ ^ a < η' := hδ1
+        calc P * δ ^ a / c * M ≤ η' / c * M := by gcongr
+          _ = η * (M / (M + 1)) := by rw [hη']; field_simp
+          _ ≤ η * 1 := by gcongr; rw [div_le_one (by linarith)]; linarith
+          _ = η := mul_one η
+
+end LogSmall
+
 /-- Uniform smallness of the logarithmic integral near a compact set (plane).  Moved here from
 M04 (`Regularization.lean`), so that M08 can use it without depending on M04. -/
 theorem logSmall_plane {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
     (hfin : ∀ K : Set ℂ, IsCompact K → μ K < ∞) {K : Set ℂ} (hK : IsCompact K) {η : ℝ}
     (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
       ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η :=
-  sorry
+  by
+  have hfin' : ∀ (z : ℂ) (r : ℝ), μ (ball z r) < ∞ := fun z r ↦
+    (measure_mono ball_subset_closedBall).trans_lt (hfin _ (isCompact_closedBall z r))
+  obtain ⟨δ, hδ0, hδ1, h⟩ := IsLocDoublingM.logSmall_aux (μ := μ) hd hfin' hK zero_le_one hη
+  exact ⟨δ, hδ0, hδ1, fun z hz ↦ by simpa only [dist_eq_norm] using h z hz⟩
 
 /-- Uniform smallness of the logarithmic integral near a compact subset of `𝔻` (disc).  Moved
 here from M04. -/
@@ -747,6 +853,92 @@ theorem logSmall_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
     (hfin : ∀ K ⊆ 𝔻, IsCompact K → μ K < ∞) {K : Set ℂ} (hK𝔻 : K ⊆ 𝔻) (hK : IsCompact K)
     {η : ℝ} (hη : 0 < η) : ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
       ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ ≤ ENNReal.ofReal η :=
-  sorry
+  by
+  obtain ⟨t, ht0, ht1, hKt⟩ : ∃ t : ℝ, 0 ≤ t ∧ t < 1 ∧ ∀ z ∈ K, ‖z‖ ≤ t := by
+    rcases K.eq_empty_or_nonempty with hKe | hne
+    · exact ⟨0, le_rfl, one_pos, fun z hz ↦ by simp [hKe] at hz⟩
+    obtain ⟨z₀, hz₀, hmax⟩ := hK.exists_isMaxOn hne continuous_norm.continuousOn
+    exact ⟨‖z₀‖, norm_nonneg _, norm_lt_one_of_mem_disc (hK𝔻 hz₀), fun z hz ↦ hmax hz⟩
+  have hfinD : ∀ z ∈ 𝔻, ∀ r, μ (hypBall z r) < ∞ := fun z hz r ↦
+    (measure_mono (hypBall_subset_closedBall_tanh hz r)).trans_lt
+      (hfin _ (closedBall_subset_ball (Real.tanh_lt_one _)) (isCompact_closedBall _ _))
+  have h1t : 0 < 1 - t := by linarith
+  have hB1 : 1 ≤ 10 / (1 - t) := by rw [le_div_iff₀ h1t]; linarith
+  have hlogB : 0 ≤ Real.log (10 / (1 - t)) := Real.log_nonneg hB1
+  have hK' : IsCompact (HDisc.val ⁻¹' K) :=
+    (Topology.IsInducing.subtypeVal (t := 𝔻)).isCompact_preimage' hK
+      (by rw [Subtype.range_coe]; exact hK𝔻)
+  obtain ⟨r, hr0, hr1, hint⟩ := IsLocDoublingM.logSmall_aux (isLocDoublingM_discPull hd)
+    (discPull_hfin hfinD) hK' (A := 1 + Real.log (10 / (1 - t))) (by linarith) hη
+  refine ⟨r * (1 - t) / 10, by positivity, ?_, fun z hz ↦ ?_⟩
+  · rw [div_le_one (by norm_num)]
+    nlinarith
+  have hz𝔻 := hK𝔻 hz
+  have hzt := hKt z hz
+  have hsub : ball z (r * (1 - t) / 10) ⊆ hypBall z r :=
+    (ball_subset_ball (by gcongr)).trans (ball_subset_hypBall hz𝔻 hr0 hr1)
+  have hpt : ∀ ζ ∈ ball z (r * (1 - t) / 10),
+      ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ≤
+        ENNReal.ofReal (1 + Real.log (10 / (1 - t)) + Real.log (1 / hypDist z ζ)) := by
+    intro ζ hζ
+    have hζH := hsub hζ
+    have hζ𝔻 : ζ ∈ 𝔻 := hζH.1
+    apply ENNReal.ofReal_le_ofReal
+    by_cases hζz : ζ = z
+    · subst hζz
+      rw [sub_self, norm_zero, hypDist_self, div_zero, Real.log_zero]
+      linarith
+    have hβ0 : 0 < hypDist z ζ := lt_of_le_of_ne (hypDist_nonneg z ζ)
+      (fun h ↦ hζz ((hypDist_eq_zero_iff hz𝔻 hζ𝔻).1 h.symm).symm)
+    have hβ1 : hypDist z ζ ≤ 1 := (hζH.2.trans_le hr1).le
+    -- `‖z - ζ‖ ≥ β (1 - t) / 10`
+    have hD := norm_one_sub_conj_mul_pos hz𝔻 hζ𝔻
+    have hnorm : ‖z - ζ‖ = pseudoHyp z ζ * ‖1 - conj z * ζ‖ := by
+      rw [pseudoHyp, div_mul_cancel₀ _ hD.ne']
+    have htanh : hypDist z ζ / 5 ≤ pseudoHyp z ζ := by
+      rw [← tanh_hypDist hz𝔻 hζ𝔻]; exact div_five_le_tanh hβ0.le hβ1
+    have hζt : ‖ζ‖ ≤ (1 + t) / 2 := by
+      have h1 : ‖ζ - z‖ < r * (1 - t) / 10 := by rw [← dist_eq_norm]; exact hζ
+      have h2 : ‖ζ‖ ≤ ‖z‖ + ‖ζ - z‖ := by
+        have := norm_add_le z (ζ - z); rwa [add_sub_cancel] at this
+      nlinarith
+    have hden : (1 - t) / 2 ≤ ‖1 - conj z * ζ‖ := by
+      have := one_sub_mul_le_norm_one_sub_conj_mul z ζ
+      have hz1 : ‖z‖ ≤ 1 := hzt.trans ht1.le
+      nlinarith [norm_nonneg ζ, norm_nonneg z]
+    have hlow : hypDist z ζ / (10 / (1 - t)) ≤ ‖z - ζ‖ := by
+      rw [hnorm]
+      calc hypDist z ζ / (10 / (1 - t)) = hypDist z ζ / 5 * ((1 - t) / 2) := by
+            field_simp; ring
+        _ ≤ pseudoHyp z ζ * ‖1 - conj z * ζ‖ :=
+            mul_le_mul htanh hden (by linarith) (pseudoHyp_nonneg z ζ)
+    have hpos : 0 < ‖z - ζ‖ := lt_of_lt_of_le (by positivity) hlow
+    have hlog : Real.log (1 / ‖z - ζ‖) ≤ Real.log (10 / (1 - t) * (1 / hypDist z ζ)) := by
+      apply Real.log_le_log (by positivity)
+      rw [div_le_iff₀ hpos]
+      rw [div_le_iff₀ (by positivity)] at hlow
+      calc 1 = 10 / (1 - t) * (1 / hypDist z ζ) * (hypDist z ζ / (10 / (1 - t))) := by
+            field_simp
+        _ ≤ 10 / (1 - t) * (1 / hypDist z ζ) * ‖z - ζ‖ := by
+            gcongr
+            rw [div_le_iff₀ (by positivity)]
+            linarith
+    rw [Real.log_mul (by positivity) (by positivity)] at hlog
+    linarith
+  calc ∫⁻ ζ in ball z (r * (1 - t) / 10), ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂μ
+      ≤ ∫⁻ ζ in ball z (r * (1 - t) / 10),
+          ENNReal.ofReal (1 + Real.log (10 / (1 - t)) + Real.log (1 / hypDist z ζ)) ∂μ :=
+        setLIntegral_mono' measurableSet_ball hpt
+    _ ≤ ∫⁻ ζ in hypBall z r,
+          ENNReal.ofReal (1 + Real.log (10 / (1 - t)) + Real.log (1 / hypDist z ζ)) ∂μ :=
+        lintegral_mono_set hsub
+    _ = ∫⁻ b in ball (HDisc.mk z hz𝔻) r,
+          ENNReal.ofReal (1 + Real.log (10 / (1 - t)) + Real.log (1 / hypDist z b.val))
+            ∂(discPull μ) := by
+        rw [hypBall_eq_image_ball hz𝔻, ← lintegral_discPull]
+    _ ≤ ENNReal.ofReal η := by
+        have := hint (HDisc.mk z hz𝔻) hz
+        convert this using 4 with b
+        rw [HDisc.dist_eq, HDisc.val_mk]
 
 end OC
