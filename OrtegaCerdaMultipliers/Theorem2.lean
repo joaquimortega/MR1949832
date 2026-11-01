@@ -5,7 +5,7 @@ import OrtegaCerdaMultipliers.ModelKernels
 /-!
 # M11 (Theorem2) — Theorem 2 (disc): weighted `L^p` and sup estimates; the bridge to BOC
 
-See `blueprint/M11_Theorem2.md`.  Scaffold: statements, proofs `sorry`; definitions are real.
+See `blueprint/M11_Theorem2.md`.  All proofs complete (modulo upstream lemmas).
 `theorem2`, `theorem2_uniform`, `theorem2_printed` are verbatim from
 `comparator/statements.lean`.  `theorem2_uniform` is proved from the uniform kernel
 `exists_disc_solution_kernel_quant` and M10's `disc_kernel_operator`; `theorem2` is proved from
@@ -200,7 +200,8 @@ theorem isLocallyDoublingDiscWith_hypArea : IsLocallyDoublingDiscWith hypArea 16
         rw [ENNReal.ofReal_mul (by norm_num)]; simp
 
 
-theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (_hr1 : r ≤ 1) :
+set_option linter.unusedVariables false in
+theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (hr1 : r ≤ 1) :
     ENNReal.ofReal (Real.pi * r ^ 2 / 900) ≤ hypArea (hypBall z r) := by
   rw [hypArea_hypBall hz hr0.le]
   apply ENNReal.ofReal_le_ofReal
@@ -566,7 +567,16 @@ theorem theorem2 (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeigh
 
 theorem IsSubharmonicWeight.div_const {Ω : Set ℂ} {φ : ℂ → ℝ} {μ : Measure ℂ}
     (hφ : IsSubharmonicWeight Ω φ μ) {p : ℝ} (hp : 0 < p) :
-    IsSubharmonicWeight Ω (fun z ↦ φ z / p) (ENNReal.ofReal p⁻¹ • μ) := sorry
+    IsSubharmonicWeight Ω (fun z ↦ φ z / p) (ENNReal.ofReal p⁻¹ • μ) := by
+  refine ⟨hφ.continuousOn.div_const p, fun K hK hKc ↦ ?_, ?_, fun χ hχ hχc hχs ↦ ?_⟩
+  · rw [Measure.smul_apply, smul_eq_mul]
+    exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hφ.finite_of_compact K hK hKc)
+  · rw [Measure.smul_apply, hφ.carried, smul_zero]
+  · rw [integral_smul_measure, ← hφ.laplacian_eq χ hχ hχc hχs,
+      ENNReal.toReal_ofReal (inv_nonneg.2 hp.le), smul_eq_mul, ← integral_const_mul]
+    congr 1
+    ext z
+    ring
 
 theorem IsLocallyDoublingDisc.smul {μ : Measure ℂ} (h : IsLocallyDoublingDisc μ) (a : ℝ≥0∞) :
     IsLocallyDoublingDisc (a • μ) := by
@@ -586,8 +596,78 @@ theorem theorem2_printed (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmo
       ∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z)) ∂discMeasure < ∞ →
       ∃ u : ℂ → ℂ, IsWeakDbarSol 𝔻 u f ∧
         ∫⁻ z, ENNReal.ofReal (‖u z‖ ^ p * Real.exp (-φ z)) ∂discMeasure ≤
-          C * ∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z)) ∂discMeasure :=
-  sorry
+          C * ∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z)) ∂discMeasure := by
+  have hp0 : 0 < p := by linarith
+  -- the rescaled weight `(φ/p, μ/p)`
+  have hφ' := hφ.div_const hp0
+  have hd' := hd.smul (ENNReal.ofReal p⁻¹)
+  have hm' : ∃ r : ℝ, 0 < r ∧ ∀ z ∈ 𝔻, 1 < (ENNReal.ofReal p⁻¹ • μ) (hypBall z r) := by
+    obtain ⟨r, hr, hmr⟩ := hm
+    obtain ⟨R, hR, hR'⟩ := exists_hypBall_measure_gt hr one_pos
+      (fun z hz ↦ by rw [ENNReal.ofReal_one]; exact (hmr z hz).le) p
+    refine ⟨R, hR, fun z hz ↦ ?_⟩
+    rw [Measure.smul_apply, smul_eq_mul]
+    calc (1 : ℝ≥0∞) = ENNReal.ofReal p⁻¹ * ENNReal.ofReal p := by
+          rw [← ENNReal.ofReal_mul (inv_nonneg.2 hp0.le), inv_mul_cancel₀ hp0.ne',
+            ENNReal.ofReal_one]
+      _ < ENNReal.ofReal p⁻¹ * μ (hypBall z R) :=
+          ENNReal.mul_lt_mul_right (by simpa using hp0) ENNReal.ofReal_ne_top (hR' z hz)
+  obtain ⟨C₀, hC₀⟩ := theorem2 (fun z ↦ φ z / p) _ hφ' hd' hm'
+  refine ⟨C₀ ^ p, fun f hf hfin ↦ ?_⟩
+  -- pointwise identity `‖a e^{-s/p}‖ₑ^p = ofReal (‖a‖^p e^{-s})`
+  have key : ∀ (a : ℂ) (s : ℝ), ‖a * ((Real.exp (-(s / p)) : ℝ) : ℂ)‖ₑ ^ p =
+      ENNReal.ofReal (‖a‖ ^ p * Real.exp (-s)) := by
+    intro a s
+    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp0.le, norm_mul,
+      Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le,
+      Real.mul_rpow (norm_nonneg _) (Real.exp_pos _).le, ← Real.exp_mul]
+    congr 3
+    field_simp
+  have hac : discMeasure ≪ volume.restrict 𝔻 := withDensity_absolutelyContinuous _ _
+  set G : ℂ → ℂ := fun z ↦ f z * ((1 - ‖z‖ ^ 2) * Real.exp (-(φ z / p)) : ℝ) with hG
+  have hGeq : ∀ z, ‖G z‖ₑ ^ p =
+      ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z)) := by
+    intro z
+    rw [← key]
+    congr 2
+    rw [hG]
+    push_cast
+    ring
+  have hGm : AEStronglyMeasurable G discMeasure := by
+    refine (hf.mono_ac hac).mul ?_
+    refine (ContinuousOn.aestronglyMeasurable ?_ measurableSet_ball).mono_ac hac
+    exact Complex.continuous_ofReal.comp_continuousOn ((continuousOn_const.sub
+      (continuous_norm.pow 2).continuousOn).mul
+      (Real.continuous_exp.comp_continuousOn (hφ.continuousOn.div_const p).neg))
+  have hpne : ENNReal.ofReal p ≠ 0 := by simpa using hp0
+  have hptop : ENNReal.ofReal p ≠ ∞ := ENNReal.ofReal_ne_top
+  have hGnorm : eLpNorm G (ENNReal.ofReal p) discMeasure =
+      (∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z)) ∂discMeasure) ^
+        (1 / p) := by
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hpne hptop hGm, ENNReal.toReal_ofReal hp0.le]
+    simp_rw [hGeq]
+  have hGfin : eLpNorm G (ENNReal.ofReal p) discMeasure < ∞ := by
+    rw [hGnorm]
+    exact ENNReal.rpow_lt_top_of_nonneg (by positivity) hfin.ne
+  obtain ⟨u, hu, hest⟩ := hC₀ f hf ⟨ENNReal.ofReal p, ENNReal.one_le_ofReal.2 hp, hGfin⟩
+  refine ⟨u, hu, ?_⟩
+  have hp' := hest (ENNReal.ofReal p) (ENNReal.one_le_ofReal.2 hp)
+  set U : ℂ → ℂ := fun z ↦ u z * (Real.exp (-(φ z / p)) : ℂ) with hU
+  have hUfin : eLpNorm U (ENNReal.ofReal p) discMeasure ≠ ∞ :=
+    (hp'.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hGfin)).ne
+  have hUm := aestronglyMeasurable_of_eLpNorm_ne_top hUfin
+  have hUnorm : eLpNorm U (ENNReal.ofReal p) discMeasure =
+      (∫⁻ z, ENNReal.ofReal (‖u z‖ ^ p * Real.exp (-φ z)) ∂discMeasure) ^ (1 / p) := by
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hpne hptop hUm, ENNReal.toReal_ofReal hp0.le]
+    simp_rw [hU, key]
+  have hle : (∫⁻ z, ENNReal.ofReal (‖u z‖ ^ p * Real.exp (-φ z)) ∂discMeasure) ^ (1 / p) ≤
+      C₀ * (∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z))
+        ∂discMeasure) ^ (1 / p) := by
+    rw [← hUnorm, ← hGnorm]
+    exact hp'
+  have := ENNReal.rpow_le_rpow hle hp0.le
+  rwa [ENNReal.mul_rpow_of_nonneg _ _ hp0.le, one_div, ENNReal.rpow_inv_rpow hp0.ne',
+    ENNReal.rpow_inv_rpow hp0.ne', ← ENNReal.coe_rpow_of_nonneg _ hp0.le] at this
 
 /-! ## The bridge to BOC -/
 
