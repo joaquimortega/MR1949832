@@ -6,6 +6,25 @@ A Lean 4 / Mathlib formalization of
 
 Page references ("p. 363") are to the journal pagination. The printed PDF used as the reference during the work (`literature/10.4171-rmi-322.pdf`) is not included in the repository.
 
+## What the paper proves
+
+The paper studies the equation `∂̄u = f` with weights `e^{-φ}`, where `φ` is subharmonic and its Laplacian `μ = Δφ` is only assumed to be a (locally) doubling measure. Such a measure defines a natural local scale `ρ(z)`, the radius of the disc around `z` of `μ`-mass one.
+
+**The multiplier theorem (Theorem 4).** For such a weight, in the plane or in the unit disc, there is a holomorphic function `h` that mimics `e^{φ}`:
+- its zero set `Λ` is separated at the scale `ρ`;
+- `|h(z)| e^{-φ(z)}` is comparable to `d(z,Λ)/ρ(z)`, up to a fixed power, so `|h| ≃ e^{φ}` away from small discs around the zeros.
+
+Proposition 2 provides finitely many such multipliers whose exceptional discs have no common point. Dividing by them turns weighted problems into unweighted ones. The paper obtains three applications.
+
+**Christ's theorem (Theorem 1).** If `Δφ` is doubling, `∂̄u = f` has a solution with `‖u e^{-φ}‖_p ≲ ‖f e^{-φ}‖_p` for all `1 ≤ p ≤ ∞`. The solution is given by an explicit kernel with off-diagonal decay (Proposition 1).
+
+**The disc analogue (Theorem 2).** The estimates hold in the measure `dm/(1−|z|²)`. In particular `sup |u| e^{-φ} ≲ sup |f(ζ)| (1−|ζ|) e^{-φ(ζ)}`.
+
+**Weights whose Laplacian lives on the real line.**
+- Theorem 5 constructs multipliers with real zeros.
+- Theorem 3 solves `∂̄u = μ` for a measure `μ` with `e^{-φ}|μ|` a two-sided Carleson measure, with a pointwise bound for `u` on the real line.
+- Theorem 3 extends Lemma 4 of Ortega-Cerdà–Seip (J. Funct. Anal. 1999), whose case is `φ = ε|Im z|`, and uses that lemma in its proof.
+
 ## Main results
 
 All thirteen main results are proved without `sorry`, depend only on `propext`, `Classical.choice` and `Quot.sound`, and are accepted by comparator against `OCChallenge.lean` (2026-11-01).
@@ -39,9 +58,10 @@ The statements are in `comparator/statements.lean` and the definitions they use 
 | `formalization.yaml` | Metadata in the [formalization.yaml](https://github.com/mathlib-initiative/formalization.yaml) format. |
 | `scripts/` | `make_challenge.py`, `check_statements.py` (the statement freeze-check), `new_worktree.sh`. |
 
-## Relation to the BOC project
+## Companion projects
 
-The companion formalization of Berndtsson–Ortega-Cerdà (1995) uses `OC.theorem2_uniform` to prove its Theorem 6 without the external Theorem G. This project does not depend on BOC. Its foundation files (∂̄ calculus, Cauchy transform, Weyl's lemma, disc geometry) are copied from BOC under namespace `OC`.
+- **BOC.** The companion formalization of Berndtsson–Ortega-Cerdà (1995), [joaquimortega/MR1340337](https://github.com/joaquimortega/MR1340337), uses `OC.theorem2_uniform` to prove its Theorem 6 without the external Theorem G. This project does not depend on BOC. Its foundation files (∂̄ calculus, Cauchy transform, Weyl's lemma, disc geometry) are copied from BOC under namespace `OC`.
+- **[OCS99].** The theorem assumed in Theorem 3 (`TheoremOCS`) is Lemma 4 of Ortega-Cerdà–Seip (1999). It is being formalized in [joaquimortega/MR1682065](https://github.com/joaquimortega/MR1682065), work in progress; once it is proved, Theorem 3 will become unconditional here.
 
 ## Building
 
