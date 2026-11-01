@@ -56,4 +56,4 @@ Lean default kernel accepts the solution
 Your solution is okay!
 ```
 
-Result: see `comparator/last_run.log`.
+This was obtained on 2026-11-01 with Lean v4.35.0 and Mathlib v4.35.0, for all thirteen theorems (log: `comparator/last_run.log`).
