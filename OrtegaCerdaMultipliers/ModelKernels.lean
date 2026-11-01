@@ -157,8 +157,18 @@ theorem schur_test_le_max {X : Type*} [MeasurableSpace X] {ν : Measure X} [SFin
 /-! ## §2 Forelli–Rudin estimate -/
 
 theorem norm_one_sub_conj_mul_le_five_mul {a w : ℂ} (ha : a ∈ 𝔻) (hw : w ∈ 𝔻)
-    (h : (1 - ‖a‖) / 2 ≤ ‖a - w‖) : ‖1 - conj a * w‖ ≤ 5 * ‖a - w‖ := sorry
+    (h : (1 - ‖a‖) / 2 ≤ ‖a - w‖) : ‖1 - conj a * w‖ ≤ 5 * ‖a - w‖ := by
+  have ha1 : ‖a‖ < 1 := norm_lt_one_of_mem_disc ha
+  have e : 1 - conj a * w = (1 - conj a * a) + conj a * (a - w) := by ring
+  rw [e]
+  calc ‖(1 - conj a * a) + conj a * (a - w)‖
+      ≤ ‖1 - conj a * a‖ + ‖conj a * (a - w)‖ := norm_add_le _ _
+    _ = (1 - ‖a‖ ^ 2) + ‖a‖ * ‖a - w‖ := by
+        rw [norm_one_sub_conj_mul_self ha, norm_mul, Complex.norm_conj]
+    _ ≤ 5 * ‖a - w‖ := by nlinarith [norm_nonneg a, norm_nonneg (a - w), sq_nonneg (1 - ‖a‖)]
 
+-- FALSE?: a = 0, s = 10: LHS = 2π ∫₀^{1/2} (1 - r²)^{-10} dr ≈ 1.84 · 2π > 2π = RHS.
+-- The statement needs `s ≤ 1`; see `lintegral_FR_near_of_le_one`, which `lintegral_FR` uses.
 theorem lintegral_FR_near {s : ℝ} (hs0 : 0 < s) {a : ℂ} (ha : a ∈ 𝔻) :
     ∫⁻ w in ball a ((1 - ‖a‖) / 2),
         ENNReal.ofReal ((1 - ‖w‖ ^ 2) ^ (-s) / (‖1 - conj a * w‖ * ‖a - w‖)) ≤
@@ -222,26 +232,324 @@ theorem lintegral_circle_inv_normSq_one_sub {a : ℂ} {ρ : ℝ} (hρ0 : 0 ≤ �
   rw [intervalIntegral.integral_const_mul, hI, hwn]
   field_simp
 
+/-- `∫₀ᵇ (1-ρ)^{-s-1} dρ = ((1-b)^{-s} - 1)/s`. -/
+theorem fr_lintegral_Ioc_rpow {s b : ℝ} (hs0 : 0 < s) (hb0 : 0 ≤ b) (hb1 : b < 1) :
+    ∫⁻ ρ in Ioc 0 b, ENNReal.ofReal ((1 - ρ) ^ (-s - 1)) =
+      ENNReal.ofReal (((1 - b) ^ (-s) - 1) / s) := by
+  have hcont : ContinuousOn (fun ρ : ℝ => (1 - ρ) ^ (-s - 1)) (Icc 0 b) := by
+    refine ContinuousOn.rpow_const (by fun_prop) (fun x hx => Or.inl ?_)
+    linarith [hx.2]
+  rw [← ofReal_integral_eq_lintegral_ofReal
+    ((hcont.integrableOn_Icc).mono_set Ioc_subset_Icc_self)]
+  · congr 1
+    rw [← intervalIntegral.integral_of_le hb0,
+      intervalIntegral.integral_comp_sub_left (fun x => x ^ (-s - 1)), integral_rpow]
+    · rw [show -s - 1 + 1 = -s by ring, sub_zero, Real.one_rpow]
+      field_simp
+      ring
+    · right
+      refine ⟨by linarith, fun h0 => ?_⟩
+      rw [uIcc_of_le (by linarith)] at h0
+      linarith [h0.1]
+  · filter_upwards [ae_restrict_mem measurableSet_Ioc] with ρ hρ
+    exact Real.rpow_nonneg (by linarith [hρ.2]) _
+
+/-- `∫_b^1 (1-ρ)^{-s} dρ = (1-b)^{1-s}/(1-s)`. -/
+theorem fr_lintegral_Ioo_rpow {s b : ℝ} (hs1 : s < 1) (hb1 : b < 1) :
+    ∫⁻ ρ in Ioo b 1, ENNReal.ofReal ((1 - ρ) ^ (-s)) =
+      ENNReal.ofReal ((1 - b) ^ (1 - s) / (1 - s)) := by
+  have hii : IntervalIntegrable (fun x : ℝ => x ^ (-s)) volume 0 (1 - b) :=
+    intervalIntegral.intervalIntegrable_rpow' (by linarith)
+  have hii2 : IntervalIntegrable (fun ρ : ℝ => (1 - ρ) ^ (-s)) volume b 1 := by
+    have := hii.comp_sub_left 1
+    simp only [sub_zero, sub_sub_cancel] at this
+    exact this.symm
+  have hint : IntegrableOn (fun ρ : ℝ => (1 - ρ) ^ (-s)) (Ioo b 1) :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hb1.le).1 hii2
+  rw [← ofReal_integral_eq_lintegral_ofReal hint]
+  · congr 1
+    rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hb1.le,
+      intervalIntegral.integral_comp_sub_left (fun x => x ^ (-s)), integral_rpow (Or.inl (by linarith))]
+    rw [show -s + 1 = 1 - s by ring, sub_self, Real.zero_rpow (by linarith), sub_zero]
+  · filter_upwards [ae_restrict_mem measurableSet_Ioo] with ρ hρ
+    exact Real.rpow_nonneg (by linarith [hρ.2]) _
+
 theorem lintegral_Ioo_rpow_div_le {s b : ℝ} (hs0 : 0 < s) (hs1 : s < 1) (hb0 : 0 ≤ b)
     (hb1 : b < 1) :
     ∫⁻ ρ in Ioo (0 : ℝ) 1, ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - b * ρ)) ≤
-      ENNReal.ofReal ((1 - b) ^ (-s) / (s * (1 - s))) := sorry
+      ENNReal.ofReal ((1 - b) ^ (-s) / (s * (1 - s))) := by
+  have hsub : Ioo (0 : ℝ) 1 ⊆ Ioc 0 b ∪ Ioo b 1 := by
+    intro ρ hρ
+    rcases le_or_gt ρ b with h | h
+    · exact Or.inl ⟨hρ.1, h⟩
+    · exact Or.inr ⟨h, hρ.2⟩
+  have hδ : 0 < 1 - b := by linarith
+  set X := (1 - b) ^ (-s) with hX
+  have hX0 : 0 ≤ X := Real.rpow_nonneg hδ.le _
+  have hXe : (1 - b)⁻¹ * ((1 - b) ^ (1 - s) / (1 - s)) = X / (1 - s) := by
+    rw [show 1 - s = 1 + -s by ring, Real.rpow_add hδ, Real.rpow_one, hX]
+    field_simp
+  calc ∫⁻ ρ in Ioo (0 : ℝ) 1, ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - b * ρ))
+      ≤ ∫⁻ ρ in Ioc 0 b ∪ Ioo b 1, ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - b * ρ)) :=
+        lintegral_mono_set hsub
+    _ ≤ (∫⁻ ρ in Ioc 0 b, ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - b * ρ))) +
+          ∫⁻ ρ in Ioo b 1, ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - b * ρ)) :=
+        lintegral_union_le _ _ _
+    _ ≤ (∫⁻ ρ in Ioc 0 b, ENNReal.ofReal ((1 - ρ) ^ (-s - 1))) +
+          ∫⁻ ρ in Ioo b 1, ENNReal.ofReal ((1 - b)⁻¹) * ENNReal.ofReal ((1 - ρ) ^ (-s)) := by
+        gcongr ?_ + ?_
+        · refine setLIntegral_mono' measurableSet_Ioc fun ρ hρ => ENNReal.ofReal_le_ofReal ?_
+          have h1 : 0 < 1 - ρ := by linarith [hρ.2]
+          have h2 : 1 - ρ ≤ 1 - b * ρ := by nlinarith [hρ.1]
+          rw [Real.rpow_sub_one h1.ne']
+          exact div_le_div_of_nonneg_left (Real.rpow_nonneg h1.le _) h1 h2
+        · refine setLIntegral_mono' measurableSet_Ioo fun ρ hρ => ?_
+          rw [← ENNReal.ofReal_mul (by positivity)]
+          apply ENNReal.ofReal_le_ofReal
+          have h1 : 0 < 1 - ρ := by linarith [hρ.2]
+          have h2 : 1 - b ≤ 1 - b * ρ := by nlinarith [hρ.2]
+          rw [inv_mul_eq_div]
+          exact div_le_div_of_nonneg_left (Real.rpow_nonneg h1.le _) hδ h2
+    _ = ENNReal.ofReal ((X - 1) / s) + ENNReal.ofReal (X / (1 - s)) := by
+        rw [fr_lintegral_Ioc_rpow hs0 hb0 hb1, lintegral_const_mul _ (by fun_prop),
+          fr_lintegral_Ioo_rpow hs1 hb1, ← ENNReal.ofReal_mul (by positivity), hXe]
+    _ ≤ ENNReal.ofReal (X / s) + ENNReal.ofReal (X / (1 - s)) := by
+        gcongr
+        linarith
+    _ = ENNReal.ofReal (X / (s * (1 - s))) := by
+        have : 0 < 1 - s := by linarith
+        rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
+        congr 1
+        field_simp
+        ring
 
 theorem lintegral_disc_rpow_div_normSq {s : ℝ} (hs0 : 0 < s) (hs1 : s < 1) {a : ℂ}
     (ha : a ∈ 𝔻) :
     ∫⁻ w in 𝔻, ENNReal.ofReal ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) ≤
-      ENNReal.ofReal (2 * Real.pi / (s * (1 - s)) * (1 - ‖a‖) ^ (-s)) := sorry
+      ENNReal.ofReal (2 * Real.pi / (s * (1 - s)) * (1 - ‖a‖) ^ (-s)) := by
+  have ha1 : ‖a‖ < 1 := norm_lt_one_of_mem_disc ha
+  have hm : Measurable fun w : ℂ => ENNReal.ofReal ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) := by
+    fun_prop
+  rw [lintegral_ball_eq_lintegral_circle 0 1 hm]
+  calc ∫⁻ ρ in Ioo (0 : ℝ) 1, ENNReal.ofReal ρ * ∫⁻ θ in Ioc 0 (2 * Real.pi),
+        ENNReal.ofReal ((1 - ‖circleMap 0 ρ θ‖) ^ (-s) / ‖1 - conj a * circleMap 0 ρ θ‖ ^ 2)
+      ≤ ∫⁻ ρ in Ioo (0 : ℝ) 1, ENNReal.ofReal (2 * Real.pi) *
+          ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - ‖a‖ * ρ)) := by
+        refine setLIntegral_mono' measurableSet_Ioo fun ρ hρ => ?_
+        have hρ0 : 0 < ρ := hρ.1
+        have hρ1 : ρ < 1 := hρ.2
+        have haρ : ‖a‖ * ρ < 1 := by nlinarith [norm_nonneg a]
+        have hX : 0 ≤ (1 - ρ) ^ (-s) := Real.rpow_nonneg (by linarith) _
+        have heq : ∀ θ, ENNReal.ofReal ((1 - ‖circleMap 0 ρ θ‖) ^ (-s) /
+            ‖1 - conj a * circleMap 0 ρ θ‖ ^ 2) = ENNReal.ofReal ((1 - ρ) ^ (-s)) *
+            ENNReal.ofReal (‖1 - conj a * circleMap 0 ρ θ‖⁻¹ ^ 2) := by
+          intro θ
+          rw [norm_circleMap_zero, abs_of_pos hρ0, ← ENNReal.ofReal_mul hX, inv_pow,
+            div_eq_mul_inv]
+        simp_rw [heq]
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          lintegral_circle_inv_normSq_one_sub hρ0.le haρ, ← ENNReal.ofReal_mul hX,
+          ← ENNReal.ofReal_mul hρ0.le, ← ENNReal.ofReal_mul Real.two_pi_pos.le]
+        apply ENNReal.ofReal_le_ofReal
+        have h1 : 0 < 1 - ‖a‖ * ρ := by linarith
+        have h2 : 1 - ‖a‖ * ρ ≤ 1 - ‖a‖ ^ 2 * ρ ^ 2 := by
+          nlinarith [mul_nonneg (norm_nonneg a) hρ0.le]
+        have h3 : 0 < 1 - ‖a‖ ^ 2 * ρ ^ 2 := lt_of_lt_of_le h1 h2
+        rw [mul_div_assoc', mul_div_assoc', mul_div_assoc']
+        rw [div_le_div_iff₀ h3 h1]
+        have : 0 ≤ 2 * Real.pi * (1 - ρ) ^ (-s) := by positivity
+        nlinarith [mul_le_mul_of_nonneg_left h2 this, mul_nonneg this h1.le]
+    _ = ENNReal.ofReal (2 * Real.pi) *
+          ∫⁻ ρ in Ioo (0 : ℝ) 1, ENNReal.ofReal ((1 - ρ) ^ (-s) / (1 - ‖a‖ * ρ)) :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal (2 * Real.pi) * ENNReal.ofReal ((1 - ‖a‖) ^ (-s) / (s * (1 - s))) := by
+        gcongr
+        exact lintegral_Ioo_rpow_div_le hs0 hs1 (norm_nonneg a) ha1
+    _ = ENNReal.ofReal (2 * Real.pi / (s * (1 - s)) * (1 - ‖a‖) ^ (-s)) := by
+        rw [← ENNReal.ofReal_mul Real.two_pi_pos.le]
+        congr 1
+        ring
+
+/-- The near part of the Forelli–Rudin integral, for `0 < s ≤ 1` (`lintegral_FR_near` without
+`s ≤ 1` is false). -/
+theorem lintegral_FR_near_of_le_one {s : ℝ} (hs0 : 0 < s) (hs1 : s ≤ 1) {a : ℂ} (ha : a ∈ 𝔻) :
+    ∫⁻ w in ball a ((1 - ‖a‖) / 2),
+        ENNReal.ofReal ((1 - ‖w‖ ^ 2) ^ (-s) / (‖1 - conj a * w‖ * ‖a - w‖)) ≤
+      ENNReal.ofReal (2 * Real.pi * (1 - ‖a‖) ^ (-s)) := by
+  have ha1 : ‖a‖ < 1 := norm_lt_one_of_mem_disc ha
+  set d := 1 - ‖a‖ with hd
+  have hd0 : 0 < d := by linarith
+  have hd2 : 0 < d / 2 := by linarith
+  calc ∫⁻ w in ball a (d / 2),
+        ENNReal.ofReal ((1 - ‖w‖ ^ 2) ^ (-s) / (‖1 - conj a * w‖ * ‖a - w‖))
+      ≤ ∫⁻ w in ball a (d / 2), ENNReal.ofReal ((d / 2) ^ (-s) / d) *
+          ENNReal.ofReal ‖w - a‖⁻¹ := by
+        refine setLIntegral_mono' measurableSet_ball fun w hw => ?_
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        apply ENNReal.ofReal_le_ofReal
+        have hwa : ‖w - a‖ < d / 2 := by rwa [mem_ball, dist_eq_norm] at hw
+        have hw1 : ‖w‖ < 1 - d / 2 := by
+          have := norm_le_norm_sub_add w a  -- ‖w‖ ≤ ‖w - a‖ + ‖a‖
+          linarith
+        have hwn := norm_nonneg w
+        have h1 : d / 2 ≤ 1 - ‖w‖ ^ 2 := by nlinarith
+        have h2 : (1 - ‖w‖ ^ 2) ^ (-s) ≤ (d / 2) ^ (-s) :=
+          Real.rpow_le_rpow_of_nonpos hd2 h1 (by linarith)
+        have h3 : d ≤ ‖1 - conj a * w‖ := by
+          have := one_sub_mul_le_norm_one_sub_conj_mul a w
+          nlinarith [norm_nonneg a]
+        rw [norm_sub_rev a w, ← div_div, div_eq_mul_inv _ ‖w - a‖]
+        gcongr
+    _ = ENNReal.ofReal ((d / 2) ^ (-s) / d) * ENNReal.ofReal (2 * Real.pi * (d / 2)) := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          lintegral_inv_norm_sub_ball a hd2.le]
+    _ ≤ ENNReal.ofReal (2 * Real.pi * d ^ (-s)) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        apply ENNReal.ofReal_le_ofReal
+        rw [Real.div_rpow hd0.le (by norm_num), Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+        have h2s : (2 : ℝ) ^ s ≤ 2 := by
+          simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2) hs1
+        have h2s0 : 0 < (2 : ℝ) ^ s := by positivity
+        have hds : 0 ≤ d ^ (-s) := Real.rpow_nonneg hd0.le _
+        field_simp
+        nlinarith [Real.pi_pos, mul_le_mul_of_nonneg_left h2s (mul_nonneg Real.pi_pos.le hds)]
 
 theorem lintegral_FR {s : ℝ} (hs0 : 0 < s) (hs1 : s < 1) {a : ℂ} (ha : a ∈ 𝔻) :
     ∫⁻ w in 𝔻, ENNReal.ofReal ((1 - ‖w‖ ^ 2) ^ (-s) / (‖1 - conj a * w‖ * ‖a - w‖)) ≤
-      ENNReal.ofReal (24 * Real.pi / (s * (1 - s)) * (1 - ‖a‖ ^ 2) ^ (-s)) := sorry
+      ENNReal.ofReal (24 * Real.pi / (s * (1 - s)) * (1 - ‖a‖ ^ 2) ^ (-s)) := by
+  have ha1 : ‖a‖ < 1 := norm_lt_one_of_mem_disc ha
+  set d := 1 - ‖a‖ with hd
+  have hd0 : 0 < d := by linarith
+  set N := ball a (d / 2) with hN
+  set g : ℂ → ℝ≥0∞ := fun w =>
+    ENNReal.ofReal ((1 - ‖w‖ ^ 2) ^ (-s) / (‖1 - conj a * w‖ * ‖a - w‖)) with hg
+  have hsub : 𝔻 ⊆ N ∪ (𝔻 \ N) := fun w hw => by
+    by_cases h : w ∈ N
+    · exact Or.inl h
+    · exact Or.inr ⟨hw, h⟩
+  have hfar : ∫⁻ w in 𝔻 \ N, g w ≤
+      ENNReal.ofReal 5 * ENNReal.ofReal (2 * Real.pi / (s * (1 - s)) * d ^ (-s)) := by
+    calc ∫⁻ w in 𝔻 \ N, g w
+        ≤ ∫⁻ w in 𝔻 \ N, ENNReal.ofReal 5 *
+            ENNReal.ofReal ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) := by
+          refine setLIntegral_mono' (measurableSet_ball.diff measurableSet_ball) fun w hw => ?_
+          rw [hg, ← ENNReal.ofReal_mul (by norm_num)]
+          apply ENNReal.ofReal_le_ofReal
+          have hwD : w ∈ 𝔻 := hw.1
+          have hw1 : ‖w‖ < 1 := norm_lt_one_of_mem_disc hwD
+          have haw : d / 2 ≤ ‖a - w‖ := by
+            have := hw.2
+            rw [hN, mem_ball, dist_eq_norm, not_lt, norm_sub_rev] at this
+            exact this
+          have h5 := norm_one_sub_conj_mul_le_five_mul ha hwD haw
+          have hY : 0 < ‖1 - conj a * w‖ := norm_one_sub_conj_mul_pos ha hwD
+          have hZ : 0 < ‖a - w‖ := lt_of_lt_of_le (by linarith) haw
+          have hX : (1 - ‖w‖ ^ 2) ^ (-s) ≤ (1 - ‖w‖) ^ (-s) :=
+            Real.rpow_le_rpow_of_nonpos (by linarith) (by nlinarith [norm_nonneg w])
+              (by linarith)
+          have hX0 : 0 ≤ (1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2 :=
+            div_nonneg (Real.rpow_nonneg (by linarith) _) (by positivity)
+          rw [div_le_iff₀ (mul_pos hY hZ)]
+          calc (1 - ‖w‖ ^ 2) ^ (-s) ≤ (1 - ‖w‖) ^ (-s) := hX
+            _ = 5 * ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) * (‖1 - conj a * w‖ *
+                  (‖1 - conj a * w‖ / 5)) := by field_simp
+            _ ≤ 5 * ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) * (‖1 - conj a * w‖ * ‖a - w‖) := by
+                exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (by linarith) hY.le)
+                  (by positivity)
+      _ ≤ ∫⁻ w in 𝔻, ENNReal.ofReal 5 *
+            ENNReal.ofReal ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) :=
+          lintegral_mono_set sdiff_subset
+      _ = ENNReal.ofReal 5 *
+            ∫⁻ w in 𝔻, ENNReal.ofReal ((1 - ‖w‖) ^ (-s) / ‖1 - conj a * w‖ ^ 2) :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ ≤ _ := by gcongr; exact lintegral_disc_rpow_div_normSq hs0 hs1 ha
+  calc ∫⁻ w in 𝔻, g w ≤ ∫⁻ w in N ∪ (𝔻 \ N), g w := lintegral_mono_set hsub
+    _ ≤ (∫⁻ w in N, g w) + ∫⁻ w in 𝔻 \ N, g w := lintegral_union_le _ _ _
+    _ ≤ ENNReal.ofReal (2 * Real.pi * d ^ (-s)) +
+          ENNReal.ofReal 5 * ENNReal.ofReal (2 * Real.pi / (s * (1 - s)) * d ^ (-s)) :=
+        add_le_add (lintegral_FR_near_of_le_one hs0 hs1.le ha) hfar
+    _ ≤ _ := by
+        have hP0 : 0 < s * (1 - s) := mul_pos hs0 (by linarith)
+        have hP1 : s * (1 - s) ≤ 1 := by nlinarith
+        have hD0 : 0 ≤ d ^ (-s) := Real.rpow_nonneg hd0.le _
+        have hE0 : 0 < 1 - ‖a‖ ^ 2 := by nlinarith [norm_nonneg a]
+        have hDE : d ^ (-s) ≤ 2 * (1 - ‖a‖ ^ 2) ^ (-s) := by
+          have h1 : (1 - ‖a‖ ^ 2) / 2 ≤ d := by nlinarith [norm_nonneg a]
+          calc d ^ (-s) ≤ ((1 - ‖a‖ ^ 2) / 2) ^ (-s) :=
+                Real.rpow_le_rpow_of_nonpos (by positivity) h1 (by linarith)
+            _ = 2 ^ s * (1 - ‖a‖ ^ 2) ^ (-s) := by
+                rw [Real.div_rpow hE0.le (by norm_num), Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+                field_simp
+            _ ≤ 2 * (1 - ‖a‖ ^ 2) ^ (-s) := by
+                gcongr
+                simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2) hs1.le
+        rw [← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_add (by positivity)
+          (by positivity)]
+        apply ENNReal.ofReal_le_ofReal
+        have hA : 2 * Real.pi * d ^ (-s) ≤ 2 * Real.pi * d ^ (-s) / (s * (1 - s)) :=
+          le_div_self (by positivity) hP0 hP1
+        calc 2 * Real.pi * d ^ (-s) + 5 * (2 * Real.pi / (s * (1 - s)) * d ^ (-s))
+            ≤ 2 * Real.pi * d ^ (-s) / (s * (1 - s)) +
+                5 * (2 * Real.pi / (s * (1 - s)) * d ^ (-s)) := by linarith
+          _ = 12 * Real.pi / (s * (1 - s)) * d ^ (-s) := by ring
+          _ ≤ 12 * Real.pi / (s * (1 - s)) * (2 * (1 - ‖a‖ ^ 2) ^ (-s)) := by gcongr
+          _ = 24 * Real.pi / (s * (1 - s)) * (1 - ‖a‖ ^ 2) ^ (-s) := by ring
 
 /-- Forelli–Rudin, the case `∫_𝔻 dm(w)/|1 − z̄w|³ ≲ (1 − |z|²)⁻¹` used by M08 (far field in the
 disc, `farField_sum_le_disc`). -/
 theorem integral_one_sub_conj_mul_rpow_neg_three_le :
     ∃ C : ℝ, ∀ z ∈ 𝔻,
-      ∫⁻ w in 𝔻, ENNReal.ofReal (1 / ‖1 - conj z * w‖ ^ 3) ≤ ENNReal.ofReal (C / (1 - ‖z‖ ^ 2)) :=
-  sorry
+      ∫⁻ w in 𝔻, ENNReal.ofReal (1 / ‖1 - conj z * w‖ ^ 3) ≤ ENNReal.ofReal (C / (1 - ‖z‖ ^ 2)) := by
+  refine ⟨16 * Real.pi, fun z hz => ?_⟩
+  have hz1 : ‖z‖ < 1 := norm_lt_one_of_mem_disc hz
+  set u := 1 - ‖z‖ with hu
+  have hu0 : 0 < u := by linarith
+  have hs : (0 : ℝ) < 1 / 2 := by norm_num
+  calc ∫⁻ w in 𝔻, ENNReal.ofReal (1 / ‖1 - conj z * w‖ ^ 3)
+      ≤ ∫⁻ w in 𝔻, ENNReal.ofReal (u ^ (-(1 / 2 : ℝ))) *
+          ENNReal.ofReal ((1 - ‖w‖) ^ (-(1 / 2 : ℝ)) / ‖1 - conj z * w‖ ^ 2) := by
+        refine setLIntegral_mono' measurableSet_ball fun w hw => ?_
+        rw [← ENNReal.ofReal_mul (Real.rpow_nonneg hu0.le _)]
+        apply ENNReal.ofReal_le_ofReal
+        have hw1 : ‖w‖ < 1 := norm_lt_one_of_mem_disc hw
+        set v := 1 - ‖w‖ with hv
+        have hv0 : 0 < v := by linarith
+        set Y := ‖1 - conj z * w‖ with hY
+        have hY0 : 0 < Y := norm_one_sub_conj_mul_pos hz hw
+        have hYl := one_sub_mul_le_norm_one_sub_conj_mul z w
+        have hYu : u ≤ Y := by nlinarith [norm_nonneg z, norm_nonneg w]
+        have hYv : v ≤ Y := by nlinarith [norm_nonneg z, norm_nonneg w]
+        have hsq : Real.sqrt u * Real.sqrt v ≤ Y := by
+          rw [← Real.sqrt_mul hu0.le, ← Real.sqrt_sq hY0.le]
+          exact Real.sqrt_le_sqrt (by nlinarith)
+        have hsu : 0 < Real.sqrt u := Real.sqrt_pos.2 hu0
+        have hsv : 0 < Real.sqrt v := Real.sqrt_pos.2 hv0
+        rw [Real.rpow_neg hu0.le, Real.rpow_neg hv0.le, ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow]
+        rw [show (Real.sqrt u)⁻¹ * ((Real.sqrt v)⁻¹ / Y ^ 2) = 1 / (Real.sqrt u * Real.sqrt v * Y ^ 2)
+          by field_simp]
+        apply one_div_le_one_div_of_le (by positivity)
+        rw [pow_succ']
+        nlinarith [mul_le_mul_of_nonneg_right hsq (sq_nonneg Y)]
+    _ = ENNReal.ofReal (u ^ (-(1 / 2 : ℝ))) *
+          ∫⁻ w in 𝔻, ENNReal.ofReal ((1 - ‖w‖) ^ (-(1 / 2 : ℝ)) / ‖1 - conj z * w‖ ^ 2) :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal (u ^ (-(1 / 2 : ℝ))) *
+          ENNReal.ofReal (2 * Real.pi / (1 / 2 * (1 - 1 / 2)) * u ^ (-(1 / 2 : ℝ))) := by
+        gcongr
+        exact lintegral_disc_rpow_div_normSq hs (by norm_num) hz
+    _ ≤ ENNReal.ofReal (16 * Real.pi / (1 - ‖z‖ ^ 2)) := by
+        rw [← ENNReal.ofReal_mul (Real.rpow_nonneg hu0.le _)]
+        apply ENNReal.ofReal_le_ofReal
+        have hE : 0 < 1 - ‖z‖ ^ 2 := by nlinarith [norm_nonneg z]
+        have hE2 : 1 - ‖z‖ ^ 2 ≤ 2 * u := by nlinarith [norm_nonneg z]
+        have huu : u ^ (-(1 / 2 : ℝ)) * u ^ (-(1 / 2 : ℝ)) = u⁻¹ := by
+          rw [← Real.rpow_add hu0]; norm_num [Real.rpow_neg_one]
+        calc u ^ (-(1 / 2 : ℝ)) * (2 * Real.pi / (1 / 2 * (1 - 1 / 2)) * u ^ (-(1 / 2 : ℝ)))
+            = 8 * Real.pi / u := by
+              rw [mul_comm, mul_assoc, mul_comm (u ^ _), huu]; field_simp; norm_num
+          _ ≤ 16 * Real.pi / (1 - ‖z‖ ^ 2) := by
+              rw [div_le_div_iff₀ hu0 hE]
+              nlinarith [Real.pi_pos]
 
 /-! ## §3 Positive model kernels and their Schur bounds -/
 
