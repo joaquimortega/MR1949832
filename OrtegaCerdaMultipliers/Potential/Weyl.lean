@@ -537,7 +537,83 @@ theorem IsSubharmonicWeight.sub_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {ψ 
       ENNReal.ofReal (Laplacian.laplacian u z) ≤ g z) :
     IsSubharmonicWeight Ω (fun z ↦ ψ z - u z)
       (ν₀ + volume.withDensity
-        (fun z ↦ g z - Ω.indicator (fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z)) z)) :=
-  sorry
+        (fun z ↦ g z - Ω.indicator (fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z)) z)) := by
+  set a : ℂ → ℝ≥0∞ := Ω.indicator fun z ↦ ENNReal.ofReal (Laplacian.laplacian u z) with ha
+  set g' : ℂ → ℝ≥0∞ := fun z ↦ g z - a z with hg'
+  have ham : Measurable a := measurable_indicator_ofReal_laplacian hΩ hu
+  have hg'm : Measurable g' := hg.sub ham
+  have hmono : ν₀ + volume.withDensity g' ≤ ν₀ + volume.withDensity g :=
+    add_le_add_right (withDensity_mono (Eventually.of_forall fun z ↦ tsub_le_self)) _
+  have hΔcont := continuousOn_laplacian_of_contDiffOn hΩ hu
+  refine ⟨h.continuousOn.sub hu.continuousOn,
+    fun K hKΩ hK ↦ ((Measure.le_iff'.1 hmono K).trans_lt (h.finite_of_compact K hKΩ hK)),
+    nonpos_iff_eq_zero.1 ((Measure.le_iff'.1 hmono _).trans h.carried.le),
+    fun χ hχ hc hs ↦ ?_⟩
+  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (WithTop.coe_le_coe.2 le_top)
+  have hχc := hχ2.continuous
+  have hΔc := continuous_laplacian hχ2
+  have hΔs := hasCompactSupport_laplacian hc
+  have hΔsub := (tsupport_laplacian_subset χ).trans hs
+  set K := tsupport χ
+  have hKm : MeasurableSet K := (isClosed_tsupport χ).measurableSet
+  have hfin : (ν₀ + volume.withDensity g) K < ∞ := h.finite_of_compact K hs hc
+  have hfin' : (ν₀ + volume.withDensity g') K < ∞ := (Measure.le_iff'.1 hmono K).trans_lt hfin
+  have hi : Integrable χ (ν₀ + volume.withDensity g) :=
+    integrable_of_measure_tsupport_lt_top hχc hc hfin
+  have hi' : Integrable χ (ν₀ + volume.withDensity g') :=
+    integrable_of_measure_tsupport_lt_top hχc hc hfin'
+  -- the lower integrals of `g`, `g'` on `K` are finite
+  have hgK : ∫⁻ x in K, g x ≠ ∞ := by
+    rw [← withDensity_apply _ hKm]
+    exact ((Measure.le_iff'.1 (Measure.le_add_left le_rfl) K).trans_lt hfin).ne
+  have hg'K : ∫⁻ x in K, g' x ≠ ∞ :=
+    ne_top_of_le_ne_top hgK (lintegral_mono fun x ↦ tsub_le_self)
+  have hglt : ∀ᵐ x ∂volume.restrict K, g x < ∞ := ae_lt_top hg hgK
+  have hg'lt : ∀ᵐ x ∂volume.restrict K, g' x < ∞ := ae_lt_top hg'm hg'K
+  -- `∫ χ d(withDensity f) = ∫_K f.toReal χ`
+  have hwd : ∀ f : ℂ → ℝ≥0∞, Measurable f → (∀ᵐ x ∂volume.restrict K, f x < ∞) →
+      ∫ x, χ x ∂(volume.withDensity f) = ∫ x in K, (f x).toReal * χ x := by
+    intro f hf hflt
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
+      (fun x hx ↦ image_eq_zero_of_notMem_tsupport hx), restrict_withDensity hKm,
+      integral_withDensity_eq_integral_toReal_smul hf hflt]
+    rfl
+  have hχb := hχc.bounded_above_of_compact_support hc
+  obtain ⟨C, hC⟩ := hχb
+  have hint_f : ∀ f : ℂ → ℝ≥0∞, Measurable f → ∫⁻ x in K, f x ≠ ∞ →
+      Integrable (fun x ↦ (f x).toReal * χ x) (volume.restrict K) := by
+    intro f hf hfK
+    have := (integrable_toReal_of_lintegral_ne_top hf.aemeasurable hfK).bdd_mul
+      hχc.aestronglyMeasurable (c := C) (Eventually.of_forall fun x ↦ hC x)
+    simpa [mul_comm] using this
+  have hint_Δ : Integrable (fun x ↦ Laplacian.laplacian u x * χ x) (volume.restrict K) :=
+    ((hΔcont.mono hs).mul hχc.continuousOn).integrableOn_compact hc
+  -- assemble
+  have hsplit : ∫ z, (ψ z - u z) * Laplacian.laplacian χ z =
+      (∫ z, ψ z * Laplacian.laplacian χ z) - ∫ z, u z * Laplacian.laplacian χ z := by
+    simp_rw [sub_mul]
+    exact integral_sub (h.integrable_mul hΩ hΔc hΔs hΔsub)
+      (integrable_mul_of_tsupport_subset_real hΩ hu.continuousOn hΔc hΔs hΔsub)
+  have hu' : ∫ z, u z * Laplacian.laplacian χ z = ∫ x in K, Laplacian.laplacian u x * χ x := by
+    rw [integral_mul_laplacian_of_contDiffOn hΩ hu hχ2 hc hs,
+      setIntegral_eq_integral_of_forall_compl_eq_zero]
+    intro x hx
+    rw [image_eq_zero_of_notMem_tsupport hx, mul_zero]
+  rw [hsplit, h.laplacian_eq χ hχ hc hs, hu',
+    integral_add_measure (hi.mono_measure (Measure.le_add_right le_rfl))
+      (hi.mono_measure (Measure.le_add_left le_rfl)),
+    integral_add_measure (hi'.mono_measure (Measure.le_add_right le_rfl))
+      (hi'.mono_measure (Measure.le_add_left le_rfl)),
+    hwd g hg hglt, hwd g' hg'm hg'lt, add_sub_assoc,
+    ← integral_sub (hint_f g hg hgK) hint_Δ]
+  congr 1
+  refine integral_congr_ae ?_
+  filter_upwards [hglt, ae_restrict_mem hKm] with x hx hxK
+  have hxΩ : x ∈ Ω := hs hxK
+  have hle : a x ≤ g x := by
+    rw [ha, indicator_of_mem hxΩ]; exact (hΔ x hxΩ).2
+  rw [hg', ENNReal.toReal_sub_of_le hle hx.ne, ha, indicator_of_mem hxΩ,
+    ENNReal.toReal_ofReal (hΔ x hxΩ).1]
+  ring
 
 end OC
