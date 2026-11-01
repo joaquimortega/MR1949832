@@ -5,7 +5,7 @@ import OrtegaCerdaMultipliers.LogModulusWeak
 /-!
 # M08 (Multiplier) — Convergence, continuity and Laplacian of the potential `S`
 
-See `blueprint/M08_Multiplier.md` §2.5.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M08_Multiplier.md` §2.5, §3.8.
 
 These are the fields of M07's `IsWeakLogModulus` for `v = ψ + S`.
 -/
@@ -543,6 +543,308 @@ theorem local_structure_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N :
             mul_le_mul_of_nonneg_left h1 hCD0
         _ = CD * ((1 - ‖c i‖ ^ 2) * massRadiusDisc ν (c i)) ^ 2 / (1 - r) ^ 3 := by ring
 
+/-! ### Plane -/
+
+/-- The truncated logarithmic kernel `log max(|z-ζ|, t)`. -/
+def kerPlaneTrunc (t : ℝ) (z ζ : ℂ) : ℝ := Real.log (max ‖z - ζ‖ t)
+
+theorem abs_kerPlane_sub_trunc_le {t : ℝ} (ht0 : 0 < t) (ht1 : t ≤ 1) {z ζ : ℂ} (hζz : ζ ≠ z) :
+    |kerPlane z ζ - kerPlaneTrunc t z ζ| ≤
+      (ball z t).indicator (fun w ↦ 1 + Real.log (1 / ‖z - w‖)) ζ := by
+  have hgnn : ∀ w ∈ ball z t, 0 ≤ 1 + Real.log (1 / ‖z - w‖) := by
+    intro w hw
+    have : ‖z - w‖ ≤ 1 := by
+      rw [← dist_eq_norm, dist_comm]; exact (mem_ball.1 hw).le.trans ht1
+    linarith [log_one_div_nonneg (norm_nonneg (z - w)) this]
+  have hd : 0 < ‖z - ζ‖ := norm_pos_iff.2 (sub_ne_zero.2 hζz.symm)
+  by_cases hpt : t ≤ ‖z - ζ‖
+  · have : kerPlane z ζ - kerPlaneTrunc t z ζ = 0 := by
+      simp [kerPlane, kerPlaneTrunc, max_eq_left hpt]
+    rw [this, abs_zero]
+    exact indicator_nonneg hgnn _
+  · push Not at hpt
+    have hball : ζ ∈ ball z t := by rw [mem_ball, dist_eq_norm, norm_sub_rev]; exact hpt
+    rw [indicator_of_mem hball]
+    have hdiff : kerPlane z ζ - kerPlaneTrunc t z ζ = Real.log ‖z - ζ‖ - Real.log t := by
+      simp [kerPlane, kerPlaneTrunc, max_eq_right hpt.le]
+    rw [hdiff, abs_of_nonpos (by linarith [Real.log_le_log hd hpt.le]), one_div, Real.log_inv]
+    have h3 : Real.log t ≤ 0 := Real.log_nonpos ht0.le ht1
+    linarith
+
+/-- Continuity of the logarithmic potential of a bounded finite piece of `ν` (plane). -/
+theorem continuous_setIntegral_kerPlane {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassPlane ν Cd R₀) {E : Set ℂ} (hE : MeasurableSet E)
+    (hEb : Bornology.IsBounded E) (hfin : ν E < ∞) :
+    Continuous (fun z ↦ ∫ ζ in E, kerPlane z ζ ∂ν) := by
+  have : IsFiniteMeasure (ν.restrict E) := isFiniteMeasure_restrict.2 hfin.ne
+  obtain ⟨RE, hRE⟩ := hEb.subset_closedBall 0
+  have hmeas_t : ∀ t z, Measurable (kerPlaneTrunc t z) := fun t z ↦ by
+    unfold kerPlaneTrunc; fun_prop
+  -- bound of the truncated kernel on `closedBall 0 r × E`
+  have hbd : ∀ t r, 0 < t → t ≤ 1 → ∀ z ∈ closedBall (0 : ℂ) r, ∀ ζ ∈ E,
+      |kerPlaneTrunc t z ζ| ≤ -Real.log t + Real.log (|r| + |RE| + 1) := by
+    intro t r ht0 ht1 z hz ζ hζ
+    have hz' : ‖z‖ ≤ |r| := by
+      rw [mem_closedBall, dist_zero_right] at hz; exact hz.trans (le_abs_self r)
+    have hζ' : ‖ζ‖ ≤ |RE| := by
+      have := hRE hζ; rw [mem_closedBall, dist_zero_right] at this
+      exact this.trans (le_abs_self RE)
+    have hmax0 : t ≤ max ‖z - ζ‖ t := le_max_right _ _
+    have hmax1 : max ‖z - ζ‖ t ≤ |r| + |RE| + 1 := max_le (by
+      have := norm_sub_le z ζ; linarith) (by linarith [abs_nonneg r, abs_nonneg RE])
+    have h1 := Real.log_le_log ht0 hmax0
+    have h2 := Real.log_le_log (ht0.trans_le hmax0) hmax1
+    have h3 : Real.log t ≤ 0 := Real.log_nonpos ht0.le ht1
+    have h4 : 0 ≤ Real.log (|r| + |RE| + 1) := Real.log_nonneg (by
+      linarith [abs_nonneg r, abs_nonneg RE])
+    rw [kerPlaneTrunc, abs_le]; constructor <;> linarith
+  have hcont_t : ∀ t r, 0 < t → t ≤ 1 →
+      ContinuousOn (fun z ↦ ∫ ζ in E, kerPlaneTrunc t z ζ ∂ν) (closedBall 0 r) := by
+    intro t r ht0 ht1
+    refine continuousOn_of_dominated
+      (bound := fun _ ↦ -Real.log t + Real.log (|r| + |RE| + 1))
+      (fun z _ ↦ (hmeas_t t z).aestronglyMeasurable) ?_ (integrable_const _) ?_
+    · intro z hz
+      refine (ae_restrict_iff' hE).2 (Eventually.of_forall fun ζ hζ ↦ ?_)
+      rw [Real.norm_eq_abs]; exact hbd t r ht0 ht1 z hz ζ hζ
+    · refine Eventually.of_forall fun ζ ↦ ?_
+      have h1 : ContinuousOn (fun z ↦ max ‖z - ζ‖ t) (closedBall 0 r) :=
+        ContinuousOn.sup (by fun_prop) continuousOn_const
+      exact h1.log fun z _ ↦ (lt_of_lt_of_le ht0 (le_max_right _ _)).ne'
+  refine continuousOn_univ.1 ?_
+  intro z₀ _
+  have hball : closedBall (0 : ℂ) (‖z₀‖ + 1) ∈ 𝓝 z₀ :=
+    closedBall_mem_nhds_of_mem (by rw [mem_ball, dist_zero_right]; linarith)
+  refine ContinuousAt.continuousWithinAt (ContinuousOn.continuousAt ?_ hball)
+  set r := ‖z₀‖ + 1
+  refine continuousOn_of_uniform_approx_of_continuousOn fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.1 hu
+  obtain ⟨δ, hδ0, hδ1, hsmall⟩ := logSmall_plane ⟨Cd, hν.doubling⟩ hν.finite
+    (isCompact_closedBall (0 : ℂ) r) (half_pos hε)
+  refine ⟨fun z ↦ ∫ ζ in E, kerPlaneTrunc δ z ζ ∂ν, hcont_t δ r hδ0 hδ1, fun z hz ↦ hεu ?_⟩
+  have hne : ∀ᵐ ζ ∂ν, ζ ≠ z := by
+    rw [ae_iff]; simpa using hν.measure_singleton z
+  have hpt : ∀ᵐ ζ ∂ν.restrict E, ‖kerPlane z ζ - kerPlaneTrunc δ z ζ‖ ≤
+      (ball z δ).indicator (fun w ↦ 1 + Real.log (1 / ‖z - w‖)) ζ := by
+    filter_upwards [ae_restrict_of_ae hne] with ζ hζz
+    rw [Real.norm_eq_abs]
+    exact abs_kerPlane_sub_trunc_le hδ0 hδ1 hζz
+  have hlint : ∫⁻ ζ in E, ENNReal.ofReal
+      ((ball z δ).indicator (fun w ↦ 1 + Real.log (1 / ‖z - w‖)) ζ) ∂ν ≤
+      ENNReal.ofReal (ε / 2) := by
+    calc ∫⁻ ζ in E, ENNReal.ofReal
+          ((ball z δ).indicator (fun w ↦ 1 + Real.log (1 / ‖z - w‖)) ζ) ∂ν
+        ≤ ∫⁻ ζ, ENNReal.ofReal
+          ((ball z δ).indicator (fun w ↦ 1 + Real.log (1 / ‖z - w‖)) ζ) ∂ν :=
+          setLIntegral_le_lintegral _ _
+      _ = ∫⁻ ζ in ball z δ, ENNReal.ofReal (1 + Real.log (1 / ‖z - ζ‖)) ∂ν := by
+          rw [← lintegral_indicator isOpen_ball.measurableSet]
+          congr 1; ext ζ
+          by_cases h : ζ ∈ ball z δ <;> simp [h]
+      _ ≤ ENNReal.ofReal (ε / 2) := hsmall z hz
+  have hint_t : IntegrableOn (kerPlaneTrunc δ z) E ν := by
+    refine Integrable.of_bound (hmeas_t δ z).aestronglyMeasurable
+      (-Real.log δ + Real.log (|r| + |RE| + 1)) ?_
+    refine (ae_restrict_iff' hE).2 (Eventually.of_forall fun ζ hζ ↦ ?_)
+    rw [Real.norm_eq_abs]; exact hbd δ r hδ0 hδ1 z hz ζ hζ
+  have hdiff_int : IntegrableOn (fun ζ ↦ kerPlane z ζ - kerPlaneTrunc δ z ζ) E ν := by
+    refine ⟨(by unfold kerPlane kerPlaneTrunc; fun_prop :
+      Measurable fun ζ ↦ kerPlane z ζ - kerPlaneTrunc δ z ζ).aestronglyMeasurable, ?_⟩
+    rw [HasFiniteIntegral]
+    refine lt_of_le_of_lt ?_ (hlint.trans_lt ENNReal.ofReal_lt_top)
+    refine lintegral_mono_ae ?_
+    filter_upwards [hpt] with ζ hζ
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal hζ
+  have hint1 : IntegrableOn (kerPlane z) E ν := by
+    have := hdiff_int.add hint_t
+    refine this.congr_fun (fun ζ _ ↦ ?_) hE
+    simp
+  rw [dist_eq_norm, ← integral_sub hint1 hint_t]
+  refine (norm_integral_le_lintegral_norm _).trans_lt ?_
+  have h1 : ∫⁻ ζ in E, ENNReal.ofReal ‖kerPlane z ζ - kerPlaneTrunc δ z ζ‖ ∂ν ≤
+      ENNReal.ofReal (ε / 2) := by
+    refine le_trans (lintegral_mono_ae ?_) hlint
+    filter_upwards [hpt] with ζ hζ
+    exact ENNReal.ofReal_le_ofReal hζ
+  have h2 := ENNReal.toReal_mono ENNReal.ofReal_ne_top h1
+  rw [ENNReal.toReal_ofReal (by linarith)] at h2
+  linarith
+
+theorem integrableOn_nodes_kerPlane (L : Multiset ℂ) {K : Set ℂ} (hK : IsCompact K) :
+    IntegrableOn (fun z ↦ (L.map (kerPlane z)).sum) K := by
+  induction L using Multiset.induction_on with
+  | empty => simp
+  | cons a t ih =>
+    have := ((locallyIntegrable_log_norm_sub a).integrableOn_isCompact hK).add ih
+    refine this.congr_fun (fun z _ ↦ ?_) hK.measurableSet
+    simp [kerPlane]
+
+theorem continuousAt_nodes_kerPlane {L : Multiset ℂ} {z₀ : ℂ} (hz₀L : z₀ ∉ L) :
+    ContinuousAt (fun z ↦ (L.map (kerPlane z)).sum) z₀ := by
+  induction L using Multiset.induction_on with
+  | empty => simp [continuousAt_const]
+  | cons a t ih =>
+    have hne : z₀ ≠ a := fun h ↦ hz₀L (h ▸ Multiset.mem_cons_self a t)
+    have h1 : ContinuousAt (fun z ↦ kerPlane z a) z₀ := by
+      unfold kerPlane
+      exact (continuous_norm.comp (continuous_id.sub continuous_const)).continuousAt.log
+        (norm_ne_zero_iff.2 (sub_ne_zero.2 hne))
+    have h2 := ih (fun h ↦ hz₀L (Multiset.mem_cons_of_mem h))
+    have := h1.add h2
+    simp only [Multiset.map_cons, Multiset.sum_cons]
+    exact this
+
+theorem integral_nodes_kerPlane_mul_laplacian (L : Multiset ℂ)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) :
+    Integrable (fun z ↦ (L.map (kerPlane z)).sum * Laplacian.laplacian χ z) ∧
+    ∫ z, (L.map (kerPlane z)).sum * Laplacian.laplacian χ z = 2 * Real.pi * (L.map χ).sum := by
+  induction L using Multiset.induction_on with
+  | empty => simp
+  | cons a t ih =>
+    obtain ⟨ih1, ih2⟩ := ih
+    have h1 : Integrable fun z ↦ kerPlane z a * Laplacian.laplacian χ z :=
+      integrable_mul_laplacian hχ hc ((locallyIntegrable_log_norm_sub a).integrableOn_isCompact hc)
+    have e : (fun z ↦ ((a ::ₘ t).map (kerPlane z)).sum * Laplacian.laplacian χ z) =
+        fun z ↦ kerPlane z a * Laplacian.laplacian χ z +
+          (t.map (kerPlane z)).sum * Laplacian.laplacian χ z := by
+      ext z; simp [add_mul]
+    rw [e]
+    refine ⟨h1.add ih1, ?_⟩
+    rw [integral_add h1 ih1, ih2, Multiset.map_cons, Multiset.sum_cons,
+      show ∫ z, kerPlane z a * Laplacian.laplacian χ z = 2 * Real.pi * χ a from
+        integral_log_norm_sub_mul_laplacian (hχ.of_le (WithTop.coe_le_coe.2 le_top)) hc a]
+    ring
+
+theorem integral_cellPot_kerPlane_mul_laplacian {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
+    (hν : MeasClassPlane ν Cd R₀) {R : ℕ → Set ℂ} {Λ : ℕ → Multiset ℂ} {i : ℕ}
+    (hR : MeasurableSet (R i)) (hRb : Bornology.IsBounded (R i)) (hfin : ν (R i) < ∞)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) :
+    Integrable (fun z ↦ cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z) ∧
+    ∫ z, cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z =
+      2 * Real.pi * (((Λ i).map χ).sum - ∫ ζ in R i, χ ζ ∂ν) := by
+  obtain ⟨h1, h2⟩ := integral_nodes_kerPlane_mul_laplacian (Λ i) hχ hc
+  have hcont := continuous_setIntegral_kerPlane hν hR hRb hfin
+  have hU : Integrable fun z ↦ (∫ ζ in R i, kerPlane z ζ ∂ν) * Laplacian.laplacian χ z :=
+    integrable_mul_laplacian hχ hc (hcont.continuousOn.integrableOn_compact hc)
+  have e : (fun z ↦ cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z) =
+      fun z ↦ ((Λ i).map (kerPlane z)).sum * Laplacian.laplacian χ z -
+        (∫ ζ in R i, kerPlane z ζ ∂ν) * Laplacian.laplacian χ z := by
+    ext z; simp [cellPot, sub_mul]
+  rw [e]
+  refine ⟨h1.sub hU, ?_⟩
+  have : IsFiniteMeasure (ν.restrict (R i)) := isFiniteMeasure_restrict.2 hfin.ne
+  obtain ⟨r, hr⟩ := hRb.subset_closedBall 0
+  have hL : ν.restrict (R i) (closedBall 0 r)ᶜ = 0 := by
+    rw [Measure.restrict_apply isClosed_closedBall.isOpen_compl.measurableSet]
+    convert measure_empty (μ := ν)
+    ext w; simp only [mem_inter_iff, mem_compl_iff, mem_empty_iff_false, iff_false, not_and]
+    intro h1 h2; exact h1 (hr h2)
+  have hpot := integral_logPotential_mul_laplacian (ν.restrict (R i)) (isCompact_closedBall 0 r)
+    hL χ hχ hc
+  rw [integral_sub h1 hU, h2]
+  simp only [kerPlane] at hpot ⊢
+  rw [hpot]
+  ring
+
+theorem local_structure_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N : ℕ} {η A B : ℝ}
+    {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
+    (hν : MeasClassPlane ν Cd R₁) (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B)
+    (hC : IsCells univ dist (massRadius ν) ν N η A R c)
+    (hN : IsNodes univ dist (massRadius ν) ν N B R c m Λ) (hm : ∀ i, 3 ≤ m i)
+    {r : ℝ} (hr0 : 0 ≤ r) :
+    ∃ G : Finset ℕ, (∀ i ∉ G, ∀ w ∈ R i, w ∉ closedBall (0 : ℂ) r) ∧
+      (∀ i ∉ G, ∀ w ∈ Λ i, w ∉ closedBall (0 : ℂ) r) ∧
+      ∃ u : ℕ → ℝ, (∀ i, 0 ≤ u i) ∧ Summable u ∧
+        ∀ i ∉ G, ∀ z ∈ closedBall (0 : ℂ) r, |cellPot kerPlane ν R Λ i z| ≤ u i := by
+  obtain ⟨C1, -, hcl⟩ := claim1_plane_quant Cd R₁ 0
+  have hρ : ∀ i, 0 < massRadius ν (c i) := fun i ↦ (hcl ν hν (c i) (c i)).1
+  have hρR : ∀ i, massRadius ν (c i) ≤ R₁ := fun i ↦ (hcl ν hν (c i) (c i)).2.1
+  set L := (4 * (A + B) + 1) * max R₁ 0 + 2 * r + 2 with hL
+  have hL0 : 0 < L := by positivity
+  obtain ⟨Cf, hCf⟩ := farField_sum_le_plane Cd R₁ η A L hη hL0
+  have hGfin := finite_cells_plane hν hη hC (closedBall 0 r) isBounded_closedBall L
+  set G := hGfin.toFinset with hGdef
+  have hfar : ∀ i ∉ G, ∀ z ∈ closedBall (0 : ℂ) r, L ≤ dist z (c i) := by
+    intro i hi z hz
+    by_contra h; push Not at h
+    exact hi ((Set.Finite.mem_toFinset _).2 ⟨z, hz, h⟩)
+  have hR₁ : ∀ i, massRadius ν (c i) ≤ max R₁ 0 := fun i ↦ (hρR i).trans (le_max_left _ _)
+  have hAB : ∀ i, 4 * (A + B) * massRadius ν (c i) + 2 * r + 1 ≤ L := fun i ↦ by
+    have := mul_le_mul_of_nonneg_left (hR₁ i) (by positivity : (0:ℝ) ≤ 4 * (A + B))
+    have h2 : 0 ≤ max R₁ 0 := le_max_right _ _
+    rw [hL]; nlinarith
+  have h0 : (0 : ℂ) ∈ closedBall (0 : ℂ) r := mem_closedBall_self hr0
+  refine ⟨G, ?_, ?_, ?_⟩
+  · intro i hi w hw hwK
+    have h1 := hfar i hi w hwK
+    have h2 := hC.subset i w hw
+    rw [dist_comm] at h2
+    have := hAB i
+    nlinarith [hρ i]
+  · intro i hi w hw hwK
+    have h1 := hfar i hi w hwK
+    have h2 := hN.near i w hw
+    rw [dist_comm] at h2
+    have := hAB i
+    nlinarith [hρ i]
+  · set u : ℕ → ℝ := fun i ↦ if i ∈ G then 0 else
+      32 * N * (A + B) ^ 3 * (massRadius ν (c i) / dist 0 (c i)) ^ 3 with hu
+    have hu0 : ∀ i, 0 ≤ u i := fun i ↦ by
+      simp only [hu]; split_ifs
+      · exact le_rfl
+      · have := hρ i; positivity
+    refine ⟨u, hu0, ?_, ?_⟩
+    · refine summable_of_sum_le hu0 (c := 32 * N * (A + B) ^ 3 * max Cf 0) fun F ↦ ?_
+      have hFG := hCf ν N R c hν hC 0 (F.filter (· ∉ G)) fun i hi ↦ by
+        have h1 := hfar i (Finset.mem_filter.1 hi).2 0 h0
+        refine ⟨h1, le_trans ?_ h1⟩
+        have := hAB i; nlinarith [hρ i]
+      rw [← Finset.sum_filter_add_sum_filter_not F (· ∈ G)]
+      have e1 : ∑ i ∈ F.filter (· ∈ G), u i = 0 :=
+        Finset.sum_eq_zero fun i hi ↦ by simp [hu, (Finset.mem_filter.1 hi).2]
+      have e2 : ∑ i ∈ F.filter (· ∉ G), u i = 32 * N * (A + B) ^ 3 *
+          ∑ i ∈ F.filter (· ∉ G), (massRadius ν (c i) / dist 0 (c i)) ^ 3 := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i hi ↦ by
+          simp only [hu, (Finset.mem_filter.1 hi).2, if_false]
+      rw [e1, e2, zero_add]
+      gcongr; exact hFG.trans (le_max_left _ _)
+    · intro i hi z hz
+      have hzr : ‖z‖ ≤ r := by rw [mem_closedBall, dist_zero_right] at hz; exact hz
+      have hβ := hfar i hi z hz
+      have hβ0 := hfar i hi 0 h0
+      have hABi := hAB i
+      have hpos : 0 ≤ 4 * (A + B) * massRadius ν (c i) := by have := hρ i; positivity
+      have hb := abs_cellPot_le_plane hC hN hA hB (hm i) (integrableOn_kerPlane_cell hν hC i z)
+        (hρ i) (by nlinarith)
+      simp only [hu, hi, if_false]
+      refine hb.trans ?_
+      have hd0 : 0 < dist 0 (c i) := hL0.trans_le hβ0
+      have hdz : dist 0 (c i) / 2 ≤ dist z (c i) := by
+        have := dist_triangle 0 z (c i)
+        rw [dist_comm 0 z, dist_zero_right] at this
+        linarith
+      have hratio : massRadius ν (c i) / dist z (c i) ≤
+          2 * (massRadius ν (c i) / dist 0 (c i)) := by
+        have hdzpos : 0 < dist z (c i) := by linarith
+        rw [div_le_iff₀ hdzpos]
+        have : massRadius ν (c i) * dist 0 (c i) ≤
+            2 * massRadius ν (c i) * dist z (c i) := by nlinarith [hρ i]
+        calc massRadius ν (c i) = massRadius ν (c i) * dist 0 (c i) / dist 0 (c i) := by
+              field_simp
+          _ ≤ 2 * massRadius ν (c i) * dist z (c i) / dist 0 (c i) := by gcongr
+          _ = 2 * (massRadius ν (c i) / dist 0 (c i)) * dist z (c i) := by ring
+      have h3 : (massRadius ν (c i) / dist z (c i)) ^ 3 ≤
+          8 * (massRadius ν (c i) / dist 0 (c i)) ^ 3 := by
+        have h0' : 0 ≤ massRadius ν (c i) / dist z (c i) :=
+          div_nonneg (hρ i).le (by linarith)
+        calc (massRadius ν (c i) / dist z (c i)) ^ 3
+            ≤ (2 * (massRadius ν (c i) / dist 0 (c i))) ^ 3 := by gcongr
+          _ = 8 * (massRadius ν (c i) / dist 0 (c i)) ^ 3 := by ring
+      have hc0 : 0 ≤ 4 * (N : ℝ) * (A + B) ^ 3 := by positivity
+      nlinarith
+
 /-- `S` is a weak log-modulus datum (M07 `IsWeakLogModulus` fields), plane. -/
 theorem multPot_props_plane {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ}
     {η A B : ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ} {m : ℕ → ℕ} {Λ : ℕ → Multiset ℂ}
@@ -557,7 +859,192 @@ theorem multPot_props_plane {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0}
       (univ \ Function.support (nodeCount Λ)) ∧
     ∀ χ : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) χ → HasCompactSupport χ →
       ∫ z, (ψ z + multPot kerPlane (lapNorm μ) R Λ z) * Laplacian.laplacian χ z =
-        2 * Real.pi * ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ := sorry
+        2 * Real.pi * ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ := by
+  set ν := lapNorm μ with hνdef
+  have hν : MeasClassPlane ν Cd (15 * R₀) := hw.meas.lapNorm
+  obtain ⟨C1, -, hcl⟩ := claim1_plane_quant Cd (15 * R₀) 0
+  have hρ : ∀ i, 0 < massRadius ν (c i) := fun i ↦ (hcl ν hν (c i) (c i)).1
+  have hA : 0 < A := lt_of_lt_of_le (half_pos hη) (hC.half_le_A_plane (i := 0) (hρ 0) hη)
+  have hN0 := hN.mono_B (B' := max B 0) (fun i ↦ (hρ i).le) (le_max_left _ _)
+  have hB0 : 0 ≤ max B 0 := le_max_right _ _
+  have hfinI : ∀ w, {i | w ∈ Λ i}.Finite := fun w ↦
+    (finite_nodeIdx_plane hν hη hC hN0 (K := {w}) Bornology.isBounded_singleton).subset
+      fun i hi ↦ ⟨w, hi, rfl⟩
+  have hnc : ∀ w, nodeCount Λ w ≠ 0 ↔ w ∈ nodeSet Λ := fun w ↦ nodeCount_ne_zero_iff (hfinI w)
+  have hsumm : ∀ z, Summable fun i ↦ cellPot kerPlane ν R Λ i z := fun z ↦
+    (summable_cellPot_plane hν hη hA hB0 hC hN0 hm z).of_abs
+  have hUcont : ∀ i, Continuous (fun z ↦ ∫ ζ in R i, kerPlane z ζ ∂ν) := fun i ↦
+    continuous_setIntegral_kerPlane hν (hC.measurableSet i) (hC.isBounded_plane i)
+      (hC.measure_lt_top i)
+  have hcellAt : ∀ i, ∀ z, z ∉ Λ i → ContinuousAt (cellPot kerPlane ν R Λ i) z := fun i z hzΛ ↦
+    (continuousAt_nodes_kerPlane hzΛ).sub (hUcont i).continuousAt
+  have hloc : ∀ r : ℝ, 0 ≤ r → ∃ G : Finset ℕ,
+      (∀ i ∉ G, ∀ w ∈ R i, w ∉ closedBall (0 : ℂ) r) ∧
+      (∀ i ∉ G, ∀ w ∈ Λ i, w ∉ closedBall (0 : ℂ) r) ∧
+      ∃ u : ℕ → ℝ, (∀ i, 0 ≤ u i) ∧ Summable u ∧
+        (∀ i ∉ G, ∀ z ∈ closedBall (0 : ℂ) r, |cellPot kerPlane ν R Λ i z| ≤ u i) ∧
+        ContinuousOn (fun z ↦ ∑' i, if i ∈ G then 0 else cellPot kerPlane ν R Λ i z)
+          (closedBall 0 r) := by
+    intro r hr0
+    obtain ⟨G, hGR, hGΛ, u, hu0, hus, hub⟩ := local_structure_plane hν hη hA hB0 hC hN0 hm hr0
+    refine ⟨G, hGR, hGΛ, u, hu0, hus, hub, ?_⟩
+    refine continuousOn_tsum (u := u) (fun i ↦ ?_) hus fun i z hz ↦ ?_
+    · by_cases hi : i ∈ G
+      · simp only [hi, ite_true]; exact continuousOn_const
+      · simp only [hi, ite_false]
+        intro z hz
+        exact (hcellAt i z (fun h ↦ hGΛ i hi z h hz)).continuousWithinAt
+    · by_cases hi : i ∈ G
+      · simp only [hi, ite_true, norm_zero]; exact hu0 i
+      · simp only [hi, ite_false, Real.norm_eq_abs]; exact hub i hi z hz
+  have hdec : ∀ (G : Finset ℕ), ∀ z, multPot kerPlane ν R Λ z =
+      ∑ i ∈ G, cellPot kerPlane ν R Λ i z +
+        ∑' i, (if i ∈ G then 0 else cellPot kerPlane ν R Λ i z) := fun G z ↦
+    tsum_eq_sum_add_tsum_ite (hsumm z) G
+  have hrad : ∀ K : Set ℂ, IsCompact K → ∃ r, 0 ≤ r ∧ K ⊆ closedBall 0 r := by
+    intro K hKc
+    obtain ⟨r, hr⟩ := hKc.isBounded.subset_closedBall 0
+    exact ⟨max r 0, le_max_right _ _, hr.trans (closedBall_subset_closedBall (le_max_left _ _))⟩
+  have hSK : ∀ K : Set ℂ, IsCompact K → IntegrableOn (fun z ↦ multPot kerPlane ν R Λ z) K := by
+    intro K hKc
+    obtain ⟨r, hr0, hKr⟩ := hrad K hKc
+    obtain ⟨G, -, -, u, -, -, -, hT⟩ := hloc r hr0
+    have hT' : IntegrableOn (fun z ↦ ∑' i, if i ∈ G then 0 else cellPot kerPlane ν R Λ i z) K :=
+      (hT.mono hKr).integrableOn_compact hKc
+    have hcells : IntegrableOn (fun z ↦ ∑ i ∈ G, cellPot kerPlane ν R Λ i z) K :=
+      integrable_finsetSum G fun i _ ↦ (integrableOn_nodes_kerPlane (Λ i) hKc).sub
+        ((hUcont i).continuousOn.integrableOn_compact hKc)
+    refine (hcells.add hT').congr_fun (fun z _ ↦ ?_) hKc.measurableSet
+    simp only [Pi.add_apply]
+    rw [hdec G z]
+  refine ⟨?_, hsumm, ?_, ?_, ?_⟩
+  · intro K hKc
+    have hF := finite_nodeIdx_plane hν hη hC hN0 hKc.isBounded
+    refine (hF.biUnion fun i _ ↦ (Λ i).finite_toSet).subset ?_
+    rintro w ⟨hwK, hw⟩
+    obtain ⟨i, hi⟩ := (hnc w).1 hw
+    exact mem_biUnion ⟨w, hi, hwK⟩ hi
+  · refine (locallyIntegrable_iff).2 fun K hKc ↦ ?_
+    exact ((hw.weight.continuousOn.mono (subset_univ K)).integrableOn_compact hKc).add
+      (hSK K hKc)
+  · intro z₀ hz₀
+    obtain ⟨-, hz₀n⟩ := hz₀
+    have hz₀N : z₀ ∉ nodeSet Λ := fun h ↦ hz₀n ((hnc z₀).2 h)
+    have hr0 : 0 ≤ ‖z₀‖ + 1 := by positivity
+    have hz₀r : z₀ ∈ ball (0 : ℂ) (‖z₀‖ + 1) := by rw [mem_ball, dist_zero_right]; linarith
+    obtain ⟨G, -, -, u, -, -, -, hT⟩ := hloc (‖z₀‖ + 1) hr0
+    have hTat := (hT.mono ball_subset_closedBall).continuousAt (isOpen_ball.mem_nhds hz₀r)
+    have hψat := hw.weight.continuousOn.continuousAt (isOpen_univ.mem_nhds (mem_univ z₀))
+    have hGat : ContinuousAt (fun z ↦ ∑ i ∈ G, cellPot kerPlane ν R Λ i z) z₀ :=
+      tendsto_finsetSum _ fun i _ ↦ hcellAt i z₀ fun h ↦ hz₀N ⟨i, h⟩
+    have hsum := hψat.add (hGat.add hTat)
+    refine (hsum.congr (Eventually.of_forall fun z ↦ ?_)).continuousWithinAt
+    rw [hdec G z]; rfl
+  · intro χ hχ hc
+    obtain ⟨hΔc, hΔs⟩ := laplacian_testFunction hχ
+    have hKc : IsCompact (tsupport χ) := hc
+    have hΔ0 : ∀ z, z ∉ tsupport χ → Laplacian.laplacian χ z = 0 := fun z hz ↦
+      image_eq_zero_of_notMem_tsupport (fun h ↦ hz (hΔs h))
+    obtain ⟨r, hr0, hKr⟩ := hrad (tsupport χ) hKc
+    obtain ⟨G, hGR, hGΛ, u, hu0, hus, hub, -⟩ := hloc r hr0
+    have hχ0 : ∀ w, w ∉ closedBall (0 : ℂ) r → χ w = 0 := fun w hw ↦
+      image_eq_zero_of_notMem_tsupport fun h ↦ hw (hKr h)
+    have hcellΔ := fun i ↦ integral_cellPot_kerPlane_mul_laplacian (Λ := Λ) hν
+      (hC.measurableSet i) (hC.isBounded_plane i) (hC.measure_lt_top i) hχ hc
+    have hΔint : Integrable fun z ↦ |Laplacian.laplacian χ z| :=
+      (hΔc.integrable_of_hasCompactSupport (hc.mono' (fun z hz ↦ by
+        by_contra h
+        exact hz (by simpa [Function.mem_support] using hΔ0 z h)))).abs
+    have hbound : ∀ i ∉ G, ∀ z, ‖cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z‖ ≤
+        u i * |Laplacian.laplacian χ z| := by
+      intro i hi z
+      by_cases hz : z ∈ tsupport χ
+      · rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+        exact mul_le_mul_of_nonneg_right (hub i hi z (hKr hz)) (abs_nonneg _)
+      · simp [hΔ0 z hz]
+    set w : ℕ → ℝ := fun i ↦ if i ∈ G then
+      ∫ z, ‖cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z‖
+      else u i * ∫ z, |Laplacian.laplacian χ z| with hw'
+    have hw0 : ∀ i, 0 ≤ w i := fun i ↦ by
+      simp only [hw']; split_ifs
+      · exact integral_nonneg fun _ ↦ norm_nonneg _
+      · exact mul_nonneg (hu0 i) (integral_nonneg fun _ ↦ abs_nonneg _)
+    have hws : Summable w := by
+      have h1 : Summable fun i ↦ u i * ∫ z, |Laplacian.laplacian χ z| := hus.mul_right _
+      have h2 : Summable fun i ↦ if i ∈ G then
+          ∫ z, ‖cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z‖ else 0 :=
+        summable_of_ne_finset_zero (s := G) fun i hi ↦ by simp [hi]
+      refine (h1.add h2).of_nonneg_of_le hw0 fun i ↦ ?_
+      simp only [hw']
+      split_ifs with hi
+      · have := mul_nonneg (hu0 i)
+          (integral_nonneg (μ := volume) fun z ↦ abs_nonneg (Laplacian.laplacian χ z))
+        linarith
+      · simp
+    have hlint : ∀ i, ∫⁻ z, ‖cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z‖ₑ ≤
+        ENNReal.ofReal (w i) := by
+      intro i
+      by_cases hi : i ∈ G
+      · simp only [hw', hi, ite_true]
+        rw [ofReal_integral_norm_eq_lintegral_enorm (hcellΔ i).1]
+      · simp only [hw', hi, ite_false]
+        rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hΔint.const_mul (u i))
+          (Eventually.of_forall fun z ↦ mul_nonneg (hu0 i) (abs_nonneg _))]
+        refine lintegral_mono fun z ↦ ?_
+        rw [← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (hbound i hi z)
+    have htsum_ne : ∑' i, ∫⁻ z, ‖cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z‖ₑ ≠ ∞ := by
+      refine ne_top_of_le_ne_top ?_ (ENNReal.tsum_le_tsum hlint)
+      rw [← ENNReal.ofReal_tsum_of_nonneg hw0 hws]
+      exact ENNReal.ofReal_ne_top
+    have hint_tsum := integral_tsum (fun i ↦ (hcellΔ i).1.aestronglyMeasurable) htsum_ne
+    have hSΔ : ∀ z, multPot kerPlane ν R Λ z * Laplacian.laplacian χ z =
+        ∑' i, cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z :=
+      fun z ↦ by rw [multPot, tsum_mul_right]
+    have hterm : ∀ i ∉ G, ∫ z, cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z = 0 := by
+      intro i hi
+      rw [(hcellΔ i).2]
+      have h1 : ((Λ i).map χ).sum = 0 := Multiset.sum_eq_zero fun x hx ↦ by
+        obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hx
+        exact hχ0 w (hGΛ i hi w hw)
+      have h2 : ∫ ζ in R i, χ ζ ∂ν = 0 :=
+        setIntegral_eq_zero_of_forall_eq_zero fun ζ hζ ↦ hχ0 ζ (hGR i hi ζ hζ)
+      rw [h1, h2]; ring
+    have hS_int : ∫ z, multPot kerPlane ν R Λ z * Laplacian.laplacian χ z =
+        ∑ i ∈ G, 2 * Real.pi * (((Λ i).map χ).sum - ∫ ζ in R i, χ ζ ∂ν) := by
+      simp_rw [hSΔ]
+      rw [hint_tsum, tsum_eq_sum (s := G) fun i hi ↦ hterm i hi]
+      exact Finset.sum_congr rfl fun i _ ↦ (hcellΔ i).2
+    have hψint : Integrable fun z ↦ ψ z * Laplacian.laplacian χ z :=
+      integrable_mul_laplacian hχ hc
+        ((hw.weight.continuousOn.mono (subset_univ _)).integrableOn_compact hKc)
+    have hψΔ : ∫ z, ψ z * Laplacian.laplacian χ z = 2 * Real.pi * ∫ ζ, χ ζ ∂ν := by
+      rw [hw.weight.laplacian_eq χ hχ hc (subset_univ _), hνdef, lapNorm, integral_smul_measure]
+      rw [ENNReal.toReal_inv, ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+      field_simp
+    have hSint : Integrable fun z ↦ multPot kerPlane ν R Λ z * Laplacian.laplacian χ z :=
+      integrable_mul_laplacian hχ hc (hSK _ hKc)
+    have hχν : ∫ ζ, χ ζ ∂ν = ∑ i ∈ G, ∫ ζ in R i, χ ζ ∂ν := by
+      have hχint : Integrable χ ν := by
+        obtain ⟨Dχ, hDχ⟩ := hχ.continuous.bounded_above_of_compact_support hc
+        have hfinK : ν (tsupport χ) < ∞ := hν.finite _ hKc
+        refine (IntegrableOn.of_bound hfinK hχ.continuous.aestronglyMeasurable.restrict Dχ
+          (Eventually.of_forall fun z ↦ hDχ z)).integrable_of_forall_notMem_eq_zero
+          fun z hz ↦ image_eq_zero_of_notMem_tsupport hz
+      rw [← setIntegral_univ, ← hC.iUnion_eq, integral_iUnion hC.measurableSet
+        hC.pairwise_disjoint (by rw [hC.iUnion_eq]; exact hχint.integrableOn)]
+      exact tsum_eq_sum fun i hi ↦
+        setIntegral_eq_zero_of_forall_eq_zero fun ζ hζ ↦ hχ0 ζ (hGR i hi ζ hζ)
+    have hfin : ∑ᶠ ζ, (nodeCount Λ ζ : ℝ) * χ ζ = ∑ i ∈ G, ((Λ i).map χ).sum :=
+      finsum_nodeCount_mul fun i hi w hw ↦ hχ0 w (hGΛ i hi w hw)
+    have hsplit : ∫ z, (ψ z + multPot kerPlane ν R Λ z) * Laplacian.laplacian χ z =
+        (∫ z, ψ z * Laplacian.laplacian χ z) +
+          ∫ z, multPot kerPlane ν R Λ z * Laplacian.laplacian χ z := by
+      have h := integral_add hψint hSint
+      refine Eq.trans ?_ h
+      congr 1; ext z; ring
+    rw [hsplit, hψΔ, hS_int, hχν, hfin, ← Finset.mul_sum, Finset.sum_sub_distrib]
+    ring
 
 /-- Same, disc. -/
 theorem multPot_props_disc {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ}
