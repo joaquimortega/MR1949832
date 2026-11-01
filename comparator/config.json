@@ -13,7 +13,8 @@
     "OC.theorem1_christ",
     "OC.prop1",
     "OC.theorem5",
-    "OC.theorem3_weighted"
+    "OC.theorem3_weighted",
+    "OC.theorem3_printed_false"
   ],
   "permitted_axioms": [
     "propext",

@@ -318,4 +318,22 @@ theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure �
             C * (1 + ∫⁻ z in ball (x : ℂ) 1,
               ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) := sorry
 
+/-- **The printed Theorem 3 is false** (NOTEBOOK N-01): there is a weight satisfying all the
+hypotheses of Theorem 3 (with Carleson constant `K = 2`) for which the printed conclusion, with
+the unweighted integral `∫_{|z-x|<1} d|μ|(z)/|x - z|`, fails for every constant `C`.  This does not
+use `TheoremOCS`. -/
+theorem theorem3_printed_false :
+    ∃ (φ : ℂ → ℝ) (μ : Measure ℂ), IsSubharmonicWeight univ φ μ ∧ IsLocallyDoublingLine μ ∧
+      (∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) ∧ ∃ K : ℝ≥0,
+      ¬ ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
+        IsFiniteMeasure ν → IsCompact L → ν Lᶜ = 0 → Measurable σ → (∀ z, ‖σ z‖ = 1) →
+        (∀ x : ℝ, ∀ r : ℝ, 0 < r →
+          (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) (ball (x : ℂ) r) ≤
+            K * ENNReal.ofReal r) →
+        ∃ u : ℂ → ℂ, IsWeakDbarSolMeasure u ν σ ∧ DifferentiableOn ℂ u Lᶜ ∧
+          Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
+          ∀ x : ℝ, (x : ℂ) ∉ L →
+            ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
+              C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := sorry
+
 end OC
