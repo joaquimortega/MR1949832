@@ -167,4 +167,14 @@ An early note claimed the Example prints "`∫_D f dm = 0`". The page image show
 
 ## Log of issues found during the Lean implementation
 
-(to be filled)
+### I-01 (M10) — a false helper statement in the blueprint
+The scaffold lemma `lintegral_FR_near` (the near-diagonal Forelli–Rudin bound) claimed
+`∫_{B(a,d/2)} (1−|w|²)^{-s} / (|1−āw||a−w|) dm(w) ≤ 2π d^{-s}` for every `s > 0`.
+- **Counterexample:** `a = 0`, `s = 10`. The left side is `2π ∫₀^{1/2} (1−r²)^{-10} dr ≈ 1.84 · 2π`.
+- **Cause:** the blueprint's step `2^s π d^{-s} ≤ 2π d^{-s}` silently assumes `s ≤ 1`.
+- **Resolution:** the lemma was removed. The proved replacement `lintegral_FR_near_of_le_one` adds the hypothesis `s ≤ 1`, which the only consumer (`lintegral_FR`, with `s < 1`) satisfies. This is a blueprint erratum, not a paper erratum.
+
+### I-02 (M10, M11) — confirmations
+- **Lemmas 7 and 8** are plain Schur tests (N-24). The printed `L^p` form of Lemma 7 follows by conjugating with `(1−|z|²)^{α/p}`.
+- **The corrected auxiliary weight** of N-22, `ψ = φ′ + c log(1−|z|²)` with `c = min(ε/8, 1/2)`, is the one used in the formal proof of Theorem 2.
+- **The doubling constant** of `hypArea` in hyperbolic balls is 16, from `hypArea(D(z,r)) = π sinh² r`.
