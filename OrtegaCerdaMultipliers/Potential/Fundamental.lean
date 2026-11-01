@@ -179,10 +179,146 @@ theorem continuous_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ) :
   rw [this]
   exact continuousOn_const.mul h
 
+theorem locallyIntegrable_log_normSq_sub (ζ : ℂ) :
+    LocallyIntegrable (fun z : ℂ ↦ Real.log (‖z - ζ‖ ^ 2)) := by
+  have h := (locallyIntegrable_log_norm_sub ζ).smul (2 : ℝ)
+  convert h using 1
+  ext z
+  simp [Real.log_pow]
+
+theorem locallyIntegrable_norm_of {f : ℂ → ℝ} (hf : LocallyIntegrable f) :
+    LocallyIntegrable (fun z ↦ ‖f z‖) :=
+  hf.mono hf.aestronglyMeasurable.norm (Eventually.of_forall fun z ↦ by simp)
+
+/-- `∫ S_s(‖z − ζ‖²) Δχ = −4π ∫ k_s(z − ζ) χ`. -/
+theorem integral_sFun_mul_laplacian {s : ℝ} (hs : 0 < s) {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
+    (hc : HasCompactSupport χ) (ζ : ℂ) :
+    ∫ z, sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z =
+      -(4 * Real.pi) * ∫ z, kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) * χ z := by
+  have hU : ContDiff ℝ 2 (fun z : ℂ ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2)) :=
+    ((contDiff_sFun (bump_pos hs) (bump_lt hs)).of_le (WithTop.coe_le_coe.2 le_top)).comp
+      ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const))
+  have h := integral_mul_lap hχ hc hU
+  have hlapU : ∀ z, lap (fun z : ℂ ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2)) z =
+      -Real.pi * kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) := fun z ↦ by
+    have := lap_comp_sub (fun w : ℂ ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖w‖ ^ 2)) ζ z
+    rw [this, lap_sFun_normSq (bump_pos hs) (bump_lt hs)]
+  simp_rw [laplacian_eq_four_mul_lap]
+  calc ∫ z, sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) * (4 * lap χ z)
+      = 4 * ∫ z, lap χ z * sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) := by
+        rw [← integral_const_mul]; congr 1; ext z; ring
+    _ = 4 * ∫ z, χ z * (-Real.pi * kernel (s ^ 2 / 4) (s ^ 2) (z - ζ)) := by
+        rw [← h]; simp_rw [hlapU]
+    _ = _ := by
+        rw [← integral_const_mul, ← integral_const_mul]; congr 1; ext z; ring
+
+/-- `|W_s(x)| ≤ |log ‖x‖²| + C` for `0 < s ≤ 1`, `x ≠ 0` (`W_s = wFun (s²/4) s²`). -/
+theorem exists_abs_wFun_bump_le : ∃ C : ℝ, 0 ≤ C ∧ ∀ s : ℝ, 0 < s → s ≤ 1 → ∀ x : ℂ, x ≠ 0 →
+    |wFun (s ^ 2 / 4) (s ^ 2) x| ≤ |Real.log (‖x‖ ^ 2)| + C := by
+  obtain ⟨C, hC⟩ := exists_abs_sFun_le (a := 1 / 4) (b := 1) (by norm_num) (by norm_num) 1
+  refine ⟨max C 0, le_max_right _ _, fun s hs hs1 x hx ↦ ?_⟩
+  have hW0 := wFun_nonpos (bump_pos hs) (bump_lt hs) hx
+  rw [abs_of_nonpos hW0]
+  rcases le_or_gt s ‖x‖ with hsx | hsx
+  · rw [wFun_eq_zero (bump_pos hs) (bump_lt hs) (pow_le_pow_left₀ hs.le hsx 2), neg_zero]
+    positivity
+  · have hscale := sFun_scale (a := 1 / 4) (b := 1) (by norm_num) (by norm_num) hs (‖x‖ ^ 2)
+    rw [show s ^ 2 * (1 / 4) = s ^ 2 / 4 by ring, mul_one] at hscale
+    have hW : wFun (s ^ 2 / 4) (s ^ 2) x =
+        Real.log (‖x‖ ^ 2) + sFun (s ^ 2 / 4) (s ^ 2) (‖x‖ ^ 2) := rfl
+    have ht : ‖x‖ ^ 2 / s ^ 2 ∈ Icc (0 : ℝ) 1 :=
+      ⟨by positivity, by rw [div_le_one (by positivity)]; nlinarith [norm_nonneg x]⟩
+    have h1 := (abs_le.1 (hC _ ht)).1
+    have hlog : Real.log (s ^ 2) ≤ 0 := Real.log_nonpos (by positivity) (by nlinarith)
+    rw [hW, hscale]
+    have := neg_abs_le (Real.log (‖x‖ ^ 2))
+    have := le_max_left C 0
+    linarith
+
+theorem measurable_wFun_bump {s : ℝ} (hs : 0 < s) : Measurable (wFun (s ^ 2 / 4) (s ^ 2)) := by
+  have h : wFun (s ^ 2 / 4) (s ^ 2) =
+      fun x : ℂ ↦ Real.log (‖x‖ ^ 2) + sFun (s ^ 2 / 4) (s ^ 2) (‖x‖ ^ 2) := rfl
+  rw [h]
+  exact (Real.measurable_log.comp (by fun_prop)).add
+    ((contDiff_sFun (bump_pos hs) (bump_lt hs)).continuous.measurable.comp (by fun_prop))
+
+/-- `∫ log ‖z − ζ‖² Δχ(z) dm(z) = 4π χ(ζ)`. -/
+theorem integral_log_normSq_sub_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
+    (hc : HasCompactSupport χ) (ζ : ℂ) :
+    ∫ z, Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z = 4 * Real.pi * χ ζ := by
+  set L := ∫ z, Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z with hL
+  have hΔc := continuous_laplacian hχ
+  have hΔs := hasCompactSupport_laplacian hc
+  have hlogloc := locallyIntegrable_log_normSq_sub ζ
+  have hlogint : Integrable (fun z ↦ Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z) := by
+    simpa [smul_eq_mul] using hlogloc.integrable_smul_right_of_hasCompactSupport hΔc hΔs
+  have hSint : ∀ s : ℝ, 0 < s →
+      Integrable (fun z ↦ sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z) :=
+    fun s hs ↦ (((contDiff_sFun (bump_pos hs) (bump_lt hs)).continuous.comp
+      ((continuous_norm.comp (continuous_id.sub continuous_const)).pow 2)).mul
+        hΔc).integrable_of_hasCompactSupport hΔs.mul_left
+  -- the identity for each `s > 0`
+  have hid : ∀ s : ℝ, 0 < s → L = (∫ z, wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) *
+      Laplacian.laplacian χ z) + 4 * Real.pi * ∫ z, kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) * χ z := by
+    intro s hs
+    have hW : (fun z ↦ wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) * Laplacian.laplacian χ z) =
+        fun z ↦ Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z +
+          sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z := by
+      ext z
+      rw [show wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) =
+        Real.log (‖z - ζ‖ ^ 2) + sFun (s ^ 2 / 4) (s ^ 2) (‖z - ζ‖ ^ 2) from rfl]
+      ring
+    rw [hW, integral_add hlogint (hSint s hs), integral_sFun_mul_laplacian hs hχ hc ζ, ← hL]
+    ring
+  -- limits
+  obtain ⟨C, hC0, hC⟩ := exists_abs_wFun_bump_le
+  have hbound : Integrable (fun z ↦ (‖Real.log (‖z - ζ‖ ^ 2)‖ + C) * ‖Laplacian.laplacian χ z‖) := by
+    have h1 : LocallyIntegrable (fun z : ℂ ↦ ‖Real.log (‖z - ζ‖ ^ 2)‖ + C) :=
+      (locallyIntegrable_norm_of hlogloc).add (locallyIntegrable_const C)
+    simpa [smul_eq_mul] using
+      h1.integrable_smul_right_of_hasCompactSupport hΔc.norm hΔs.norm
+  have hlimW : Tendsto (fun s ↦ ∫ z, wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) * Laplacian.laplacian χ z)
+      (𝓝[>] 0) (𝓝 0) := by
+    have := tendsto_integral_filter_of_dominated_convergence (μ := volume) (l := 𝓝[>] (0 : ℝ))
+      (F := fun s z ↦ wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) * Laplacian.laplacian χ z)
+      (f := fun _ ↦ 0) _ ?_ ?_ hbound ?_
+    · simpa using this
+    · filter_upwards [self_mem_nhdsWithin] with s hs
+      exact (((measurable_wFun_bump hs).comp (measurable_id.sub_const ζ)).mul
+        hΔc.measurable).aestronglyMeasurable
+    · filter_upwards [Ioo_mem_nhdsGT one_pos] with s hs
+      filter_upwards [Measure.ae_ne volume ζ] with z hz
+      rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs (Real.log _)]
+      exact mul_le_mul_of_nonneg_right (hC s hs.1 hs.2.le (z - ζ) (sub_ne_zero.2 hz))
+        (norm_nonneg _)
+    · filter_upwards [Measure.ae_ne volume ζ] with z hz
+      refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Ioo_mem_nhdsGT (norm_pos_iff.2 (sub_ne_zero.2 hz))] with s hs
+      rw [wFun_eq_zero (bump_pos hs.1) (bump_lt hs.1) (pow_le_pow_left₀ hs.1.le hs.2.le 2),
+        zero_mul]
+  have hlimK : Tendsto (fun s ↦ ∫ z, kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) * χ z)
+      (𝓝[>] 0) (𝓝 (χ ζ)) :=
+    tendsto_integral_kernel_bump_mul one_pos
+      (hχ.continuous.continuousOn.integrableOn_compact (isCompact_closedBall ζ 1)) hχ.continuous.continuousAt
+  have hlim := hlimW.add (hlimK.const_mul (4 * Real.pi))
+  rw [zero_add] at hlim
+  have hev : (fun s ↦ (∫ z, wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) * Laplacian.laplacian χ z) +
+      4 * Real.pi * ∫ z, kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) * χ z) =ᶠ[𝓝[>] 0] fun _ ↦ L := by
+    filter_upwards [self_mem_nhdsWithin] with s hs
+    exact (hid s hs).symm
+  exact tendsto_nhds_unique (tendsto_const_nhds.congr' hev.symm) hlim
+
 /-- **Fundamental solution.** `∫ log|z − ζ| Δχ(z) dm(z) = 2π χ(ζ)`. -/
 theorem integral_log_norm_sub_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
     (hc : HasCompactSupport χ) (ζ : ℂ) :
-    ∫ z, Real.log ‖z - ζ‖ * Laplacian.laplacian χ z = 2 * Real.pi * χ ζ := sorry
+    ∫ z, Real.log ‖z - ζ‖ * Laplacian.laplacian χ z = 2 * Real.pi * χ ζ := by
+  have h := integral_log_normSq_sub_mul_laplacian hχ hc ζ
+  have e : ∀ z, Real.log ‖z - ζ‖ * Laplacian.laplacian χ z =
+      (1 / 2) * (Real.log (‖z - ζ‖ ^ 2) * Laplacian.laplacian χ z) := fun z ↦ by
+    rw [Real.log_pow]; push_cast; ring
+  simp_rw [e]
+  rw [integral_const_mul, h]
+  ring
 
 /-- Integration by parts against a test function, for `U ∈ C²(Ω)`. -/
 theorem integral_mul_laplacian_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {U χ : ℂ → ℝ}
