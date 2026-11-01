@@ -112,12 +112,127 @@ theorem finite_nodeIdx_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N :
 theorem integrableOn_kerPlane_cell {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A : ℝ}
     {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hν : MeasClassPlane ν Cd R₀)
     (hC : IsCells univ dist (massRadius ν) ν N η A R c) (i : ℕ) (z : ℂ) :
-    IntegrableOn (kerPlane z) (R i) ν := sorry
+    IntegrableOn (kerPlane z) (R i) ν := by
+  have hRm := hC.measurableSet i
+  have hfinR := hC.measure_lt_top i
+  set B1 := ball z 1
+  have hB1 : ν B1 < ∞ :=
+    (measure_mono ball_subset_closedBall).trans_lt (hν.finite _ (isCompact_closedBall z 1))
+  obtain ⟨Cc, hCc⟩ := christ_plane_quant Cd R₀ 1
+  have hchr := hCc ν hν z 1 one_pos le_rfl
+  set D : ℝ := dist z (c i) + A * massRadius ν (c i) + 1
+  set K : ℝ := max (Real.log D) 0
+  have hmeas : Measurable (kerPlane z) := by unfold kerPlane; fun_prop
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  have hpt : ∀ ζ ∈ R i, ‖kerPlane z ζ‖ₑ ≤ ENNReal.ofReal K +
+      B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / dist z ζ))) ζ := by
+    intro ζ hζ
+    rw [Real.enorm_eq_ofReal_abs, kerPlane]
+    by_cases hζz : ζ = z
+    · simp [hζz]
+    have hd : 0 < dist z ζ := dist_pos.2 (Ne.symm hζz)
+    rw [← dist_eq_norm]
+    by_cases hB : ζ ∈ B1
+    · rw [indicator_of_mem hB]
+      have hd1 : dist z ζ < 1 := by rw [dist_comm]; exact hB
+      have hlog : Real.log (dist z ζ) < 0 := Real.log_neg hd hd1
+      rw [abs_of_neg hlog]
+      refine le_trans ?_ le_add_self
+      apply ENNReal.ofReal_le_ofReal
+      rw [one_div, Real.log_inv]
+    · rw [indicator_of_notMem hB, add_zero]
+      have hd1 : 1 ≤ dist z ζ := by
+        rw [dist_comm]; simpa [B1, mem_ball] using hB
+      have hlog : 0 ≤ Real.log (dist z ζ) := Real.log_nonneg hd1
+      rw [abs_of_nonneg hlog]
+      apply ENNReal.ofReal_le_ofReal
+      refine le_trans ?_ (le_max_left _ _)
+      apply Real.log_le_log hd
+      have := hC.subset i ζ hζ
+      calc dist z ζ ≤ dist z (c i) + dist (c i) ζ := dist_triangle _ _ _
+        _ ≤ D := by simp only [D]; linarith
+  calc ∫⁻ ζ in R i, ‖kerPlane z ζ‖ₑ ∂ν
+      ≤ ∫⁻ ζ in R i, (ENNReal.ofReal K +
+          B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / dist z ζ))) ζ) ∂ν :=
+        setLIntegral_mono' hRm hpt
+    _ = ENNReal.ofReal K * ν (R i) + ∫⁻ ζ in R i,
+          B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / dist z ζ))) ζ ∂ν := by
+        rw [lintegral_add_left measurable_const, setLIntegral_const]
+    _ ≤ ENNReal.ofReal K * ν (R i) + ∫⁻ ζ in B1, ENNReal.ofReal (Real.log (1 / dist z ζ)) ∂ν := by
+        refine add_le_add le_rfl ?_
+        rw [← lintegral_indicator isOpen_ball.measurableSet]
+        exact setLIntegral_le_lintegral _ _
+    _ < ∞ := by
+        refine ENNReal.add_lt_top.2 ⟨ENNReal.mul_lt_top ENNReal.ofReal_lt_top hfinR, ?_⟩
+        exact hchr.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hB1)
 
 theorem integrableOn_kerDisc_cell {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A : ℝ}
     {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hν : MeasClassDisc ν Cd R₀)
     (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c) (i : ℕ) {z : ℂ} (hz : z ∈ 𝔻) :
-    IntegrableOn (kerDisc z) (R i) ν := sorry
+    IntegrableOn (kerDisc z) (R i) ν := by
+  have hRm := hC.measurableSet i
+  have hfinR := hC.measure_lt_top i
+  set B1 := hypBall z 1
+  have hB1 : ν B1 < ∞ := by
+    refine (measure_mono ?_).trans_lt (hν.finite _ (closedBall_tanh_subset_disc
+      (Real.artanh ‖z‖ + 1)) (isCompact_closedBall _ _))
+    exact fun w hw ↦ closedHypBall_subset_closedBall hz 1 ⟨hw.1, hw.2.le⟩
+  obtain ⟨Cc, hCc⟩ := christ_disc_quant Cd R₀ 1
+  have hchr := hCc ν hν z hz 1 one_pos le_rfl
+  set K : ℝ := Real.log 5 - Real.log (Real.tanh 1)
+  have ht1 : 0 < Real.tanh 1 := tanh_pos' one_pos
+  have hK0 : 0 ≤ - Real.log (Real.tanh 1) := by
+    have := Real.log_nonpos ht1.le (Real.tanh_lt_one 1).le; linarith
+  have hlog5 : 0 ≤ Real.log 5 := Real.log_nonneg (by norm_num)
+  have hmeas : Measurable (kerDisc z) := by unfold kerDisc pseudoHyp; fun_prop
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  have hpt : ∀ ζ ∈ R i, ‖kerDisc z ζ‖ₑ ≤ ENNReal.ofReal K +
+      B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / hypDist z ζ))) ζ := by
+    intro ζ hζ
+    have hζ𝔻 := hC.subset_univ i hζ
+    rw [Real.enorm_eq_ofReal_abs, kerDisc]
+    by_cases hζz : ζ = z
+    · simp [hζz, pseudoHyp_self]
+    set β := hypDist z ζ
+    have hβ : 0 < β := lt_of_le_of_ne (hypDist_nonneg _ _) fun h ↦
+      hζz ((hypDist_eq_zero_iff hz hζ𝔻).1 h.symm).symm
+    have hp : pseudoHyp ζ z = Real.tanh β := by rw [← tanh_hypDist hζ𝔻 hz, hypDist_comm]
+    have hp1 : pseudoHyp ζ z < 1 := pseudoHyp_lt_one hζ𝔻 hz
+    rw [hp] at hp1 ⊢
+    have htpos : 0 < Real.tanh β := tanh_pos' hβ
+    have hlog : Real.log (Real.tanh β) < 0 := Real.log_neg htpos hp1
+    rw [abs_of_neg hlog]
+    by_cases hB : ζ ∈ B1
+    · rw [indicator_of_mem hB]
+      have hβ1 : β < 1 := hB.2
+      have h5 := div_five_le_tanh hβ.le hβ1.le
+      have : -Real.log (Real.tanh β) ≤ K + Real.log (1 / β) := by
+        have := Real.log_le_log (by positivity) h5
+        rw [Real.log_div hβ.ne' (by norm_num)] at this
+        rw [one_div, Real.log_inv]
+        simp only [K]; linarith
+      exact (ENNReal.ofReal_le_ofReal this).trans ENNReal.ofReal_add_le
+    · rw [indicator_of_notMem hB, add_zero]
+      have hβ1 : 1 ≤ β := by
+        by_contra h; push Not at h; exact hB ⟨hζ𝔻, h⟩
+      apply ENNReal.ofReal_le_ofReal
+      have := Real.log_le_log ht1 (tanh_le_tanh hβ1)
+      simp only [K]; linarith
+  calc ∫⁻ ζ in R i, ‖kerDisc z ζ‖ₑ ∂ν
+      ≤ ∫⁻ ζ in R i, (ENNReal.ofReal K +
+          B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / hypDist z ζ))) ζ) ∂ν :=
+        setLIntegral_mono' hRm hpt
+    _ = ENNReal.ofReal K * ν (R i) + ∫⁻ ζ in R i,
+          B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / hypDist z ζ))) ζ ∂ν := by
+        rw [lintegral_add_left measurable_const, setLIntegral_const]
+    _ ≤ ENNReal.ofReal K * ν (R i) +
+          ∫⁻ ζ in B1, ENNReal.ofReal (Real.log (1 / hypDist z ζ)) ∂ν := by
+        refine add_le_add le_rfl ?_
+        rw [← lintegral_indicator (isOpen_hypBall z 1).measurableSet]
+        exact setLIntegral_le_lintegral _ _
+    _ < ∞ := by
+        refine ENNReal.add_lt_top.2 ⟨ENNReal.mul_lt_top ENNReal.ofReal_lt_top hfinR, ?_⟩
+        exact hchr.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hB1)
 
 /-! ### A generic per-cell bound -/
 
