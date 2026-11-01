@@ -15,6 +15,8 @@ Re-exports the modules containing the main theorems of `comparator/statements.le
 * `theorem2`, `theorem2_uniform`, `theorem2_printed` (M11, `Theorem2.lean`);
 * `theorem1`, `theorem1_christ`, `prop1` (M12, `Theorem1.lean`);
 * `theorem5` (M13, `Theorem5.lean`);
-* `theorem3_weighted` (M14, `Theorem3.lean`), the corrected Theorem 3.  The printed `theorem3`
-  is false (`not_theorem3_printed`) and is not declared.
+* `theorem3_weighted` (M14, `Theorem3.lean`), the corrected Theorem 3, unconditional via
+  `theoremOCS_holds` (`TheoremOCSProof.lean`, proved in MR1682065, vendored in `OrtegaCerdaSeip/`);
+  `theorem3_weighted_of_theoremOCS` is the conditional form (the paper's route);
+* `theorem3_printed_false` (M14): the printed `theorem3` is false and is not declared.
 -/

@@ -1,5 +1,6 @@
 import OrtegaCerdaMultipliers.Theorem5
 import OrtegaCerdaMultipliers.Foundations.Weyl
+import OrtegaCerdaMultipliers.TheoremOCSProof
 
 /-!
 # M14 (Theorem3) — Theorem 3 (degenerate weights), from Theorem 5 and [OCS99]
@@ -13,10 +14,12 @@ measure is replaced by `N` point masses at `x₀ - i 2^{-(k+6)}`, so that the Ca
 explicit sum of poles, and Bernstein's inequality is replaced by Phragmén–Lindelöf in half-planes
 (`PhragmenLindelof.right_half_plane_of_tendsto_zero_on_real`) plus the Cauchy estimate.
 
-`theorem3_weighted` is the corrected Theorem 3 (proposed main statement): hypothesis
-`TheoremOCS`, conclusion with the weighted integral `∫_{|z-x|<1} e^{-φ(z)} d|μ|(z) / |x − z|`.
-The printed `theorem3` of `comparator/statements.lean` is false (`not_theorem3_printed`); it is
-kept below only as a comment.
+`theorem3_weighted_of_theoremOCS` is the corrected Theorem 3 proved from the hypothesis
+`TheoremOCS` ([OCS99], as the paper uses it), with the weighted integral
+`∫_{|z-x|<1} e^{-φ(z)} d|μ|(z) / |x − z|` in the conclusion.  `TheoremOCS` is proved in the companion
+project MR1682065 (`theoremOCS_holds`, `TheoremOCSProof.lean`), so `theorem3_weighted` (main
+statement) and `theorem3_of_lowerBound` are unconditional.  The printed `theorem3` is false
+(`not_theorem3_printed`, `theorem3_printed_false`); it is kept below only as a comment.
 -/
 
 open MeasureTheory Metric Set Complex
@@ -270,7 +273,9 @@ theorem one_add_mul_le_mul_one_add (M J : ℝ≥0∞) : 1 + M * J ≤ (1 + M) * 
     _ = (1 + M) * (1 + J) := by ring
 
 /-! 14.3 Theorem 3, corrected (weight inside the integral) -/
-theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
+/-- **Theorem 3, corrected**, from the Ortega-Cerdà–Seip theorem `TheoremOCS` (the paper's route:
+[OCS99] is used as a black box).  See `theorem3_weighted` for the unconditional form. -/
+theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
     (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) (K : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
@@ -377,8 +382,29 @@ theorem theorem3_weighted (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure �
       _ = ((2 * Cu.toNNReal * CO * (1 + m.toNNReal) : ℝ≥0) : ℝ≥0∞) * (1 + J) := by
           push_cast; rw [ENNReal.ofReal, ENNReal.ofReal]; ring
 
+/-- **Theorem 3, corrected** (paper, p. 358): `∂̄u = σν` has a solution, holomorphic off `L`, with
+`|u| e^{-φ} → 0` at `∞` and `|u(x)| e^{-φ(x)} ≤ C (1 + ∫_{|z-x|<1} e^{-φ(z)} d|ν|(z) / |x − z|)` on `ℝ`.
+Unconditional: `TheoremOCS` is proved in MR1682065 (`theoremOCS_holds`). -/
+theorem theorem3_weighted (φ : ℂ → ℝ) (μ : Measure ℂ)
+    (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
+    (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r)) (K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
+      IsFiniteMeasure ν → IsCompact L → ν Lᶜ = 0 → Measurable σ → (∀ z, ‖σ z‖ = 1) →
+      (∀ x : ℝ, ∀ r : ℝ, 0 < r →
+        (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) (ball (x : ℂ) r) ≤
+          K * ENNReal.ofReal r) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSolMeasure u ν σ ∧ DifferentiableOn ℂ u Lᶜ ∧
+        Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
+        ∀ x : ℝ, (x : ℂ) ∉ L →
+          ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1,
+              ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν) :=
+  theorem3_weighted_of_theoremOCS theoremOCS_holds φ μ hφ hd hm K
+
 /-! 14.4 the printed form, under a lower bound for `φ` on the strip `|Im z| < 1` -/
-theorem theorem3_of_lowerBound (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
+/-- The printed conclusion of Theorem 3 (unweighted integral) holds when `φ` is bounded below on the
+strip `|Im z| < 1`, from `TheoremOCS`.  See `theorem3_of_lowerBound` for the unconditional form. -/
+theorem theorem3_of_lowerBound_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
     (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r))
     (hlow : ∃ B : ℝ, ∀ z : ℂ, |z.im| < 1 → -B ≤ φ z) (K : ℝ≥0) :
@@ -393,7 +419,7 @@ theorem theorem3_of_lowerBound (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Meas
           ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
             C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := by
   obtain ⟨B, hB⟩ := hlow
-  obtain ⟨C, hC⟩ := theorem3_weighted hOCS φ μ hφ hd hm K
+  obtain ⟨C, hC⟩ := theorem3_weighted_of_theoremOCS hOCS φ μ hφ hd hm K
   refine ⟨C * (1 + (Real.exp B).toNNReal), fun ν σ L hν hL hνL hσ hσ1 hcar ↦ ?_⟩
   obtain ⟨u, hu1, hu2, hu3, hu4⟩ := hC ν σ L hν hL hνL hσ hσ1 hcar
   refine ⟨u, hu1, hu2, hu3, fun x hx ↦ ?_⟩
@@ -421,6 +447,24 @@ theorem theorem3_of_lowerBound (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Meas
         gcongr; exact one_add_mul_le_mul_one_add _ _
     _ = ((C * (1 + (Real.exp B).toNNReal) : ℝ≥0) : ℝ≥0∞) * (1 + I) := by
         push_cast; rw [ENNReal.ofReal]; ring
+
+/-- The printed conclusion of Theorem 3 (unweighted integral) holds when `φ` is bounded below on the
+strip `|Im z| < 1` (e.g. `φ = α|Im z|`, the case of [OCS99]).  Unconditional. -/
+theorem theorem3_of_lowerBound (φ : ℂ → ℝ) (μ : Measure ℂ)
+    (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
+    (hm : ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, 1 < μ (lineInterval x r))
+    (hlow : ∃ B : ℝ, ∀ z : ℂ, |z.im| < 1 → -B ≤ φ z) (K : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
+      IsFiniteMeasure ν → IsCompact L → ν Lᶜ = 0 → Measurable σ → (∀ z, ‖σ z‖ = 1) →
+      (∀ x : ℝ, ∀ r : ℝ, 0 < r →
+        (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) (ball (x : ℂ) r) ≤
+          K * ENNReal.ofReal r) →
+      ∃ u : ℂ → ℂ, IsWeakDbarSolMeasure u ν σ ∧ DifferentiableOn ℂ u Lᶜ ∧
+        Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
+        ∀ x : ℝ, (x : ℂ) ∉ L →
+          ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) :=
+  theorem3_of_lowerBound_of_theoremOCS theoremOCS_holds φ μ hφ hd hm hlow K
 
 /-! 14.5 the counterexample to the printed Theorem 3 (documentation; optional) -/
 /-- `φ₀(z) = |Im z| + Re z · Im z`. -/
@@ -954,8 +998,9 @@ theorem cexP_oscillation (N : ℕ) :
     _ ≤ |(cexP N (cexX0 N) - cexP N ((cexX0 N + τ : ℝ) : ℂ)).im| := neg_le_abs _
     _ ≤ ‖cexP N (cexX0 N) - cexP N ((cexX0 N + τ : ℝ) : ℂ)‖ := abs_im_le_norm _
 
-/-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`; hence `theorem3` in
-`comparator/statements.lean` is equivalent to `¬ TheoremOCS`. -/
+/-- The conclusion of the printed Theorem 3 fails for `(φ₀, μ₀, K = 2)`.  Hence the printed
+`theorem3` (hypothesis `TheoremOCS`, kept as a comment below) is equivalent to `¬ TheoremOCS`;
+since `TheoremOCS` is proved (`theoremOCS_holds`), it is simply false. -/
 theorem not_theorem3_printed :
     ¬ ∃ C : ℝ≥0, ∀ (ν : Measure ℂ) (σ : ℂ → ℂ) (L : Set ℂ),
       IsFiniteMeasure ν → IsCompact L → ν Lᶜ = 0 → Measurable σ → (∀ z, ‖σ z‖ = 1) →
@@ -1097,9 +1142,10 @@ theorem not_theorem3_printed :
 
 /-! ### The printed Theorem 3 (comparator statement `theorem3`): FALSE, kept out of the build
 
-The printed statement (paper, p. 358), as in `comparator/statements.lean`, is false: for the
-weight `cexWeight` and `cexMeasure` (§4 of `blueprint/M14_Theorem3.md`) its conclusion fails
-(`not_theorem3_printed`), so `theorem3` is equivalent to `¬ TheoremOCS`.  The corrected
+The printed statement (paper, p. 358) is false: for the weight `cexWeight` and `cexMeasure`
+(§4 of `blueprint/M14_Theorem3.md`) its conclusion fails (`not_theorem3_printed`,
+`theorem3_printed_false`).  With the hypothesis `TheoremOCS` below it was equivalent to
+`¬ TheoremOCS`; since `TheoremOCS` is proved (`theoremOCS_holds`), it is simply false.  The corrected
 statement is `theorem3_weighted` above (weight `e^{-φ}` inside the integral).  The printed form
 is recorded here as a comment only, so that no known-false `sorry` theorem is in the build:
 
