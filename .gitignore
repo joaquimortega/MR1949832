@@ -1,0 +1,6 @@
+.lake/
+*.olean
+/build
+
+# Source papers are kept locally only.
+*.pdf
