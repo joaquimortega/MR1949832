@@ -119,6 +119,43 @@ theorem integrableOn_kerDisc_cell {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
     (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c) (i : ℕ) {z : ℂ} (hz : z ∈ 𝔻) :
     IntegrableOn (kerDisc z) (R i) ν := sorry
 
+/-! ### A generic per-cell bound -/
+
+theorem abs_multiset_sum_le {s : Multiset ℂ} {f : ℂ → ℝ} {E : ℝ} (h : ∀ w ∈ s, |f w| ≤ E) :
+    |(s.map f).sum| ≤ Multiset.card s * E := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a t ih =>
+    rw [Multiset.map_cons, Multiset.sum_cons, Multiset.card_cons]
+    have ha := h a (Multiset.mem_cons_self a t)
+    have ht := ih fun w hw ↦ h w (Multiset.mem_cons_of_mem hw)
+    calc |f a + (t.map f).sum| ≤ |f a| + |(t.map f).sum| := abs_add_le _ _
+      _ ≤ E + Multiset.card t * E := add_le_add ha ht
+      _ = ((Multiset.card t + 1 : ℕ) : ℝ) * E := by push_cast; ring
+
+/-- Moment cancellation plus a pointwise bound on `k − T` gives `|cellPot| ≤ 2 N E`. -/
+theorem abs_cellPot_le_of_bound {k : ℂ → ℂ → ℝ} {ν : Measure ℂ} {R : ℕ → Set ℂ}
+    {Λ : ℕ → Multiset ℂ} {i m N : ℕ} {z : ℂ} (hcard : Multiset.card (Λ i) = N)
+    (hmeas : ν (R i) = N) (hR : MeasurableSet (R i)) (hb : Bornology.IsBounded (R i))
+    (hmom : ∀ j < m, ∫ ζ in R i, ζ ^ j ∂ν = ((Λ i).map (· ^ j)).sum)
+    (hint : IntegrableOn (k z) (R i) ν) {T : ℂ → ℝ} {p : Polynomial ℂ} (hp : p.natDegree < m)
+    (hT : ∀ ζ, T ζ = (p.eval ζ).re) {E : ℝ} (hΛ : ∀ w ∈ Λ i, |k z w - T w| ≤ E)
+    (hRb : ∀ ζ ∈ R i, |k z ζ - T ζ| ≤ E) :
+    |cellPot k ν R Λ i z| ≤ 2 * N * E := by
+  have hfin : ν (R i) < ∞ := by rw [hmeas]; exact ENNReal.natCast_lt_top N
+  rw [cellPot_eq_sub_poly hR hfin hb hmom hint hp hT]
+  have h1 := abs_multiset_sum_le hΛ
+  have h2 : ‖∫ ζ in R i, (k z ζ - T ζ) ∂ν‖ ≤ E * ν.real (R i) :=
+    norm_setIntegral_le_of_norm_le_const hfin fun ζ hζ ↦ by
+      rw [Real.norm_eq_abs]; exact hRb ζ hζ
+  have hreal : ν.real (R i) = N := by simp [Measure.real, hmeas]
+  rw [hreal, Real.norm_eq_abs] at h2
+  rw [hcard] at h1
+  calc _ ≤ |((Λ i).map fun w ↦ k z w - T w).sum| + |∫ ζ in R i, (k z ζ - T ζ) ∂ν| :=
+        abs_sub _ _
+    _ ≤ N * E + E * N := add_le_add h1 h2
+    _ = 2 * N * E := by ring
+
 /-! ### Per-cell bounds for non-near cells (§3.4) -/
 
 /-- (P): plane, order-3 moments. -/
@@ -130,7 +167,34 @@ theorem abs_cellPot_le_plane {ν : Measure ℂ} {N : ℕ} {η A B : ℝ} {R : �
     (hρ : 0 < massRadius ν (c i))
     (hfar : 2 * (A + B) * massRadius ν (c i) ≤ dist z (c i)) :
     |cellPot kerPlane ν R Λ i z| ≤
-      4 * N * (A + B) ^ 3 * (massRadius ν (c i) / dist z (c i)) ^ 3 := sorry
+      4 * N * (A + B) ^ 3 * (massRadius ν (c i) / dist z (c i)) ^ 3 := by
+  set ρ := massRadius ν (c i)
+  set d := dist z (c i)
+  have hd : 0 < d := lt_of_lt_of_le (by positivity) hfar
+  have hzc : z ≠ c i := dist_pos.1 hd
+  obtain ⟨p, hp, hT⟩ := exists_poly_taylorPlane (m := 3) (by norm_num) z (c i)
+  have hmom : ∀ j < 3, ∫ ζ in R i, ζ ^ j ∂ν = ((Λ i).map (· ^ j)).sum :=
+    fun j hj ↦ hN.moments i j (lt_of_lt_of_le hj hm)
+  have hpt : ∀ ζ, ‖ζ - c i‖ ≤ (A + B) * ρ →
+      |kerPlane z ζ - taylorPlane 3 z (c i) ζ| ≤ 2 * ((A + B) ^ 3 * (ρ / d) ^ 3) := by
+    intro ζ hζ
+    have h2 : 2 * ‖ζ - c i‖ ≤ ‖z - c i‖ := by
+      rw [← dist_eq_norm z]; linarith
+    refine (abs_kerPlane_sub_taylorPlane_le (by norm_num) hzc h2).trans ?_
+    rw [← dist_eq_norm z]
+    have : ‖ζ - c i‖ / d ≤ (A + B) * ρ / d := div_le_div_of_nonneg_right hζ hd.le
+    calc 2 * (‖ζ - c i‖ / d) ^ 3 ≤ 2 * ((A + B) * ρ / d) ^ 3 := by gcongr
+      _ = 2 * ((A + B) ^ 3 * (ρ / d) ^ 3) := by ring
+  have hbd := abs_cellPot_le_of_bound (hN.card i) (hC.measure_eq i) (hC.measurableSet i)
+    (hC.isBounded_plane i) hmom hint hp (fun ζ ↦ hT ζ)
+    (fun w hw ↦ hpt w (by
+      rw [← dist_eq_norm, dist_comm]
+      exact (hN.near i w hw).trans (by nlinarith)))
+    (fun ζ hζ ↦ hpt ζ (by
+      rw [← dist_eq_norm, dist_comm]
+      exact (hC.subset i ζ hζ).trans (by nlinarith)))
+  calc _ ≤ 2 * N * (2 * ((A + B) ^ 3 * (ρ / d) ^ 3)) := hbd
+    _ = 4 * N * (A + B) ^ 3 * (ρ / d) ^ 3 := by ring
 
 /-- (D-near): disc, small cells, order-3 moments. -/
 theorem abs_cellPot_le_disc_near {ν : Measure ℂ} {N : ℕ} {η A B : ℝ} {R : ℕ → Set ℂ}
@@ -142,7 +206,81 @@ theorem abs_cellPot_le_disc_near {ν : Measure ℂ} {N : ℕ} {η A B : ℝ} {R 
     (hβ : hypDist z (c i) ≤ 1 / 4)
     (hβ' : 64 * (A + B) * massRadiusDisc ν (c i) ≤ hypDist z (c i)) :
     |cellPot kerDisc ν R Λ i z| ≤
-      8 * N * (12 * (A + B)) ^ 3 * (massRadiusDisc ν (c i) / hypDist z (c i)) ^ 3 := sorry
+      8 * N * (14 * (A + B)) ^ 3 * (massRadiusDisc ν (c i) / hypDist z (c i)) ^ 3 := by
+  set ρ := massRadiusDisc ν (c i)
+  set β := hypDist z (c i)
+  set sr := (A + B) * ρ
+  have hc := hC.center_mem' i
+  have hsr0 : 0 < sr := by positivity
+  have hβ0 : 0 < β := by nlinarith
+  have hzc : z ≠ c i := by
+    intro h; have : β = 0 := by simp [β, h]
+    linarith
+  have hz1 := norm_lt_one_of_mem_disc hz
+  have hc1 := norm_lt_one_of_mem_disc hc
+  have hcpos := one_sub_normSq_pos hc
+  have hDpos := norm_one_sub_conj_mul_pos hz hc
+  -- lower bound for `|z - c|`
+  have hzcl : β * (1 - ‖c i‖ ^ 2) / 10 ≤ ‖z - c i‖ := by
+    rw [norm_sub_eq_tanh_mul hz hc, hypDist_comm]
+    have h5 := div_five_le_tanh hβ0.le (by linarith)
+    have h2 := one_sub_normSq_le_two_mul_norm hz hc
+    have ht0 : 0 ≤ Real.tanh β := tanh_nonneg_of_nonneg hβ0.le
+    calc β * (1 - ‖c i‖ ^ 2) / 10 = (β / 5) * ((1 - ‖c i‖ ^ 2) / 2) := by ring
+      _ ≤ Real.tanh β * ‖1 - conj z * c i‖ := by
+          apply mul_le_mul h5 (by linarith) (by positivity) ht0
+  have hzcpos : 0 < ‖z - c i‖ := norm_pos_iff.2 (sub_ne_zero.2 hzc)
+  -- upper bound for `|ζ - c|`
+  have hζc : ∀ ζ ∈ 𝔻, hypDist (c i) ζ ≤ sr → ‖ζ - c i‖ ≤ (4 / 3) * sr * (1 - ‖c i‖ ^ 2) := by
+    intro ζ hζ hd
+    refine (norm_sub_le_mul_exp hc hζ hsr0.le hd).trans ?_
+    have he : Real.exp (2 * sr) ≤ 4 / 3 :=
+      (Real.exp_le_exp.2 (by linarith)).trans exp_quarter_le
+    have : sr * Real.exp (2 * sr) ≤ 4 / 3 * sr := by nlinarith
+    exact mul_le_mul_of_nonneg_right this hcpos.le
+  have hratio : ∀ ζ ∈ 𝔻, hypDist (c i) ζ ≤ sr →
+      ‖ζ - c i‖ / ‖z - c i‖ ≤ (40 / 3) * sr / β := by
+    intro ζ hζ hd
+    rw [div_le_div_iff₀ hzcpos hβ0]
+    have h1 := hζc ζ hζ hd
+    have : ‖ζ - c i‖ * β ≤ (4 / 3) * sr * (1 - ‖c i‖ ^ 2) * β :=
+      mul_le_mul_of_nonneg_right h1 hβ0.le
+    nlinarith
+  have hpt : ∀ ζ ∈ 𝔻, hypDist (c i) ζ ≤ sr →
+      |kerDisc z ζ - taylorDisc 3 z (c i) ζ| ≤ 4 * ((14 * (A + B)) ^ 3 * (ρ / β) ^ 3) := by
+    intro ζ hζ hd
+    have hr := hratio ζ hζ hd
+    have hr' : (40 / 3) * sr / β ≤ 1 / 2 := by
+      rw [div_le_iff₀ hβ0]; nlinarith
+    have h2 : 2 * ‖ζ - c i‖ ≤ ‖z - c i‖ := by
+      have := hr.trans hr'
+      rw [div_le_iff₀ hzcpos] at this; linarith
+    refine (abs_kerDisc_sub_taylorDisc_le (by norm_num) hz hc hzc h2).trans ?_
+    have hzD : (1 - ‖z‖ ^ 2) / ‖1 - conj z * c i‖ ≤ 2 := by
+      rw [div_le_iff₀ hDpos]
+      have := one_sub_mul_le_norm_one_sub_conj_mul z (c i)
+      nlinarith [norm_nonneg z, norm_nonneg (c i)]
+    have hr0 : 0 ≤ ‖ζ - c i‖ / ‖z - c i‖ := by positivity
+    calc 2 * (1 - ‖z‖ ^ 2) * ‖ζ - c i‖ ^ 3 / (‖z - c i‖ ^ 3 * ‖1 - conj z * c i‖)
+        = 2 * ((1 - ‖z‖ ^ 2) / ‖1 - conj z * c i‖) * (‖ζ - c i‖ / ‖z - c i‖) ^ 3 := by
+          field_simp
+      _ ≤ 2 * 2 * ((40 / 3) * sr / β) ^ 3 := by gcongr
+      _ ≤ 4 * ((14 * (A + B)) ^ 3 * (ρ / β) ^ 3) := by
+          have : (40 / 3) * sr / β ≤ 14 * (A + B) * (ρ / β) := by
+            rw [show (40 / 3) * sr / β = (40 / 3) * (A + B) * (ρ / β) by ring]
+            gcongr; norm_num
+          calc 2 * 2 * ((40 / 3) * sr / β) ^ 3 ≤ 2 * 2 * (14 * (A + B) * (ρ / β)) ^ 3 := by
+                gcongr
+            _ = 4 * ((14 * (A + B)) ^ 3 * (ρ / β) ^ 3) := by ring
+  obtain ⟨p, hp, hT⟩ := exists_poly_taylorDisc (m := 3) (by norm_num) z (c i)
+  have hmom : ∀ j < 3, ∫ ζ in R i, ζ ^ j ∂ν = ((Λ i).map (· ^ j)).sum :=
+    fun j hj ↦ hN.moments i j (lt_of_lt_of_le hj hm)
+  have hbd := abs_cellPot_le_of_bound (hN.card i) (hC.measure_eq i) (hC.measurableSet i)
+    (hC.isBounded_disc i) hmom hint hp (fun ζ ↦ hT ζ)
+    (fun w hw ↦ hpt w (hN.mem i w hw) ((hN.near i w hw).trans (by nlinarith)))
+    (fun ζ hζ ↦ hpt ζ (hC.subset_univ i hζ) ((hC.subset i ζ hζ).trans (by nlinarith)))
+  calc _ ≤ 2 * N * (4 * ((14 * (A + B)) ^ 3 * (ρ / β) ^ 3)) := hbd
+    _ = 8 * N * (14 * (A + B)) ^ 3 * (ρ / β) ^ 3 := by ring
 
 /-- (D-far): disc, any cell (order-2 moments), hyperbolically far from `z`. -/
 theorem abs_cellPot_le_disc_far (A B R₀ M₀ : ℝ) (N : ℕ) (hA : 0 < A) (hB : 0 ≤ B)
