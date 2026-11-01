@@ -5,7 +5,7 @@ import OrtegaCerdaMultipliers.ModelKernels
 /-!
 # M08 (Multiplier) — The area-counting near-field lemma and the far-field sums
 
-See `blueprint/M08_Multiplier.md` §2.4.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M08_Multiplier.md` §2.4, §3.5, §3.6.
 -/
 
 open MeasureTheory Metric Set Complex
@@ -345,7 +345,89 @@ theorem farField_sum_le_plane (Cd : ℝ≥0) (R₀ η A M₀ : ℝ) (hη : 0 < �
     ∃ C : ℝ, ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ),
       MeasClassPlane ν Cd R₀ → IsCells univ dist (massRadius ν) ν N η A R c → ∀ z : ℂ,
       ∀ F : Finset ℕ, (∀ i ∈ F, M₀ ≤ dist z (c i) ∧ 2 * A * massRadius ν (c i) ≤ dist z (c i)) →
-        ∑ i ∈ F, (massRadius ν (c i) / dist z (c i)) ^ 3 ≤ C := sorry
+        ∑ i ∈ F, (massRadius ν (c i) / dist z (c i)) ^ 3 ≤ C := by
+  obtain ⟨C₁, hC₁, hcl⟩ := claim1_plane_quant Cd R₀ 0
+  set a := min η (η / 2) with ha
+  have ha0 : 0 < a := lt_min hη (by linarith)
+  set Q := 16 / a ^ 2 with hQ
+  set C' := max R₀ 0 / M₀ with hC'
+  refine ⟨C' * Q / (1 - (2 : ℝ) ^ (-(1 : ℝ))), ?_⟩
+  intro ν N R c hν hC z F hF
+  have hρ : ∀ w, 0 < massRadius ν w := fun w ↦ (hcl ν hν w w).1
+  have hρR : ∀ w, massRadius ν w ≤ R₀ := fun w ↦ (hcl ν hν w w).2.1
+  have hA : η / 2 ≤ A := hC.half_le_A_plane (i := 0) (hρ _) hη
+  have haA : a ≤ A := (min_le_right _ _).trans hA
+  have haη : a ≤ η := min_le_left _ _
+  refine dyadic_sum_le (r := fun i ↦ massRadius ν (c i)) (β := fun i ↦ dist z (c i))
+    hM₀ one_pos (by positivity) (by positivity) (fun i hi ↦ (hF i hi).1)
+    (fun i _ ↦ (hρ _).le) ?_ ?_
+  · intro n
+    set Fn := F.filter (fun i ↦ 2 ^ n * M₀ ≤ dist z (c i) ∧ dist z (c i) < 2 ^ (n + 1) * M₀)
+    set b := 4 * (2 ^ n * M₀) with hb
+    have hb0 : 0 < b := by positivity
+    have hsub : ∀ i ∈ Fn, ball (c i) (a * massRadius ν (c i)) ⊆ R i := by
+      intro i _ w hw
+      refine hC.inner i ⟨mem_univ _, ?_⟩
+      rw [dist_comm]
+      exact (mem_ball.1 hw).trans_le (mul_le_mul_of_nonneg_right haη (hρ _).le)
+    have hball : ∀ i ∈ Fn, ball (c i) (a * massRadius ν (c i)) ⊆ ball z b := by
+      intro i hi w hw
+      have hi' := Finset.mem_filter.1 hi
+      rw [mem_ball] at hw ⊢
+      have htri := dist_triangle w (c i) z
+      have h3 := (hF i hi'.1).2
+      have haA' : a * massRadius ν (c i) ≤ A * massRadius ν (c i) :=
+        mul_le_mul_of_nonneg_right haA (hρ _).le
+      have : dist z (c i) < 2 ^ (n + 1) * M₀ := hi'.2.2
+      rw [pow_succ] at this
+      rw [dist_comm (c i) z] at htri
+      have h2n : 0 < 2 ^ n * M₀ := by positivity
+      nlinarith
+    have hdisj : (Fn : Set ℕ).PairwiseDisjoint
+        fun i ↦ ball (c i) (a * massRadius ν (c i)) := by
+      intro i hi j hj hij
+      exact (hC.pairwise_disjoint hij).mono (hsub i hi) (hsub j hj)
+    have hvol : ∀ (x : ℂ) (r : ℝ), 0 ≤ r → volume (ball x r) = ENNReal.ofReal (Real.pi * r ^ 2) := by
+      intro x r hr
+      rw [Complex.volume_ball, ← ENNReal.ofReal_pow hr, ← ENNReal.ofReal_coe_nnreal,
+        ← ENNReal.ofReal_mul (by positivity)]
+      simp [mul_comm]
+    have hcount := sum_le_of_pairwiseDisjoint (μ := volume)
+      (E := fun i ↦ ball (c i) (a * massRadius ν (c i))) (U := ball z b)
+      (f := fun i ↦ Real.pi * (a * massRadius ν (c i)) ^ 2)
+      (V := Real.pi * b ^ 2) (fun i _ ↦ isOpen_ball.measurableSet) hdisj
+      hball (fun i _ ↦ by positivity)
+      (fun i _ ↦ (hvol _ _ (by have := hρ (c i); positivity)).ge)
+      (by positivity) (hvol _ _ hb0.le).le
+    rw [← Finset.mul_sum] at hcount
+    have hsum : ∑ i ∈ Fn, (massRadius ν (c i)) ^ 2 ≤ b ^ 2 / a ^ 2 := by
+      have h1 : ∑ i ∈ Fn, (a * massRadius ν (c i)) ^ 2 ≤ b ^ 2 := by
+        have := Real.pi_pos; nlinarith
+      simp_rw [mul_pow] at h1
+      rw [← Finset.mul_sum] at h1
+      rw [le_div_iff₀ (by positivity), mul_comm]
+      linarith
+    calc ∑ i ∈ Fn, (massRadius ν (c i) / dist z (c i)) ^ 2
+        ≤ ∑ i ∈ Fn, (massRadius ν (c i)) ^ 2 / (2 ^ n * M₀) ^ 2 :=
+          Finset.sum_le_sum fun i hi ↦ by
+            have hi' := Finset.mem_filter.1 hi
+            rw [div_pow]
+            gcongr
+            exact hi'.2.1
+      _ = (∑ i ∈ Fn, (massRadius ν (c i)) ^ 2) / (2 ^ n * M₀) ^ 2 := by
+          rw [Finset.sum_div]
+      _ ≤ b ^ 2 / a ^ 2 / (2 ^ n * M₀) ^ 2 := by gcongr
+      _ = Q := by rw [hb, hQ]; field_simp; ring
+  · intro n i hi hlo hhi
+    have hdpos : 0 < dist z (c i) := lt_of_lt_of_le (by positivity) hlo
+    have h2 : (2 : ℝ) ^ (-(1 : ℝ)) = 1 / 2 := by rw [Real.rpow_neg_one]; norm_num
+    rw [h2, hC', div_pow, one_pow]
+    rw [div_le_iff₀ hdpos]
+    have hR := (hρR (c i)).trans (le_max_left R₀ 0)
+    have : max R₀ 0 / M₀ * (1 / 2 ^ n) * dist z (c i) ≥ max R₀ 0 / M₀ * (1 / 2 ^ n) * (2 ^ n * M₀) := by
+      gcongr
+    have e : max R₀ 0 / M₀ * (1 / 2 ^ n) * (2 ^ n * M₀) = max R₀ 0 := by field_simp
+    linarith
 
 /-- Far field (disc): the Forelli–Rudin sum. -/
 theorem farField_sum_le_disc (Cd : ℝ≥0) (R₀ η A M₀ : ℝ) (hη : 0 < η) (hM₀ : 0 < M₀) :
