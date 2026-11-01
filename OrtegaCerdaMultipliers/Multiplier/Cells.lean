@@ -5,7 +5,7 @@ import OrtegaCerdaMultipliers.Partition.Lemma4
 /-!
 # M08 (Multiplier) — Geometry of cells and nodes
 
-See `blueprint/M08_Multiplier.md` §2.3.  Scaffold: statements, proofs `sorry`.
+See `blueprint/M08_Multiplier.md` §2.3, §3.3.
 -/
 
 open MeasureTheory Metric Set Complex
@@ -178,14 +178,174 @@ theorem cells_near_plane (Cd : ℝ≥0) (R₀ η A B K₀ : ℝ) (hη : 0 < η) 
           ∀ w ∈ R i ∪ {w | w ∈ Λ i}, dist z w ≤ C₃ * massRadius ν z) ∧
         (∀ i, K₀ * massRadius ν (c i) ≤ dist z (c i) →
           δ * massRadius ν z ≤ dist z (c i) ∧ ∀ w ∈ Λ i, δ * massRadius ν z ≤ 2 * dist z w) ∧
-        (∃ i, z ∈ R i ∧ dist z (c i) < K₀ * massRadius ν (c i)) := sorry
+        (∃ i, z ∈ R i ∧ dist z (c i) < K₀ * massRadius ν (c i)) := by
+  set K₁ := max K₀ η with hK₁
+  have hK₁pos : 0 < K₁ := lt_of_lt_of_le hη (le_max_right _ _)
+  obtain ⟨C₁, hC₁, hcl⟩ := claim1_plane_quant Cd R₀ K₁
+  obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_plane Cd R₀ K₁ hK₁pos
+  set Kb := K₁ * C₁ + η with hKbdef
+  have hKb : 0 < Kb := by positivity
+  set Mc : ℕ := ⌈(Kb * C₁ / η) ^ 2⌉₊ with hMc
+  refine ⟨Mc, δ, (K₁ + |A| + |B|) * C₁, hδ, by positivity, ?_⟩
+  intro ν N R c m Λ hν hN1 hC hN z
+  have hρ : ∀ w, 0 < massRadius ν w := fun w ↦ (hcl ν hν w w).1
+  have hρz := hρ z
+  have hA : η / 2 ≤ A := hC.half_le_A_plane (i := 0) (hρ _) hη
+  have hB : 0 ≤ B := hN.B_nonneg (fun _ _ ↦ dist_nonneg) hN1 (i := 0) (hρ _)
+  have hK₀η : η ≤ K₀ := by linarith
+  have hK₁eq : K₁ = K₀ := max_eq_left hK₀η
+  have hcomp : ∀ i, dist z (c i) < K₀ * massRadius ν (c i) →
+      massRadius ν z ≤ C₁ * massRadius ν (c i) ∧
+        massRadius ν (c i) ≤ C₁ * massRadius ν z := by
+    intro i hi
+    have hle : dist z (c i) ≤ K₁ * max (massRadius ν z) (massRadius ν (c i)) := by
+      rw [hK₁eq]
+      exact hi.le.trans (mul_le_mul_of_nonneg_left (le_max_right _ _) (by linarith))
+    refine ⟨(hcl ν hν z (c i)).2.2 hle, (hcl ν hν (c i) z).2.2 ?_⟩
+    rw [dist_comm, max_comm]; exact hle
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · refine encard_le_of_forall_finset fun F hF ↦ ?_
+    set a := η * massRadius ν z / C₁ with ha
+    set b := Kb * massRadius ν z with hb
+    have ha0 : 0 < a := by positivity
+    have hab : ∀ i ∈ F, ball (c i) a ⊆ ball z b := by
+      intro i hi w hw
+      have hiF := hF hi
+      obtain ⟨h1, h2⟩ := hcomp i hiF
+      rw [mem_ball] at hw ⊢
+      have htri := dist_triangle w (c i) z
+      have : dist (c i) z < K₁ * C₁ * massRadius ν z := by
+        rw [hK₁eq, dist_comm]
+        calc dist z (c i) < K₀ * massRadius ν (c i) := hiF
+          _ ≤ K₀ * (C₁ * massRadius ν z) := mul_le_mul_of_nonneg_left h2 (by linarith)
+          _ = K₀ * C₁ * massRadius ν z := by ring
+      have ha' : a ≤ η * massRadius ν z := by
+        rw [ha]; exact div_le_self (by positivity) hC₁
+      calc dist w z ≤ dist w (c i) + dist (c i) z := htri
+        _ < a + K₁ * C₁ * massRadius ν z := by linarith
+        _ ≤ b := by rw [hb, hKbdef]; nlinarith
+    have hsub : ∀ i ∈ F, ball (c i) a ⊆ R i := by
+      intro i hi w hw
+      obtain ⟨h1, -⟩ := hcomp i (hF hi)
+      refine hC.inner i ⟨mem_univ _, ?_⟩
+      rw [dist_comm]
+      refine (mem_ball.1 hw).trans_le ?_
+      rw [ha, div_le_iff₀ (by linarith), mul_assoc, mul_comm (massRadius ν (c i))]
+      exact mul_le_mul_of_nonneg_left (by linarith) hη.le
+    have hdisj : (F : Set ℕ).PairwiseDisjoint fun i ↦ ball (c i) a := by
+      intro i _ j _ hij
+      exact (hC.pairwise_disjoint hij).mono (hsub i ‹_›) (hsub j ‹_›)
+    have hcount := sum_le_of_pairwiseDisjoint (μ := volume) (E := fun i ↦ ball (c i) a)
+      (U := ball z b) (f := fun _ ↦ Real.pi * a ^ 2)
+      (V := Real.pi * b ^ 2) (fun i _ ↦ isOpen_ball.measurableSet) hdisj hab
+      (fun i _ ↦ by positivity) (fun i _ ↦ by
+        rw [Complex.volume_ball, ← ENNReal.ofReal_pow ha0.le, ← ENNReal.ofReal_coe_nnreal,
+          ← ENNReal.ofReal_mul (by positivity)]
+        simp [mul_comm])
+      (by positivity) (by
+        rw [Complex.volume_ball, ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_coe_nnreal,
+          ← ENNReal.ofReal_mul (by positivity)]
+        simp [mul_comm])
+    rw [Finset.sum_const, nsmul_eq_mul] at hcount
+    have hba : b / a = Kb * C₁ / η := by rw [hb, ha]; field_simp
+    have hcard : (F.card : ℝ) ≤ (Kb * C₁ / η) ^ 2 := by
+      rw [← hba, div_pow, le_div_iff₀ (by positivity)]
+      nlinarith [Real.pi_pos]
+    exact_mod_cast hcard.trans (Nat.le_ceil _)
+  · intro i hi w hw
+    obtain ⟨-, h2⟩ := hcomp i hi
+    have hcw : dist (c i) w ≤ (|A| + |B|) * massRadius ν (c i) := by
+      rcases hw with hw | hw
+      · exact (hC.subset i w hw).trans (mul_le_mul_of_nonneg_right
+          ((le_abs_self A).trans (le_add_of_nonneg_right (abs_nonneg B))) (hρ _).le)
+      · exact (hN.near i w hw).trans (mul_le_mul_of_nonneg_right
+          ((le_abs_self B).trans (le_add_of_nonneg_left (abs_nonneg A))) (hρ _).le)
+    calc dist z w ≤ dist z (c i) + dist (c i) w := dist_triangle _ _ _
+      _ ≤ K₀ * massRadius ν (c i) + (|A| + |B|) * massRadius ν (c i) := by linarith
+      _ = (K₁ + |A| + |B|) * massRadius ν (c i) := by rw [hK₁eq]; ring
+      _ ≤ (K₁ + |A| + |B|) * (C₁ * massRadius ν z) := by gcongr
+      _ = (K₁ + |A| + |B|) * C₁ * massRadius ν z := by ring
+  · intro i hi
+    have hi' : K₁ * massRadius ν (c i) ≤ dist z (c i) := by rw [hK₁eq]; exact hi
+    refine ⟨hδK ν hν z (c i) hi', fun w hw ↦ ?_⟩
+    have h1 := hδK ν hν z (c i) hi'
+    have htri' : dist z (c i) ≤ dist z w + dist w (c i) := dist_triangle _ _ _
+    rw [dist_comm w] at htri'
+    have hnear := hN.near i w hw
+    have hBK : B * massRadius ν (c i) ≤ K₀ / 2 * massRadius ν (c i) :=
+      mul_le_mul_of_nonneg_right (by linarith) (hρ _).le
+    nlinarith
+  · have hz' : z ∈ ⋃ i, R i := by rw [hC.iUnion_eq]; exact mem_univ z
+    obtain ⟨i, hi⟩ := mem_iUnion.1 hz'
+    refine ⟨i, hi, ?_⟩
+    rw [dist_comm]
+    calc dist (c i) z ≤ A * massRadius ν (c i) := hC.subset i z hi
+      _ < K₀ * massRadius ν (c i) := by
+          apply mul_lt_mul_of_pos_right _ (hρ _); linarith
 
 /-- Local finiteness: a bounded set meets only finitely many enlarged cells. -/
 theorem finite_cells_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A : ℝ}
     {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hν : MeasClassPlane ν Cd R₀) (hη : 0 < η)
     (hC : IsCells univ dist (massRadius ν) ν N η A R c) (K : Set ℂ)
     (hK : Bornology.IsBounded K) (L : ℝ) :
-    {i | ∃ z ∈ K, dist z (c i) < L}.Finite := sorry
+    {i | ∃ z ∈ K, dist z (c i) < L}.Finite := by
+  obtain ⟨r, hr⟩ := hK.subset_closedBall 0
+  set D := |r| + |L| with hD
+  obtain ⟨C0, -, hcl0⟩ := claim1_plane_quant Cd R₀ 0
+  have hρ0 : 0 < massRadius ν 0 := (hcl0 ν hν 0 0).1
+  set Kc := D / massRadius ν 0 + 1 with hKc
+  obtain ⟨C, hC1, hcl⟩ := claim1_plane_quant Cd R₀ Kc
+  have hdist : ∀ i ∈ {i | ∃ z ∈ K, dist z (c i) < L}, dist 0 (c i) ≤ D := by
+    rintro i ⟨z, hzK, hz⟩
+    have h1 := dist_triangle 0 z (c i)
+    have h2 : dist 0 z ≤ r := by rw [dist_comm]; exact hr hzK
+    have := le_abs_self r
+    have := le_abs_self L
+    linarith
+  have hρi : ∀ i ∈ {i | ∃ z ∈ K, dist z (c i) < L},
+      massRadius ν 0 ≤ C * massRadius ν (c i) := by
+    intro i hi
+    refine (hcl ν hν 0 (c i)).2.2 ((hdist i hi).trans ?_)
+    calc D ≤ Kc * massRadius ν 0 := by rw [hKc]; field_simp; linarith
+      _ ≤ Kc * max (massRadius ν 0) (massRadius ν (c i)) :=
+          mul_le_mul_of_nonneg_left (le_max_left _ _) (by positivity)
+  set a := η * massRadius ν 0 / C with ha
+  have ha0 : 0 < a := by positivity
+  refine Set.finite_of_encard_le_coe (k := ⌈(D + a) ^ 2 / a ^ 2⌉₊) ?_
+  refine encard_le_of_forall_finset fun F hF ↦ ?_
+  have hsub : ∀ i ∈ F, ball (c i) a ⊆ R i := by
+    intro i hi w hw
+    have h1 := hρi i (hF hi)
+    refine hC.inner i ⟨mem_univ _, ?_⟩
+    rw [dist_comm]
+    refine (mem_ball.1 hw).trans_le ?_
+    rw [ha, div_le_iff₀ (by linarith)]
+    nlinarith
+  have hab : ∀ i ∈ F, ball (c i) a ⊆ ball 0 (D + a) := by
+    intro i hi w hw
+    rw [mem_ball] at hw ⊢
+    have := dist_triangle w (c i) 0
+    have := hdist i (hF hi)
+    rw [dist_comm 0] at this
+    linarith
+  have hdisj : (F : Set ℕ).PairwiseDisjoint fun i ↦ ball (c i) a := by
+    intro i hi j hj hij
+    exact (hC.pairwise_disjoint hij).mono (hsub i hi) (hsub j hj)
+  have hcount := sum_le_of_pairwiseDisjoint (μ := volume) (E := fun i ↦ ball (c i) a)
+    (U := ball 0 (D + a)) (f := fun _ ↦ Real.pi * a ^ 2)
+    (V := Real.pi * (D + a) ^ 2) (fun i _ ↦ isOpen_ball.measurableSet)
+    hdisj hab (fun i _ ↦ by positivity) (fun i _ ↦ by
+      rw [Complex.volume_ball, ← ENNReal.ofReal_pow ha0.le, ← ENNReal.ofReal_coe_nnreal,
+        ← ENNReal.ofReal_mul (by positivity)]
+      simp [mul_comm])
+    (by positivity) (by
+      rw [Complex.volume_ball, ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_coe_nnreal,
+        ← ENNReal.ofReal_mul (by positivity)]
+      simp [mul_comm])
+  rw [Finset.sum_const, nsmul_eq_mul] at hcount
+  have : (F.card : ℝ) ≤ (D + a) ^ 2 / a ^ 2 := by
+    rw [le_div_iff₀ (by positivity)]; nlinarith [Real.pi_pos]
+  exact_mod_cast this.trans (Nat.le_ceil _)
 
 /-- Bounded number of near cells, near/far dichotomy for nodes (disc). -/
 theorem cells_near_disc (Cd : ℝ≥0) (R₀ η A B K₀ : ℝ) (hη : 0 < η) (hK₀ : 2 * (A + B) ≤ K₀) :
@@ -332,6 +492,63 @@ theorem finite_cells_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : �
     {R : ℕ → Set ℂ} {c : ℕ → ℂ} (hν : MeasClassDisc ν Cd R₀) (hη : 0 < η)
     (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c) (K : Set ℂ) (hK𝔻 : K ⊆ 𝔻)
     (hK : IsCompact K) (L : ℝ) :
-    {i | ∃ z ∈ K, hypDist z (c i) < L}.Finite := sorry
+    {i | ∃ z ∈ K, hypDist z (c i) < L}.Finite := by
+  rcases K.eq_empty_or_nonempty with hKe | hKne
+  · simp [hKe]
+  obtain ⟨x₀, hx₀K, hx₀max⟩ := hK.exists_isMaxOn hKne continuous_norm.continuousOn
+  have h0 : (0 : ℂ) ∈ 𝔻 := mem_ball_self one_pos
+  have hx₀1 : ‖x₀‖ < 1 := norm_lt_one_of_mem_disc (hK𝔻 hx₀K)
+  set D := Real.artanh ‖x₀‖ + L with hD
+  obtain ⟨C0, -, hcl0⟩ := claim1_disc_quant Cd R₀ 0
+  have hρ0 : 0 < massRadiusDisc ν 0 := (hcl0 ν hν 0 h0 0 h0).1
+  set Kc := |D| / massRadiusDisc ν 0 + 1 with hKc
+  obtain ⟨C, hC1, hcl⟩ := claim1_disc_quant Cd R₀ Kc
+  have hci := hC.center_mem'
+  have hdist : ∀ i ∈ {i | ∃ z ∈ K, hypDist z (c i) < L}, hypDist 0 (c i) ≤ D := by
+    rintro i ⟨z, hzK, hz⟩
+    have hz𝔻 := hK𝔻 hzK
+    have h1 := hypDist_triangle h0 hz𝔻 (hci i)
+    have h1' := hypDist_zero_left z
+    have h2 : Real.artanh ‖z‖ ≤ Real.artanh ‖x₀‖ :=
+      Real.artanh_le_artanh (by linarith [norm_nonneg z]) hx₀1 (hx₀max hzK)
+    linarith
+  have hρi : ∀ i ∈ {i | ∃ z ∈ K, hypDist z (c i) < L},
+      massRadiusDisc ν 0 ≤ C * massRadiusDisc ν (c i) := by
+    intro i hi
+    refine (hcl ν hν 0 h0 (c i) (hci i)).2.2 ((hdist i hi).trans ?_)
+    calc D ≤ |D| := le_abs_self D
+      _ ≤ Kc * massRadiusDisc ν 0 := by rw [hKc]; field_simp; linarith
+      _ ≤ Kc * max (massRadiusDisc ν 0) (massRadiusDisc ν (c i)) :=
+          mul_le_mul_of_nonneg_left (le_max_left _ _) (by positivity)
+  set a := η * massRadiusDisc ν 0 / C with ha
+  have ha0 : 0 < a := by positivity
+  refine Set.finite_of_encard_le_coe (k := ⌈Real.sinh (|D| + a) ^ 2 / Real.sinh a ^ 2⌉₊) ?_
+  refine encard_le_of_forall_finset fun F hF ↦ ?_
+  have hsub : ∀ i ∈ F, hypBall (c i) a ⊆ R i := by
+    intro i hi w hw
+    have h1 := hρi i (hF hi)
+    refine hC.inner i ⟨hw.1, hw.2.trans_le ?_⟩
+    rw [ha, div_le_iff₀ (by linarith)]
+    nlinarith
+  have hab : ∀ i ∈ F, hypBall (c i) a ⊆ hypBall 0 (|D| + a) := by
+    intro i hi w hw
+    refine ⟨hw.1, ?_⟩
+    have := hypDist_triangle h0 (hci i) hw.1
+    have := hdist i (hF hi)
+    have := le_abs_self D
+    linarith [hw.2]
+  have hdisj : (F : Set ℕ).PairwiseDisjoint fun i ↦ hypBall (c i) a := by
+    intro i hi j hj hij
+    exact (hC.pairwise_disjoint hij).mono (hsub i hi) (hsub j hj)
+  have hcount := sum_le_of_pairwiseDisjoint (μ := hypArea) (E := fun i ↦ hypBall (c i) a)
+    (U := hypBall 0 (|D| + a)) (f := fun _ ↦ Real.pi * Real.sinh a ^ 2)
+    (V := Real.pi * Real.sinh (|D| + a) ^ 2) (fun i _ ↦ (isOpen_hypBall _ _).measurableSet)
+    hdisj hab (fun i _ ↦ by positivity) (fun i _ ↦ (hypArea_hypBall (hci i) ha0.le).ge)
+    (by positivity) (hypArea_hypBall h0 (by positivity)).le
+  rw [Finset.sum_const, nsmul_eq_mul] at hcount
+  have hsa : 0 < Real.sinh a := Real.sinh_pos_iff.2 ha0
+  have : (F.card : ℝ) ≤ Real.sinh (|D| + a) ^ 2 / Real.sinh a ^ 2 := by
+    rw [le_div_iff₀ (by positivity)]; nlinarith [Real.pi_pos]
+  exact_mod_cast this.trans (Nat.le_ceil _)
 
 end OC
