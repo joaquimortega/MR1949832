@@ -438,45 +438,99 @@ end Disc
 
 /-! ### Line (intervals) -/
 
+theorem measurableEmbedding_ofReal : MeasurableEmbedding (fun x : ℝ ↦ (x : ℂ)) :=
+  Complex.isometry_ofReal.isClosedEmbedding.measurableEmbedding
+
+theorem lineInterval_eq_image_ball (x r : ℝ) :
+    lineInterval x r = (fun t : ℝ ↦ (t : ℂ)) '' ball x r := by
+  rw [Real.ball_eq_Ioo]; rfl
+
+theorem lintegral_linePull (μ : Measure ℂ) (g : ℂ → ℝ≥0∞) (s : Set ℝ) :
+    ∫⁻ t in s, g (t : ℂ) ∂(linePull μ) = ∫⁻ z in (fun t : ℝ ↦ (t : ℂ)) '' s, g z ∂μ :=
+  lintegral_comap_image measurableEmbedding_ofReal μ g s
+
+theorem linePull_hfin {μ : Measure ℂ} (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) :
+    ∀ (x : ℝ) (r : ℝ), linePull μ (ball x r) < ∞ := fun x r ↦ by
+  rw [linePull_ball]; exact hfin x r
+
+theorem linePull_hm {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) :
+    ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ linePull μ (ball x R) := by
+  obtain ⟨R, hR, h⟩ := hm
+  exact ⟨R, hR, fun x ↦ by rw [linePull_ball]; exact h x⟩
+
+theorem linePull_hne {μ : Measure ℂ} (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R))
+    (x : ℝ) : ∃ r, 0 < r ∧ 1 ≤ linePull μ (ball x r) := by
+  obtain ⟨R, hR, h⟩ := linePull_hm hm
+  exact ⟨R, hR, h x⟩
+
 section Line
 variable {μ : Measure ℂ}
 
 theorem doubling_upTo_line (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ x r : ℝ, 0 < r → r ≤ R₁ →
-      μ (lineInterval x (2 * r)) ≤ C * μ (lineInterval x r) := sorry
+      μ (lineInterval x (2 * r)) ≤ C * μ (lineInterval x r) := by
+  obtain ⟨C, hC, h⟩ := IsLocDoublingM.exists_const_of_le hd.isLocDoublingM R₁
+  exact ⟨C, hC, fun x r hr hr1 ↦ by simpa only [linePull_ball] using h x r hr hr1⟩
 
 theorem measure_lineInterval_le_rpow (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ (x x' r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → |x - x'| ≤ r →
       μ (lineInterval x r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (lineInterval x' r') :=
-  sorry
+  by
+  obtain ⟨C, s, hC, hs, h⟩ := IsLocDoublingM.measure_ball_le_rpow hd.isLocDoublingM R₁
+  refine ⟨C, s, hC, hs, fun x x' r r' hr' hrr hr hdist ↦ ?_⟩
+  simpa only [linePull_ball] using h x x' r r' hr' hrr hr (by rwa [Real.dist_eq])
 
 theorem rpow_le_measure_lineInterval (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
     ∃ c δ : ℝ, 0 < c ∧ 0 < δ ∧ ∀ (x x' r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → |x - x'| ≤ r →
       ENNReal.ofReal (c * (r / r') ^ δ) * μ (lineInterval x' r') ≤ μ (lineInterval x r) :=
-  sorry
+  by
+  obtain ⟨c, δ, hc, hδ, h⟩ := IsLocDoublingM.rpow_le_measure_ball hd.isLocDoublingM R₁
+  refine ⟨c, δ, hc, hδ, fun x x' r r' hr' hrr hr hdist ↦ ?_⟩
+  simpa only [linePull_ball] using h x x' r r' hr' hrr hr (by rwa [Real.dist_eq])
 
 theorem measure_singleton_line (hd : IsLocallyDoublingLine μ)
-    (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) (z : ℂ) : μ {z} = 0 := sorry
+    (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) (z : ℂ) : μ {z} = 0 := by
+  by_cases hz : z.im = 0
+  · have h1 := IsLocDoublingM.measure_singleton hd.isLocDoublingM (linePull_hfin hfin) z.re
+    rw [linePull_apply, Set.image_singleton] at h1
+    have e : ((z.re : ℝ) : ℂ) = z := Complex.ext (by simp) (by simp [hz])
+    rwa [e] at h1
+  · refine measure_mono_null (fun w hw ↦ ?_) hd.1
+    rw [mem_singleton_iff] at hw
+    subst hw
+    exact hz
 
 theorem continuous_measure_lineInterval (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) (x : ℝ) :
-    Continuous fun r : ℝ ↦ μ (lineInterval x r) := sorry
+    Continuous fun r : ℝ ↦ μ (lineInterval x r) := by
+  simpa only [linePull_ball] using
+    IsLocDoublingM.continuous_measure_ball hd.isLocDoublingM (linePull_hfin hfin) x
 
 theorem massRadiusLine_pos (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (x : ℝ) :
-    0 < massRadiusLine μ x := sorry
+    0 < massRadiusLine μ x := by
+  rw [massRadiusLine_eq]
+  exact IsLocDoublingM.massRadiusM_pos hd.isLocDoublingM (linePull_hfin hfin) (linePull_hne hm x)
 
 theorem massRadiusLine_le {R : ℝ} (hR : 0 < R) (hm : ∀ x : ℝ, 1 ≤ μ (lineInterval x R))
-    (x : ℝ) : massRadiusLine μ x ≤ R := sorry
+    (x : ℝ) : massRadiusLine μ x ≤ R := by
+  rw [massRadiusLine_eq]
+  exact massRadiusM_le hR (by rw [linePull_ball]; exact hm x)
 
 theorem measure_lineInterval_massRadiusLine (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (x : ℝ) :
-    μ (lineInterval x (massRadiusLine μ x)) = 1 := sorry
+    μ (lineInterval x (massRadiusLine μ x)) = 1 := by
+  rw [massRadiusLine_eq, ← linePull_ball]
+  exact IsLocDoublingM.measure_ball_massRadiusM hd.isLocDoublingM (linePull_hfin hfin)
+    (linePull_hne hm x)
 
 theorem lipschitzWith_massRadiusLine (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) :
-    LipschitzWith 1 (massRadiusLine μ) := sorry
+    LipschitzWith 1 (massRadiusLine μ) := by
+  have e : massRadiusLine μ = massRadiusM (linePull μ) := funext (massRadiusLine_eq μ)
+  rw [e]
+  exact lipschitzWith_massRadiusM (linePull_hne hm)
 
 theorem measure_lineInterval_massRadiusLine_bounds (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
@@ -484,12 +538,22 @@ theorem measure_lineInterval_massRadiusLine_bounds (hd : IsLocallyDoublingLine �
     ∃ c C δ s : ℝ, 0 < c ∧ 0 < C ∧ 0 < δ ∧ 0 < s ∧ ∀ x r : ℝ,
       massRadiusLine μ x ≤ r → r ≤ R₁ →
         ENNReal.ofReal (c * (r / massRadiusLine μ x) ^ δ) ≤ μ (lineInterval x r) ∧
-        μ (lineInterval x r) ≤ ENNReal.ofReal (C * (r / massRadiusLine μ x) ^ s) := sorry
+        μ (lineInterval x r) ≤ ENNReal.ofReal (C * (r / massRadiusLine μ x) ^ s) := by
+  obtain ⟨c, C, δ, s, hc, hC, hδ, hs, h⟩ := IsLocDoublingM.measure_ball_massRadiusM_bounds
+    hd.isLocDoublingM (linePull_hfin hfin) (linePull_hm hm) R₁
+  refine ⟨c, C, δ, s, hc, hC, hδ, hs, fun x r h1 h2 ↦ ?_⟩
+  rw [massRadiusLine_eq] at h1 ⊢
+  simpa only [linePull_ball] using h x r h1 h2
 
 theorem claim1_line (hd : IsLocallyDoublingLine μ) (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ x y : ℝ, |x - y| ≤ K * max (massRadiusLine μ x) (massRadiusLine μ y) →
-      massRadiusLine μ x ≤ C * massRadiusLine μ y := sorry
+      massRadiusLine μ x ≤ C * massRadiusLine μ y := by
+  obtain ⟨C, hC, h⟩ := IsLocDoublingM.claim1 hd.isLocDoublingM (linePull_hfin hfin)
+    (linePull_hm hm) K
+  refine ⟨C, hC, fun x y hxy ↦ ?_⟩
+  rw [massRadiusLine_eq, massRadiusLine_eq] at hxy ⊢
+  exact h x y (by rwa [Real.dist_eq])
 
 /-- **Lemma 3** on the line; the integral is over `μ` on `ℂ` (carried by `ℝ`). -/
 theorem lemma3_line (hd : IsLocallyDoublingLine μ) (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
@@ -498,16 +562,34 @@ theorem lemma3_line (hd : IsLocallyDoublingLine μ) (hfin : ∀ x r : ℝ, μ (l
       ∫⁻ z in lineInterval x R₁,
         ENNReal.ofReal
           ((massRadiusLine μ z.re / max |z.re - x| (δ * massRadiusLine μ x)) ^ m) ∂μ ≤ C :=
-  sorry
+  by
+  obtain ⟨m₀, hm₀⟩ := IsLocDoublingM.lemma3 hd.isLocDoublingM (linePull_hfin hfin)
+    (linePull_hm hm)
+  refine ⟨m₀, fun m hm δ R₁ hδ ↦ ?_⟩
+  obtain ⟨C, hC⟩ := hm₀ m hm δ R₁ hδ
+  refine ⟨C, fun x ↦ ?_⟩
+  have key := hC x
+  rw [lineInterval_eq_image_ball, ← lintegral_linePull]
+  convert key using 3 with t
+  rw [Complex.ofReal_re, massRadiusLine_eq, massRadiusLine_eq, Real.dist_eq]
 
 theorem christ_lemma23_line (hd : IsLocallyDoublingLine μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ x R : ℝ, 0 < R → R ≤ R₁ →
       ∫⁻ z in lineInterval x R, ENNReal.ofReal (Real.log (R / |z.re - x|)) ∂μ ≤
-        C * μ (lineInterval x R) := sorry
+        C * μ (lineInterval x R) := by
+  obtain ⟨C, hC⟩ := IsLocDoublingM.christ_lemma23 hd.isLocDoublingM R₁
+  refine ⟨C, fun x R hR hR1 ↦ ?_⟩
+  have key := hC x R hR hR1
+  rw [linePull_ball] at key
+  rw [lineInterval_eq_image_ball, ← lintegral_linePull, ← lineInterval_eq_image_ball]
+  convert key using 3 with t
+  rw [Complex.ofReal_re, Real.dist_eq, abs_sub_comm]
 
 theorem exists_radius_lt_measure_lineInterval
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (p : ℝ≥0) :
-    ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, (p : ℝ≥0∞) < μ (lineInterval x r) := sorry
+    ∃ r : ℝ, 0 < r ∧ ∀ x : ℝ, (p : ℝ≥0∞) < μ (lineInterval x r) := by
+  obtain ⟨r, hr, h⟩ := exists_radius_lt_measure_ball (linePull_hm hm) p
+  exact ⟨r, hr, fun x ↦ by simpa only [linePull_ball] using h x⟩
 
 end Line
 
@@ -538,7 +620,14 @@ theorem decay_line {μ : Measure ℂ} (hd : IsLocallyDoublingLine μ)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R)) (M₀ : ℝ) :
     ∃ C θ : ℝ, 0 < C ∧ 0 < θ ∧ θ < 1 ∧ ∀ (x y : ℝ) (n : ℕ),
       2 ^ n * massRadiusLine μ x ≤ |x - y| → |x - y| ≤ M₀ →
-        massRadiusLine μ y / |x - y| ≤ C * θ ^ n := sorry
+        massRadiusLine μ y / |x - y| ≤ C * θ ^ n := by
+  obtain ⟨C, θ, hC, hθ, hθ1, h⟩ := IsLocDoublingM.decay hd.isLocDoublingM
+    (linePull_hfin hfin) (linePull_hm hm) M₀
+  refine ⟨C, θ, hC, hθ, hθ1, fun x y n h1 h2 ↦ ?_⟩
+  rw [massRadiusLine_eq] at h1
+  rw [massRadiusLine_eq]
+  rw [← Real.dist_eq] at h1 h2 ⊢
+  exact h x y n h1 h2
 
 /-- Bounded count in `ℂ` for convex sets (no upper size bound needed). -/
 theorem encard_le_of_disjoint_convex (a b L : ℝ) (ha : 0 < a) (hb : 0 < b) :
@@ -582,7 +671,18 @@ theorem encard_le_of_disjoint_plane (a b D : ℝ) (ha : 0 < a) :
       (∀ i, E i ⊆ ball (c i) D) → {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := BallGeometry.encard_le_of_disjoint a b D ha
 
 theorem lineInterval_eq (x r : ℝ) :
-    lineInterval x r = ball (x : ℂ) r ∩ range fun t : ℝ ↦ (t : ℂ) := sorry
+    lineInterval x r = ball (x : ℂ) r ∩ range fun t : ℝ ↦ (t : ℂ) := by
+  ext z
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨?_, t, rfl⟩
+    rw [mem_ball, dist_ofReal_ofReal]
+    rw [mem_Ioo] at ht
+    exact abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
+  · rintro ⟨hz, t, rfl⟩
+    rw [mem_ball, dist_ofReal_ofReal] at hz
+    obtain ⟨h1, h2⟩ := abs_sub_lt_iff.1 hz
+    exact ⟨t, ⟨by linarith, by linarith⟩, rfl⟩
 
 /-! ### Requested by later modules (reconciliation additions) -/
 
