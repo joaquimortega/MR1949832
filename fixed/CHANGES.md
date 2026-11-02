@@ -6,13 +6,12 @@ This folder contains a corrected version of the paper. It makes the smallest cha
 
 | File | Content |
 |---|---|
+| `original_dbar2.tex` | The author's LaTeX source (the accepted version, which agrees with the printed paper), unmodified. |
 | `dbar_fixed.tex` | The corrected source. |
 | `dbar_fixed.pdf` | The corrected paper (19 pages). |
 | `CHANGES.md` | This file. |
 
-These three files are in the repository. Two companion files are kept locally only and are not in the repository:
-- `original_dbar2.tex`: the author's LaTeX source, the accepted version, which agrees with the printed paper;
-- `dbar_diff.pdf`: `latexdiff original_dbar2.tex dbar_fixed.tex`, with additions in blue and deletions in red.
+These four files are in the repository. `dbar_diff.pdf` (`latexdiff original_dbar2.tex dbar_fixed.tex`, additions in blue, deletions in red) is kept locally only. To regenerate it, run the command below.
 
 Build: `latexmk -pdf dbar_fixed.tex`. The repository's `.gitignore` excludes `*.pdf`, so `dbar_fixed.pdf` was added explicitly.
 
@@ -99,4 +98,4 @@ Line numbers refer to `original_dbar2.tex`.
 
 ## Status
 
-The corrected source, the PDF and this file are in the repository. The other files in `fixed/` are kept locally only.
+The original source, the corrected source, the PDF and this file are in the repository. Only the diff PDF is kept locally.
