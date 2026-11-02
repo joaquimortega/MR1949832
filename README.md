@@ -45,7 +45,7 @@ The statements are in `comparator/statements.lean` and the definitions they use 
 
 **Weights.** A weight is a pair `(φ, μ)`: `φ` is continuous and `Δφ = μ` in the sense of distributions. Mathlib has no Riesz-measure theory. For the paper's weights (subharmonic, with locally doubling Laplacian) this class coincides with the paper's.
 
-**Corrections to the paper.** Theorem 3 as printed is false. Two independent referee agents found this, and it is now proved in Lean (`OC.theorem3_printed_false`). The formalized version puts the weight `e^{-φ}` inside the integral. The [OCS99] theorem it relies on (`OC.TheoremOCS`, as quoted on p. 375, with `limsup = 0`) is proved in the companion project MR1682065, so Theorem 3 is unconditional (`OC.theoremOCS_holds`). All errata, gaps and simplifications are in `NOTEBOOK.md`.
+**Corrections to the paper.** Theorem 3 as printed is false. The formalized version puts the weight `e^{-φ}` inside the integral. The [OCS99] theorem it relies on (`OC.TheoremOCS`, as quoted on p. 375, with `limsup = 0`) is proved in the companion project MR1682065, so Theorem 3 is unconditional (`OC.theoremOCS_holds`). All errata, gaps and simplifications are in `NOTEBOOK.md`.
 
 ## Layout
 
