@@ -127,7 +127,7 @@ theorem mem_disc_and_hypDist_le {c w : ℂ} (hc : c ∈ 𝔻) {τ : ℝ} (hτ0 :
 
 /-- Hyperbolic lower bound from a Euclidean lower bound. -/
 theorem le_hypDist_of_norm {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {τ : ℝ}
-    (hwτ : ‖w - c‖ ≤ τ * (1 - ‖c‖ ^ 2)) (hτ : 0 ≤ τ) :
+    (hwτ : ‖w - c‖ ≤ τ * (1 - ‖c‖ ^ 2)) :
     ‖w - c‖ / ((1 + τ) * (1 - ‖c‖ ^ 2)) ≤ hypDist c w := by
   have hcpos := one_sub_normSq_pos hc
   have hc1 := norm_lt_one_of_mem_disc hc
@@ -246,7 +246,7 @@ theorem exists_tangent_pair {b : ℂ} (hb : b ∈ 𝔻) {d : ℝ} (hd : 0 ≤ d)
 
 /-- The barycentre of a cell lies in the closed hyperbolic ball of radius `A ρ` around the
 centre. -/
-theorem barycentre_mem {ν : Measure ℂ} {R : Set ℂ} {c : ℂ} (hc : c ∈ 𝔻) {s : ℝ} (hs : 0 ≤ s)
+theorem barycentre_mem {ν : Measure ℂ} {R : Set ℂ} {c : ℂ} (hc : c ∈ 𝔻) {s : ℝ}
     (hR : MeasurableSet R) (hR𝔻 : R ⊆ 𝔻) (hRs : ∀ w ∈ R, hypDist c w ≤ s) (hmass : ν R = 12) :
     (12 : ℂ)⁻¹ * ∫ ζ in R, ζ ∂ν ∈ 𝔻 ∧ hypDist c ((12 : ℂ)⁻¹ * ∫ ζ in R, ζ ∂ν) ≤ s := by
   set r' := Real.tanh (Real.artanh ‖c‖ + s)
@@ -325,7 +325,7 @@ theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
         simp only [mem_inter_iff, mem_compl_iff, mem_closedBall, mem_empty_iff_false, iff_false,
           not_and]
         intro h1 h2
-        exact h1 (by rw [dist_eq_norm]; exact norm_sub_le_mul_exp hc (hR𝔻 h2) hsr0.le (hRs w h2))
+        exact h1 (by rw [dist_eq_norm]; exact norm_sub_le_mul_exp hc (hR𝔻 h2) (hRs w h2))
       have hmass : ν.restrict (R i) univ = ((3 * 4 : ℕ) : ℝ≥0∞) := by
         rw [Measure.restrict_apply MeasurableSet.univ, univ_inter, hC.measure_eq i]
       obtain ⟨L, K, hL, hK, hLn, hKn, hmom⟩ :=
@@ -373,7 +373,7 @@ theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
           rw [hτk]; rw [hre] at hk; nlinarith [hk.2]
         obtain ⟨hw𝔻, hd⟩ := mem_disc_and_hypDist_le hc hτk0 hτk6 h1
         refine ⟨hw𝔻, hd.trans (by nlinarith), ?_⟩
-        have hlow := le_hypDist_of_norm hc hw𝔻 h1 hτk0
+        have hlow := le_hypDist_of_norm hc hw𝔻 h1
         refine le_trans ?_ hlow
         rw [le_div_iff₀ (by positivity)]
         have h2 : 2 * B * re ≤ ‖w - c i‖ := hk.1
@@ -396,7 +396,7 @@ theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
           fun w hw ↦ ?_, fun h ↦ by simp at h, fun _ w hw ↦ (hKd w hw).2.2⟩
         exact (hKd w hw).2.1.trans (by nlinarith)
     · -- large cell: barycentre, order 2
-      obtain ⟨hb𝔻, hbd⟩ := barycentre_mem hc hsr0.le (hC.measurableSet i) hR𝔻 hRs
+      obtain ⟨hb𝔻, hbd⟩ := barycentre_mem hc (hC.measurableSet i) hR𝔻 hRs
         (by rw [hC.measure_eq i]; norm_num)
       set b := (12 : ℂ)⁻¹ * ∫ ζ in R i, ζ ∂ν with hb
       have hint1 : ∫ ζ in R i, ζ ∂ν = 12 * b := by rw [hb]; ring
@@ -409,7 +409,7 @@ theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
           fun _ w hw ↦ ?_, fun h ↦ by simp at h⟩
         · intro j hj
           interval_cases j
-          · rw [hint0]; simp [Multiset.map_replicate, Multiset.sum_replicate]; norm_num
+          · rw [hint0]; simp; norm_num
           · simp only [pow_one, Multiset.map_replicate, Multiset.sum_replicate, hint1]
             norm_num
         · rw [Multiset.eq_of_mem_replicate hw]

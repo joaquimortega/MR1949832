@@ -285,7 +285,7 @@ theorem smoothedDensity_eq_zero (h : IsLocalPotData Ω σ s) {x : ℂ} (hx : x �
 theorem lintegral_ofReal_bumpKernel_le_one {r : ℝ} (hr : 0 < r) (ζ : ℂ) (S : Set ℂ) :
     ∫⁻ x in S, ENNReal.ofReal (bumpKernel r (x - ζ)) ≤ 1 := by
   have hint : Integrable (fun x ↦ bumpKernel r (x - ζ)) :=
-    ((contDiff_bumpKernel hr).continuous.integrable_of_hasCompactSupport
+    ((contDiff_bumpKernel r).continuous.integrable_of_hasCompactSupport
       (hasCompactSupport_bumpKernel hr)).comp_sub_right ζ
   calc ∫⁻ x in S, ENNReal.ofReal (bumpKernel r (x - ζ))
       ≤ ∫⁻ x, ENNReal.ofReal (bumpKernel r (x - ζ)) := setLIntegral_le_lintegral _ _
@@ -613,8 +613,8 @@ theorem integral_localPot_mul_laplacian (h : IsLocalPotData Ω σ s) {χ : ℂ �
   set H : ℂ → ℂ → ℝ := fun z ζ ↦ bumpKernel (s ζ) (z - ζ) * χ z with hHdef
   have hHm : StronglyMeasurable (Function.uncurry H) :=
     (h.measurable_kernel_prod.mul (hχc.measurable.comp measurable_fst)).stronglyMeasurable
-  have hHint : ∀ ζ ∈ Ω, Integrable (fun z ↦ H z ζ) := fun ζ hζ ↦
-    (((contDiff_bumpKernel (h.pos ζ hζ)).continuous.comp
+  have hHint : ∀ ζ, Integrable (fun z ↦ H z ζ) := fun ζ ↦
+    (((contDiff_bumpKernel _).continuous.comp
       (continuous_id.sub continuous_const)).mul hχc).integrable_of_hasCompactSupport hc.mul_left
   have hHnorm : ∀ ζ ∈ Ω, ∫ z, ‖H z ζ‖ ≤ A.indicator (fun _ ↦ Mχ) ζ := by
     intro ζ hζ
@@ -622,8 +622,8 @@ theorem integral_localPot_mul_laplacian (h : IsLocalPotData Ω σ s) {χ : ℂ �
     by_cases hζA : ζ ∈ A
     · rw [indicator_of_mem hζA]
       calc ∫ z, ‖H z ζ‖ ≤ ∫ z, bumpKernel (s ζ) (z - ζ) * Mχ := by
-            refine integral_mono (hHint ζ hζ).norm
-              ((((contDiff_bumpKernel hsζ).continuous.integrable_of_hasCompactSupport
+            refine integral_mono (hHint ζ).norm
+              ((((contDiff_bumpKernel _).continuous.integrable_of_hasCompactSupport
                 (hasCompactSupport_bumpKernel hsζ)).comp_sub_right ζ).mul_const Mχ) fun z ↦ ?_
             rw [hHdef, norm_mul, Real.norm_eq_abs, abs_of_nonneg (bumpKernel_nonneg hsζ _)]
             exact mul_le_mul_of_nonneg_left (hMχ z) (bumpKernel_nonneg hsζ _)
@@ -641,7 +641,7 @@ theorem integral_localPot_mul_laplacian (h : IsLocalPotData Ω σ s) {χ : ℂ �
   have hHint2 : Integrable (Function.uncurry H) (volume.prod σ) := by
     rw [integrable_prod_iff' hHm.aestronglyMeasurable]
     refine ⟨?_, ?_⟩
-    · filter_upwards [h.ae_mem] with ζ hζ using hHint ζ hζ
+    · exact ae_of_all _ hHint
     · refine Integrable.mono' (g := A.indicator fun _ ↦ Mχ)
         ((integrable_indicator_iff hA).2 (integrableOn_const hσA.ne))
         (hHm.norm.integral_prod_left' (μ := volume)).aestronglyMeasurable ?_

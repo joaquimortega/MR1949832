@@ -150,7 +150,7 @@ theorem M03b.DoublingUpTo.pow {μ : Measure X} {C : ℝ≥0} {R : ℝ} (h : M03b
 omit [OpensMeasurableSpace X] in
 /-- Lemma 1, upper inequality, `ℕ` form (§3.4). -/
 theorem M03b.DoublingUpTo.measure_ball_le_pow {μ : Measure X} {C : ℝ≥0} {R : ℝ}
-    (h : M03b.DoublingUpTo μ C R) (x x' : X) {r r' : ℝ} (k : ℕ) (_hr' : 0 < r') (hrR : r ≤ R)
+    (h : M03b.DoublingUpTo μ C R) (x x' : X) {r r' : ℝ} (k : ℕ) (hrR : r ≤ R)
     (hxx' : dist x x' ≤ r) (hrk : r ≤ 2 ^ k * r') :
     μ (ball x r) ≤ C ^ (k + 1) * μ (ball x' r') := by
   rcases le_or_gt r 0 with hr | hr
@@ -186,7 +186,7 @@ theorem M03b.DoublingUpTo.measure_ball_le_rpow {μ : Measure X} {C : ℝ≥0} {R
         _ = 2 ^ k := Real.rpow_natCast _ _
     rw [hq, div_le_iff₀ hr'] at h1
     linarith
-  have key := h.measure_ball_le_pow x x' k hr' hrR hxx' hrk
+  have key := h.measure_ball_le_pow x x' k hrR hxx' hrk
   have hreal : ((C : ℝ)) ^ (k + 1) ≤ (C : ℝ) ^ 2 * q ^ Real.logb 2 C := by
     have hC1 : (1 : ℝ) ≤ C := by exact_mod_cast hC
     have hkl : (k : ℝ) + 1 ≤ Real.logb 2 q + 2 := by

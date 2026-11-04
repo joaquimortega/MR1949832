@@ -43,7 +43,7 @@ theorem IsLineMeasure.hm_m03b {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
   exact ⟨r, hr, fun x ↦ (h x).le⟩
 
 /-! (L1) local doubling at every bounded scale. -/
-theorem IsLineMeasure.doubling_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A : ℝ} (hA : 0 < A) :
+theorem IsLineMeasure.doubling_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) (A : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ x r : ℝ, 0 < r → r ≤ A →
       μ (lineInterval x (2 * r)) ≤ C * μ (lineInterval x r) :=
   doubling_upTo_line hμ.doubling A
@@ -90,8 +90,7 @@ theorem IsLineMeasure.measure_massRadiusLine {μ : Measure ℂ} (hμ : IsLineMea
   measure_lineInterval_massRadiusLine hμ.doubling hμ.hfin_m03b hμ.hm_m03b x
 
 /-! (L5) Claim 1 on the line. -/
-theorem IsLineMeasure.massRadiusLine_comparable {μ : Measure ℂ} (hμ : IsLineMeasure μ) {K : ℝ}
-    (hK : 0 < K) :
+theorem IsLineMeasure.massRadiusLine_comparable {μ : Measure ℂ} (hμ : IsLineMeasure μ) (K : ℝ) :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ x t : ℝ, |x - t| ≤ K * max (massRadiusLine μ x) (massRadiusLine μ t) →
       massRadiusLine μ t ≤ C * massRadiusLine μ x := by
   obtain ⟨C, hC, h⟩ := claim1_line hμ.doubling hμ.hfin_m03b hμ.hm_m03b K
@@ -192,8 +191,7 @@ theorem IsLineMeasure.length_comparable {μ : Measure ℂ} (hμ : IsLineMeasure 
       _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) hρt.le
 
 /-! (L8) [Chr91, Lemma 2.3] on the line: uniform logarithmic integrability. -/
-theorem IsLineMeasure.lintegral_log_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A : ℝ}
-    (hA : 0 < A) :
+theorem IsLineMeasure.lintegral_log_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) (A : ℝ) :
     ∃ C : ℝ≥0, ∀ x R : ℝ, 0 < R → R ≤ A →
       ∫⁻ ζ in lineInterval x R, ENNReal.ofReal (Real.log (R / ‖ζ - (x : ℂ)‖)) ∂μ ≤
         C * μ (lineInterval x R) := by

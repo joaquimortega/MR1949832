@@ -91,15 +91,18 @@ section ClassHelpers
 
 variable {μ : Measure X} {Cd : ℝ≥0} {R₀ : ℝ}
 
+omit [OpensMeasurableSpace X] in
 theorem MeasClassM.R₀_pos_m03b (h : MeasClassM μ Cd R₀) (x : X) : 0 < R₀ := by
   by_contra hR
   have h1 := h.mass x
   rw [ball_eq_empty.2 (not_lt.1 hR), measure_empty] at h1
   exact absurd h1 (by norm_num)
 
+omit [OpensMeasurableSpace X] in
 theorem MeasClassM.hne_m03b (h : MeasClassM μ Cd R₀) (x : X) : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r) :=
   ⟨R₀, h.R₀_pos_m03b x, h.mass x⟩
 
+omit [OpensMeasurableSpace X] in
 theorem MeasClassM.hm_m03b (h : MeasClassM μ Cd R₀) : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R) :=
   ⟨max R₀ 1, lt_max_of_lt_right one_pos,
     fun x ↦ (h.mass x).trans (measure_mono (ball_subset_ball (le_max_left _ _)))⟩
@@ -108,6 +111,7 @@ theorem MeasClassM.massRadiusM_pos_m03b [BallGeometry X] (h : MeasClassM μ Cd R
     0 < massRadiusM μ x :=
   IsLocDoublingM.massRadiusM_pos h.doubling.isLocDoublingM h.finite (h.hne_m03b x)
 
+omit [OpensMeasurableSpace X] in
 theorem MeasClassM.massRadiusM_le_m03b (h : MeasClassM μ Cd R₀) (x : X) : massRadiusM μ x ≤ R₀ :=
   OC.massRadiusM_le (h.R₀_pos_m03b x) (h.mass x)
 
@@ -116,6 +120,7 @@ theorem MeasClassM.one_le_two_m03b [BallGeometry X] (h : MeasClassM μ Cd R₀) 
   (one_le_measure_closedBall_massRadiusM (h.finite x) (h.hne_m03b x)).trans
     (measure_mono (closedBall_subset_ball (by linarith [h.massRadiusM_pos_m03b x])))
 
+omit [OpensMeasurableSpace X] in
 theorem MeasClassM.le_add_dist_m03b (h : MeasClassM μ Cd R₀) (x y : X) :
     massRadiusM μ y ≤ massRadiusM μ x + dist x y := by
   have := (lipschitzWith_massRadiusM (μ := μ) h.hne_m03b).dist_le_mul x y
@@ -151,12 +156,14 @@ theorem M03b.decay_algebra {c CU δ s a b : ℝ} (hc : 0 < c) (hCU : 0 < CU) (h�
   rw [mul_one_div]
   exact Real.rpow_le_rpow_of_exponent_ge hb hb1 (min_le_right _ _)
 
+omit [OpensMeasurableSpace X] in
 theorem doubling_upTo_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ x : X, ∀ r : ℝ, 0 < r →
       r ≤ R₁ → μ (ball x (2 * r)) ≤ C * μ (ball x r) := by
   obtain ⟨C, hC, h⟩ := M03b.exists_doublingUpTo (X := X) Cd R₁
   exact ⟨C, hC, fun μ hμ ↦ h μ hμ⟩
 
+omit [OpensMeasurableSpace X] in
 theorem measure_ball_le_rpow_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd →
       ∀ (x x' : X) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → dist x x' ≤ r →
@@ -799,13 +806,7 @@ theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
         rw [not_le, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
         exact this
     exact mem_iUnion.2 ⟨Nat.find hex, mem_ball.2 hk2, fun h ↦ not_lt.2 hk1 (mem_ball.1 h)⟩
-  have hsing : ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ = 0 := by
-    have : ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤ ∫⁻ _y in {x}, 0 ∂μ :=
-      setLIntegral_mono' isClosed_singleton.measurableSet fun y hy ↦ by
-        rw [mem_singleton_iff] at hy
-        subst hy
-        simp
-    simpa using this
+  have hsing : ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ = 0 := by simp
   have hAk : ∀ k : ℕ, ∫⁻ y in A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤
       ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) := by
     intro k
@@ -837,7 +838,7 @@ theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
           ENNReal.ofReal_add zero_le_one (NNReal.coe_nonneg _), ENNReal.ofReal_one,
           ENNReal.ofReal_coe_nnreal, ENNReal.inv_pow]
       rw [e]
-      calc μ (A k) ≤ μ (ball x (R / 2 ^ k)) := measure_mono diff_subset
+      calc μ (A k) ≤ μ (ball x (R / 2 ^ k)) := measure_mono sdiff_subset
         _ ≤ ((1 + (((C₁ ^ 3)⁻¹ : ℝ≥0) : ℝ≥0∞)) ^ k)⁻¹ * μ (ball x R) :=
             (ENNReal.mul_le_iff_le_inv hne0 hnet).1 hrev
     calc ∫⁻ y in A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ

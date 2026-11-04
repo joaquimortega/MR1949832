@@ -154,7 +154,7 @@ theorem integral_log_one_sub_normSq_mul_laplacian {χ : ℂ → ℝ} (hχ : Cont
 theorem one_sub_normSq_le_of_mem_hypBall {z w : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr1 : r ≤ 1)
     (hw : w ∈ hypBall z r) : 1 - ‖z‖ ^ 2 ≤ 12 * (1 - ‖w‖ ^ 2)
 
-theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (hr1 : r ≤ 1) :
+theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) :
     ENNReal.ofReal (Real.pi * r ^ 2 / 900) ≤ hypArea (hypBall z r)
 
 theorem hypArea_hypBall_le {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (hr1 : r ≤ 1) :

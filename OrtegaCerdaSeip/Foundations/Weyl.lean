@@ -86,7 +86,6 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
   set g : ℂ → ℂ := fun z ↦ u z * dbar χ z with hg
   have hgi : Integrable g :=
     integrable_mul_dbar_of_locallyIntegrableOn hu hχ1 hχc (hχt.trans hball)
-  have hgc : HasCompactSupport g := (hasCompactSupport_dbar hχc).mul_left
   have hgt : tsupport g ⊆ (ball a (R / 2))ᶜ := by
     refine closure_minimal ?_ isOpen_ball.isClosed_compl
     intro z hz hzb
@@ -94,8 +93,7 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
     simp [g, hdχ_zero z hzb]
   set H := cauchyTransform g with hHdef
   have hH : DifferentiableOn ℂ H (ball a (R / 2)) :=
-    differentiableOn_cauchyTransform hgi hgc isOpen_ball
-      (Set.subset_compl_iff_disjoint_right.mp hgt)
+    differentiableOn_cauchyTransform hgi (Set.subset_compl_iff_disjoint_right.mp hgt)
   refine ⟨H, hH, ?_⟩
   -- a.e. equality via the fundamental lemma of the calculus of variations
   have hloc : LocallyIntegrableOn (fun z ↦ u z - H z) (ball a (R / 2)) :=

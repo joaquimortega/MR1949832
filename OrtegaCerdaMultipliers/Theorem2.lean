@@ -211,8 +211,7 @@ theorem isLocallyDoublingDiscWith_hypArea : IsLocallyDoublingDiscWith hypArea 16
 
 end Thm2
 
-set_option linter.unusedVariables false in
-theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (hr1 : r ≤ 1) :
+theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) :
     ENNReal.ofReal (Real.pi * r ^ 2 / 900) ≤ hypArea (hypBall z r) := by
   rw [hypArea_hypBall hz hr0.le]
   apply ENNReal.ofReal_le_ofReal
@@ -413,7 +412,7 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
           ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
   classical
   obtain ⟨c, B, Cd', R', hc0, hc1, hB, hR', haux⟩ := exists_aux_weight_disc_quant Cd r hr
-  obtain ⟨n, M, C, εP, -, hC, -, hP⟩ := prop2_disc_quant Cd' R' hR'
+  obtain ⟨n, M, C, εP, -, hC, -, hP⟩ := prop2_disc_quant Cd' R'
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   refine ⟨c, (C : ℝ) ^ 2 * Real.exp (2 * B), hc0, hc1, by positivity, fun φ μ hφ hμ ↦ ?_⟩
   obtain ⟨ψ, μψ, hψ, hμψ, hψφ⟩ := haux φ μ hφ hμ

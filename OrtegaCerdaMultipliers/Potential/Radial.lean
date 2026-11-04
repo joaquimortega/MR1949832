@@ -58,7 +58,7 @@ def wFun (a b : ℝ) : ℂ → ℝ := wFn (planeProfile a b) b
 
 variable {a b : ℝ}
 
-theorem contDiff_cutProfile (hab : a < b) : ContDiff ℝ (⊤ : ℕ∞) (cutProfile a b) := by
+theorem contDiff_cutProfile (a b : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (cutProfile a b) := by
   unfold cutProfile
   exact contDiff_const.sub (Real.smoothTransition.contDiff.comp
     ((contDiff_id.sub contDiff_const).div_const _))
@@ -70,7 +70,7 @@ theorem cutProfile_of_ge (hab : a < b) {t : ℝ} (ht : b ≤ t) : cutProfile a b
   unfold cutProfile
   rw [Real.smoothTransition.one_of_one_le, sub_self]
   rw [le_div_iff₀ (by linarith)]; linarith
-theorem cutProfile_mem_Icc (hab : a < b) (t : ℝ) : cutProfile a b t ∈ Set.Icc (0 : ℝ) 1 := by
+theorem cutProfile_mem_Icc (a b t : ℝ) : cutProfile a b t ∈ Set.Icc (0 : ℝ) 1 := by
   unfold cutProfile
   have h1 := Real.smoothTransition.nonneg ((t - a) / (b - a))
   have h2 := Real.smoothTransition.le_one ((t - a) / (b - a))
@@ -81,12 +81,12 @@ theorem antitone_cutProfile (hab : a < b) : Antitone (cutProfile a b) := by
   have : (s - a) / (b - a) ≤ (t - a) / (b - a) :=
     div_le_div_of_nonneg_right (by linarith) (by linarith)
   linarith [Real.smoothTransition.monotone this]
-theorem continuous_cutProfile (hab : a < b) : Continuous (cutProfile a b) :=
-  (contDiff_cutProfile hab).continuous
+theorem continuous_cutProfile (a b : ℝ) : Continuous (cutProfile a b) :=
+  (contDiff_cutProfile a b).continuous
 
 theorem le_profMass (ha : 0 < a) (hab : a < b) : a ≤ profMass a b := by
   unfold profMass
-  have hc := continuous_cutProfile hab
+  have hc := continuous_cutProfile a b
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := a)
     (hc.intervalIntegrable _ _) (hc.intervalIntegrable _ _)]
   have h1 : ∫ t in (0 : ℝ)..a, cutProfile a b t = a := by
@@ -96,14 +96,14 @@ theorem le_profMass (ha : 0 < a) (hab : a < b) : a ≤ profMass a b := by
       rw [uIcc_of_le ha.le] at ht
       exact cutProfile_of_le hab ht.2
   have h2 : 0 ≤ ∫ t in a..b, cutProfile a b t :=
-    intervalIntegral.integral_nonneg hab.le (fun t _ ↦ (cutProfile_mem_Icc hab t).1)
+    intervalIntegral.integral_nonneg hab.le (fun t _ ↦ (cutProfile_mem_Icc a b t).1)
   linarith
 theorem profMass_le (ha : 0 < a) (hab : a < b) : profMass a b ≤ b := by
   unfold profMass
-  have hc := continuous_cutProfile hab
+  have hc := continuous_cutProfile a b
   calc ∫ t in (0 : ℝ)..b, cutProfile a b t ≤ ∫ t in (0 : ℝ)..b, (1 : ℝ) :=
         intervalIntegral.integral_mono_on (by linarith) (hc.intervalIntegrable _ _)
-          intervalIntegrable_const (fun t _ ↦ (cutProfile_mem_Icc hab t).2)
+          intervalIntegrable_const (fun t _ ↦ (cutProfile_mem_Icc a b t).2)
     _ = b := by simp
 
 theorem profMass_pos (ha : 0 < a) (hab : a < b) : 0 < profMass a b :=
@@ -112,18 +112,18 @@ theorem profMass_pos (ha : 0 < a) (hab : a < b) : 0 < profMass a b :=
 theorem kernel_eq (a b : ℝ) (z : ℂ) :
     kernel a b z = cutProfile a b (‖z‖ ^ 2) / profMass a b / Real.pi := rfl
 
-theorem contDiff_kernel (ha : 0 < a) (hab : a < b) : ContDiff ℝ (⊤ : ℕ∞) (kernel a b) :=
-  (((contDiff_cutProfile hab).div_const _).comp (contDiff_norm_sq ℝ)).div_const _
+theorem contDiff_kernel (a b : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (kernel a b) :=
+  (((contDiff_cutProfile a b).div_const _).comp (contDiff_norm_sq ℝ)).div_const _
 theorem kernel_nonneg (ha : 0 < a) (hab : a < b) (z : ℂ) : 0 ≤ kernel a b z := by
   rw [kernel_eq]
-  exact div_nonneg (div_nonneg (cutProfile_mem_Icc hab _).1 (profMass_pos ha hab).le)
+  exact div_nonneg (div_nonneg (cutProfile_mem_Icc a b _).1 (profMass_pos ha hab).le)
     Real.pi_pos.le
-theorem kernel_eq_zero (ha : 0 < a) (hab : a < b) {z : ℂ} (hz : b ≤ ‖z‖ ^ 2) :
+theorem kernel_eq_zero (hab : a < b) {z : ℂ} (hz : b ≤ ‖z‖ ^ 2) :
     kernel a b z = 0 := by
   rw [kernel_eq, cutProfile_of_ge hab hz, zero_div, zero_div]
 theorem integral_kernel (ha : 0 < a) (hab : a < b) : ∫ z, kernel a b z = 1 := by
   have hb : 0 < b := ha.trans hab
-  have hc := (contDiff_cutProfile hab).continuous
+  have hc := (contDiff_cutProfile a b).continuous
   set f : ℝ → ℝ := fun y ↦ cutProfile a b (y ^ 2) / profMass a b / Real.pi with hf
   have h1 : ∫ z : ℂ, kernel a b z = ∫ z : ℂ, f ‖z‖ := rfl
   rw [h1, integral_fun_norm_addHaar volume f, finrank_real_complex]
@@ -166,7 +166,7 @@ theorem kernel_le_inv_pi_mul (ha : 0 < a) (hab : a < b) (z : ℂ) :
     kernel a b z ≤ (Real.pi * a)⁻¹ := by
   rw [kernel_eq, mul_inv, mul_comm, ← div_eq_mul_inv, ← one_div]
   have hM := le_profMass ha hab
-  have hσ := (cutProfile_mem_Icc hab (‖z‖ ^ 2))
+  have hσ := (cutProfile_mem_Icc a b (‖z‖ ^ 2))
   have h : cutProfile a b (‖z‖ ^ 2) / profMass a b ≤ 1 / a := by
     rw [div_le_div_iff₀ (profMass_pos ha hab) ha]; nlinarith [hσ.1, hσ.2]
   exact div_le_div_of_nonneg_right h Real.pi_pos.le
@@ -178,7 +178,7 @@ theorem kernel_le_indicator (ha : 0 < a) (hab : a < b) (z : ℂ) :
     exact kernel_le_inv_pi_mul ha hab z
   · rw [indicator_of_notMem hz, mul_zero]
     apply le_of_eq
-    apply kernel_eq_zero ha hab
+    apply kernel_eq_zero hab
     rw [mem_ball_zero_iff, not_lt] at hz
     calc b = Real.sqrt b ^ 2 := (Real.sq_sqrt (by linarith)).symm
       _ ≤ ‖z‖ ^ 2 := by gcongr
@@ -447,8 +447,8 @@ theorem sFn_le_sFn_of_gFn_le {p₁ p₂ : ℝ → ℝ} {b₁ b₂ : ℝ} (h₁ :
   sFn_le_sFn_of_gFn_le_of_le h₁ h₂ fun τ hτ ↦ hg τ (ht.trans hτ)
 -- plane instance
 theorem isProfile_planeProfile (ha : 0 < a) (hab : a < b) : IsProfile (planeProfile a b) b := by
-  refine ⟨ha.trans hab, (contDiff_cutProfile hab).div_const _,
-    fun t ↦ div_nonneg (cutProfile_mem_Icc hab t).1 (profMass_pos ha hab).le,
+  refine ⟨ha.trans hab, (contDiff_cutProfile a b).div_const _,
+    fun t ↦ div_nonneg (cutProfile_mem_Icc a b t).1 (profMass_pos ha hab).le,
     fun t ht ↦ by simp [planeProfile, cutProfile_of_ge hab ht], ⟨a, ha, fun t ht ↦ ?_⟩, ?_⟩
   · simp only [planeProfile]
     rw [cutProfile_of_le hab ht.le, cutProfile_of_le hab ha.le]
@@ -567,7 +567,7 @@ theorem sFun_scale (ha : 0 < a) (hab : a < b) {ε : ℝ} (hε : 0 < ε) (t : ℝ
   rw [this, Real.log_mul hε2 hb.ne']
   simp only [gFun]
   ring
-theorem kernel_scale (ha : 0 < a) (hab : a < b) {ε : ℝ} (hε : 0 < ε) (z : ℂ) :
+theorem kernel_scale (hab : a < b) {ε : ℝ} (hε : 0 < ε) (z : ℂ) :
     kernel (ε ^ 2 * a) (ε ^ 2 * b) z = kernel a b (z / ε) / ε ^ 2 := by
   unfold kernel
   rw [planeProfile_scale hab hε]

@@ -403,8 +403,7 @@ theorem continuousOn_kerSol {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ} [IsFini
 
 /-- Growth: `|u(z)| e^{-ε|Im z|} → 0` as `z → ∞`, for compactly supported `ν`. -/
 theorem tendsto_kerSol {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ} [IsFiniteMeasure ν]
-    {L : Set ℂ} (hL : IsCompact L) (hνL : ν Lᶜ = 0) {θ : ℂ → ℂ}
-    (hθ : AEStronglyMeasurable θ ν) {M : ℝ} (hθM : ∀ ζ, ‖θ ζ‖ ≤ M) :
+    {L : Set ℂ} (hL : IsCompact L) (hνL : ν Lᶜ = 0) {θ : ℂ → ℂ} {M : ℝ} (hθM : ∀ ζ, ‖θ ζ‖ ≤ M) :
     Tendsto (fun z ↦ ‖kerSol ε ν θ z‖ * Real.exp (-ε * |z.im|)) (cocompact ℂ) (𝓝 0) := by
   obtain ⟨R₀, hR₀⟩ := hL.isBounded.subset_closedBall 0
   set R := max R₀ 0
@@ -450,8 +449,8 @@ theorem tendsto_kerSol {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ} [IsFiniteMea
 
 /-! ## Densities with respect to Lebesgue measure (the correction `u₃`) -/
 
-theorem kerSol_volume_eq_restrict (ε : ℝ) {g : ℂ → ℂ} {S : Set ℂ} (hS : MeasurableSet S)
-    (hg : ∀ z ∉ S, g z = 0) : kerSol ε volume g = kerSol ε (volume.restrict S) g := by
+theorem kerSol_volume_eq_restrict (ε : ℝ) {g : ℂ → ℂ} {S : Set ℂ} (hg : ∀ z ∉ S, g z = 0) :
+    kerSol ε volume g = kerSol ε (volume.restrict S) g := by
   funext z
   exact (setIntegral_eq_integral_of_forall_compl_eq_zero (fun ζ hζ ↦ by simp [hg ζ hζ])).symm
 
@@ -525,7 +524,7 @@ theorem lintegral_sinKernel_strip_le {ε : ℝ} (hε : 0 < ε) {a a' B : ℝ} (h
         rw [lintegral_indicator measurableSet_ball, lintegral_indicator measurableSet_ball.compl,
           lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
           lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-          lintegral_inv_norm_sub_ball 0 zero_le_one]
+          lintegral_inv_norm_sub_ball 0 1]
     _ ≤ ENNReal.ofReal (Real.exp (ε * B) / Real.pi) * ENNReal.ofReal (2 * Real.pi * 1) +
         ENNReal.ofReal (Real.exp (ε * B) / (Real.pi * ε)) *
           (ENNReal.ofReal (6 / 1) * ENNReal.ofReal (2 * (a' - a))) := by gcongr
@@ -702,7 +701,7 @@ theorem tendsto_kerSol_volume {ε : ℝ} (hε : 0 < ε) {g : ℂ → ℂ}
   have hsplit : ∀ z, kerSol ε volume g z =
       kerSol ε (volume.restrict Kc) (Kc.indicator g) z + kerSol ε volume (Kcᶜ.indicator g) z := by
     intro z
-    rw [← kerSol_volume_eq_restrict ε hKc (fun ζ hζ ↦ indicator_of_notMem hζ _)]
+    rw [← kerSol_volume_eq_restrict ε (S := Kc) (fun ζ hζ ↦ indicator_of_notMem hζ _)]
     simp only [kerSol]
     rw [← integral_add (integrable_sinKernel_sub_mul hε (hg.indicator hKc) hb' hg₁M hg₁b z)
       (integrable_sinKernel_sub_mul hε (hg.indicator hKc.compl) hb' hg₂η hg₂b z)]
@@ -715,7 +714,7 @@ theorem tendsto_kerSol_volume {ε : ℝ} (hε : 0 < ε) {g : ℂ → ℂ}
   have hKc0 : volume.restrict Kc Kcᶜ = 0 := by
     rw [Measure.restrict_apply hKc.compl, compl_inter_self, measure_empty]
   have h1 := Metric.tendsto_nhds.1 (tendsto_kerSol hε (isCompact_closedBall 0 R) hKc0
-    ((hg.indicator hKc).restrict) hg₁M) (δ / 2) (half_pos hδ)
+    hg₁M) (δ / 2) (half_pos hδ)
   filter_upwards [h1] with z hz
   rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)] at hz ⊢
   -- the part bounded by `η`

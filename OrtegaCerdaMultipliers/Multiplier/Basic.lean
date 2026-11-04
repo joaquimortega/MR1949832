@@ -58,7 +58,7 @@ theorem tanh_div_one_sub_tanh_eq (s : ℝ) :
   field_simp
   ring
 
-theorem exp_two_mul_sub_one_le (s : ℝ) (hs : 0 ≤ s) :
+theorem exp_two_mul_sub_one_le (s : ℝ) :
     (Real.exp (2 * s) - 1) / 2 ≤ s * Real.exp (2 * s) := by
   have h1 := Real.add_one_le_exp (-(2 * s))
   have h2 : Real.exp (2 * s) * Real.exp (-(2 * s)) = 1 := by
@@ -67,11 +67,11 @@ theorem exp_two_mul_sub_one_le (s : ℝ) (hs : 0 ≤ s) :
   nlinarith
 
 /-- Euclidean size of a hyperbolic neighbourhood: `|w - c| ≤ s e^{2s} (1 - |c|²)`. -/
-theorem norm_sub_le_mul_exp {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {s : ℝ} (hs0 : 0 ≤ s)
+theorem norm_sub_le_mul_exp {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {s : ℝ}
     (hs : hypDist c w ≤ s) : ‖w - c‖ ≤ s * Real.exp (2 * s) * (1 - ‖c‖ ^ 2) := by
   have h := norm_sub_le_of_hypDist_le hc hw hs (Real.tanh_lt_one s)
   rw [tanh_div_one_sub_tanh_eq] at h
-  exact h.trans (mul_le_mul_of_nonneg_right (exp_two_mul_sub_one_le s hs0)
+  exact h.trans (mul_le_mul_of_nonneg_right (exp_two_mul_sub_one_le s)
     (one_sub_normSq_pos hc).le)
 
 theorem norm_one_sub_conj_mul_comm (z c : ℂ) : ‖1 - conj c * z‖ = ‖1 - conj z * c‖ := by

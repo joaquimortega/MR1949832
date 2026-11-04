@@ -41,10 +41,11 @@ theorem clm_apply_eq_wirtinger (L : ℂ →L[ℝ] ℂ) (w : ℂ) :
   simp only [Complex.real_smul, map_add, map_mul, conj_ofReal, conj_I]
   linear_combination ((w.im : ℂ) * L I) * I_sq
 
-theorem fderiv_apply_eq_dz_dbar {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℝ f z) (w : ℂ) :
-    fderiv ℝ f z w = dz f z * w + dbar f z * conj w := by
-  -- the identity holds for every real-linear map, so `hf` is not needed
-  exact clm_apply_eq_wirtinger _ w
+/-- `Df(z)w = ∂f(z) w + ∂̄f(z) w̄`; this holds for every real-linear map, so no differentiability
+hypothesis is needed (if `f` is not differentiable at `z` both sides vanish). -/
+theorem fderiv_apply_eq_dz_dbar (f : ℂ → ℂ) (z w : ℂ) :
+    fderiv ℝ f z w = dz f z * w + dbar f z * conj w :=
+  clm_apply_eq_wirtinger _ w
 
 theorem differentiableAt_iff_dbar_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔ dbar f z = 0 := by
@@ -151,9 +152,9 @@ theorem dbar_cexp {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℝ f z) :
     dbar (fun w ↦ Complex.exp (f w)) z = Complex.exp (f z) * dbar f z := by
   simp only [dbar, hf.hasFDerivAt.cexp.fderiv, _root_.smul_apply, smul_eq_mul]; ring
 
-theorem fderiv_real_eq_two_re_dz {φ : ℂ → ℝ} {z : ℂ} (hφ : DifferentiableAt ℝ φ z) (w : ℂ) :
+/-- `Dφ(z)w = 2 Re(∂φ(z) w)` for real `φ` (unconditional, since `fderiv_cplx` is). -/
+theorem fderiv_real_eq_two_re_dz (φ : ℂ → ℝ) (z w : ℂ) :
     fderiv ℝ φ z w = 2 * (dz (cplx φ) z * w).re := by
-  -- `fderiv_cplx` holds unconditionally, so `hφ` is not needed
   have hw : w = (w.re : ℝ) • (1 : ℂ) + (w.im : ℝ) • I := by
     apply Complex.ext <;> simp
   simp only [dz, fderiv_cplx, ContinuousLinearMap.comp_apply, ofRealCLM_apply]

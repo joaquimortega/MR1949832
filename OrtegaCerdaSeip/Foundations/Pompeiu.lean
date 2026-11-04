@@ -285,7 +285,7 @@ lemma lintegral_inv_norm_sub_le_of_set (K : Set ℂ) (z : ℂ) :
   · calc ∫⁻ w in K ∩ ball z 1, ENNReal.ofReal ‖w - z‖⁻¹
         ≤ ∫⁻ w in ball z 1, ENNReal.ofReal ‖w - z‖⁻¹ := lintegral_mono_set inter_subset_right
       _ = ENNReal.ofReal (2 * Real.pi) := by
-        rw [lintegral_inv_norm_sub_ball z zero_le_one, mul_one]
+        rw [lintegral_inv_norm_sub_ball z 1, mul_one]
   · calc ∫⁻ w in K \ ball z 1, ENNReal.ofReal ‖w - z‖⁻¹
         ≤ ∫⁻ w in K \ ball z 1, 1 := by
           refine setLIntegral_mono measurable_const (fun w hw ↦ ?_)
@@ -377,9 +377,8 @@ theorem continuous_cauchyTransform {f : ℂ → ℂ} (hf : Continuous f) (hc : H
   rw [cauchyTransform_eq_convolution]
   exact continuous_const.mul (hc.continuous_convolution_right _ locallyIntegrable_inv_complex hf)
 
-theorem norm_cauchyTransform_le {f : ℂ → ℂ} {M R : ℝ} {c w : ℂ} (hf : Continuous f)
-    (hM : ∀ z, ‖f z‖ ≤ M) (hsupp : tsupport f ⊆ Metric.closedBall c R)
-    (hw : w ∈ Metric.closedBall c R) :
+theorem norm_cauchyTransform_le {f : ℂ → ℂ} {M R : ℝ} {c w : ℂ} (hM : ∀ z, ‖f z‖ ≤ M)
+    (hsupp : tsupport f ⊆ Metric.closedBall c R) (hw : w ∈ Metric.closedBall c R) :
     ‖cauchyTransform f w‖ ≤ 4 * M * R := by
   have hM0 : 0 ≤ M := le_trans (norm_nonneg _) (hM 0)
   have hR0 : 0 ≤ R := le_trans dist_nonneg (mem_closedBall.mp hw)
@@ -460,8 +459,8 @@ theorem dbar_cauchyTransform {β : ℂ → ℂ} (hβ : ContDiff ℝ (⊤ : ℕ�
   rw [integral_add (i1.const_mul _) (iI.const_mul _), integral_const_mul, integral_const_mul]
   ring
 
-theorem differentiableOn_cauchyTransform {f : ℂ → ℂ} (hf : Integrable f)
-    (hc : HasCompactSupport f) {U : Set ℂ} (hU : IsOpen U) (hdisj : Disjoint (tsupport f) U) :
+theorem differentiableOn_cauchyTransform {f : ℂ → ℂ} (hf : Integrable f) {U : Set ℂ}
+    (hdisj : Disjoint (tsupport f) U) :
     DifferentiableOn ℂ (cauchyTransform f) U := by
   intro w hw
   apply DifferentiableAt.differentiableWithinAt

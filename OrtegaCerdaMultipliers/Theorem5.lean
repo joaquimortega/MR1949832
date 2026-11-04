@@ -125,7 +125,7 @@ theorem m13_integral_abs_mul_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff 
       (f := fun s ↦ s * H s - h s) (f' := fun s ↦ s * H' s)
       (fun s _ ↦ (((hasDerivAt_id s).mul (m13_hasDerivAt_comp_line₂ hf2 z v s)).sub
           (m13_hasDerivAt_comp_line hf2 z v s)).congr_deriv (by
-            simp only [H, H', id, Pi.neg_apply]; ring))
+            simp only [H', id]; ring))
       hint.integrableOn
       (tendsto_const_nhds.congr' (by
         filter_upwards [m13_eventually_atTop_zero h0s, m13_eventually_atTop_zero h1s] with s e0 e1
@@ -138,7 +138,7 @@ theorem m13_integral_abs_mul_line_second_deriv {f : ℂ → ℝ} (hf : ContDiff 
       (f := fun s ↦ -s * H s + h s) (f' := fun s ↦ -s * H' s)
       (fun s _ ↦ ((((hasDerivAt_id s).neg).mul (m13_hasDerivAt_comp_line₂ hf2 z v s)).add
           (m13_hasDerivAt_comp_line hf2 z v s)).congr_deriv (by
-            simp only [H, H', id, Pi.neg_apply]; ring))
+            simp only [H', id, Pi.neg_apply]; ring))
       hint'.integrableOn
       (tendsto_const_nhds.congr' (by
         filter_upwards [m13_eventually_atBot_zero h0s, m13_eventually_atBot_zero h1s] with s e0 e1
@@ -261,7 +261,7 @@ theorem IsLineMeasure.continuous_logPotential_Ioc {μ : Measure ℂ} (hμ : IsLi
     · exact (((continuous_id.sub continuous_const).norm.max continuous_const).continuousAt).log
         (ne_of_gt (hδ.trans_le (le_max_right _ _)))
   -- (L8) at scale 1
-  obtain ⟨CL, hCL⟩ := hμ.m13_lintegral_log_line one_pos
+  obtain ⟨CL, hCL⟩ := hμ.m13_lintegral_log_line 1
   -- the error of the truncation
   have herr : ∀ δ : ℝ, 0 < δ → δ ≤ 1 → ∀ z : ℂ,
       |(∫ t in Ioc a b, Real.log ‖z - t‖ ∂linePull μ) -
@@ -588,7 +588,7 @@ theorem m13_hasCompactSupport_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (
 
 /-- The weak Laplacian of the potential of a piece `(ν|_{(a,b]})` of a line measure. -/
 theorem IsLineMeasure.m13_integral_logPotential_Ioc_mul_laplacian {ν : Measure ℂ}
-    (hν : IsLineMeasure ν) {a b : ℝ} (hab : a ≤ b) (χ : ℂ → ℝ)
+    (hν : IsLineMeasure ν) (a b : ℝ) (χ : ℂ → ℝ)
     (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) (hc : HasCompactSupport χ) :
     ∫ z : ℂ, (∫ t in Ioc a b, Real.log ‖z - (t : ℂ)‖ ∂linePull ν) * Laplacian.laplacian χ z =
       2 * Real.pi * ∫ t in Ioc a b, χ t ∂linePull ν := by
@@ -649,8 +649,8 @@ theorem IsLineMeasure.integral_lineTerm_mul_laplacian {μ : Measure ℂ} (hμ : 
     ring
   have H1 := (logKernel νp).2 χ hχ hc
   have H2 := (logKernel νm).2 χ hχ hc
-  have H3 := hμ.m13_integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
-  have H4 := isLineMeasure_lebLine.m13_integral_logPotential_Ioc_mul_laplacian hab χ hχ hc
+  have H3 := hμ.m13_integral_logPotential_Ioc_mul_laplacian a b χ hχ hc
+  have H4 := isLineMeasure_lebLine.m13_integral_logPotential_Ioc_mul_laplacian a b χ hχ hc
   rw [linePull_lebLine] at H4
   have ia : Integrable fun z ↦ Real.log ‖z - νp‖ * Δχ z + Real.log ‖z - νm‖ * Δχ z := i1.add i2
   have ic : Integrable fun z ↦ 2 * α * (Pv z * Δχ z) := i4.const_mul _
@@ -697,7 +697,7 @@ theorem LineConsts.finsum_lineZeroCount {μ : Measure ℂ} {r C₂ c₀ α₁ : 
     intro ζ
     unfold lineZeroCount
     by_cases h1 : ζ ∈ lineNodeSet μ α s true <;> by_cases h2 : ζ ∈ lineNodeSet μ α s false <;>
-      simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2] <;> ring
+      simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2, two_mul]
   rw [finsum_congr hpt, finsum_add_distrib (hfin true) (hfin false), hb true, hb false,
     Finset.sum_add_distrib]
 

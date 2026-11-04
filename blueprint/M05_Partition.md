@@ -188,7 +188,6 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
     (P : ℝ → ℝ → ℝ → ℝ → Prop)
     (hP : ∀ x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ, P x₁ x₂ y₁ y₂ → x₁ ≤ x₁' → x₂' ≤ x₂ → y₁ ≤ y₁' →
       y₂' ≤ y₂ → P x₁' x₂' y₁' y₂')
-    (hfin : ∀ x₁ x₂ y₁ y₂ : ℝ, P x₁ x₂ y₁ y₂ → ν (rect x₁ x₂ y₁ y₂) < ∞)
     (C₀ : ℕ) (hC₀ : ∀ x₁ x₂ y₁ y₂ : ℝ, IsRectLE 3 x₁ x₂ y₁ y₂ → P x₁ x₂ y₁ y₂ →
       (C₀ : ℝ≥0∞) < ν (rect x₁ x₂ y₁ y₂) → 1 < ν (midThird x₁ x₂ y₁ y₂))
     (σ : ℝ → ℝ → ℝ → ℝ → ℝ) (C_E κ : ℝ) (hκ : 0 < κ)
@@ -312,8 +311,7 @@ theorem claim2_lower_plane (hP : IsMassPartition μ univ dist (massRadius μ) N 
 
 /-- **Claim 2**, comparability of `ρ` inside a piece (diameters of neighbours, via Claim 1). -/
 theorem claim2_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
-    (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ (ball z R₀))
-    (hP : IsMassPartition μ univ dist (massRadius μ) N a A R) (K : ℝ) :
+    (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ (ball z R₀)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ i j, ∀ z ∈ R i, ∀ w ∈ R j,
       dist z w ≤ K * max (massRadius μ z) (massRadius μ w) → massRadius μ w ≤ C * massRadius μ z :=
   sorry

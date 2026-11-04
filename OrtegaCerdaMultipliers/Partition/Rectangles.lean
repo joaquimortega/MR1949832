@@ -254,7 +254,7 @@ theorem rect_exists_Ico_of_gap {x : ℤ → ℝ} {h : ℝ} (hh : 0 < h)
   obtain ⟨k, hk, hmax⟩ := Int.exists_greatest_of_bdd (P := fun k ↦ x k ≤ t)
     ⟨N, fun k hk ↦ by
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       have := hmono.monotone hlt.le
       have := hup N
       have := le_abs_self t
@@ -267,7 +267,7 @@ theorem rect_exists_Ico_of_gap {x : ℤ → ℝ} {h : ℝ} (hh : 0 < h)
       linarith⟩
   refine ⟨k, hk, ?_⟩
   by_contra hle
-  push_neg at hle
+  push Not at hle
   have := hmax (k + 1) hle
   omega
 
@@ -288,7 +288,7 @@ theorem exists_strip_cuts {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = 
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp [hx]
     · have : ¬ (0 ≤ -(n : ℤ)) := by omega
-      simp only [hx, this, if_false, neg_neg, Int.toNat_natCast]
+      simp only [hx, this, ite_false, neg_neg, Int.toNat_natCast]
   -- each block is a step of `fR` or of `fL`
   have hblock : ∀ k : ℤ, h ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * h ∧
       ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := by
@@ -371,9 +371,9 @@ theorem rect_slab_core {ν : Measure ℂ} {C_E u s y₁ y₂ v : ℝ} {T : Set �
   have hEj : ∀ j, ν (E j) ≤ ENNReal.ofReal C_E * ν (D j) := by
     intro j
     by_cases hj : good j
-    · simp only [hE, hD, if_pos hj]
+    · simp only [hE, hD, ite_eq_left hj]
       exact (measure_mono (hshift _)).trans (hT _ (hgt_lo j) (hgt_hi j hj)).2
-    · simp only [hE, hD, if_neg hj, measure_empty, mul_zero, le_refl]
+    · simp only [hE, hD, ite_eq_right hj, measure_empty, mul_zero, le_refl]
   have htop : ν (ball (⟨u + s / 2, y₂ - s / 2⟩ : ℂ) s) ≤
       ENNReal.ofReal C_E * ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2)) :=
     (measure_mono (hshift _)).trans (hT _ (by linarith) le_rfl).2
@@ -383,7 +383,7 @@ theorem rect_slab_core {ν : Measure ℂ} {C_E u s y₁ y₂ v : ℝ} {T : Set �
     have hre : |z.re - (u + s / 2)| ≤ s / 2 := by rw [abs_le]; constructor <;> linarith
     by_cases htop' : y₂ - s ≤ z.im
     · exact Or.inr (rect_mem_ball_of_abs hs hre (by rw [abs_le]; constructor <;> linarith))
-    · push_neg at htop'
+    · push Not at htop'
       left
       set j := ⌊(z.im - y₁) / s⌋₊
       have hj1 : (j : ℝ) ≤ (z.im - y₁) / s := Nat.floor_le (div_nonneg (by linarith) hs.le)
@@ -392,7 +392,7 @@ theorem rect_slab_core {ν : Measure ℂ} {C_E u s y₁ y₂ v : ℝ} {T : Set �
       rw [div_lt_iff₀ hs] at hj2
       have hgj : good j := by simp only [hgood]; nlinarith
       refine mem_iUnion.2 ⟨j, ?_⟩
-      simp only [hE, if_pos hgj]
+      simp only [hE, ite_eq_left hgj]
       refine rect_mem_ball_of_abs hs hre ?_
       simp only [hhgt]
       rw [abs_le]; constructor <;> nlinarith
@@ -621,7 +621,7 @@ theorem rectCore_bisect_x {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = 
     have := rect_toReal_add_x ν (y₁ := y₁) (y₂ := y₂) (show x₁ ≤ t by linarith)
       (show t ≤ x₂ by linarith) hQf
     rw [hQ, ENNReal.toReal_natCast] at this
-    simp only [hF] at hFt
+    simp only at hFt
     rw [Nat.cast_sub hn₁n.le]
     linarith
 
@@ -632,7 +632,7 @@ theorem rectCore_exists_index {t : ℕ → ℝ} (n : ℕ) {a : ℝ} (h0 : t 0 �
   | succ n ih =>
     by_cases h : t n ≤ a
     · exact ⟨n, Nat.lt_succ_self n, h, hn⟩
-    · push_neg at h
+    · push Not at h
       obtain ⟨i, hi, h1, h2⟩ := ih h
       exact ⟨i, by omega, h1, h2⟩
 
@@ -677,7 +677,7 @@ theorem rectCore_slice_x {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x
   have hlt : ∀ i j, i < j → j ≤ n → t i < t j := by
     intro i j hij hjn
     by_contra hle
-    push_neg at hle
+    push Not at hle
     have := hFmono _ _ (htI j) (htI i) hle
     rw [htF j hjn, htF i (by omega)] at this
     have : (j : ℝ) > i := by exact_mod_cast hij
@@ -690,10 +690,10 @@ theorem rectCore_slice_x {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x
     · exact (hlt i j hij hjn).le
     · have : t j = x₂ := by
         simp only [ht]
-        rw [if_neg (by omega), if_pos (by omega)]
+        rw [ite_eq_right (by omega), ite_eq_left (by omega)]
       rw [this]; exact (htI i).2
   refine ⟨t, by simp [ht], ?_, hmono, fun i hi ↦ hlt i (i + 1) (by omega) hi, fun i hi ↦ ?_⟩
-  · simp only [ht]; rw [if_neg (by omega), if_pos le_rfl]
+  · simp only [ht]; rw [ite_eq_right (by omega), ite_eq_left le_rfl]
   · have hadd := rect_toReal_add_x ν (y₁ := y₁) (y₂ := y₂) (htI i).1 (hmono (Nat.le_succ i))
       ((measure_mono (rect_subset_rect le_rfl (htI (i + 1)).2 le_rfl le_rfl)).trans_lt hQf)
     have h1 := htF i (by omega)
@@ -780,7 +780,7 @@ theorem rectCore_slice_wide {ν : Measure ℂ} {C₀ : ℕ} {C_E κ x₁ x₂ y�
   have hs : 0 < t' - t := sub_pos.2 htt'
   have h3 : (0 : ℝ) < 3 ^ k₀ := by positivity
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hsk : 3 ^ k₀ * (t' - t) < min (1 / 4) κ * (x₂ - x₁) := by
     rw [div_mul_eq_mul_div, lt_div_iff₀ h3] at hcon; linarith
   have hm1 : min (1 / 4) κ ≤ 1 / 4 := min_le_left _ _
@@ -987,7 +987,6 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
     (P : ℝ → ℝ → ℝ → ℝ → Prop)
     (hP : ∀ x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ, P x₁ x₂ y₁ y₂ → x₁ ≤ x₁' → x₂' ≤ x₂ → y₁ ≤ y₁' →
       y₂' ≤ y₂ → P x₁' x₂' y₁' y₂')
-    (hfin : ∀ x₁ x₂ y₁ y₂ : ℝ, P x₁ x₂ y₁ y₂ → ν (rect x₁ x₂ y₁ y₂) < ∞)
     (C₀ : ℕ) (hC₀ : ∀ x₁ x₂ y₁ y₂ : ℝ, IsRectLE 3 x₁ x₂ y₁ y₂ → P x₁ x₂ y₁ y₂ →
       (C₀ : ℝ≥0∞) < ν (rect x₁ x₂ y₁ y₂) → 1 < ν (midThird x₁ x₂ y₁ y₂))
     (σ : ℝ → ℝ → ℝ → ℝ → ℝ) (C_E κ : ℝ) (hκ : 0 < κ)
@@ -1065,10 +1064,10 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
         exact ⟨hx, hs, h2, h1⟩
       · exact rect_subset_rect le_rfl le_rfl (ht0 ▸ htm (Nat.zero_le _)) (htn ▸ htm (by omega))
   · -- Case A: bisect through the middle third of the longer side
-    push_neg at hnC
+    push Not at hnC
     have hmid := hC₀ x₁ x₂ y₁ y₂ hQg hQP (by rw [hQ]; exact_mod_cast hnC)
     rcases le_or_gt (y₂ - y₁) (x₂ - x₁) with hlw | hlw
-    · rw [midThird, if_pos hlw] at hmid
+    · rw [midThird, ite_eq_left hlw] at hmid
       obtain ⟨t, n₁, n₂, ht1, ht2, hn₁, hn₂, hsum, hm₁, hm₂⟩ := rectCore_bisect_x hre hx hQ hmid
       subst hsum
       have h₁ := ih n₁ (by omega) x₁ t y₁ y₂ hn₁

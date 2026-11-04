@@ -47,14 +47,14 @@ theorem exists_coloring_nat (adj : ℕ → ℕ → Prop) (hsymm : ∀ i j, adj i
     ∃ col : ℕ → Fin (D + 1), ∀ i j, i ≠ j → adj i j → col i ≠ col j := sorry
 
 /-- Separated colouring of the cells (plane): same colour ⟹ `L`-separated centres. -/
-theorem exists_separated_coloring_plane (Cd : ℝ≥0) (R₀ η A L : ℝ) (hη : 0 < η) :
+theorem exists_separated_coloring_plane (Cd : ℝ≥0) (R₀ η A L : ℝ) :
     ∃ n : ℕ, ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ),
       MeasClassPlane ν Cd R₀ → IsCells univ dist (massRadius ν) ν N η A R c →
       ∃ col : ℕ → Fin n, ∀ i j, i ≠ j → col i = col j →
         L * (massRadius ν (c i) + massRadius ν (c j)) ≤ dist (c i) (c j) := sorry
 
 /-- Separated colouring of the cells (disc). -/
-theorem exists_separated_coloring_disc (Cd : ℝ≥0) (R₀ η A L : ℝ) (hη : 0 < η) :
+theorem exists_separated_coloring_disc (Cd : ℝ≥0) (R₀ η A L : ℝ) :
     ∃ n : ℕ, ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ),
       MeasClassDisc ν Cd R₀ → IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c →
       ∃ col : ℕ → Fin n, ∀ i j, i ≠ j → col i = col j →
@@ -68,7 +68,7 @@ def colorSel (d : ℂ → ℂ → ℝ) (ρ : ℂ → ℝ) (R : ℕ → Set ℂ) 
 /-- Key separation lemma (plane): for `z` in a cell of colour `l`, every node of the colour-`l`
 configuration is at distance `≥ c₅ ρ(z)`.  `Bl`: spread of the ordinary nodes; selected cells
 carry nodes in the annulus `[Bk, Bk'] · ρ(c j)`. -/
-theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < η) (hA : 0 < A)
+theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hA : 0 < A)
     (hBl : 0 ≤ Bl) :
     ∃ Bk₀ : ℝ, ∀ Bk Bk' : ℝ, Bk₀ ≤ Bk → ∃ L₀ : ℝ, ∀ L : ℝ, L₀ ≤ L → ∃ c₅ : ℝ, 0 < c₅ ∧
       ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ) {n : ℕ} (col : ℕ → Fin n)
@@ -84,7 +84,7 @@ theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < 
       ∀ i, col i = l → ∀ z ∈ R i, ∀ j, ∀ w ∈ Λ j, c₅ * massRadius ν z ≤ dist z w := sorry
 
 /-- Key separation lemma (disc). -/
-theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < η) (hA : 0 < A)
+theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hA : 0 < A)
     (hBl : 0 ≤ Bl) :
     ∃ Bk₀ : ℝ, ∀ Bk Bk' : ℝ, Bk₀ ≤ Bk → ∃ L₀ : ℝ, ∀ L : ℝ, L₀ ≤ L → ∃ c₅ : ℝ, 0 < c₅ ∧
       ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ) {n : ℕ} (col : ℕ → Fin n)
@@ -102,7 +102,7 @@ theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < �
   sorry
 
 /-- **Proposition 2, quantitative, full form (plane).** -/
-theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (n M : ℕ) (C : ℝ≥0) (ε : ℝ), 1 ≤ M ∧ 1 ≤ C ∧ 0 < ε ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassPlane ψ μ Cd R₀ →
       ∃ h : Fin n → ℂ → ℂ, (∀ i, Differentiable ℂ (h i)) ∧ (∀ i, ∃ z₀, h i z₀ ≠ 0) ∧
@@ -113,7 +113,7 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
         (∀ i, ∀ z : ℂ, ‖h i z‖ ≤ C * Real.exp (ψ z)) := sorry
 
 /-- **Proposition 2, quantitative, full form (disc).** -/
-theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (n M : ℕ) (C : ℝ≥0) (ε : ℝ), 1 ≤ M ∧ 1 ≤ C ∧ 0 < ε ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassDisc ψ μ Cd R₀ →
       ∃ h : Fin n → ℂ → ℂ, (∀ i, DifferentiableOn ℂ (h i) 𝔻) ∧ (∀ i, ∃ z₀ ∈ 𝔻, h i z₀ ≠ 0) ∧

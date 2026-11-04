@@ -25,7 +25,7 @@ namespace OC
 
 theorem MeasClassDisc.hypBall_lt_top {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
     (hν : MeasClassDisc ν Cd R₀) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : ν (hypBall z r) < ∞ :=
-  (measure_mono fun w hw ↦ closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩).trans_lt
+  (measure_mono fun _ hw ↦ closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩).trans_lt
     (hν.finite _ (closedBall_tanh_subset_disc _) (isCompact_closedBall _ _))
 
 theorem MeasClassDisc.measure_singleton {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
@@ -294,8 +294,7 @@ theorem abs_cellPot_le_disc_near {ν : Measure ℂ} {N : ℕ} {η A B : ℝ} {R 
     (hC : IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c)
     (hN : IsNodes 𝔻 hypDist (massRadiusDisc ν) ν N B R c m Λ) (hA : 0 < A) (hB : 0 ≤ B)
     {i : ℕ} (hm : 3 ≤ m i) {z : ℂ} (hz : z ∈ 𝔻) (hint : IntegrableOn (kerDisc z) (R i) ν)
-    (hρ : 0 < massRadiusDisc ν (c i)) (hs : (A + B) * massRadiusDisc ν (c i) ≤ 1 / 8)
-    (hβ : hypDist z (c i) ≤ 1 / 4)
+    (hρ : 0 < massRadiusDisc ν (c i)) (hβ : hypDist z (c i) ≤ 1 / 4)
     (hβ' : 64 * (A + B) * massRadiusDisc ν (c i) ≤ hypDist z (c i)) :
     |cellPot kerDisc ν R Λ i z| ≤
       8 * N * (14 * (A + B)) ^ 3 * (massRadiusDisc ν (c i) / hypDist z (c i)) ^ 3 := by
@@ -325,7 +324,7 @@ theorem abs_cellPot_le_disc_near {ν : Measure ℂ} {N : ℕ} {η A B : ℝ} {R 
   -- upper bound for `|ζ - c|`
   have hζc : ∀ ζ ∈ 𝔻, hypDist (c i) ζ ≤ sr → ‖ζ - c i‖ ≤ (4 / 3) * sr * (1 - ‖c i‖ ^ 2) := by
     intro ζ hζ hd
-    refine (norm_sub_le_mul_exp hc hζ hsr0.le hd).trans ?_
+    refine (norm_sub_le_mul_exp hc hζ hd).trans ?_
     have he : Real.exp (2 * sr) ≤ 4 / 3 :=
       (Real.exp_le_exp.2 (by linarith)).trans exp_quarter_le
     have : sr * Real.exp (2 * sr) ≤ 4 / 3 * sr := by nlinarith
@@ -454,7 +453,7 @@ theorem abs_cellPot_le_disc_far (A B R₀ M₀ : ℝ) (N : ℕ) (hA : 0 < A) (hB
     have hK3 := abs_kerDisc_sub_taylorDisc_two_le hz (Bd := Bd)
       (fun ξ hξ ↦ ⟨(hseg hξ).1, hξz ξ (hseg hξ)⟩) (fun ξ hξ ↦ hBd ξ (hseg hξ))
     refine hK3.trans ?_
-    have hζc := norm_sub_le_mul_exp hc hζ.1 hsr0 hζ.2
+    have hζc := norm_sub_le_mul_exp hc hζ.1 hζ.2
     have hζc2 : ‖ζ - c i‖ ^ 2 ≤ (sr * Real.exp (2 * sr) * (1 - ‖c i‖ ^ 2)) ^ 2 := by gcongr
     have he10 : Real.exp (6 * sr) * Real.exp (2 * sr) ^ 2 ≤ Real.exp (10 * S₀) := by
       rw [← Real.exp_nat_mul, ← Real.exp_add]
@@ -496,7 +495,7 @@ theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
   obtain ⟨C₁, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
   obtain ⟨Cn, hCn⟩ := nearField_sum_le_disc Cd R₀ η A δ hη hδ
   obtain ⟨CD, hCD0, hCD⟩ := abs_cellPot_le_disc_far A B R₀ M₀ N hA hB hM₀
-  obtain ⟨Cf, hCf⟩ := farField_sum_le_disc Cd R₀ η A M₀ hη hM₀
+  obtain ⟨Cf, hCf⟩ := farField_sum_le_disc Cd R₀ η A M₀ hη
   set Cnear : ℝ := 8 * N * (14 * (A + B)) ^ 3
   refine ⟨K₀, Cnear * max Cn 0 + CD * max Cf 0, by rw [hK₀]; nlinarith, by positivity, ?_⟩
   intro ν R c m Λ hν hC hN hm2 hm3 z hz F hF
@@ -527,7 +526,7 @@ theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
             rw [le_div_iff₀ (by positivity)] at h8
             nlinarith [(hρ i).1]
           exact abs_cellPot_le_disc_near hC hN hA hB (hm3 i hρ₀le) hz
-            (integrableOn_kerDisc_cell hν hC i hz) (hρ i).1 hs hβi
+            (integrableOn_kerDisc_cell hν hC i hz) (hρ i).1 hβi
             (le_trans (by rw [hK₀]; nlinarith [(hρ i).1]) hK)
       _ = Cnear * ∑ i ∈ F.filter (fun i ↦ hypDist z (c i) < M₀),
           (massRadiusDisc ν (c i) / hypDist z (c i)) ^ 3 := by rw [Finset.mul_sum]
@@ -622,7 +621,7 @@ theorem summable_cellPot_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N
   refine add_le_add (Finset.sum_le_sum_of_subset_of_nonneg (fun i hi ↦ (Finset.mem_filter.1 hi).2)
     fun i _ _ ↦ abs_nonneg _) (hK ν R c m Λ hν hC hN hm z _ fun i hi ↦ ?_)
   have := (Finset.mem_filter.1 hi).2
-  rw [Set.Finite.mem_toFinset, Set.mem_setOf_eq, not_lt] at this
+  rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_lt] at this
   exact this
 
 theorem summable_cellPot_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {η A B ρ₀ : ℝ}
@@ -648,7 +647,7 @@ theorem summable_cellPot_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N 
   refine add_le_add (Finset.sum_le_sum_of_subset_of_nonneg (fun i hi ↦ (Finset.mem_filter.1 hi).2)
     fun i _ _ ↦ abs_nonneg _) (hK ν R c m Λ hν hC hN hm2 hm3 z hz _ fun i hi ↦ ?_)
   have := (Finset.mem_filter.1 hi).2
-  rw [Set.Finite.mem_toFinset, Set.mem_setOf_eq, not_lt] at this
+  rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_lt] at this
   exact this
 
 end OC

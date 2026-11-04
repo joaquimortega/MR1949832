@@ -16,8 +16,6 @@ open scoped ENNReal NNReal ComplexConjugate
 
 noncomputable section
 
-set_option linter.unusedSectionVars false
-
 namespace OC
 
 section Abstract
@@ -45,6 +43,7 @@ def IsPorous (E : Set X) : Prop :=
   ∃ κ s₀ : ℝ, 0 < κ ∧ 0 < s₀ ∧ ∀ y ∈ E, ∀ s : ℝ, 0 < s → s ≤ s₀ →
     ∃ y', dist y y' ≤ s ∧ ∀ e ∈ E, κ * s ≤ dist y' e
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem exists_dist_eq [BallGeometry X] (x : X) {r : ℝ} (hr : 0 ≤ r) : ∃ y, dist x y = r := by
   obtain ⟨y, hy⟩ := BallGeometry.exists_far x r
   obtain ⟨m, hm1, hm2⟩ := BallGeometry.exists_between x y r hr hy
@@ -52,6 +51,7 @@ theorem exists_dist_eq [BallGeometry X] (x : X) {r : ℝ} (hr : 0 ≤ r) : ∃ y
   have := dist_triangle x m y
   linarith
 
+omit [OpensMeasurableSpace X] in
 /-- Local doubling with a constant `≥ 1` at base radii `≤ 1/4`. -/
 theorem IsLocDoublingM.exists_const_quarter {μ : Measure X} (hd : IsLocDoublingM μ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ x : X, ∀ r : ℝ, 0 < r → r ≤ 1 / 4 →
@@ -61,6 +61,7 @@ theorem IsLocDoublingM.exists_const_quarter {μ : Measure X} (hd : IsLocDoubling
   calc μ (ball x (2 * r)) ≤ C * μ (ball x r) := hC x r hr (by linarith)
     _ ≤ (max C 1 : ℝ≥0) * μ (ball x r) := by gcongr; exact_mod_cast le_max_left _ _
 
+omit [OpensMeasurableSpace X] in
 /-- Chain lemma: if `d(x,y) ≤ n δ` with `2δ < 1`, then `μ B(y,δ) ≤ Cⁿ μ B(x,δ)`. -/
 theorem chain_aux [BallGeometry X] {μ : Measure X} {C : ℝ≥0} (hC1 : 1 ≤ C) {δ : ℝ}
     (hδ : 0 < δ) (hC : ∀ x : X, μ (ball x (2 * δ)) ≤ C * μ (ball x δ)) :
@@ -104,6 +105,7 @@ theorem chain_aux [BallGeometry X] {μ : Measure X} {C : ℝ≥0} (hC1 : 1 ≤ C
           exact (measure_mono hsub).trans (hC x)
         _ = (C : ℝ≥0∞) ^ (n + 1) * μ (ball x δ) := by ring
 
+omit [OpensMeasurableSpace X] in
 theorem IsLocDoublingM.exists_const_of_le [BallGeometry X] {μ : Measure X}
     (hd : IsLocDoublingM μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ x : X, ∀ r : ℝ, 0 < r → r ≤ R₁ →
@@ -150,6 +152,7 @@ theorem IsLocDoublingM.exists_const_of_le [BallGeometry X] {μ : Measure X}
     _ ≤ (max C (K * C ^ n₀) : ℝ≥0) * μ (ball x r) := by
         gcongr; exact_mod_cast le_max_right _ _
 
+omit [OpensMeasurableSpace X] in
 /-- Iterated doubling: `u ≤ 2ⁿ t`, `u ≤ 2R₁` ⟹ `μ B(x,u) ≤ Dⁿ μ B(x,t)`. -/
 theorem measure_ball_le_pow_aux {μ : Measure X} {D : ℝ≥0} (hD1 : 1 ≤ D) {R₁ : ℝ}
     (hD : ∀ x : X, ∀ r : ℝ, 0 < r → r ≤ R₁ → μ (ball x (2 * r)) ≤ D * μ (ball x r)) :
@@ -179,6 +182,7 @@ theorem measure_ball_le_pow_aux {μ : Measure X} {D : ℝ≥0} (hD1 : 1 ≤ D) {
         _ ≤ D * ((D : ℝ≥0∞) ^ n * μ (ball x t)) := by gcongr
         _ = (D : ℝ≥0∞) ^ (n + 1) * μ (ball x t) := by ring
 
+omit [OpensMeasurableSpace X] in
 theorem IsLocDoublingM.measure_ball_le_of_dist_le [BallGeometry X] {μ : Measure X}
     (hd : IsLocDoublingM μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ x y : X, ∀ r : ℝ, 0 < r → r ≤ R₁ → dist x y ≤ r →
@@ -193,6 +197,7 @@ theorem IsLocDoublingM.measure_ball_le_of_dist_le [BallGeometry X] {μ : Measure
     linarith
   exact (measure_mono hsub).trans (hC x r hr hrR)
 
+omit [OpensMeasurableSpace X] in
 theorem IsLocDoublingM.measure_ball_le_pow [BallGeometry X] {μ : Measure X}
     (hd : IsLocDoublingM μ) (R₁ : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ (x x' : X) (r r' : ℝ) (k : ℕ), 0 < r' → r ≤ R₁ → dist x x' ≤ r →
@@ -259,6 +264,7 @@ theorem rpow_logb_comm {a q : ℝ} (ha : 0 < a) (hq : 0 < q) :
   congr 1
   ring
 
+omit [OpensMeasurableSpace X] in
 theorem IsLocDoublingM.measure_ball_le_rpow [BallGeometry X] {μ : Measure X}
     (hd : IsLocDoublingM μ) (R₁ : ℝ) :
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ (x x' : X) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ →
@@ -470,6 +476,7 @@ theorem IsLocDoublingM.measure_singleton {μ : Measure X} (hd : IsLocDoublingM �
   refine le_antisymm (ge_of_tendsto' htend fun k ↦ ?_) (zero_le)
   exact (measure_mono (singleton_subset_iff.2 (mem_ball_self (by positivity)))).trans (hstep k)
 
+omit [OpensMeasurableSpace X] in
 theorem IsLocDoublingM.measure_ball_pos [BallGeometry X] {μ : Measure X}
     (hd : IsLocDoublingM μ) (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R))
     (x : X) {r : ℝ} (hr : 0 < r) : 0 < μ (ball x r) := by
@@ -484,6 +491,7 @@ theorem IsLocDoublingM.measure_ball_pos [BallGeometry X] {μ : Measure X}
   rw [h0, mul_zero] at h1
   exact absurd h1 (by norm_num)
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem IsPorous.mono {E F : Set X} (hF : IsPorous F) (hEF : E ⊆ F) : IsPorous E := by
   obtain ⟨κ, s₀, hκ, hs₀, h⟩ := hF
   exact ⟨κ, s₀, hκ, hs₀, fun y hy s hs hss ↦ (h y (hEF hy) s hs hss).imp
@@ -663,6 +671,7 @@ theorem IsLocDoublingM.measure_eq_zero_of_isPorous [TopologicalSpace.SeparableSp
   exact measure_iUnion_null fun n ↦ measure_eq_zero_of_isPorous_of_subset_ball hD1 hD hfin
     (hE.mono inter_subset_left) x₀ inter_subset_right
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem isPorous_sphere [BallGeometry X] (x : X) (r : ℝ) : IsPorous (sphere x r) := by
   rcases lt_trichotomy r 0 with hr | rfl | hr
   · refine ⟨1, 1, one_pos, one_pos, fun y hy ↦ ?_⟩
@@ -704,6 +713,7 @@ theorem IsLocDoublingM.measure_closedBall [BallGeometry X] [TopologicalSpace.Sep
     _ ≤ μ (ball x r) + μ (sphere x r) := measure_union_le _ _
     _ = μ (ball x r) := by rw [hd.measure_sphere hfin, add_zero]
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem monotone_ball_sub (x : X) (r : ℝ) :
     Monotone fun n : ℕ ↦ ball x (r - 1 / ((n : ℝ) + 1)) := by
   intro n m hnm
@@ -712,6 +722,7 @@ theorem monotone_ball_sub (x : X) (r : ℝ) :
   have h1 : 1 / ((m : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) := by gcongr
   linarith
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem iUnion_ball_sub (x : X) (r : ℝ) :
     ⋃ n : ℕ, ball x (r - 1 / ((n : ℝ) + 1)) = ball x r := by
   ext z
@@ -730,6 +741,7 @@ theorem iUnion_ball_sub (x : X) (r : ℝ) :
       nlinarith
     linarith
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem antitone_ball_add (x : X) (r : ℝ) :
     Antitone fun n : ℕ ↦ ball x (r + 1 / ((n : ℝ) + 1)) := by
   intro n m hnm
@@ -738,6 +750,7 @@ theorem antitone_ball_add (x : X) (r : ℝ) :
   have h1 : 1 / ((m : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) := by gcongr
   linarith
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 theorem iInter_ball_add (x : X) (r : ℝ) :
     ⋂ n : ℕ, ball x (r + 1 / ((n : ℝ) + 1)) = closedBall x r := by
   ext z
@@ -786,13 +799,16 @@ theorem IsLocDoublingM.continuous_measure_ball [BallGeometry X]
 
 /-! ### The mass radius -/
 
+omit [OpensMeasurableSpace X] in
 theorem massRadiusM_le {μ : Measure X} {x : X} {R : ℝ} (hR : 0 < R) (h : 1 ≤ μ (ball x R)) :
     massRadiusM μ x ≤ R :=
   csInf_le ⟨0, fun _ hr ↦ hr.1.le⟩ ⟨hR, h⟩
 
+omit [OpensMeasurableSpace X] in
 theorem massRadiusM_nonneg (μ : Measure X) (x : X) : 0 ≤ massRadiusM μ x :=
   Real.sInf_nonneg fun _ hr ↦ hr.1.le
 
+omit [OpensMeasurableSpace X] in
 theorem measure_ball_lt_one_of_lt_massRadiusM' {μ : Measure X} {x : X} {r : ℝ}
     (hr : r < massRadiusM μ x) : μ (ball x r) < 1 := by
   by_cases hr0 : r ≤ 0
@@ -803,6 +819,7 @@ theorem measure_ball_lt_one_of_lt_massRadiusM' {μ : Measure X} {x : X} {r : ℝ
   rw [not_lt] at h
   exact absurd (massRadiusM_le hr0 h) (not_le.2 hr)
 
+omit [OpensMeasurableSpace X] in
 theorem measure_ball_massRadiusM_le_one (μ : Measure X) (x : X) :
     μ (ball x (massRadiusM μ x)) ≤ 1 := by
   have := tendsto_measure_iUnion_atTop (μ := μ) (monotone_ball_sub x (massRadiusM μ x))
@@ -811,12 +828,14 @@ theorem measure_ball_massRadiusM_le_one (μ : Measure X) (x : X) :
   have : 0 < 1 / ((n : ℝ) + 1) := by positivity
   linarith
 
+omit [OpensMeasurableSpace X] in
 theorem one_le_measure_ball_of_massRadiusM_lt {μ : Measure X} {x : X}
     (hne : ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) {r : ℝ} (hr : massRadiusM μ x < r) :
     1 ≤ μ (ball x r) := by
   obtain ⟨r', hr'S, hr'r⟩ := exists_lt_of_csInf_lt (s := {r | 0 < r ∧ 1 ≤ μ (ball x r)}) hne hr
   exact hr'S.2.trans (measure_mono (ball_subset_ball hr'r.le))
 
+omit [OpensMeasurableSpace X] in
 theorem measure_ball_lt_one_of_lt_massRadiusM {μ : Measure X} {x : X} {r : ℝ}
     (hr : r < massRadiusM μ x) : μ (ball x r) < 1 :=
   measure_ball_lt_one_of_lt_massRadiusM' hr
@@ -856,6 +875,7 @@ theorem IsLocDoublingM.measure_ball_massRadiusM [BallGeometry X]
   rw [← hd.measure_closedBall hfin]
   exact one_le_measure_closedBall_massRadiusM (hfin x) hne
 
+omit [OpensMeasurableSpace X] in
 theorem lipschitzWith_massRadiusM {μ : Measure X} (hne : ∀ x : X, ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) :
     LipschitzWith 1 (massRadiusM μ) := by
   have key : ∀ x y, massRadiusM μ y ≤ massRadiusM μ x + dist x y := by
@@ -876,6 +896,7 @@ theorem lipschitzWith_massRadiusM {μ : Measure X} (hne : ∀ x : X, ∃ r, 0 < 
     have := key y x
     rwa [dist_comm] at this
 
+omit [OpensMeasurableSpace X] in
 /-- `ρ(y) ≤ ρ(x) + d(x,y)`. -/
 theorem massRadiusM_le_add_dist {μ : Measure X} (hne : ∀ x : X, ∃ r, 0 < r ∧ 1 ≤ μ (ball x r))
     (x y : X) : massRadiusM μ y ≤ massRadiusM μ x + dist x y := by
@@ -1315,6 +1336,7 @@ theorem IsLocDoublingM.lemma3_paper [BallGeometry X] [TopologicalSpace.Separable
         lintegral_mono_set fun z hz ↦ mem_ball.2 hz.2
     _ ≤ C := hC w
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 /-- Pointwise dyadic bound behind [Chr91, Lemma 2.3]. -/
 theorem ofReal_log_le_tsum_indicator (x y : X) {R : ℝ} (hR : 0 < R) :
     ENNReal.ofReal (Real.log (R / dist x y)) ≤
@@ -1489,6 +1511,7 @@ theorem exists_radius_lt_measure_ball [BallGeometry X] {μ : Measure X}
         (measure_biUnion_finset hdisj fun i _ ↦ measurableSet_ball).symm
     _ ≤ μ (ball x (2 * k * R)) := measure_mono hsub
 
+omit [OpensMeasurableSpace X] in
 theorem IsLocDoublingM.smul {μ : Measure X} (hd : IsLocDoublingM μ) (c : ℝ≥0∞) :
     IsLocDoublingM (c • μ) := by
   obtain ⟨C, hC⟩ := hd
@@ -1566,6 +1589,7 @@ theorem IsLocDoublingM.decay [BallGeometry X] {μ : Measure X}
         massRadiusM μ ζ / dist z ζ ≤ C * θ ^ n :=
   hd.decay_aux hfin hm M₀
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 /-- Disjoint open balls of radius `a` in a `BallGeometry` space have `2a`-separated centres. -/
 theorem le_dist_of_disjoint_ball [BallGeometry X] {x y : X} {a : ℝ}
     (h : Disjoint (ball x a) (ball y a)) : 2 * a ≤ dist x y := by
@@ -1577,6 +1601,7 @@ theorem le_dist_of_disjoint_ball [BallGeometry X] {x y : X} {a : ℝ}
   refine Set.disjoint_left.1 h (show m ∈ ball x a by rw [mem_ball, dist_comm]; linarith)
     (show m ∈ ball y a by rw [mem_ball]; linarith)
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
 /-- **Bounded count** (coordinator addition (2)), abstract form: disjoint sets containing a ball
 of radius `a` and contained in a ball of radius `D` around the same centre; at most `M` of them
 meet a ball of radius `b`. -/

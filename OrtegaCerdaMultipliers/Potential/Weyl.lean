@@ -25,8 +25,8 @@ def bumpKernel (s : ℝ) (x : ℂ) : ℝ := kernel (s ^ 2 / 4) (s ^ 2) x
 
 /-! ### `bumpKernel` API (doc §4.1) -/
 
-theorem contDiff_bumpKernel {s : ℝ} (hs : 0 < s) : ContDiff ℝ (⊤ : ℕ∞) (bumpKernel s) :=
-  contDiff_kernel (bump_pos hs) (bump_lt hs)
+theorem contDiff_bumpKernel (s : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (bumpKernel s) :=
+  contDiff_kernel _ _
 
 theorem bumpKernel_nonneg {s : ℝ} (hs : 0 < s) (x : ℂ) : 0 ≤ bumpKernel s x :=
   kernel_nonneg (bump_pos hs) (bump_lt hs) x
@@ -283,7 +283,7 @@ theorem harmonicAt_and_ae_eq_integral_bumpKernel {U : Set ℂ} {f : ℂ → ℝ}
   have hGs : ContDiff ℝ (⊤ : ℕ∞) G := by
     rw [hGconv]
     exact (hasCompactSupport_bumpKernel hR).contDiff_convolution_right _ hf'l
-      (contDiff_bumpKernel hR)
+      (contDiff_bumpKernel _)
   have hG2 : ContDiff ℝ 2 G := hGs.of_le (WithTop.coe_le_coe.2 le_top)
   -- `f = G` a.e. on the ball
   have hae : ∀ᵐ y, y ∈ ball z₀ R → f y = G y := by

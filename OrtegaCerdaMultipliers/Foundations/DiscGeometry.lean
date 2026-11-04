@@ -319,7 +319,7 @@ theorem dz_comp_holomorphic {g F : ℂ → ℂ} {z : ℂ} (hg : DifferentiableAt
     (hF : DifferentiableAt ℂ F z) : dz (g ∘ F) z = dz g (F z) * deriv F z := by
   have h1 := fderiv_comp_holomorphic_apply hg hF 1
   have hI := fderiv_comp_holomorphic_apply hg hF I
-  rw [fderiv_apply_eq_dz_dbar hg] at h1 hI
+  rw [fderiv_apply_eq_dz_dbar g (F z)] at h1 hI
   rw [dz, h1, hI]
   simp only [map_mul, conj_I, mul_one]
   linear_combination (-(1 / 2) * dz g (F z) * deriv F z +
@@ -330,7 +330,7 @@ theorem dbar_comp_holomorphic {g F : ℂ → ℂ} {z : ℂ} (hg : Differentiable
     (hF : DifferentiableAt ℂ F z) : dbar (g ∘ F) z = dbar g (F z) * conj (deriv F z) := by
   have h1 := fderiv_comp_holomorphic_apply hg hF 1
   have hI := fderiv_comp_holomorphic_apply hg hF I
-  rw [fderiv_apply_eq_dz_dbar hg] at h1 hI
+  rw [fderiv_apply_eq_dz_dbar g (F z)] at h1 hI
   rw [dbar, h1, hI]
   simp only [map_mul, conj_I, mul_one]
   linear_combination (1 / 2 * dz g (F z) * deriv F z -
@@ -414,7 +414,7 @@ theorem ball_subset_pseudoBall {a : ℂ} (ha : a ∈ 𝔻) {s : ℝ} (hs : 0 < s
   rw [div_lt_iff₀ hDpos, norm_sub_rev]
   nlinarith
 
-theorem pseudoBall_subset_ball {a : ℂ} (ha : a ∈ 𝔻) {s : ℝ} (hs : 0 < s) (hs1 : s < 1) :
+theorem pseudoBall_subset_ball {a : ℂ} (ha : a ∈ 𝔻) {s : ℝ} (hs1 : s < 1) :
     {z ∈ 𝔻 | pseudoHyp a z < s} ⊆ Metric.ball a (s * (1 - ‖a‖ ^ 2) / (1 - s)) := by
   rintro z ⟨hz, hρ⟩
   obtain ⟨w, hw_def⟩ : ∃ w, w = mobius a z := ⟨_, rfl⟩
@@ -558,7 +558,7 @@ theorem finite_and_ncard_pseudoBall_le {Γ : Set ℂ} {ε : ℝ} (hΓ𝔻 : Γ �
       {w ∈ Γ | pseudoHyp z w < s} ∩ ball z (s * (1 - ‖z‖ ^ 2) / (1 - s)) := by
     refine (inter_eq_left.2 ?_).symm
     rintro w ⟨hwΓ, hwρ⟩
-    exact pseudoBall_subset_ball hz hs hs1 ⟨hΓ𝔻 hwΓ, hwρ⟩
+    exact pseudoBall_subset_ball hz hs1 ⟨hΓ𝔻 hwΓ, hwρ⟩
   have hfin := finite_inter_ball_of_sep hδ hsep z (s * (1 - ‖z‖ ^ 2) / (1 - s))
   have hcard := ncard_inter_ball_le_of_sep hδ hsep z (s * (1 - ‖z‖ ^ 2) / (1 - s))
   have heq : 2 * (s * (1 - ‖z‖ ^ 2) / (1 - s)) / (ε * ((1 - s) / (1 + s) * (1 - ‖z‖ ^ 2)) / 2) =

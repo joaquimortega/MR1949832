@@ -157,9 +157,6 @@ theorem integrable_jonesWeight {μ : Measure ℂ} [IsFiniteMeasure μ] {z : ℂ}
 
 section Measure
 
--- Some statements below do not use finiteness; the instance is part of the frozen statements.
-set_option linter.unusedSectionVars false
-
 variable {ρ : Measure ℂ} [IsFiniteMeasure ρ]
 
 theorem re_jonesExponent (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {z : ℂ} (hz : 0 ≤ z.im) (ζ : ℂ) :
@@ -184,6 +181,7 @@ theorem norm_exp_jonesExponent (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {z : ℂ} (hz
     ‖Complex.exp (jonesExponent ρ z ζ)‖ = Real.exp (jonesPot ρ ζ ζ.im - jonesPot ρ z ζ.im) := by
   rw [Complex.norm_exp, re_jonesExponent h10 hz]
 
+omit [IsFiniteMeasure ρ] in
 theorem jonesPot_nonneg (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {z : ℂ} (hz : 0 ≤ z.im) (t : ℝ) :
     0 ≤ jonesPot ρ z t :=
   integral_nonneg_of_ae <| (ae_restrict_of_ae h10).mono fun w hw ↦
@@ -204,6 +202,7 @@ theorem jonesPot_self_le_mass (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) (ζ : ℂ) :
         exact ENNReal.toReal_mono (measure_ne_top ρ univ) (Measure.restrict_le_self _)
     _ = (ρ univ).toReal / 20 := by rw [measureReal_def]; ring
 
+omit [IsFiniteMeasure ρ] in
 /-- **Carleson bound** for the positive part of the exponent: `A(ζ) = P(ζ, Im ζ) ≤ 12K`. -/
 theorem jonesPot_self_le (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {K : ℝ≥0} (hC : IsCarlesonLarge ρ K)
     (ζ : ℂ) : jonesPot ρ ζ ζ.im ≤ 12 * K := by
@@ -236,6 +235,7 @@ theorem jonesPot_self_le (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {K : ℝ≥0} (hC :
         · rw [show (12 : ℝ) = 4 * 3 by norm_num, ENNReal.ofReal_mul (by norm_num)]; simp
         · simp
 
+omit [IsFiniteMeasure ρ] in
 /-- `P(z, t)` is the mass of `{Im w ≤ t}` for the measure `ρ_z = (Im z + Im w)/|z - w̄|² dρ(w)`. -/
 theorem jonesPot_eq_toReal (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {z : ℂ} (hz : 0 ≤ z.im) (t : ℝ) :
     jonesPot ρ z t =

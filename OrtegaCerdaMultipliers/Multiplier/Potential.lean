@@ -297,7 +297,7 @@ theorem integral_setIntegral_kerDisc_mul_laplacian {ν : Measure ℂ} {E : Set �
 
 theorem continuousOn_kerDisc_left {w : ℂ} (hw : w ∈ 𝔻) :
     ContinuousOn (fun z ↦ kerDisc z w) (𝔻 \ {w}) := by
-  refine ContinuousOn.log ((continuousOn_pseudoHyp hw).mono diff_subset) fun z hz ↦ ?_
+  refine ContinuousOn.log ((continuousOn_pseudoHyp hw).mono sdiff_subset) fun z hz ↦ ?_
   rw [pseudoHyp]
   exact (div_pos (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hz.2)))
     (norm_one_sub_conj_mul_pos hw hz.1)).ne'
@@ -462,7 +462,7 @@ theorem local_structure_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N :
   obtain ⟨CD, hCD0, hCD⟩ := abs_cellPot_le_disc_far A B R₁ 1 N hA hB one_pos
   set L := (2 * (A + B) + 1) * max R₁ 0 + 2 with hL
   have hL0 : 0 < L := by positivity
-  obtain ⟨Cf, hCf⟩ := farField_sum_le_disc Cd R₁ η A L hη hL0
+  obtain ⟨Cf, hCf⟩ := farField_sum_le_disc Cd R₁ η A L hη
   have hK𝔻 : closedBall (0 : ℂ) r ⊆ 𝔻 := closedBall_subset_ball hr1
   have hGfin := finite_cells_disc hν hη hC (closedBall 0 r) hK𝔻 (isCompact_closedBall _ _) L
   set G := hGfin.toFinset with hGdef
@@ -525,7 +525,7 @@ theorem local_structure_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N :
       have hABi := hAB i
       have hb := hCD ν η R c m Λ hC hN i (hm2 i) z hz𝔻 (integrableOn_kerDisc_cell hν hC i hz𝔻)
         (hρ i).le (hρR i) (by linarith) (by linarith)
-      simp only [hu, if_neg hi]
+      simp only [hu, ite_eq_right hi]
       refine hb.trans ?_
       have hc1 := norm_lt_one_of_mem_disc (hci i)
       have hD : 1 - r ≤ ‖1 - conj z * c i‖ := by
@@ -807,7 +807,7 @@ theorem local_structure_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N 
           ∑ i ∈ F.filter (· ∉ G), (massRadius ν (c i) / dist 0 (c i)) ^ 3 := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl fun i hi ↦ by
-          simp only [hu, (Finset.mem_filter.1 hi).2, if_false]
+          simp only [hu, (Finset.mem_filter.1 hi).2, ite_false]
       rw [e1, e2, zero_add]
       gcongr; exact hFG.trans (le_max_left _ _)
     · intro i hi z hz
@@ -818,7 +818,7 @@ theorem local_structure_plane {ν : Measure ℂ} {Cd : ℝ≥0} {R₁ : ℝ} {N 
       have hpos : 0 ≤ 4 * (A + B) * massRadius ν (c i) := by have := hρ i; positivity
       have hb := abs_cellPot_le_plane hC hN hA hB (hm i) (integrableOn_kerPlane_cell hν hC i z)
         (hρ i) (by nlinarith)
-      simp only [hu, hi, if_false]
+      simp only [hu, hi, ite_false]
       refine hb.trans ?_
       have hd0 : 0 < dist 0 (c i) := hL0.trans_le hβ0
       have hdz : dist 0 (c i) / 2 ≤ dist z (c i) := by

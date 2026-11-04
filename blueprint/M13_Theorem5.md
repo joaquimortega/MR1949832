@@ -122,7 +122,7 @@ theorem lineCDF_sub {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ) {a b 
 theorem continuous_lineCDF {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ) :
     Continuous (lineCDF μ α)
 theorem lineCDF_add_ge {μ : Measure ℂ} (hμ : IsLineMeasure μ) {r α : ℝ} (hr : 0 < r)
-    (hmr : ∀ x : ℝ, 1 < μ (lineInterval x r)) (hα : 0 ≤ α) (hαr : α * r ≤ 1 / 8) (t : ℝ) :
+    (hmr : ∀ x : ℝ, 1 < μ (lineInterval x r)) (hαr : α * r ≤ 1 / 8) (t : ℝ) :
     lineCDF μ α t + 1 / 2 ≤ lineCDF μ α (t + 2 * r)
 
 -- 13.3 the knots (same hypotheses hμ hr hmr hα hαr in each)
@@ -526,7 +526,7 @@ theorem integral_logPotential_mul_laplacian (ν : Measure ℂ) [IsFiniteMeasure 
 
 **M03, line forms** (Lemma 1, Claim 1, Claim 2, [Chr91, Lemma 2.3], reverse doubling, no atoms):
 ```lean
-theorem IsLineMeasure.doubling_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A : ℝ} (hA : 0 < A) :
+theorem IsLineMeasure.doubling_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) (A : ℝ) :
     ∃ C : ℝ≥0, 1 ≤ C ∧ ∀ x r : ℝ, 0 < r → r ≤ A →
       μ (lineInterval x (2 * r)) ≤ C * μ (lineInterval x r)                        -- L1
 theorem IsLineMeasure.lineInterval_pos {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x : ℝ) {r : ℝ}
@@ -545,8 +545,7 @@ theorem massRadiusLine_le_of_mass {μ : Measure ℂ} {r : ℝ} (hr : 0 < r)
     (hmr : ∀ x : ℝ, 1 < μ (lineInterval x r)) (x : ℝ) : massRadiusLine μ x ≤ r     -- L4
 theorem IsLineMeasure.measure_massRadiusLine {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x : ℝ) :
     μ (lineInterval x (massRadiusLine μ x)) = 1                                   -- L4
-theorem IsLineMeasure.massRadiusLine_comparable {μ : Measure ℂ} (hμ : IsLineMeasure μ) {K : ℝ}
-    (hK : 0 < K) :
+theorem IsLineMeasure.massRadiusLine_comparable {μ : Measure ℂ} (hμ : IsLineMeasure μ) (K : ℝ) :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ x t : ℝ, |x - t| ≤ K * max (massRadiusLine μ x) (massRadiusLine μ t) →
       massRadiusLine μ t ≤ C * massRadiusLine μ x                                 -- L5 (Claim 1)
 theorem IsLineMeasure.massRadiusLine_le_rpow {μ : Measure ℂ} (hμ : IsLineMeasure μ) :
@@ -558,8 +557,7 @@ theorem IsLineMeasure.length_comparable {μ : Measure ℂ} (hμ : IsLineMeasure 
       ENNReal.ofReal m₁ ≤ μ ((fun t : ℝ ↦ (t : ℂ)) '' Ioc a b) →
       μ ((fun t : ℝ ↦ (t : ℂ)) '' Ioc a b) ≤ ENNReal.ofReal m₂ →
       ∀ t ∈ Icc a b, massRadiusLine μ t ≤ b - a ∧ b - a ≤ C * massRadiusLine μ t  -- L7 (Claim 2)
-theorem IsLineMeasure.lintegral_log_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A : ℝ}
-    (hA : 0 < A) :
+theorem IsLineMeasure.lintegral_log_le {μ : Measure ℂ} (hμ : IsLineMeasure μ) (A : ℝ) :
     ∃ C : ℝ≥0, ∀ x R : ℝ, 0 < R → R ≤ A →
       ∫⁻ ζ in lineInterval x R, ENNReal.ofReal (Real.log (R / ‖ζ - (x : ℂ)‖)) ∂μ ≤
         C * μ (lineInterval x R)                                                  -- L8 ([Chr91, 2.3])

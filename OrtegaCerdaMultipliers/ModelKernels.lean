@@ -158,7 +158,7 @@ theorem schur_test_le_max {X : Type*} [MeasurableSpace X] {ν : Measure X} [SFin
 
 /-! ## §2 Forelli–Rudin estimate -/
 
-theorem norm_one_sub_conj_mul_le_five_mul {a w : ℂ} (ha : a ∈ 𝔻) (hw : w ∈ 𝔻)
+theorem norm_one_sub_conj_mul_le_five_mul {a w : ℂ} (ha : a ∈ 𝔻)
     (h : (1 - ‖a‖) / 2 ≤ ‖a - w‖) : ‖1 - conj a * w‖ ≤ 5 * ‖a - w‖ := by
   have ha1 : ‖a‖ < 1 := norm_lt_one_of_mem_disc ha
   have e : 1 - conj a * w = (1 - conj a * a) + conj a * (a - w) := by ring
@@ -400,7 +400,7 @@ theorem lintegral_FR_near_of_le_one {s : ℝ} (hs0 : 0 < s) (hs1 : s ≤ 1) {a :
         gcongr
     _ = ENNReal.ofReal ((d / 2) ^ (-s) / d) * ENNReal.ofReal (2 * Real.pi * (d / 2)) := by
         rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-          lintegral_inv_norm_sub_ball a hd2.le]
+          lintegral_inv_norm_sub_ball a (d / 2)]
     _ ≤ ENNReal.ofReal (2 * Real.pi * d ^ (-s)) := by
         rw [← ENNReal.ofReal_mul (by positivity)]
         apply ENNReal.ofReal_le_ofReal
@@ -439,7 +439,7 @@ theorem lintegral_FR {s : ℝ} (hs0 : 0 < s) (hs1 : s < 1) {a : ℂ} (ha : a ∈
             have := hw.2
             rw [hN, mem_ball, dist_eq_norm, not_lt, norm_sub_rev] at this
             exact this
-          have h5 := norm_one_sub_conj_mul_le_five_mul ha hwD haw
+          have h5 := norm_one_sub_conj_mul_le_five_mul ha haw
           have hY : 0 < ‖1 - conj a * w‖ := norm_one_sub_conj_mul_pos ha hwD
           have hZ : 0 < ‖a - w‖ := lt_of_lt_of_le (by linarith) haw
           have hX : (1 - ‖w‖ ^ 2) ^ (-s) ≤ (1 - ‖w‖) ^ (-s) :=

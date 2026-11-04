@@ -3,7 +3,8 @@
 This directory is a copy of part of the library `OrtegaCerdaSeip` from the companion formalization of
 J. Ortega-Cerdà and K. Seip, *Multipliers for entire functions and an interpolation problem of Beurling*,
 J. Funct. Anal. 162 (1999): https://github.com/joaquimortega/MR1682065, commit
-`3f164843606d8fc2e0fd8271fe033e8225905103`.
+`05e3ac2ca83f8862636e1dd002467ad9add83396`
+(re-copied after the lint fixes of that repository; first vendored at `3f16484`).
 
 Only the import closure of `OrtegaCerdaSeip/Lemma4/Main.lean` is copied. It proves `OCS.theoremOCS : OCS.TheoremOCS`
 (Lemma 4 of [OCS99] in the form quoted on p. 375 of the article, with `limsup = 0`), without `sorry`. The 18 files are:

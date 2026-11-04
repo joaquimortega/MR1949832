@@ -165,7 +165,7 @@ theorem hypDist_radial {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (ht : t < 1) {
   congr 1
   ring
 
-theorem hypBall_zero {r : ℝ} (hr : 0 < r) : hypBall 0 r = ball 0 (Real.tanh r) := by
+theorem hypBall_zero (r : ℝ) : hypBall 0 r = ball 0 (Real.tanh r) := by
   have h0 : (0 : ℂ) ∈ 𝔻 := mem_ball_self one_pos
   rw [hypBall_eq_pseudoBall h0]
   ext w
@@ -200,10 +200,10 @@ theorem ball_subset_hypBall_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 <
   rw [hypBall_eq_pseudoBall hz]
   exact ball_subset_pseudoBall hz (tanh_pos_of_pos hr) (Real.tanh_lt_one r)
 
-theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
     hypBall z r ⊆ ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / (1 - Real.tanh r)) := by
   rw [hypBall_eq_pseudoBall hz]
-  exact pseudoBall_subset_ball hz (tanh_pos_of_pos hr) (Real.tanh_lt_one r)
+  exact pseudoBall_subset_ball hz (Real.tanh_lt_one r)
 
 /-! ## Disc geometry used by M08 (§2.2) -/
 

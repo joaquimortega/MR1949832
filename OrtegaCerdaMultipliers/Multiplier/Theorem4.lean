@@ -22,7 +22,7 @@ namespace OC
 
 /-- The three `ENNReal` inequalities of `Thm4Bounds*` from their real counterparts. -/
 theorem ennreal_thm4_bounds {C : ℝ≥0} (hC : 1 ≤ C) {M : ℕ} {d ρ x : ℝ} (hd : 0 ≤ d)
-    (hρ : 0 < ρ) (hx : 0 ≤ x) (h1 : (C : ℝ)⁻¹ * (d / ρ) ^ M ≤ x) (h2 : x ≤ C * (d / ρ))
+    (hρ : 0 < ρ) (h1 : (C : ℝ)⁻¹ * (d / ρ) ^ M ≤ x) (h2 : x ≤ C * (d / ρ))
     (h3 : d ≤ C * ρ) :
     C⁻¹ * (ENNReal.ofReal d / ENNReal.ofReal ρ) ^ M ≤ ENNReal.ofReal x ∧
       ENNReal.ofReal x ≤ C * (ENNReal.ofReal d / ENNReal.ofReal ρ) ∧
@@ -115,8 +115,8 @@ theorem exists_min_dist {Z : Set ℂ} (hfin : ∀ K : Set ℂ, IsCompact K → (
     exact (hmin w₀ ⟨by simp [K, mem_closedBall, dist_comm], hw₀⟩).trans hwr.le
 
 /-- Core: multiplier from an arbitrary admissible node configuration (plane). -/
-theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hR₀ : 0 < R₀)
-    (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B) (hN : 1 ≤ N) :
+theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
+    (hB : 0 ≤ B) (hN : 1 ≤ N) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassPlane ψ μ Cd R₀ → ∀ (R : ℕ → Set ℂ) (c : ℕ → ℂ) (m : ℕ → ℕ)
       (Λ : ℕ → Multiset ℂ),
@@ -182,7 +182,7 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
     have hh0 : h z = 0 := (hzero z).2 hzN
     subst hd
     refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
-      le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) (by positivity) ?_ ?_ hdC
+      le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) ?_ ?_ hdC
     · rw [hh0, norm_zero, zero_mul, zero_div, zero_pow (by omega), mul_zero]
     · rw [hh0, norm_zero, zero_mul, zero_div, mul_zero]
   · have hn0 : nodeCount Λ z = 0 := by
@@ -199,7 +199,7 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
     obtain ⟨e1, e2⟩ := exp_bounds_of_log hdpos hρpos hρρ' hρ'ρ hlo hhi
     have hCpos : 0 < Real.exp C₁ * Cρ ^ M := by positivity
     refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
-      hd0 hρpos (by positivity) ?_ ?_ hdC
+      hd0 hρpos ?_ ?_ hdC
     · rw [hx, hCC]
       refine le_trans ?_ e1
       gcongr
@@ -210,8 +210,8 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
       exact le_max_of_le_left (le_max_right _ _)
 
 /-- Core: multiplier from an arbitrary admissible node configuration (disc). -/
-theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hR₀ : 0 < R₀)
-    (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) (hN : 1 ≤ N) :
+theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
+    (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) (hN : 1 ≤ N) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassDisc ψ μ Cd R₀ → ∀ (R : ℕ → Set ℂ) (c : ℕ → ℂ) (m : ℕ → ℕ)
       (Λ : ℕ → Multiset ℂ),
@@ -284,7 +284,7 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
     have hh0 : h z = 0 := (hzero z hz).2 hzN
     subst hd
     refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
-      le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) (by positivity) ?_ ?_ hdC
+      le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) ?_ ?_ hdC
     · rw [hh0, norm_zero, zero_mul, zero_div, zero_pow (by omega), mul_zero]
     · rw [hh0, norm_zero, zero_mul, zero_div, mul_zero]
   · have hn0 : nodeCount Λ z = 0 := by
@@ -302,7 +302,7 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
     obtain ⟨e1, e2⟩ := exp_bounds_of_log hdpos hρpos hρρ' hρ'ρ hlo hhi
     have hCpos : 0 < Real.exp C₁ * Cρ ^ M := by positivity
     refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
-      hd0 hρpos (by positivity) ?_ ?_ hdC
+      hd0 hρpos ?_ ?_ hdC
     · rw [hx, hCC]
       refine le_trans ?_ e1
       gcongr
@@ -318,7 +318,7 @@ theorem countable_nodeSet (Λ : ℕ → Multiset ℂ) : (nodeSet Λ).Countable :
   rw [this]
   exact countable_iUnion fun i ↦ (Λ i).finite_toSet.countable
 
-theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassDisc ψ μ Cd R₀ →
         ∃ h : ℂ → ℂ, DifferentiableOn ℂ h 𝔻 ∧ (∃ z₀ ∈ 𝔻, h z₀ ≠ 0) ∧
@@ -327,7 +327,7 @@ theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
   obtain ⟨Bl, -, hnodes⟩ := exists_nodes_disc A hA
   obtain ⟨ρ₀, B', hρ₀, hB', hnodes'⟩ := hnodes 0 le_rfl
   obtain ⟨M, C, hM, hC, hmult⟩ :=
-    multiplier_of_nodes_disc Cd R₀ a A B' ρ₀ 12 hR₀ ha hA hB' hρ₀ (by norm_num)
+    multiplier_of_nodes_disc Cd R₀ a A B' ρ₀ 12 ha hA hB' hρ₀ (by norm_num)
   obtain ⟨C0, -, hcl⟩ := claim1_disc_quant Cd (15 * R₀) 0
   refine ⟨M, C, hM, hC, fun ψ μ hw ↦ ?_⟩
   have hν := hw.meas.lapNorm
@@ -339,18 +339,18 @@ theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
   obtain ⟨h, hh, hzero, -, hb⟩ := hmult ψ μ hw R c m Λ hcells hN hm2 hm3
   refine ⟨h, hh, ?_, hb⟩
   have hvol : volume (𝔻 \ nodeSet Λ) ≠ 0 := by
-    rw [measure_diff_null ((countable_nodeSet Λ).measure_zero volume)]
+    rw [measure_sdiff_null ((countable_nodeSet Λ).measure_zero volume)]
     exact (measure_ball_pos volume 0 one_pos).ne'
   obtain ⟨z₀, hz₀, hz₀N⟩ := nonempty_of_measure_ne_zero hvol
   exact ⟨z₀, hz₀, fun h0 ↦ hz₀N ((hzero z₀ hz₀).1 h0)⟩
 
-theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassPlane ψ μ Cd R₀ →
         ∃ h : ℂ → ℂ, Differentiable ℂ h ∧ (∃ z₀, h z₀ ≠ 0) ∧ Thm4BoundsPlane ψ μ h M C := by
   obtain ⟨a, A, ha, hA, hpart⟩ := lemma4_plane_quant Cd (15 * R₀) 12 (by norm_num)
   obtain ⟨M, C, hM, hC, hmult⟩ :=
-    multiplier_of_nodes_plane Cd R₀ a A ((0 + 12) * A) 12 hR₀ ha hA (by positivity)
+    multiplier_of_nodes_plane Cd R₀ a A ((0 + 12) * A) 12 ha hA (by positivity)
       (by norm_num)
   refine ⟨M, C, hM, hC, fun ψ μ hw ↦ ?_⟩
   have hν := hw.meas.lapNorm
@@ -360,7 +360,7 @@ theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
   obtain ⟨h, hh, hzero, -, hb⟩ := hmult ψ μ hw R c (fun _ ↦ 3) Λ hcells hN (fun _ ↦ le_rfl)
   refine ⟨h, hh, ?_, hb⟩
   have hvol : volume (nodeSet Λ)ᶜ ≠ 0 := by
-    rw [compl_eq_univ_diff, measure_diff_null ((countable_nodeSet Λ).measure_zero volume)]
+    rw [compl_eq_univ_sdiff, measure_sdiff_null ((countable_nodeSet Λ).measure_zero volume)]
     simp
   obtain ⟨z₀, hz₀N⟩ := nonempty_of_measure_ne_zero hvol
   exact ⟨z₀, fun h0 ↦ hz₀N ((hzero z₀).1 h0)⟩
@@ -378,7 +378,7 @@ theorem theorem4_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonic
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
-  obtain ⟨M, C, -, -, hall⟩ := theorem4_disc_quant Cd R hR
+  obtain ⟨M, C, -, -, hall⟩ := theorem4_disc_quant Cd R
   obtain ⟨h, hh, hz₀, hb⟩ := hall ψ μ hw
   exact ⟨h, M, C, hh, hz₀, fun z hz ↦ ⟨(hb z hz).1, (hb z hz).2.1⟩⟩
 
@@ -396,7 +396,7 @@ theorem theorem4_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmoni
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
       fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
-  obtain ⟨M, C, -, -, hall⟩ := theorem4_plane_quant Cd R hR
+  obtain ⟨M, C, -, -, hall⟩ := theorem4_plane_quant Cd R
   obtain ⟨h, hh, hz₀, hb⟩ := hall ψ μ hw
   exact ⟨h, M, C, hh, hz₀, fun z ↦ ⟨(hb z).1, (hb z).2.1⟩⟩
 

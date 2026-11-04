@@ -62,7 +62,7 @@ The statements are in `comparator/statements.lean` and the definitions they use 
 ## Companion projects
 
 - **BOC.** The companion formalization of Berndtsson–Ortega-Cerdà (1995), [joaquimortega/MR1340337](https://github.com/joaquimortega/MR1340337), uses `OC.theorem2_uniform` to prove its Theorem 6 without the external Theorem G. This project does not depend on BOC. Its foundation files (∂̄ calculus, Cauchy transform, Weyl's lemma, disc geometry) are copied from BOC under namespace `OC`.
-- **[OCS99].** The theorem used in Theorem 3 (`TheoremOCS`) is Lemma 4 of Ortega-Cerdà–Seip (1999), with the decay `limsup = 0` that the quotation on p. 375 states and the proof gives. It is proved in the companion formalization [joaquimortega/MR1682065](https://github.com/joaquimortega/MR1682065) as `OCS.theoremOCS`. A sorry-free subset of that library (the 18 files that `OCS.theoremOCS` needs, commit `3f16484`) is vendored here in `OrtegaCerdaSeip/`, so this repository still depends only on Mathlib; `OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS` makes Theorem 3 unconditional.
+- **[OCS99].** The theorem used in Theorem 3 (`TheoremOCS`) is Lemma 4 of Ortega-Cerdà–Seip (1999), with the decay `limsup = 0` that the quotation on p. 375 states and the proof gives. It is proved in the companion formalization [joaquimortega/MR1682065](https://github.com/joaquimortega/MR1682065) as `OCS.theoremOCS`. A sorry-free subset of that library (the 18 files that `OCS.theoremOCS` needs, commit `05e3ac2`) is vendored here in `OrtegaCerdaSeip/`, so this repository still depends only on Mathlib; `OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS` makes Theorem 3 unconditional.
 
 ## Building
 

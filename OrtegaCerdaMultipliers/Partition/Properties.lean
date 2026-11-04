@@ -42,7 +42,7 @@ theorem prop_massRadiusLine_nonneg (ν : Measure ℂ) (x : ℝ) : 0 ≤ massRadi
 /-- `ρ ≤ r` as soon as every larger radius gives mass `≥ 1` (closed-ball form). -/
 theorem prop_le_of_forall_gt {ρ r : ℝ} (h : ∀ r' : ℝ, r < r' → ρ ≤ r') : ρ ≤ r := by
   by_contra hlt
-  push_neg at hlt
+  push Not at hlt
   have := h ((r + ρ) / 2) (by linarith)
   linarith
 
@@ -63,7 +63,7 @@ theorem prop_encard_le {ν : Measure ℂ} {R : ℕ → Set ℂ} (hmeas : ∀ i, 
     (hdisj : Pairwise (Function.onFun Disjoint R)) (h1 : ∀ i, 1 ≤ ν (R i)) {S : Set ℕ}
     {B : Set ℂ} (hSB : ∀ i ∈ S, R i ⊆ B) {M : ℕ} (hB : ν B ≤ M) : S.encard ≤ M := by
   by_contra h
-  push_neg at h
+  push Not at h
   have hk : ((M + 1 : ℕ) : ℕ∞) ≤ S.encard := by
     have := Order.add_one_le_of_lt h
     exact_mod_cast this
@@ -111,8 +111,7 @@ theorem claim2_lower_plane (hP : IsMassPartition μ univ dist (massRadius μ) N 
 
 /-- **Claim 2**, comparability of `ρ` inside a piece (diameters of neighbours, via Claim 1). -/
 theorem claim2_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
-    (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ (ball z R₀))
-    (hP : IsMassPartition μ univ dist (massRadius μ) N a A R) (K : ℝ) :
+    (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ (ball z R₀)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ i j, ∀ z ∈ R i, ∀ w ∈ R j,
       dist z w ≤ K * max (massRadius μ z) (massRadius μ w) → massRadius μ w ≤ C * massRadius μ z := by
   obtain ⟨C, hC, h⟩ := claim1_plane hd hfin hm K

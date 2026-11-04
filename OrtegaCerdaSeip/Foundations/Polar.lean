@@ -273,7 +273,7 @@ theorem volume_ball_complex (a : ℂ) {r : ℝ} (hr : 0 ≤ r) :
   congr 1
   rw [← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
 
-theorem lintegral_inv_norm_sub_ball (a : ℂ) {R : ℝ} (hR : 0 ≤ R) :
+theorem lintegral_inv_norm_sub_ball (a : ℂ) (R : ℝ) :
     ∫⁻ z in Metric.ball a R, ENNReal.ofReal ‖z - a‖⁻¹ = ENNReal.ofReal (2 * Real.pi * R) := by
   rw [lintegral_ball_comp_norm_sub a R (F := fun s ↦ ENNReal.ofReal s⁻¹) (by fun_prop)]
   rw [setLIntegral_congr_fun measurableSet_Ioo (g := fun _ ↦ 1) (fun s (hs : s ∈ Ioo 0 R) ↦ by
@@ -285,7 +285,7 @@ theorem integrableOn_inv_sub_ball (a : ℂ) (R : ℝ) :
   refine ⟨(by fun_prop : Measurable fun z : ℂ ↦ (z - a)⁻¹).aestronglyMeasurable, ?_⟩
   rw [hasFiniteIntegral_iff_norm]
   simp only [norm_inv]
-  rw [lintegral_inv_norm_sub_ball a (abs_nonneg R)]
+  rw [lintegral_inv_norm_sub_ball a |R|]
   exact ENNReal.ofReal_lt_top
 
 theorem locallyIntegrable_inv_sub (a : ℂ) : LocallyIntegrable (fun z : ℂ ↦ (z - a)⁻¹) := by
@@ -296,7 +296,6 @@ theorem locallyIntegrable_inv_sub (a : ℂ) : LocallyIntegrable (fun z : ℂ ↦
 theorem lintegral_inv_norm_sub_le {c w : ℂ} {R : ℝ} (hw : w ∈ Metric.closedBall c R) :
     ∫⁻ z in Metric.closedBall c R, ENNReal.ofReal ‖z - w‖⁻¹ ≤
       ENNReal.ofReal (4 * Real.pi * R) := by
-  have hR : 0 ≤ R := nonempty_closedBall.1 ⟨w, hw⟩
   have hsub : closedBall c R ⊆ closedBall w (2 * R) := by
     intro z hz
     rw [mem_closedBall] at hz hw ⊢
@@ -309,7 +308,7 @@ theorem lintegral_inv_norm_sub_le {c w : ℂ} {R : ℝ} (hw : w ∈ Metric.close
         · rw [closedBall_sdiff_ball]; exact Measure.addHaar_sphere volume w _
         · rw [sdiff_eq_empty.2 ball_subset_closedBall]; simp
     _ = ENNReal.ofReal (4 * Real.pi * R) := by
-        rw [lintegral_inv_norm_sub_ball w (by positivity)]; ring_nf
+        rw [lintegral_inv_norm_sub_ball w (2 * R)]; ring_nf
 
 theorem lintegral_inv_normSq_sub_ball_eq_top (a : ℂ) {R : ℝ} (hR : 0 < R) :
     ∫⁻ z in Metric.ball a R, ENNReal.ofReal (‖z - a‖⁻¹ ^ 2) = ∞ := by

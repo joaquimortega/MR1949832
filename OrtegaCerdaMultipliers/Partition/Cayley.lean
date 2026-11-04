@@ -134,7 +134,7 @@ theorem isPorous_cayley_re (x : ℝ) : IsPorous (cayleyPre {w | w.re = x}) := by
   by_cases hx : x = 0
   · refine IsPorous.mono (isPorous_line 0 1) ?_
     rintro z ⟨hz, hzx⟩
-    simp only [mem_setOf_eq, cay_re, hx] at hzx
+    simp only [mem_ofPred_eq, cay_re, hx] at hzx
     have hn := Complex.normSq_pos.2 (cay_one_sub_ne_zero hz)
     rw [div_eq_zero_iff] at hzx
     have him : z.im = 0 := by
@@ -144,7 +144,7 @@ theorem isPorous_cayley_re (x : ℝ) : IsPorous (cayleyPre {w | w.re = x}) := by
     exact ⟨z.re, Complex.ext (by simp) (by simp [him])⟩
   · refine IsPorous.mono (isPorous_sphere (⟨1, -1 / x⟩ : ℂ) (1 / |x|)) ?_
     rintro z ⟨hz, hzx⟩
-    simp only [mem_setOf_eq, cay_re] at hzx
+    simp only [mem_ofPred_eq, cay_re] at hzx
     have hn := Complex.normSq_pos.2 (cay_one_sub_ne_zero hz)
     rw [div_eq_iff hn.ne', Complex.normSq_apply] at hzx
     simp only [Complex.sub_re, Complex.sub_im, Complex.one_re, Complex.one_im] at hzx
@@ -158,7 +158,7 @@ theorem isPorous_cayley_im (y : ℝ) : IsPorous (cayleyPre {w | w.im = y}) := by
   by_cases hy : y = -1
   · refine IsPorous.mono (isPorous_line 1 I) ?_
     rintro z ⟨hz, hzy⟩
-    simp only [mem_setOf_eq, cay_im, hy] at hzy
+    simp only [mem_ofPred_eq, cay_im, hy] at hzy
     have hn := Complex.normSq_pos.2 (cay_one_sub_ne_zero hz)
     rw [div_eq_iff hn.ne', Complex.normSq_apply, Complex.normSq_apply] at hzy
     simp only [Complex.sub_re, Complex.sub_im, Complex.one_re, Complex.one_im] at hzy
@@ -167,7 +167,7 @@ theorem isPorous_cayley_im (y : ℝ) : IsPorous (cayleyPre {w | w.im = y}) := by
   · have hy' : 1 + y ≠ 0 := fun h ↦ hy (by linarith)
     refine IsPorous.mono (isPorous_sphere (⟨y / (1 + y), 0⟩ : ℂ) (1 / |1 + y|)) ?_
     rintro z ⟨hz, hzy⟩
-    simp only [mem_setOf_eq, cay_im] at hzy
+    simp only [mem_ofPred_eq, cay_im] at hzy
     have hn := Complex.normSq_pos.2 (cay_one_sub_ne_zero hz)
     rw [div_eq_iff hn.ne', Complex.normSq_apply, Complex.normSq_apply] at hzy
     simp only [Complex.sub_re, Complex.sub_im, Complex.one_re, Complex.one_im] at hzy
@@ -213,7 +213,7 @@ theorem cay_norm_lt_of_tau_lt {c v : ℂ} (hc : 0 < c.im) {t : ℝ} (ht : t < 1)
   rw [abs_of_pos hc] at h1
   have ht0 : 0 < t := by
     by_contra h0
-    push_neg at h0
+    push Not at h0
     have := mul_nonpos_of_nonpos_of_nonneg h0 (norm_nonneg (c - conj v))
     linarith [norm_nonneg (c - v)]
   rw [norm_sub_rev, lt_div_iff₀ (by linarith)]
@@ -270,7 +270,7 @@ theorem cay_map_apply (μ : Measure ℂ) {S : Set ℂ} (hS : MeasurableSet S) :
   rw [Measure.map_apply measurable_cayley hS, Measure.restrict_apply (measurable_cayley hS)]
   congr 1
   ext z
-  simp only [mem_inter_iff, mem_preimage, cayleyPre, mem_setOf_eq]
+  simp only [mem_inter_iff, mem_preimage, cayleyPre, mem_ofPred_eq]
   exact and_comm
 
 theorem cay_ball_subset_midThird {x₁ x₂ y₁ y₂ : ℝ} :
@@ -380,7 +380,7 @@ theorem cay_ratio_arith {P Q K y : ℝ} (hy : 0 < y) (hP : 0 ≤ P) (hQ : 0 < Q)
     mul_le_mul_of_nonneg_left hQsq (by linarith)
   have e4 : 2 * y ^ 2 * Q ≤ (Q - P) * Q ^ 2 := by nlinarith
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   nlinarith
 
 theorem cay_outer_arith {τ M K y₁ m L Λ A₀ β : ℝ} (hy₁ : 0 < y₁) (hK : 0 < K) (hτ0 : 0 ≤ τ)
@@ -612,7 +612,7 @@ theorem exists_hypBall_subset_discBox_row {R : ℝ} (hR : 0 < R) {y₁ : ℝ} (h
     nlinarith
   have hy₁yc : y₁ ≤ v.im := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have : u * v.im < u * y₁ := by nlinarith
     rw [hyc] at hv2
     nlinarith

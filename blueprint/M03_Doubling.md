@@ -1088,9 +1088,9 @@ theorem hypDist_radial {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (ht : t < 1) {
 theorem ball_subset_hypBall_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
     ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / 2) ⊆ hypBall z r := sorry
 -- (reconciled) M01 name `hypBall_subset_ball_tanh` (`hypBall_subset_ball` is the `r ≤ 1` form)
-theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
     hypBall z r ⊆ ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / (1 - Real.tanh r)) := sorry
-theorem hypBall_zero {r : ℝ} (hr : 0 < r) : hypBall 0 r = ball 0 (Real.tanh r) := sorry
+theorem hypBall_zero (r : ℝ) : hypBall 0 r = ball 0 (Real.tanh r) := sorry
 theorem isOpen_hypBall (z : ℂ) (r : ℝ) : IsOpen (hypBall z r)  -- (reconciled) M01 form
 theorem continuousOn_hypDist : ContinuousOn (fun p : ℂ × ℂ ↦ hypDist p.1 p.2) (𝔻 ×ˢ 𝔻) := sorry
 end OC

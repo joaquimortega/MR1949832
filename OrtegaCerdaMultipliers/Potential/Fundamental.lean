@@ -80,15 +80,15 @@ theorem bump_lt (hs : 0 < s) : s ^ 2 / 4 < s ^ 2 := by nlinarith [pow_pos hs 2]
 
 theorem kernel_bump_eq_zero (hs : 0 < s) {x : ℂ} (hx : s ≤ ‖x‖) :
     kernel (s ^ 2 / 4) (s ^ 2) x = 0 :=
-  kernel_eq_zero (bump_pos hs) (bump_lt hs) (pow_le_pow_left₀ hs.le hx 2)
+  kernel_eq_zero (bump_lt hs) (pow_le_pow_left₀ hs.le hx 2)
 
 theorem integral_kernel_bump_sub (hs : 0 < s) (ζ : ℂ) :
     ∫ z, kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) = 1 := by
   rw [integral_sub_right_eq_self (fun z ↦ kernel (s ^ 2 / 4) (s ^ 2) z) ζ,
     integral_kernel (bump_pos hs) (bump_lt hs)]
 
-theorem continuous_kernel_bump (hs : 0 < s) : Continuous (kernel (s ^ 2 / 4) (s ^ 2)) :=
-  (contDiff_kernel (bump_pos hs) (bump_lt hs)).continuous
+theorem continuous_kernel_bump (s : ℝ) : Continuous (kernel (s ^ 2 / 4) (s ^ 2)) :=
+  (contDiff_kernel _ _).continuous
 
 /-- `k_s(· − ζ) f` is integrable as soon as `f` is integrable on a closed ball of radius `≥ s`. -/
 theorem integrable_kernel_bump_mul {f : ℂ → ℝ} {ζ : ℂ} {r : ℝ} (hs : 0 < s) (hsr : s ≤ r)
@@ -105,7 +105,7 @@ theorem integrable_kernel_bump_mul {f : ℂ → ℝ} {ζ : ℂ} {r : ℝ} (hs : 
   rw [heq]
   refine Integrable.bdd_mul (c := (Real.pi * (s ^ 2 / 4))⁻¹)
     ((integrable_indicator_iff measurableSet_closedBall).2 hf)
-    ((continuous_kernel_bump hs).comp (continuous_id.sub continuous_const)).aestronglyMeasurable
+    ((continuous_kernel_bump s).comp (continuous_id.sub continuous_const)).aestronglyMeasurable
     (Eventually.of_forall fun z ↦ ?_)
   rw [Real.norm_eq_abs, abs_of_nonneg (kernel_nonneg (bump_pos hs) (bump_lt hs) _)]
   exact kernel_le (bump_pos hs) (bump_lt hs) _
@@ -126,7 +126,7 @@ theorem tendsto_integral_kernel_bump_mul {f : ℂ → ℝ} {ζ : ℂ} {r : ℝ} 
   have hk0 := kernel_nonneg (bump_pos hs0) (bump_lt hs0)
   have hint := integrable_kernel_bump_mul hs0 hsr hf
   have hkint : Integrable (fun z ↦ kernel (s ^ 2 / 4) (s ^ 2) (z - ζ)) :=
-    ((contDiff_kernel (bump_pos hs0) (bump_lt hs0)).continuous.integrable_of_hasCompactSupport
+    ((contDiff_kernel _ _).continuous.integrable_of_hasCompactSupport
       (by
         refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) s) fun x hx ↦ ?_
         rw [mem_closedBall, dist_zero_right, not_le] at hx

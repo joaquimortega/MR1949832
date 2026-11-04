@@ -13,7 +13,7 @@ scope = "leanprover-community"
 rev = "v4.35.0"
 
 # Vendored subset of the library of the companion project (Ortega-Cerdà–Seip 1999,
-# github.com/joaquimortega/MR1682065, commit 3f16484): `OCS.theoremOCS` proves `OC.TheoremOCS`.
+# github.com/joaquimortega/MR1682065, commit 05e3ac2): `OCS.theoremOCS` proves `OC.TheoremOCS`.
 # See OrtegaCerdaSeip/VENDORED.md.
 [[lean_lib]]
 name = "OrtegaCerdaSeip"

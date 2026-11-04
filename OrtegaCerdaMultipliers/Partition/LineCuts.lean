@@ -25,7 +25,7 @@ theorem lineCut_measClassLine_of {μ : Measure ℂ} (hd : IsLocallyDoublingLine 
   obtain ⟨r, -, hr⟩ := exists_radius_lt_measure_lineInterval hm 1
   refine ⟨C, r, ⟨hd.1, hC⟩, fun x ↦ by simpa using hr x, fun K hK ↦ ?_⟩
   obtain ⟨ρ, hρ⟩ := hK.isBounded.subset_closedBall 0
-  calc μ K ≤ μ (K ∩ {z | z.im = 0}) + μ (K \ {z | z.im = 0}) := measure_le_inter_add_diff _ _ _
+  calc μ K ≤ μ (K ∩ {z | z.im = 0}) + μ (K \ {z | z.im = 0}) := measure_le_inter_add_sdiff _ _ _
     _ ≤ μ (lineInterval 0 (ρ + 1)) + μ {z : ℂ | z.im ≠ 0} := by
         gcongr
         · rintro z ⟨hzK, hz⟩
@@ -78,11 +78,11 @@ theorem lineCut_measure_rect {μ : Measure ℂ} (hμ : μ {z | z.im ≠ 0} = 0) 
   have he : (fun u : ℝ ↦ (u : ℂ)) '' Ico s t = rect s t (-1) 1 ∩ {z | z.im = 0} := by
     rw [lineCut_image_Ico]
     ext z
-    simp only [mem_setOf_eq, mem_inter_iff, rect_mem_iff, mem_Ico]
+    simp only [mem_ofPred_eq, mem_inter_iff, rect_mem_iff, mem_Ico]
     constructor
     · rintro ⟨h1, h2⟩; exact ⟨⟨h2, by rw [h1]; norm_num, by rw [h1]; norm_num⟩, h1⟩
     · rintro ⟨⟨h2, _⟩, h1⟩; exact ⟨h1, h2⟩
-  rw [he, ← measure_inter_add_diff (rect s t (-1) 1) lineCut_measurableSet_im_eq]
+  rw [he, ← measure_inter_add_sdiff (rect s t (-1) 1) lineCut_measurableSet_im_eq]
   have : μ (rect s t (-1) 1 \ {z | z.im = 0}) = 0 :=
     measure_mono_null (fun z hz ↦ hz.2) hμ
   rw [this, add_zero]
@@ -125,12 +125,12 @@ theorem lineCut_exists_Ico {x : ℤ → ℝ} (hmono : StrictMono x) (hup : ∀ T
   obtain ⟨k, hk, hmax⟩ := Int.exists_greatest_of_bdd (P := fun k ↦ x k ≤ t)
     ⟨K, fun k hk ↦ by
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       have := hmono.monotone hlt.le
       linarith⟩ ⟨k₀, hk₀⟩
   refine ⟨k, hk, ?_⟩
   by_contra hle
-  push_neg at hle
+  push Not at hle
   have := hmax (k + 1) hle
   omega
 
@@ -152,11 +152,11 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     have he : lineInterval 0 R₀ = ∅ := by
       rw [lineCut_lineInterval_eq]
       ext z
-      simp only [mem_setOf_eq, mem_Ioo, mem_empty_iff_false, iff_false, not_and]
+      simp only [mem_ofPred_eq, mem_Ioo, mem_empty_iff_false, iff_false, not_and]
       intro _ h1
       linarith
     rw [he, measure_empty] at h
-    exact absurd h (not_lt.2 (zero_le'))
+    exact absurd h (not_lt.2 (zero_le))
   set rN : ℝ := ((N : ℝ) + 1) * R₀ with hrN
   have hrN0 : 0 < rN := by positivity
   set R₁ : ℝ := 2 * rN with hR₁
@@ -267,7 +267,7 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp [hx]
     · have : ¬ (0 ≤ -(n : ℤ)) := by omega
-      simp only [hx, this, if_false, neg_neg, Int.toNat_natCast]
+      simp only [hx, this, ite_false, neg_neg, Int.toNat_natCast]
   have hblock : ∀ k : ℤ, x k < x (k + 1) ∧ x (k + 1) - x k ≤ R₁ ∧
       μ (rect (x k) (x (k + 1)) (-1) 1) = N := by
     intro k
@@ -323,7 +323,7 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
   have hup : ∀ T, ∃ k, T < x k := by
     intro T
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (hfinR (x 0) T).ne
     have h1 : μ (rect (x 0) (x n) (-1) 1) ≤ μ (rect (x 0) T (-1) 1) :=
       measure_mono (rect_subset_rect le_rfl (hcon n) le_rfl le_rfl)
@@ -335,7 +335,7 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
   have hdown : ∀ T, ∃ k, x k ≤ T := by
     intro T
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (hfinR T (x 0)).ne
     have h1 : μ (rect (x (-(n : ℤ))) (x 0) (-1) 1) ≤ μ (rect T (x 0) (-1) 1) :=
       measure_mono (rect_subset_rect (hcon _).le le_rfl le_rfl le_rfl)

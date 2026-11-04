@@ -52,7 +52,7 @@ The copy is needed because RMI must not depend on BOC: BOC will later `require` 
 - Imports: `BerndtssonOrtegaCerda.Defs` → `OrtegaCerdaMultipliers.Foundations.Basic`, and `BerndtssonOrtegaCerda.X.Y` → `OrtegaCerdaMultipliers.Foundations.Y`.
 - The `# Mxx — …` titles became `# M01 (Foundations) — …`, and a provenance paragraph was added.
 - No proof was changed, except the `pseudoHyp` spots in `DiscGeometry.lean` listed in §1.3 (12 lemmas).
-- The unused-variable linter warnings are inherited unchanged from BOC.
+- The unused-variable linter warnings were inherited unchanged from BOC; the lint pass of 2026-11-04 removed the unused hypotheses (see the statements below).
 
 **Import closure.** `Disc/Geometry.lean` imports `Calculus/Wirtinger`, `Calculus/Polar` and `Geometry/Separated`. `Complex/Weyl.lean` imports `Wirtinger`, `Polar`, `LocalEstimates` and `Pompeiu`. Nothing else is needed: the closure of the requested files is exactly the seven copied files plus `Defs`.
 
@@ -145,7 +145,7 @@ The mathematics and full proofs are in the BOC blueprints cited in §0. Only the
 def dz (f : ℂ → ℂ) (z : ℂ) : ℂ := (1 / 2 : ℂ) * (fderiv ℝ f z 1 - I * fderiv ℝ f z I)
 def cplx (φ : ℂ → ℝ) : ℂ → ℂ := fun z ↦ (φ z : ℂ)
 
-theorem fderiv_apply_eq_dz_dbar {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℝ f z) (w : ℂ) :
+theorem fderiv_apply_eq_dz_dbar (f : ℂ → ℂ) (z w : ℂ) :
     fderiv ℝ f z w = dz f z * w + dbar f z * conj w
 theorem differentiableAt_iff_dbar_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔ dbar f z = 0
@@ -200,7 +200,7 @@ theorem integral_comp_normSq_sub (a : ℂ) {F : ℝ → ℝ} (hF : IntegrableOn 
     ∫ z : ℂ, F (‖z - a‖ ^ 2) = Real.pi * ∫ t in Set.Ioi (0 : ℝ), F t
 theorem volume_ball_complex (a : ℂ) {r : ℝ} (hr : 0 ≤ r) :
     volume (Metric.ball a r) = ENNReal.ofReal (Real.pi * r ^ 2)
-theorem lintegral_inv_norm_sub_ball (a : ℂ) {R : ℝ} (hR : 0 ≤ R) :
+theorem lintegral_inv_norm_sub_ball (a : ℂ) (R : ℝ) :
     ∫⁻ z in Metric.ball a R, ENNReal.ofReal ‖z - a‖⁻¹ = ENNReal.ofReal (2 * Real.pi * R)
 theorem locallyIntegrable_inv_sub (a : ℂ) : LocallyIntegrable (fun z : ℂ ↦ (z - a)⁻¹)
 theorem lintegral_inv_norm_sub_le {c w : ℂ} {R : ℝ} (hw : w ∈ Metric.closedBall c R) :
@@ -240,9 +240,8 @@ theorem pompeiu {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (hc : HasCompactSup
     cauchyTransform (dbar α) w = α w
 theorem continuous_cauchyTransform {f : ℂ → ℂ} (hf : Continuous f) (hc : HasCompactSupport f) :
     Continuous (cauchyTransform f)
-theorem norm_cauchyTransform_le {f : ℂ → ℂ} {M R : ℝ} {c w : ℂ} (hf : Continuous f)
-    (hM : ∀ z, ‖f z‖ ≤ M) (hsupp : tsupport f ⊆ Metric.closedBall c R)
-    (hw : w ∈ Metric.closedBall c R) :
+theorem norm_cauchyTransform_le {f : ℂ → ℂ} {M R : ℝ} {c w : ℂ} (hM : ∀ z, ‖f z‖ ≤ M)
+    (hsupp : tsupport f ⊆ Metric.closedBall c R) (hw : w ∈ Metric.closedBall c R) :
     ‖cauchyTransform f w‖ ≤ 4 * M * R
 theorem isWeakDbarSol_cauchyTransform {f : ℂ → ℂ} (hf : Continuous f)
     (hc : HasCompactSupport f) :
@@ -252,8 +251,8 @@ theorem contDiff_cauchyTransform {β : ℂ → ℂ} (hβ : ContDiff ℝ (⊤ : �
     ContDiff ℝ (⊤ : ℕ∞) (cauchyTransform β)
 theorem dbar_cauchyTransform {β : ℂ → ℂ} (hβ : ContDiff ℝ (⊤ : ℕ∞) β) (hc : HasCompactSupport β)
     (w : ℂ) : dbar (cauchyTransform β) w = β w
-theorem differentiableOn_cauchyTransform {f : ℂ → ℂ} (hf : Integrable f)
-    (hc : HasCompactSupport f) {U : Set ℂ} (hU : IsOpen U) (hdisj : Disjoint (tsupport f) U) :
+theorem differentiableOn_cauchyTransform {f : ℂ → ℂ} (hf : Integrable f) {U : Set ℂ}
+    (hdisj : Disjoint (tsupport f) U) :
     DifferentiableOn ℂ (cauchyTransform f) U
 lemma integral_mul_cauchyTransform_comm {f g : ℂ → ℂ} (hf : Integrable f) (hg : Continuous g)
     (hgc : HasCompactSupport g) :
@@ -342,7 +341,7 @@ theorem invLap_comp_mobius {u : ℂ → ℝ} {a z : ℂ} (ha : a ∈ 𝔻) (hz :
     invLap (u ∘ mobius a) z = invLap u (mobius a z)
 theorem ball_subset_pseudoBall {a : ℂ} (ha : a ∈ 𝔻) {s : ℝ} (hs : 0 < s) (hs1 : s < 1) :
     Metric.ball a (s * (1 - ‖a‖ ^ 2) / 2) ⊆ {z ∈ 𝔻 | pseudoHyp a z < s}
-theorem pseudoBall_subset_ball {a : ℂ} (ha : a ∈ 𝔻) {s : ℝ} (hs : 0 < s) (hs1 : s < 1) :
+theorem pseudoBall_subset_ball {a : ℂ} (ha : a ∈ 𝔻) {s : ℝ} (hs1 : s < 1) :
     {z ∈ 𝔻 | pseudoHyp a z < s} ⊆ Metric.ball a (s * (1 - ‖a‖ ^ 2) / (1 - s))
 theorem one_sub_normSq_comparable {a z : ℂ} (ha : a ∈ 𝔻) (hz : z ∈ 𝔻) {s : ℝ} (hs1 : s < 1)
     (hρ : pseudoHyp a z < s) :
@@ -684,11 +683,11 @@ theorem hypArea_hypBall {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 ≤ r) :
     hypArea (hypBall z r) = ENNReal.ofReal (Real.pi * Real.sinh r ^ 2)
 theorem hypDist_radial {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (ht : t < 1) {u : ℂ} (hu : ‖u‖ = 1) :
     hypDist (s * u) (t * u) = Real.artanh t - Real.artanh s
-theorem hypBall_zero {r : ℝ} (hr : 0 < r) : hypBall 0 r = ball 0 (Real.tanh r)
+theorem hypBall_zero (r : ℝ) : hypBall 0 r = ball 0 (Real.tanh r)
 theorem continuousOn_hypDist : ContinuousOn (fun p : ℂ × ℂ ↦ hypDist p.1 p.2) (𝔻 ×ˢ 𝔻)
 theorem ball_subset_hypBall_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
     ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / 2) ⊆ hypBall z r
-theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr : 0 < r) :
+theorem hypBall_subset_ball_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
     hypBall z r ⊆ ball z (Real.tanh r * (1 - ‖z‖ ^ 2) / (1 - Real.tanh r))
 theorem norm_sub_le_of_hypDist_le {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻) {s : ℝ}
     (hs : hypDist c w ≤ s) (hs1 : Real.tanh s < 1) :

@@ -127,8 +127,7 @@ theorem divMeasure_withDensity_le {ν : Measure ℂ} {Ω : Set ℂ} (hΩ : Measu
     _ ≤ ∫⁻ z in s, ENNReal.ofReal c⁻¹ * ENNReal.ofReal (Real.exp (-φ z)) ∂ν :=
         lintegral_mono_set inter_subset_left
 theorem lintegral_ball_divMeasure_le {ν : Measure ℂ} {Ω : Set ℂ} (hΩ : MeasurableSet Ω)
-    {f : ℂ → ℂ} {φ : ℂ → ℝ} {α c : ℝ} (hf : Continuous f) (hφ : Continuous φ) (hc : 0 < c)
-    (hα : 0 ≤ α)
+    {f : ℂ → ℂ} {φ : ℂ → ℝ} {α c : ℝ} (hf : Continuous f) (hc : 0 < c) (hα : 0 ≤ α)
     (hlow : ∀ z ∈ Ω, c * Real.exp (φ z - α * |z.im|) ≤ ‖f z‖) (x : ℝ) :
     ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂divMeasure ν Ω f ≤
       ENNReal.ofReal (c⁻¹ * Real.exp α) *
@@ -172,7 +171,7 @@ theorem isWeakDbarSolMeasure_sum_mul {ι : Type*} [Fintype ι] {ν : Measure ℂ
     [IsFiniteMeasure ν] {σ : ℂ → ℂ} (hσ : Measurable σ) (hσ1 : ∀ z, ‖σ z‖ = 1)
     (Ω : ι → Set ℂ) (hΩm : ∀ i, MeasurableSet (Ω i)) (hΩd : Pairwise (Function.onFun Disjoint Ω))
     (hΩc : ⋃ i, Ω i = univ) (f : ι → ℂ → ℂ) (hf : ∀ i, Differentiable ℂ (f i))
-    (hf0 : ∀ i, ∀ z ∈ Ω i, f i z ≠ 0) (hfin : ∀ i, IsFiniteMeasure (divMeasure ν (Ω i) (f i)))
+    (hf0 : ∀ i, ∀ z ∈ Ω i, f i z ≠ 0)
     (v : ι → ℂ → ℂ) (hv : ∀ i, IsWeakDbarSolMeasure (v i) (divMeasure ν (Ω i) (f i))
       (divPhase σ (f i))) :
     IsWeakDbarSolMeasure (fun z ↦ ∑ i, f i z * v i z) ν σ := by
@@ -349,7 +348,7 @@ theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (
   choose v hv1 hv2 hv3 hv4 using hex
   refine ⟨fun z ↦ ∑ i, f i z * v i z,
     isWeakDbarSolMeasure_sum_mul hσ hσ1 Ω hΩm (pairwise_disjoint_fin_two_partition G)
-      (iUnion_fin_two_partition G) f hfd hf0 hfin v hv1, ?_, ?_, ?_⟩
+      (iUnion_fin_two_partition G) f hfd hf0 v hv1, ?_, ?_, ?_⟩
   · exact DifferentiableOn.fun_sum fun i _ ↦ (hfd i).differentiableOn.mul (hv2 i)
   · -- decay: `‖u‖ e^{-φ} ≤ Σ C_up ‖v_i‖ e^{-α|y|} → 0`
     have hlim : Filter.Tendsto (fun z ↦ ∑ i, Cu * (‖v i z‖ * Real.exp (-α * |z.im|)))
@@ -362,7 +361,7 @@ theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (
     set J := ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (Real.exp (-φ z) / ‖(x : ℂ) - z‖) ∂ν
     have hJ : ∀ i, ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖)
         ∂divMeasure ν (Ω i) (f i) ≤ ENNReal.ofReal m * J := fun i ↦
-      lintegral_ball_divMeasure_le (hΩm i) (hfd i).continuous hφc hc hα.le (hΩlow i) x
+      lintegral_ball_divMeasure_le (hΩm i) (hfd i).continuous hc hα.le (hΩlow i) x
     have h1 : ENNReal.ofReal (‖∑ i, f i x * v i x‖ * Real.exp (-φ x)) ≤
         ∑ i, ENNReal.ofReal Cu * ENNReal.ofReal ‖v i x‖ := by
       have h2 := norm_sum_mul_mul_exp_le (v := v) hfu (x : ℂ)

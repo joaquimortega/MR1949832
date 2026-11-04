@@ -183,7 +183,7 @@ theorem one_le_N_disc {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} {
 end Prop2
 
 /-- Separated colouring of the cells (plane): same colour ⟹ `L`-separated centres. -/
-theorem exists_separated_coloring_plane (Cd : ℝ≥0) (R₀ η A L : ℝ) (hη : 0 < η) :
+theorem exists_separated_coloring_plane (Cd : ℝ≥0) (R₀ η A L : ℝ) :
     ∃ n : ℕ, ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ),
       MeasClassPlane ν Cd R₀ → IsCells univ dist (massRadius ν) ν N η A R c →
       ∃ col : ℕ → Fin n, ∀ i j, i ≠ j → col i = col j →
@@ -209,7 +209,7 @@ theorem exists_separated_coloring_plane (Cd : ℝ≥0) (R₀ η A L : ℝ) (hη 
   exact mul_le_mul_of_nonneg_right (le_max_left _ _) (add_nonneg (hρ _).le (hρ _).le)
 
 /-- Separated colouring of the cells (disc). -/
-theorem exists_separated_coloring_disc (Cd : ℝ≥0) (R₀ η A L : ℝ) (hη : 0 < η) :
+theorem exists_separated_coloring_disc (Cd : ℝ≥0) (R₀ η A L : ℝ) :
     ∃ n : ℕ, ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ),
       MeasClassDisc ν Cd R₀ → IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c →
       ∃ col : ℕ → Fin n, ∀ i j, i ≠ j → col i = col j →
@@ -412,7 +412,7 @@ end Prop2
 /-- Key separation lemma (plane): for `z` in a cell of colour `l`, every node of the colour-`l`
 configuration is at distance `≥ c₅ ρ(z)`.  `Bl`: spread of the ordinary nodes; selected cells
 carry nodes in the annulus `[Bk, Bk'] · ρ(c j)`. -/
-theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < η) (hA : 0 < A)
+theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hA : 0 < A)
     (hBl : 0 ≤ Bl) :
     ∃ Bk₀ : ℝ, ∀ Bk Bk' : ℝ, Bk₀ ≤ Bk → ∃ L₀ : ℝ, ∀ L : ℝ, L₀ ≤ L → ∃ c₅ : ℝ, 0 < c₅ ∧
       ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ) {n : ℕ} (col : ℕ → Fin n)
@@ -442,7 +442,7 @@ theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < 
     (fun _ ↦ subset_univ _) hC.center_mem hC.subset (fun _ _ _ ↦ mem_univ _) hsep hns hs
 
 /-- Key separation lemma (disc). -/
-theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hη : 0 < η) (hA : 0 < A)
+theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hA : 0 < A)
     (hBl : 0 ≤ Bl) :
     ∃ Bk₀ : ℝ, ∀ Bk Bk' : ℝ, Bk₀ ≤ Bk → ∃ L₀ : ℝ, ∀ L : ℝ, L₀ ≤ L → ∃ c₅ : ℝ, 0 < c₅ ∧
       ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ) {n : ℕ} (col : ℕ → Fin n)
@@ -560,7 +560,7 @@ theorem constP_spec {C : ℝ≥0} (hC : 1 ≤ C) {c₆ : ℝ} (M : ℕ) (hc₆ :
 end Prop2
 
 /-- **Proposition 2, quantitative, full form (plane).** -/
-theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (n M : ℕ) (C : ℝ≥0) (ε : ℝ), 1 ≤ M ∧ 1 ≤ C ∧ 0 < ε ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassPlane ψ μ Cd R₀ →
       ∃ h : Fin n → ℂ → ℂ, (∀ i, Differentiable ℂ (h i)) ∧ (∀ i, ∃ z₀, h i z₀ ≠ 0) ∧
@@ -572,16 +572,16 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
   classical
   -- constants, all depending only on `(Cd, R₀)`
   obtain ⟨a, A, ha, hA, hpart⟩ := lemma4_plane_quant Cd (15 * R₀) 12 (by norm_num)
-  obtain ⟨Bk₀, hfar⟩ := nodes_far_of_color_plane Cd (15 * R₀) a A (6 * A) ha hA (by positivity)
+  obtain ⟨Bk₀, hfar⟩ := nodes_far_of_color_plane Cd (15 * R₀) a A (6 * A) hA (by positivity)
   set B := max Bk₀ 0 / A with hB_def
   have hB : 0 ≤ B := div_nonneg (le_max_right _ _) hA.le
   have hBA : Bk₀ ≤ B * A := by
     rw [hB_def, div_mul_cancel₀ _ hA.ne']; exact le_max_left _ _
   obtain ⟨L₀, hL₀⟩ := hfar (B * A) ((B + 12) * A) hBA
   obtain ⟨c₅, hc₅, hfarL⟩ := hL₀ L₀ le_rfl
-  obtain ⟨n, hcolor⟩ := exists_separated_coloring_plane Cd (15 * R₀) a A L₀ ha
+  obtain ⟨n, hcolor⟩ := exists_separated_coloring_plane Cd (15 * R₀) a A L₀
   obtain ⟨M, C, hM, hC, hmult⟩ :=
-    multiplier_of_nodes_plane Cd R₀ a A ((B + 12) * A) 12 hR₀ ha hA (by positivity)
+    multiplier_of_nodes_plane Cd R₀ a A ((B + 12) * A) 12 ha hA (by positivity)
       (by norm_num)
   obtain ⟨C1, hC1, hcl1⟩ := claim1_plane_quant Cd (15 * R₀) 1
   obtain ⟨C1', hC1', hcl1'⟩ := claim1_plane_quant Cd R₀ 1
@@ -674,7 +674,7 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
     exact (hupper l z).trans (mul_le_mul_of_nonneg_right hC2CP (Real.exp_pos _).le)
 
 /-- **Proposition 2, quantitative, full form (disc).** -/
-theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (n M : ℕ) (C : ℝ≥0) (ε : ℝ), 1 ≤ M ∧ 1 ≤ C ∧ 0 < ε ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassDisc ψ μ Cd R₀ →
       ∃ h : Fin n → ℂ → ℂ, (∀ i, DifferentiableOn ℂ (h i) 𝔻) ∧ (∀ i, ∃ z₀ ∈ 𝔻, h i z₀ ≠ 0) ∧
@@ -687,7 +687,7 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
   -- constants, all depending only on `(Cd, R₀)`
   obtain ⟨a, A, ha, hA, hpart⟩ := lemma4_disc_quant Cd (15 * R₀) 12 (by norm_num)
   obtain ⟨Bl, hBl, hnodes⟩ := exists_nodes_disc A hA
-  obtain ⟨Bk₀, hfar⟩ := nodes_far_of_color_disc Cd (15 * R₀) a A Bl ha hA hBl
+  obtain ⟨Bk₀, hfar⟩ := nodes_far_of_color_disc Cd (15 * R₀) a A Bl hA hBl
   set B := max Bk₀ 0 / A with hB_def
   have hB : 0 ≤ B := div_nonneg (le_max_right _ _) hA.le
   have hBA : Bk₀ ≤ B * A := by
@@ -695,9 +695,9 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
   obtain ⟨ρ₀, B', hρ₀, hB', hnodesB⟩ := hnodes B hB
   obtain ⟨L₀, hL₀⟩ := hfar (B * A) B' hBA
   obtain ⟨c₅, hc₅, hfarL⟩ := hL₀ L₀ le_rfl
-  obtain ⟨n, hcolor⟩ := exists_separated_coloring_disc Cd (15 * R₀) a A L₀ ha
+  obtain ⟨n, hcolor⟩ := exists_separated_coloring_disc Cd (15 * R₀) a A L₀
   obtain ⟨M, C, hM, hC, hmult⟩ :=
-    multiplier_of_nodes_disc Cd R₀ a A B' ρ₀ 12 hR₀ ha hA hB' hρ₀ (by norm_num)
+    multiplier_of_nodes_disc Cd R₀ a A B' ρ₀ 12 ha hA hB' hρ₀ (by norm_num)
   obtain ⟨C1, hC1, hcl1⟩ := claim1_disc_quant Cd (15 * R₀) 1
   obtain ⟨C1', hC1', hcl1'⟩ := claim1_disc_quant Cd R₀ 1
   obtain ⟨Cρ, -, hρν⟩ := massRadiusDisc_lapNorm_quant Cd R₀
@@ -812,7 +812,7 @@ theorem prop2_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWei
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R hR
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R
   obtain ⟨h, hh, hz₀, hb, hcov, hgood, -⟩ := hall ψ μ hw
   exact ⟨n, h, M, ε, C, hε, zero_lt_one.trans_le hC,
     fun i ↦ ⟨hh i, hz₀ i, fun z hz ↦ ⟨(hb i z hz).1, (hb i z hz).2.1⟩⟩, hcov, hgood⟩
@@ -834,7 +834,7 @@ theorem prop2_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWe
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
       fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R hR
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R
   obtain ⟨h, hh, hz₀, hb, hcov, hgood, -⟩ := hall ψ μ hw
   exact ⟨n, h, M, ε, C, hε, zero_lt_one.trans_le hC,
     fun i ↦ ⟨hh i, hz₀ i, fun z ↦ ⟨(hb i z).1, (hb i z).2.1⟩⟩, hcov, hgood⟩
@@ -852,7 +852,7 @@ theorem prop2_disc_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmon
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R hR
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
   have hC0 : (0 : ℝ) < C := by
     have : (1 : ℝ) ≤ C := by exact_mod_cast hC
@@ -873,7 +873,7 @@ theorem prop2_plane_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmo
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
       fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R hR
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
   have hC0 : (0 : ℝ) < C := by
     have : (1 : ℝ) ≤ C := by exact_mod_cast hC
@@ -1067,7 +1067,7 @@ theorem prop2_disc_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubh
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R hR
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   obtain ⟨Ω, hΩm, hΩG, hdisj, hU⟩ := Prop2.partition_of_cover measurableSet_ball
@@ -1096,7 +1096,7 @@ theorem prop2_plane_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSub
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
       fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R hR
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   obtain ⟨Ω, hΩm, hΩG, hdisj, hU⟩ := Prop2.partition_of_cover MeasurableSet.univ
@@ -1123,7 +1123,7 @@ theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
         ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
           C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ := by
   obtain ⟨Cd, R₀, hR₀, hcl⟩ := Prop2.measClassDisc_of_hypArea_aux ha hab
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R₀ hR₀
+  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R₀
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   refine ⟨n, ε, C, hε, hC0, fun ψ μ hψ h₁ h₂ ↦ ?_⟩
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ ⟨hψ, hcl μ hψ.carried h₁ h₂⟩

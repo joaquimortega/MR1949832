@@ -67,11 +67,11 @@ theorem IsLineMeasure.m13_ae_ne {μ : Measure ℂ} (hμ : IsLineMeasure μ) (x :
   simpa using hμ.m13_linePull_singleton x
 
 /-- (L8) on the line, in terms of `linePull μ`. -/
-theorem IsLineMeasure.m13_lintegral_log_line {μ : Measure ℂ} (hμ : IsLineMeasure μ) {A : ℝ}
-    (hA : 0 < A) : ∃ C : ℝ≥0, ∀ x R : ℝ, 0 < R → R ≤ A →
+theorem IsLineMeasure.m13_lintegral_log_line {μ : Measure ℂ} (hμ : IsLineMeasure μ) (A : ℝ) :
+    ∃ C : ℝ≥0, ∀ x R : ℝ, 0 < R → R ≤ A →
       ∫⁻ t in Ioo (x - R) (x + R), ENNReal.ofReal (Real.log (R / |t - x|)) ∂linePull μ ≤
         C * μ (lineInterval x R) := by
-  obtain ⟨C, hC⟩ := hμ.lintegral_log_le hA
+  obtain ⟨C, hC⟩ := hμ.lintegral_log_le A
   refine ⟨C, fun x R hR hRA ↦ ?_⟩
   have h1 := hC x R hR hRA
   have e : ∫⁻ ζ in lineInterval x R, ENNReal.ofReal (Real.log (R / ‖ζ - (x : ℂ)‖)) ∂μ =
@@ -87,7 +87,7 @@ theorem m13_measurable_log_norm_sub (z : ℂ) : Measurable fun t : ℝ ↦ Real.
 /-- `log |z − t|` is integrable on bounded intervals against a line measure. -/
 theorem IsLineMeasure.m13_integrableOn_log {μ : Measure ℂ} (hμ : IsLineMeasure μ) (z : ℂ)
     (a b : ℝ) : IntegrableOn (fun t : ℝ ↦ Real.log ‖z - t‖) (Ioc a b) (linePull μ) := by
-  obtain ⟨C, hC⟩ := hμ.m13_lintegral_log_line one_pos
+  obtain ⟨C, hC⟩ := hμ.m13_lintegral_log_line 1
   set x := z.re
   set B := Real.log (1 + ‖z‖ + |a| + |b|)
   refine ⟨(m13_measurable_log_norm_sub z).aestronglyMeasurable, ?_⟩
@@ -315,9 +315,9 @@ theorem near_upper : ∃ C : ℝ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → �
     ∀ (k : ℤ) (z : ℂ), ‖z - lineCentre μ α k‖ < 2 * lineLength μ α k →
       (∀ b : Bool, z ≠ lineNode μ α s k b) → lineTerm μ α s k z ≤ C := by
   have hr := hc.hr
-  obtain ⟨CD, -, hCD⟩ := hc.hμ.doubling_le (A := 208 * r) (by linarith)
-  obtain ⟨CL, hCL⟩ := hc.hμ.m13_lintegral_log_line (A := 156 * r) (by linarith)
-  obtain ⟨CB, hCB⟩ := isLineMeasure_lebLine.m13_lintegral_log_line (A := 156 * r) (by linarith)
+  obtain ⟨CD, -, hCD⟩ := hc.hμ.doubling_le (208 * r)
+  obtain ⟨CL, hCL⟩ := hc.hμ.m13_lintegral_log_line (156 * r)
+  obtain ⟨CB, hCB⟩ := isLineMeasure_lebLine.m13_lintegral_log_line (156 * r)
   have hπ := Real.pi_pos
   refine ⟨1 / (2 * Real.pi) * (CL * ((CD : ℝ) ^ 4 * (4 * Real.pi + 13))),
     fun α hα hα' s hs hs' k z hz hnode ↦ ?_⟩
@@ -356,8 +356,8 @@ theorem near_lower : ∃ C : ℝ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → �
       (∀ b : Bool, η * massRadiusLine μ (lineNode μ α s k b) ≤ ‖z - lineNode μ α s k b‖) →
       2 * Real.log η - C ≤ lineTerm μ α s k z := by
   have hr := hc.hr
-  obtain ⟨CL, hCL⟩ := hc.hμ.m13_lintegral_log_line (A := 156 * r) (by linarith)
-  obtain ⟨CB, hCB⟩ := isLineMeasure_lebLine.m13_lintegral_log_line (A := 156 * r) (by linarith)
+  obtain ⟨CL, hCL⟩ := hc.hμ.m13_lintegral_log_line (156 * r)
+  obtain ⟨CB, hCB⟩ := isLineMeasure_lebLine.m13_lintegral_log_line (156 * r)
   have hπ := Real.pi_pos
   have hC₂ := hc.hC₂
   refine ⟨2 * Real.log (3 * C₂) + 39 / Real.pi * CB,
@@ -734,7 +734,7 @@ theorem centre_mem_Icc {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) (k : �
 theorem far_sum : ∃ Cf : ℝ, 0 ≤ Cf ∧ ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → ∀ (z : ℂ) (F : Finset ℤ),
     (∀ k ∈ F, 2 * lineLength μ α k ≤ ‖z - lineCentre μ α k‖) →
     ∑ k ∈ F, (lineLength μ α k / ‖z - lineCentre μ α k‖) ^ 2 ≤ Cf := by
-  obtain ⟨C₁, hC₁, hL5⟩ := hc.hμ.massRadiusLine_comparable (K := 1) one_pos
+  obtain ⟨C₁, hC₁, hL5⟩ := hc.hμ.massRadiusLine_comparable 1
   obtain ⟨γ, Cg, hγ, hγ1, hCg, hL6⟩ := hc.hμ.massRadiusLine_le_rpow
   set K₁ := ∫ v : ℝ, (1 + ‖v‖) ^ (-(1 + γ))
   set K₂ := ∫ v : ℝ, (1 + ‖v‖) ^ (-(2 : ℝ))
@@ -830,7 +830,7 @@ include hc
 theorem near_count : ∃ N₀ : ℕ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → ∀ (z : ℂ) (F : Finset ℤ),
     (∀ k ∈ F, ‖z - lineCentre μ α k‖ < 2 * lineLength μ α k) → F.card ≤ N₀ := by
   have hC₂ := hc.hC₂
-  obtain ⟨C₅, hC₅, hL5⟩ := hc.hμ.massRadiusLine_comparable (K := 2 * C₂) (by linarith)
+  obtain ⟨C₅, hC₅, hL5⟩ := hc.hμ.massRadiusLine_comparable (2 * C₂)
   refine ⟨⌈6 * C₂ * C₅ ^ 2⌉₊, fun α hα hα' z F hF ↦ ?_⟩
   have hl := hc.hyp hα hα'
   set x := z.re

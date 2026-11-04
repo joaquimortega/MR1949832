@@ -102,7 +102,7 @@ theorem isLocalPotData_plane {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubh
     (hd : IsLocallyDoubling μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z : ℂ, 1 ≤ μ (ball z R)) :
     IsLocalPotData univ (μ.withDensity (massWeight μ R)) (fun _ ↦ R)
 theorem isLocalPotData_disc {φ : ℂ → ℝ} {μ : Measure ℂ} (hφ : IsSubharmonicWeight 𝔻 φ μ)
-    (hd : IsLocallyDoublingDisc μ) {R : ℝ} (hR : 0 < R) (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
+    (hd : IsLocallyDoublingDisc μ) {R : ℝ} (hm : ∀ z ∈ 𝔻, 1 ≤ μ (hypBall z R)) :
     IsLocalPotData 𝔻 (μ.withDensity (massWeightDisc μ R)) discRadius
 
 theorem smoothedDensity_plane_bounds {φ : ℂ → ℝ} {μ : Measure ℂ}

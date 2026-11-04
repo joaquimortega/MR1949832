@@ -66,7 +66,7 @@ sources:
       limsup |u|e^{-α|Im z|} = 0; the published lemma states only limsup < ∞, and "= 0" follows
       from its proof. It is proved, with "= 0" (its NOTEBOOK N-08), in the companion formalization
       https://github.com/joaquimortega/MR1682065 as OCS.theoremOCS. The 18 files it needs are
-      vendored in OrtegaCerdaSeip/ (commit 3f164843606d8fc2e0fd8271fe033e8225905103), and
+      vendored in OrtegaCerdaSeip/ (commit 05e3ac2ca83f8862636e1dd002467ad9add83396), and
       OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS makes OC.theorem3_weighted
       unconditional. OC.theorem3_weighted_of_theoremOCS keeps the article's conditional form. See
       NOTEBOOK N-07.
@@ -97,7 +97,7 @@ related_formalizations:
       Proves [OCS99, Lemma 4] in the form quoted on p. 375 (OCS.theoremOCS : OCS.TheoremOCS, the
       same definition as OC.TheoremOCS). A sorry-free subset of its library OrtegaCerdaSeip (the
       import closure of OrtegaCerdaSeip.Lemma4.Main, 18 files, commit
-      3f164843606d8fc2e0fd8271fe033e8225905103) is vendored in OrtegaCerdaSeip/ and imported
+      05e3ac2ca83f8862636e1dd002467ad9add83396) is vendored in OrtegaCerdaSeip/ and imported
       only by OrtegaCerdaMultipliers/TheoremOCSProof.lean; it makes Theorem 3 unconditional.
 
 classification:

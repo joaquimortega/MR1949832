@@ -11,7 +11,7 @@
 
 **Status (2026-11-02):**
 - **All modules proved.** All 14 modules M01–M14 are proved: 54 Lean files, with no `sorry` and no axioms beyond `propext`, `Classical.choice` and `Quot.sound`.
-- **Theorem 3 unconditional.** `TheoremOCS` ([OCS99] as quoted on p. 375) is proved in the companion project MR1682065 (`OCS.theoremOCS`). The 18 files it needs are vendored in `OrtegaCerdaSeip/` (commit `3f16484`, see `OrtegaCerdaSeip/VENDORED.md`), and `TheoremOCSProof.lean` proves `theoremOCS_holds`. `theorem3_weighted` is unconditional; the conditional form is `theorem3_weighted_of_theoremOCS`.
+- **Theorem 3 unconditional.** `TheoremOCS` ([OCS99] as quoted on p. 375) is proved in the companion project MR1682065 (`OCS.theoremOCS`). The 18 files it needs are vendored in `OrtegaCerdaSeip/` (commit `05e3ac2`, see `OrtegaCerdaSeip/VENDORED.md`), and `TheoremOCSProof.lean` proves `theoremOCS_holds`. `theorem3_weighted` is unconditional; the conditional form is `theorem3_weighted_of_theoremOCS`.
 - **Main results accepted.** comparator (`lake comparator`) accepts the 14 main results (`comparator/last_run.log`).
 - **Statements frozen.** `scripts/check_statements.py` confirms that no statement of the reviewed scaffold changed, except two false helper statements removed with approval (NOTEBOOK I-01, I-03) and the deliberate removal of the hypothesis `hOCS` from `theorem3_weighted` and `theorem3_of_lowerBound` (2026-11-02; the conditional statements are kept as `*_of_theoremOCS`).
 

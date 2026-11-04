@@ -334,7 +334,7 @@ theorem IsSubharmonicWeight.sub_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {ψ 
 /-- `G_s = −(1/4π) wFun (s²/4) s² ≥ 0`: `Δ G_s = bumpKernel s − δ₀`, `G_s = 0` off `ball 0 s`. -/
 def bumpPot (s : ℝ) (x : ℂ) : ℝ := -(4 * Real.pi)⁻¹ * wFun (s ^ 2 / 4) (s ^ 2) x
 
-theorem contDiff_bumpKernel {s : ℝ} (hs : 0 < s) : ContDiff ℝ (⊤ : ℕ∞) (bumpKernel s)
+theorem contDiff_bumpKernel (s : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (bumpKernel s)
 theorem bumpKernel_nonneg {s : ℝ} (hs : 0 < s) (x : ℂ) : 0 ≤ bumpKernel s x
 theorem bumpKernel_eq_zero {s : ℝ} (hs : 0 < s) {x : ℂ} (hx : s ≤ ‖x‖) : bumpKernel s x = 0
 theorem integral_bumpKernel {s : ℝ} (hs : 0 < s) : ∫ x, bumpKernel s x = 1

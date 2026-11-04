@@ -1,5 +1,7 @@
-import Mathlib
-import OrtegaCerdaMultipliers.Defs
+module
+
+public import Mathlib
+public import OrtegaCerdaMultipliers.Defs
 
 /-!
 # M07 — Holomorphic functions with prescribed log-modulus
@@ -23,7 +25,7 @@ around `p`, then the identity theorem), so `h z := h_{R(z)} z` is well defined a
 
 open Metric Set Filter Topology Complex InnerProductSpace MeasureTheory
 
-noncomputable section
+@[expose] public noncomputable section
 
 namespace OC
 

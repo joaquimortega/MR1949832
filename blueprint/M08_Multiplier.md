@@ -335,7 +335,7 @@ theorem farField_sum_le_plane (Cd : ℝ≥0) (R₀ η A M₀ : ℝ) (hη : 0 < �
         ∑ i ∈ F, (massRadius ν (c i) / dist z (c i)) ^ 3 ≤ C := sorry
 
 /-- Far field (disc): the Forelli–Rudin sum. -/
-theorem farField_sum_le_disc (Cd : ℝ≥0) (R₀ η A M₀ : ℝ) (hη : 0 < η) (hM₀ : 0 < M₀) :
+theorem farField_sum_le_disc (Cd : ℝ≥0) (R₀ η A M₀ : ℝ) (hη : 0 < η) :
     ∃ C : ℝ, ∀ (ν : Measure ℂ) (N : ℕ) (R : ℕ → Set ℂ) (c : ℕ → ℂ),
       MeasClassDisc ν Cd R₀ → IsCells 𝔻 hypDist (massRadiusDisc ν) ν N η A R c → ∀ z ∈ 𝔻,
       ∀ F : Finset ℕ, (∀ i ∈ F, M₀ ≤ hypDist z (c i)) →
@@ -442,8 +442,8 @@ theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
 
 ```lean
 /-- Core: multiplier from an arbitrary admissible node configuration (plane). -/
-theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hR₀ : 0 < R₀)
-    (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B) (hN : 1 ≤ N) :
+theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
+    (hB : 0 ≤ B) (hN : 1 ≤ N) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassPlane ψ μ Cd R₀ → ∀ (R : ℕ → Set ℂ) (c : ℕ → ℂ) (m : ℕ → ℕ)
       (Λ : ℕ → Multiset ℂ),
@@ -453,8 +453,8 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
         (∀ w, analyticOrderAt h w = (nodeCount Λ w : ℕ∞)) ∧ Thm4BoundsPlane ψ μ h M C := sorry
 
 /-- Core: multiplier from an arbitrary admissible node configuration (disc). -/
-theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hR₀ : 0 < R₀)
-    (hη : 0 < η) (hA : 0 < A) (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) (hN : 1 ≤ N) :
+theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
+    (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) (hN : 1 ≤ N) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassDisc ψ μ Cd R₀ → ∀ (R : ℕ → Set ℂ) (c : ℕ → ℂ) (m : ℕ → ℕ)
       (Λ : ℕ → Multiset ℂ),
@@ -465,12 +465,12 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
         (∀ w ∈ 𝔻, analyticOrderAt h w = (nodeCount Λ w : ℕ∞)) ∧
         Thm4BoundsDisc ψ μ h M C := sorry
 
-theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem theorem4_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassPlane ψ μ Cd R₀ →
         ∃ h : ℂ → ℂ, Differentiable ℂ h ∧ (∃ z₀, h z₀ ≠ 0) ∧ Thm4BoundsPlane ψ μ h M C := sorry
 
-theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) (hR₀ : 0 < R₀) :
+theorem theorem4_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ (M : ℕ) (C : ℝ≥0), 1 ≤ M ∧ 1 ≤ C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       WeightClassDisc ψ μ Cd R₀ →
         ∃ h : ℂ → ℂ, DifferentiableOn ℂ h 𝔻 ∧ (∃ z₀ ∈ 𝔻, h z₀ ≠ 0) ∧

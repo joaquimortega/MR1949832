@@ -116,7 +116,7 @@ theorem continuous_lineCDF {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ
   exact key.sub (continuous_const.mul continuous_id)
 
 theorem lineCDF_add_ge {μ : Measure ℂ} (hμ : IsLineMeasure μ) {r α : ℝ} (hr : 0 < r)
-    (hmr : ∀ x : ℝ, 1 < μ (lineInterval x r)) (hα : 0 ≤ α) (hαr : α * r ≤ 1 / 8) (t : ℝ) :
+    (hmr : ∀ x : ℝ, 1 < μ (lineInterval x r)) (hαr : α * r ≤ 1 / 8) (t : ℝ) :
     lineCDF μ α t + 1 / 2 ≤ lineCDF μ α (t + 2 * r) := by
   have h := lineCDF_sub hμ α (show t ≤ t + 2 * r by linarith)
   have h1 : 1 < (linePull μ (Ioc t (t + 2 * r))).toReal := by
@@ -146,7 +146,7 @@ include h
 theorem cont : Continuous (lineCDF μ α) := continuous_lineCDF h.hμ α
 
 theorem add_ge (t : ℝ) : lineCDF μ α t + 1 / 2 ≤ lineCDF μ α (t + 2 * r) :=
-  lineCDF_add_ge h.hμ h.hr h.hmr h.hα h.hαr t
+  lineCDF_add_ge h.hμ h.hr h.hmr h.hαr t
 
 theorem add_nat_ge (t : ℝ) (n : ℕ) : lineCDF μ α t + n / 2 ≤ lineCDF μ α (t + 2 * r * n) := by
   induction n with
@@ -570,7 +570,7 @@ theorem IsLineMeasure.exists_lineConsts {μ : Measure ℂ} (hμ : IsLineMeasure 
   obtain ⟨r, hr, hmr⟩ := hμ.mass
   obtain ⟨C₂, hC₂, hL7⟩ := hμ.length_comparable (m₁ := 4 * Real.pi) (m₂ := 4 * Real.pi + 13)
     (by nlinarith [Real.pi_gt_three])
-  obtain ⟨C, hC1, hC⟩ := hμ.doubling_le (A := 26 * r) (by positivity)
+  obtain ⟨C, hC1, hC⟩ := hμ.doubling_le (26 * r)
   have hC0 : (0 : ℝ) < (C : ℝ) := by exact_mod_cast (zero_lt_one.trans_le hC1)
   have hC1' : (1 : ℝ) ≤ (C : ℝ) := by exact_mod_cast hC1
   refine ⟨r, C₂, 1 / (4 * (C : ℝ) ^ 2), min (1 / (8 * r)) (Real.pi / (52 * r * (C : ℝ) ^ 2)),

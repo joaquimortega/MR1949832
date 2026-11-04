@@ -33,7 +33,7 @@ structure IsMassPartition (μ : Measure ℂ) (Ω : Set ℂ) (d : ℂ → ℂ →
 
 /-! ### Helpers for the constructions (M05 §3.6, §3.8) -/
 
-theorem l4_midThird_subset {x₁ x₂ y₁ y₂ : ℝ} (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂) :
+theorem l4_midThird_subset {x₁ x₂ : ℝ} (hx : x₁ ≤ x₂) (y₁ y₂ : ℝ) :
     midThird x₁ x₂ y₁ y₂ ⊆ rect x₁ x₂ y₁ y₂ := by
   unfold midThird
   split_ifs
@@ -60,7 +60,7 @@ theorem l4_iter {f : ℝ → ℝ≥0∞} {C : ℝ≥0∞} {R₁ : ℝ}
       _ = C ^ (k + 1) * f r := by ring
 
 /-- From `c (r/ρ)^δ ≤ M` to `r ≤ (M/c)^{1/δ} ρ`. -/
-theorem l4_le_of_rpow {c δ M r ρ : ℝ} (hc : 0 < c) (hδ : 0 < δ) (hM : 0 ≤ M) (hρ : 0 < ρ)
+theorem l4_le_of_rpow {c δ M r ρ : ℝ} (hc : 0 < c) (hδ : 0 < δ) (hρ : 0 < ρ)
     (hr : 0 ≤ r) (h : c * (r / ρ) ^ δ ≤ M) : r ≤ (M / c) ^ (1 / δ) * ρ := by
   have h2 : (r / ρ) ^ δ ≤ M / c := by rw [le_div_iff₀ hc]; linarith
   have h3 : r / ρ ≤ (M / c) ^ (1 / δ) := by
@@ -75,7 +75,7 @@ theorem l4_sigma_partition {n : ℤ × ℤ → ℕ} (hn : ∀ jk, 1 ≤ n jk) (B
     (hfB : ∀ jk, ⋃ a, f ⟨jk, a⟩ = B jk) :
     ∃ e : ℕ ≃ (Σ jk : ℤ × ℤ, Fin (n jk)), Pairwise (Function.onFun Disjoint fun i ↦ f (e i)) ∧
       ⋃ i, f (e i) = ⋃ jk, B jk := by
-  haveI : Infinite (Σ jk : ℤ × ℤ, Fin (n jk)) :=
+  have : Infinite (Σ jk : ℤ × ℤ, Fin (n jk)) :=
     Infinite.of_injective (fun jk : ℤ × ℤ ↦ (⟨jk, ⟨0, hn jk⟩⟩ : Σ jk : ℤ × ℤ, Fin (n jk)))
       (fun a b h ↦ congrArg Sigma.fst h)
   obtain ⟨e⟩ := nonempty_equiv_of_countable (α := ℕ) (β := Σ jk : ℤ × ℤ, Fin (n jk))
@@ -181,7 +181,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     exfalso
     have h := hν.mass 0
     rw [ball_eq_empty.2 (not_lt.1 hR₀), measure_empty] at h
-    exact absurd h (not_lt.2 zero_le')
+    exact absurd h (not_lt.2 zero_le)
   -- constants, chosen before the measure
   set R' : ℝ := ((N : ℝ) + 1) * R₀ with hR'
   have hR'0 : 0 < R' := by positivity
@@ -233,7 +233,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     intro x
     have : {w : ℂ | w.re = x} = {z | ∃ t : ℝ, z = (x : ℂ) + t * I} := by
       ext w
-      simp only [mem_setOf_eq]
+      simp only [mem_ofPred_eq]
       constructor
       · intro h; exact ⟨w.im, Complex.ext (by simp [h]) (by simp)⟩
       · rintro ⟨t, rfl⟩; simp
@@ -243,7 +243,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     intro y
     have : {w : ℂ | w.im = y} = {z | ∃ t : ℝ, z = (y : ℂ) * I + t * 1} := by
       ext w
-      simp only [mem_setOf_eq]
+      simp only [mem_ofPred_eq]
       constructor
       · intro h; exact ⟨w.re, Complex.ext (by simp) (by simp [h])⟩
       · rintro ⟨t, rfl⟩; simp
@@ -292,7 +292,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
         _ ≤ (C₁ : ℝ≥0∞) ^ 5 * μ' (ball p r) := hpow p 5 r hr (by nlinarith)
         _ ≤ (C₁ : ℝ≥0∞) ^ 5 * μ' (midThird x₁ x₂ y₁ y₂) := by gcongr
     by_contra hle
-    push_neg at hle
+    push Not at hle
     have := hlt.trans_le (h32.trans (by
       calc (C₁ : ℝ≥0∞) ^ 5 * μ' (midThird x₁ x₂ y₁ y₂) ≤ (C₁ : ℝ≥0∞) ^ 5 * 1 := by gcongr
         _ ≤ (C₀ : ℝ≥0∞) := by rw [mul_one]; exact hC₁5))
@@ -308,7 +308,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     rw [show (2 : ℝ) ^ 3 * (r / 2) = 4 * r by ring] at this
     rw [hCE, ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_coe_nnreal]
     exact this
-  have hpart := exists_rect_partition hre' him' P hPher (fun _ _ _ _ _ ↦ hfinR _ _ _ _) C₀ hC₀'
+  have hpart := exists_rect_partition hre' him' P hPher C₀ hC₀'
     (fun x₁ x₂ y₁ y₂ ↦ max (x₂ - x₁) (y₂ - y₁)) C_E 1 one_pos hσ'
   -- the blocks
   set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2 with hnn
@@ -382,7 +382,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
         _ ≤ (C₁ : ℝ≥0∞) ^ 6 * μ' (ball p r) := hpow p 6 r hr (by nlinarith)
         _ ≤ (C₁ : ℝ≥0∞) ^ 6 * C₀ := by
             gcongr
-            exact (measure_mono (hin.trans (l4_midThird_subset hgx.le hgy.le))).trans hμb
+            exact (measure_mono (hin.trans (l4_midThird_subset hgx.le _ _))).trans hμb
         _ = ENNReal.ofReal M := by
             rw [hM, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
               ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_natCast]
@@ -391,7 +391,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
       rcases le_or_gt (massRadius μ' z) (36 * r) with hle | hlt
       · have h1 := ((hb μ' hclass' z (36 * r) hle (by linarith)).1).trans hball
         rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
-        exact (l4_le_of_rpow hc hδ hM0 hρ' (by positivity) h1).trans
+        exact (l4_le_of_rpow hc hδ hρ' (by positivity) h1).trans
           (mul_le_mul_of_nonneg_right (le_max_right _ _) hρ'.le)
       · exact hlt.le.trans (le_mul_of_one_le_left hρ'.le hA'1)
     have hCNz := (hCN ν hν.measClassM z).2
@@ -401,7 +401,8 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   · -- fatness
     obtain ⟨hμ1, hLe, -⟩ := hqprops (e i).1 (e i).2
     obtain ⟨p, r, hr, -, hin, hout⟩ := rect_inner_outer hL1 hLe
-    have hmid := l4_midThird_subset (x₁ := (q (e i).1 (e i).2).1) hLe.1.le hLe.2.1.le
+    have hmid := l4_midThird_subset (x₁ := (q (e i).1 (e i).2).1) hLe.1.le
+      (q (e i).1 (e i).2).2.2.1 (q (e i).1 (e i).2).2.2.2
     have hpP : p ∈ f (e i) := hmid (hin (mem_ball_self hr))
     have hρ : massRadius ν p ≤ 6 * L * r := by
       refine l4_massRadius_le (by positivity) ?_
@@ -423,12 +424,12 @@ theorem l4_rect_subset_coords {x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ
   have h0 := h (show (⟨x₁, y₁⟩ : ℂ) ∈ rect x₁ x₂ y₁ y₂ from ⟨⟨le_rfl, hx⟩, ⟨le_rfl, hy⟩⟩)
   refine ⟨h0.1.1, ?_, h0.2.1, ?_⟩
   · by_contra hc
-    push_neg at hc
+    push Not at hc
     have := h (show (⟨max x₁ x₂', y₁⟩ : ℂ) ∈ rect x₁ x₂ y₁ y₂ from
       ⟨⟨le_max_left _ _, max_lt hx hc⟩, ⟨le_rfl, hy⟩⟩)
     exact absurd this.1.2 (not_lt.2 (le_max_right _ _))
   · by_contra hc
-    push_neg at hc
+    push Not at hc
     have := h (show (⟨x₁, max y₁ y₂'⟩ : ℂ) ∈ rect x₁ x₂ y₁ y₂ from
       ⟨⟨le_rfl, hx⟩, ⟨le_max_left _ _, max_lt hy hc⟩⟩)
     exact absurd this.2.2 (not_lt.2 (le_max_right _ _))
@@ -455,7 +456,7 @@ theorem l4_massRadiusM_discPull_smul (ν : Measure ℂ) (c : ℝ≥0∞) (a : HD
   unfold massRadiusM massRadiusDisc
   congr 1
   ext r
-  simp only [mem_setOf_eq, Measure.smul_apply, smul_eq_mul, discPull_ball]
+  simp only [mem_ofPred_eq, Measure.smul_apply, smul_eq_mul, discPull_ball]
 
 /-- **Lemma 4 (disc)**, uniform form with the shape of the pieces. -/
 theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
@@ -471,11 +472,11 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     have h := hν.mass 0 h0D
     have he : hypBall 0 R₀ = ∅ := by
       ext w
-      simp only [hypBall, mem_setOf_eq, mem_empty_iff_false, iff_false, not_and, not_lt]
+      simp only [hypBall, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_and, not_lt]
       intro _
       exact (not_lt.1 hR₀).trans (hypDist_nonneg _ _)
     rw [he, measure_empty] at h
-    exact absurd h (not_lt.2 zero_le')
+    exact absurd h (not_lt.2 zero_le)
   -- constants, chosen before the measure
   set R' : ℝ := (2 * ⌈(N : ℝ) / 1⌉₊ + 1) * R₀ with hR'
   have hR'0 : 0 < R' := by positivity
@@ -618,7 +619,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
             hpow p hp k₃ β hβ (hpow_ok β hβ hβD k₃ (by omega))
         _ ≤ (C₁ : ℝ≥0∞) ^ k₃ * μ' (cayleyPre (midThird x₁ x₂ y₁ y₂)) := by gcongr
     by_contra hle
-    push_neg at hle
+    push Not at hle
     have := hlt.trans_le (h32.trans (by
       calc (C₁ : ℝ≥0∞) ^ k₃ * ν' (midThird x₁ x₂ y₁ y₂) ≤ (C₁ : ℝ≥0∞) ^ k₃ * 1 := by gcongr
         _ ≤ (C₀ : ℝ≥0∞) := by rw [mul_one]; exact hC₁k))
@@ -637,7 +638,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
       apply max_le <;> linarith
     calc κ * max (x₂ - x₁) (y₂ - y₁) ≤ κ * (3 * (Λ * y₁)) := by gcongr
       _ = y₁ / 16 := by rw [hκ]; field_simp; ring
-  have hpart := exists_rect_partition hre' him' P hPher (fun _ _ _ _ hP ↦ hfinR _ _ _ _ hP.1)
+  have hpart := exists_rect_partition hre' him' P hPher
     C₀ hC₀' (fun _ _ y₁ _ ↦ y₁ / 16) C_E κ hκ0 hσ'
   -- the blocks
   set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2 with hnn
@@ -704,7 +705,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     fun i ↦ ?_, fun i ↦ ?_⟩, fun i ↦ ?_⟩
   · -- measurability
     exact (measurable_cayley (measurableSet_rect _ _ _ _)).inter measurableSet_ball |>.congr
-      (by ext z; simp only [cayleyPre, mem_inter_iff, mem_preimage, mem_setOf_eq]; exact and_comm)
+      (by ext z; simp only [cayleyPre, mem_inter_iff, mem_preimage, mem_ofPred_eq]; exact and_comm)
   · -- disjointness
     show Disjoint (cayleyPre (f (e i))) (cayleyPre (f (e j)))
     exact Set.disjoint_left.2 fun z hz1 hz2 ↦ Set.disjoint_left.1 (hedisj hij) hz1.2 hz2.2
@@ -749,7 +750,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
         _ ≤ (C₁ : ℝ≥0∞) ^ (k₃ + 2) * C₀ := by
             gcongr
             exact (measure_mono (hin.trans (l4_cayleyPre_mono
-              (l4_midThird_subset hg.1.le hg.2.1.le)))).trans
+              (l4_midThird_subset hg.1.le _ _)))).trans
               ((hν'rect x₁' x₂' y₁' y₂').symm.trans_le hμb)
         _ = ENNReal.ofReal M := by
             rw [hM, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
@@ -767,7 +768,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
         rw [hbl, ← hmr] at hb'
         have h1 := hb'.trans hball
         rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
-        exact (l4_le_of_rpow hc hδ hM0 hρ' (by positivity) h1).trans
+        exact (l4_le_of_rpow hc hδ hρ' (by positivity) h1).trans
           (mul_le_mul_of_nonneg_right (le_max_right _ _) hρ'.le)
       · exact hlt.le.trans (le_mul_of_one_le_left hρ'.le hA'1)
     have hCNz := (hCN (discPull ν) hν.measClassM_discPull (HDisc.mk z hzD)).2
@@ -783,7 +784,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     obtain ⟨hμ1, hLe, -⟩ := hqprops (e i).1 (e i).2
     obtain ⟨hy0, hl, -⟩ := hP_piece i
     obtain ⟨p, hp, β, hβ, -, hin, hout⟩ := hioL _ _ _ _ hLe hy0 hl
-    have hmid := l4_cayleyPre_mono (l4_midThird_subset hLe.1.le hLe.2.1.le) (S :=
+    have hmid := l4_cayleyPre_mono (l4_midThird_subset hLe.1.le _ _) (S :=
       midThird (q (e i).1 (e i).2).1 (q (e i).1 (e i).2).2.1 (q (e i).1 (e i).2).2.2.1
         (q (e i).1 (e i).2).2.2.2)
     have hpP : p ∈ cayleyPre (f (e i)) :=

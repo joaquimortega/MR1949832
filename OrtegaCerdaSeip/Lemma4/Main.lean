@@ -182,7 +182,7 @@ theorem tendsto_lemma4Sol (hε : 0 < ε) (hL : IsCompact L) (hνL : ν Lᶜ = 0)
     (hσ : Measurable σ) (hσ1 : ∀ z, ‖σ z‖ ≤ 1) :
     Tendsto (fun z ↦ ‖lemma4Sol ε ν σ z‖ * Real.exp (-ε * |z.im|)) (cocompact ℂ) (𝓝 0) := by
   have t₁ := tendsto_kerSol hε (ν := ν.restrict {w | |w.im| < 10}) hL
-    (measure_mono_null_restrict hνL) hσ.aestronglyMeasurable hσ1
+    (measure_mono_null_restrict hνL) hσ1
   have t₂ := tendsto_upperSol (ν := ν.restrict {w | 10 ≤ w.im}) hε
     (hL.inter_right isClosed_ten_le_im) (restrict_upper_compl_eq_zero hνL) (fun w hw ↦ hw.2)
     hσ hσ1

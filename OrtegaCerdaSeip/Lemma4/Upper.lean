@@ -226,7 +226,7 @@ theorem norm_cutoff_mul_le (ε : ℝ) (f : ℂ → ℂ) (z : ℂ) :
 
 section Hyp
 
-variable {ε : ℝ} {ν : Measure ℂ} [IsFiniteMeasure ν] {σ : ℂ → ℂ} {L : Set ℂ}
+variable {ε : ℝ} {ν : Measure ℂ} {σ : ℂ → ℂ} {L : Set ℂ}
 
 theorem ae_ten_le_im_expImMeasure (hνL : ν Lᶜ = 0) (hL10 : ∀ w ∈ L, 10 ≤ w.im) :
     ∀ᵐ w ∂(expImMeasure ε ν), 10 ≤ w.im :=
@@ -235,9 +235,7 @@ theorem ae_ten_le_im_expImMeasure (hνL : ν Lᶜ = 0) (hL10 : ∀ w ∈ L, 10 �
     fun w hw ↦ hL10 w hw
 
 /-- `∫ β θ dρ = ∫ β e^{iεw} σ dν`: the Jones datum is `e^{iεz} dμ₂`. -/
-theorem integral_upperTheta (hε : 0 ≤ ε) (hL : IsCompact L) (hνL : ν Lᶜ = 0)
-    (hL10 : ∀ w ∈ L, 10 ≤ w.im) (hσ : Measurable σ) (hσ1 : ∀ z, ‖σ z‖ ≤ 1) {β : ℂ → ℂ}
-    (hβ : Continuous β) :
+theorem integral_upperTheta (hνL : ν Lᶜ = 0) (hL10 : ∀ w ∈ L, 10 ≤ w.im) (β : ℂ → ℂ) :
     ∫ w, β w * upperTheta ε σ w ∂(expImMeasure ε ν) =
       ∫ w, β w * Complex.exp (I * ε * w) * σ w ∂ν := by
   have hmeas : Measurable fun z : ℂ ↦ ENNReal.ofReal (Real.exp (-ε * |z.im|)) := by fun_prop
@@ -253,6 +251,8 @@ theorem integral_upperTheta (hε : 0 ≤ ε) (hL : IsCompact L) (hνL : ν Lᶜ 
     apply Complex.ext <;> simp
   rw [ENNReal.toReal_ofReal (Real.exp_pos _).le, him, upperTheta, Complex.real_smul, hexp]
   ring
+
+variable [IsFiniteMeasure ν]
 
 /-- **Uniform bound for `g = ∂̄u₂ - μ₂`**, from Jones' strip estimate. -/
 theorem norm_upperG_le (hε : 0 < ε) :
@@ -423,7 +423,7 @@ theorem upperSol_isWeakDbarSolMeasure (hε : 0 < ε) (hL : IsCompact L) (hνL : 
   have hJ := hv_eq _ hβ hβc hβs
   have hθ : ∫ w, (cutoff w : ℂ) * Complex.exp (-(I * ε * w)) * α w * upperTheta ε σ w
       ∂(expImMeasure ε ν) = ∫ w, α w * σ w ∂ν := by
-    rw [integral_upperTheta hε.le hL hνL hL10 hσ hσ1 hβ.continuous]
+    rw [integral_upperTheta hνL hL10]
     refine integral_congr_ae ?_
     filter_upwards [ae_mem_of_measure_compl hνL] with w hw
     have hΦ1 : (cutoff w : ℂ) = 1 := by
@@ -537,7 +537,7 @@ theorem norm_upperSol_real_le {ε : ℝ} (hε : 0 < ε) (K : ℝ≥0) :
   have hx : upperSol ε ν σ x = -kerSol ε (volume.restrict {z : ℂ | 1 ≤ z.im ∧ z.im ≤ 2})
       (upperG ε ν σ) x := by
     rw [upperSol, cutoff_eq_zero (by simp), ← kerSol_volume_eq_restrict ε
-      measurableSet_strip_one_two fun z hz ↦ upperG_eq_zero_of_notMem ε ν σ hz]
+      fun z hz ↦ upperG_eq_zero_of_notMem ε ν σ hz]
     simp
   have hCv : IsCarlesonLarge (volume.restrict {z : ℂ | 1 ≤ z.im ∧ z.im ≤ 2}) Kv :=
     (isCarlesonWith_volume_strip (a := 1) (b := 2) (by norm_num)).isCarlesonLarge

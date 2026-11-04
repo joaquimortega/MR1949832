@@ -61,11 +61,10 @@ theorem lintegral_sqrt_div_add_one_le {t : ℝ} (ht : 1 ≤ t) :
     _ = 3 := by norm_num
 
 /-- The super-level sets of the Poisson-type integrand are discs:
-for `0 < λ < 1/t`, `t/(|w - s|² + t²) > λ ↔ |w - s| < √(t/λ - t²)`. -/
-theorem setOf_lt_poisson_eq_ball {t : ℝ} (ht : 0 < t) (s : ℝ) {lam : ℝ} (hlam : 0 < lam)
-    (hlamt : lam < 1 / t) :
+for `0 < λ`, `t/(|w - s|² + t²) > λ ↔ |w - s| < √(t/λ - t²)` (for `λ ≥ 1/t` both sides are
+empty). -/
+theorem setOf_lt_poisson_eq_ball {t : ℝ} (ht : 0 < t) (s : ℝ) {lam : ℝ} (hlam : 0 < lam) :
     {w : ℂ | lam < t / (‖w - s‖ ^ 2 + t ^ 2)} = ball (s : ℂ) (Real.sqrt (t / lam - t ^ 2)) := by
-  have _ := hlamt  -- not needed: for `λ ≥ 1/t` both sides are empty
   ext w
   have hpos : 0 < ‖w - s‖ ^ 2 + t ^ 2 := by positivity
   simp only [mem_ofPred_eq, mem_ball, dist_eq_norm]
@@ -102,7 +101,7 @@ theorem IsCarlesonLarge.lintegral_poisson_le {ν : Measure ℂ} {K : ℝ≥0} (h
   have h1 : ∫⁻ lam in Ioo 0 (1 / t), ν {w | lam < f w} ≤
       ∫⁻ lam in Ioo 0 (1 / t), K * ENNReal.ofReal (Real.sqrt (t / lam) + 1) := by
     refine setLIntegral_mono' measurableSet_Ioo fun lam hlam ↦ ?_
-    rw [hf, setOf_lt_poisson_eq_ball ht0 s hlam.1 hlam.2]
+    rw [hf, setOf_lt_poisson_eq_ball ht0 s hlam.1]
     refine (h.measure_ball_le s _).trans (mul_le_mul_right (ENNReal.ofReal_le_ofReal ?_) _)
     refine max_le ?_ (by linarith [Real.sqrt_nonneg (t / lam)])
     have := Real.sqrt_le_sqrt (show t / lam - t ^ 2 ≤ t / lam by nlinarith)

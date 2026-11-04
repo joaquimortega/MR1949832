@@ -1,4 +1,6 @@
-import Mathlib
+module
+
+public import Mathlib
 
 /-!
 # Statement-level definitions
@@ -25,7 +27,7 @@ Conventions (see `blueprint/M00_Defs.md`):
 open MeasureTheory Metric Set Complex Filter Topology
 open scoped ENNReal NNReal ComplexConjugate
 
-noncomputable section
+@[expose] public noncomputable section
 
 namespace OCS
 

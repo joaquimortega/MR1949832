@@ -80,7 +80,7 @@ theorem schur_test_le_max {X : Type*} [MeasurableSpace X] {ν : Measure X} [SFin
 ### 2.2 The Forelli–Rudin estimate
 
 ```lean
-theorem norm_one_sub_conj_mul_le_five_mul {a w : ℂ} (ha : a ∈ 𝔻) (hw : w ∈ 𝔻)
+theorem norm_one_sub_conj_mul_le_five_mul {a w : ℂ} (ha : a ∈ 𝔻)
     (h : (1 - ‖a‖) / 2 ≤ ‖a - w‖) : ‖1 - conj a * w‖ ≤ 5 * ‖a - w‖
 
 theorem lintegral_FR_near {s : ℝ} (hs0 : 0 < s) {a : ℂ} (ha : a ∈ 𝔻) :

@@ -392,12 +392,11 @@ theorem tanh_div_one_sub_tanh_le {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) :
 `hypBall z r ⊆ ball z (18 r (1 - |z|))`. -/
 theorem hypBall_subset_ball {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) (hr1 : r ≤ 1) :
     hypBall z r ⊆ ball z (18 * r * (1 - ‖z‖)) := by
-  have hs0 : 0 < Real.tanh r := lt_of_lt_of_le (by linarith) (div_five_le_tanh hr0.le hr1)
   have hs1 := Real.tanh_lt_one r
   have hz1 := norm_lt_one_of_mem_disc hz
   have hz0 := norm_nonneg z
   rw [hypBall_eq_pseudoBall hz]
-  refine (pseudoBall_subset_ball hz hs0 hs1).trans (ball_subset_ball ?_)
+  refine (pseudoBall_subset_ball hz hs1).trans (ball_subset_ball ?_)
   have h := tanh_div_one_sub_tanh_le hr0.le hr1
   have e : Real.tanh r * (1 - ‖z‖ ^ 2) / (1 - Real.tanh r) =
       Real.tanh r / (1 - Real.tanh r) * ((1 + ‖z‖) * (1 - ‖z‖)) := by

@@ -1,4 +1,6 @@
-import Mathlib
+module
+
+public import Mathlib
 
 /-!
 # M04 (Jones) — the layer-cake lemma `∫ e^{-F} dm ≤ 1`
@@ -17,7 +19,7 @@ distribution function is `≤ s`), and `e^{-F} = ∫_F^∞ e^{-s} ds`, so by Ton
 open MeasureTheory Set Filter
 open scoped ENNReal NNReal
 
-noncomputable section
+@[expose] public noncomputable section
 
 namespace OCS
 

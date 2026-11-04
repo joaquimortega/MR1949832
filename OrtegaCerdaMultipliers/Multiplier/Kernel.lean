@@ -76,7 +76,7 @@ theorem abs_log_sub_log_add_taylor_le {w₁ w₂ : ℂ} (h1 : ‖w₁‖ ≤ 1 /
   have hq : Real.log ‖1 - w₁‖ - Real.log ‖1 - w₂‖ +
       (∑ k ∈ Finset.Ico 1 m, (w₁ ^ k - w₂ ^ k) / (k : ℂ)).re =
       -(log (1 - w₂) - log (1 - w₁) - ∑ i ∈ Finset.range m, f i).re := by
-    rw [hlog1, hlog2, hrange]; simp only [neg_re, sub_re]; ring
+    rw [hlog1, hlog2, hrange]; simp only [sub_re]; ring
   rw [hq, abs_neg]
   refine (abs_re_le_norm _).trans (hle.trans ?_)
   have h1r : (1 - r)⁻¹ ≤ 2 := by
@@ -379,7 +379,7 @@ theorem exists_poly_taylorPlane {m : ℕ} (hm : 1 ≤ m) (z c : ℂ) :
       refine (natDegree_C_mul_le _ _).trans ((natDegree_C_mul_X_sub_C_pow_le _ _ _).trans ?_)
       have := (Finset.mem_Ico.1 hk).2; omega
     omega
-  · simp only [taylorPlane, eval_sub, eval_C, eval_finset_sum, eval_mul, eval_pow, eval_X,
+  · simp only [taylorPlane, eval_sub, eval_C, eval_finsetSum, eval_mul, eval_pow, eval_X,
       sub_re, ofReal_re]
     congr 2
     refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -402,7 +402,7 @@ theorem exists_poly_taylorDisc {m : ℕ} (hm : 1 ≤ m) (z c : ℂ) :
           ((natDegree_C_mul_X_sub_C_pow_le _ _ _).trans ?_))) <;>
       · have := (Finset.mem_Ico.1 hk).2; omega
     omega
-  · simp only [taylorDisc, eval_sub, eval_C, eval_finset_sum, eval_mul, eval_pow, eval_X,
+  · simp only [taylorDisc, eval_sub, eval_C, eval_finsetSum, eval_mul, eval_pow, eval_X,
       sub_re, ofReal_re]
     congr 2
     refine Finset.sum_congr rfl fun k _ ↦ ?_
