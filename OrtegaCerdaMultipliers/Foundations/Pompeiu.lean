@@ -125,108 +125,148 @@ lemma integrableOn_Ioi_of_continuous_of_eq_zero {h : ℝ → ℂ} (hc : Continuo
   · linarith
   · exact h
 
+/-- Radial derivative of `α` in polar coordinates around `w`. -/
+private def radDeriv (α : ℂ → ℂ) (w : ℂ) (p : ℝ × ℝ) : ℂ :=
+  fderiv ℝ α (w + p.1 * unitVec p.2) (unitVec p.2)
+
+/-- Angular derivative of `α` (divided by `r`) in polar coordinates around `w`. -/
+private def angDeriv (α : ℂ → ℂ) (w : ℂ) (p : ℝ × ℝ) : ℂ :=
+  fderiv ℝ α (w + p.1 * unitVec p.2) (I * unitVec p.2)
+
+private lemma continuous_radDeriv {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (w : ℂ) :
+    Continuous (radDeriv α w) := by
+  have hDc : Continuous (fderiv ℝ α) := hα.continuous_fderiv one_ne_zero
+  have hcu := continuous_unitVec
+  unfold radDeriv
+  refine (hDc.comp ?_).clm_apply (hcu.comp continuous_snd)
+  exact continuous_const.add
+    ((Complex.continuous_ofReal.comp continuous_fst).mul (hcu.comp continuous_snd))
+
+private lemma continuous_angDeriv {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (w : ℂ) :
+    Continuous (angDeriv α w) := by
+  have hDc : Continuous (fderiv ℝ α) := hα.continuous_fderiv one_ne_zero
+  have hcu := continuous_unitVec
+  unfold angDeriv
+  refine (hDc.comp ?_).clm_apply (continuous_const.mul (hcu.comp continuous_snd))
+  exact continuous_const.add
+    ((Complex.continuous_ofReal.comp continuous_fst).mul (hcu.comp continuous_snd))
+
+private lemma radDeriv_eq_zero {α : ℂ → ℂ} {w : ℂ} {R : ℝ} (hR : tsupport α ⊆ closedBall w R)
+    (p : ℝ × ℝ) (hp : R < |p.1|) : radDeriv α w p = 0 := by
+  simp only [radDeriv]
+  rw [fderiv_eq_zero_of_closedBall_lt hR (by rwa [norm_add_ofReal_mul_unitVec_sub])]; rfl
+
+private lemma angDeriv_eq_zero {α : ℂ → ℂ} {w : ℂ} {R : ℝ} (hR : tsupport α ⊆ closedBall w R)
+    (p : ℝ × ℝ) (hp : R < |p.1|) : angDeriv α w p = 0 := by
+  simp only [angDeriv]
+  rw [fderiv_eq_zero_of_closedBall_lt hR (by rwa [norm_add_ofReal_mul_unitVec_sub])]; rfl
+
+/-- Translation and polar coordinates in `∫ ∂̄α(z)/(w − z)`. -/
+private lemma integral_dbar_div_eq_polar (α : ℂ → ℂ) (w : ℂ) :
+    ∫ z, dbar α z / (w - z) =
+      ∫ p in Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi,
+        -(1/2 : ℂ) * (radDeriv α w p + I * angDeriv α w p) := by
+  have e := integral_add_left_eq_self (μ := volume) (fun z => dbar α z / (w - z)) w
+  rw [← e, ← Complex.integral_comp_polarCoord_symm, polarCoord_target]
+  refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Ioo) (fun p hp => ?_)
+  have hp1 : (p.1 : ℂ) ≠ 0 := by
+    have : 0 < p.1 := hp.1
+    exact_mod_cast this.ne'
+  have hsym : Complex.polarCoord.symm p = p.1 * unitVec p.2 := by
+    simp [Complex.polarCoord_symm_apply, unitVec]
+  have key := two_dbar_mul_conj (fderiv ℝ α (w + p.1 * unitVec p.2)) p.2
+  have hconj : conj (unitVec p.2) = (unitVec p.2)⁻¹ :=
+    (inv_eq_of_mul_eq_one_right (unitVec_mul_conj p.2)).symm
+  have hu := unitVec_ne_zero p.2
+  simp only [hsym, radDeriv, angDeriv, ← key, dbar, Complex.real_smul, hconj]
+  field_simp
+  ring
+
+/-- The angular term integrates to zero. -/
+private lemma integral_angDeriv_eq_zero {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) {w : ℂ} {R : ℝ}
+    (hR : tsupport α ⊆ closedBall w R) :
+    ∫ p in Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi, angDeriv α w p = 0 := by
+  have hαd : Differentiable ℝ α := hα.differentiable one_ne_zero
+  have h2c := continuous_angDeriv hα w
+  have i2 := integrableOn_polarTarget_of_continuous h2c (angDeriv_eq_zero hR)
+  rw [Measure.volume_eq_prod, setIntegral_prod _ i2]
+  refine (setIntegral_congr_fun measurableSet_Ioi (g := fun _ => (0:ℂ)) (fun r hr => ?_)).trans
+    (by simp)
+  have hr : 0 < r := hr
+  have hderiv : ∀ θ : ℝ,
+      HasDerivAt (fun θ : ℝ => α (w + (r:ℂ) * unitVec θ)) (r • angDeriv α w (r, θ)) θ := by
+    intro θ
+    have hγ : HasDerivAt (fun θ : ℝ => w + (r:ℂ) * unitVec θ) ((r:ℂ) * (I * unitVec θ)) θ :=
+      ((hasDerivAt_unitVec θ).const_mul (r:ℂ)).const_add w
+    have := (hαd (w + (r:ℂ) * unitVec θ)).hasFDerivAt.comp_hasDerivAt θ hγ
+    rw [show ((r:ℂ) * (I * unitVec θ)) = r • (I * unitVec θ) from (Complex.real_smul ..).symm,
+      map_smul] at this
+    exact this
+  have hcont : Continuous (fun θ : ℝ => r • angDeriv α w (r, θ)) :=
+    (h2c.comp (Continuous.prodMk continuous_const continuous_id)).const_smul r
+  have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun θ _ => hderiv θ)
+    (hcont.intervalIntegrable (-Real.pi) Real.pi)
+  rw [unitVec_pi, sub_self, intervalIntegral.integral_smul,
+    intervalIntegral.integral_of_le (by linarith [Real.pi_pos]), integral_Ioc_eq_integral_Ioo]
+    at hftc
+  exact (smul_eq_zero.mp hftc).resolve_left hr.ne'
+
+/-- For fixed `θ`, the radial integral of the radial derivative is `-α(w)`. -/
+private lemma integral_radDeriv_Ioi {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) {w : ℂ} {R : ℝ}
+    (hR : tsupport α ⊆ closedBall w R) (θ : ℝ) :
+    ∫ r in Ioi (0:ℝ), radDeriv α w (r, θ) = -α w := by
+  have hαd : Differentiable ℝ α := hα.differentiable one_ne_zero
+  have h1c := continuous_radDeriv hα w
+  have hderiv : ∀ r : ℝ,
+      HasDerivAt (fun r : ℝ => α (w + (r:ℂ) * unitVec θ)) (radDeriv α w (r, θ)) r := by
+    intro r
+    have hγ : HasDerivAt (fun r : ℝ => w + (r:ℂ) * unitVec θ) (unitVec θ) r := by
+      have := (((hasDerivAt_id r).ofReal_comp).mul_const (unitVec θ)).const_add w
+      simpa using this
+    exact (hαd (w + (r:ℂ) * unitVec θ)).hasFDerivAt.comp_hasDerivAt r hγ
+  have hcf : Continuous (fun r : ℝ => α (w + (r:ℂ) * unitVec θ)) := by
+    exact hα.continuous.comp
+      (continuous_const.add (Complex.continuous_ofReal.mul continuous_const))
+  have hint : IntegrableOn (fun r => radDeriv α w (r, θ)) (Ioi 0) :=
+    integrableOn_Ioi_of_continuous_of_eq_zero
+      (h1c.comp (Continuous.prodMk continuous_id continuous_const))
+      (R := R) (fun r hr => radDeriv_eq_zero hR _ (lt_of_lt_of_le hr (le_abs_self r)))
+  have hlim : Filter.Tendsto (fun r : ℝ => α (w + (r:ℂ) * unitVec θ)) Filter.atTop (𝓝 0) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_gt_atTop (max R 0)] with r hr
+    symm
+    apply eq_zero_of_closedBall_lt hR
+    rw [norm_add_ofReal_mul_unitVec_sub]
+    exact lt_of_le_of_lt (le_max_left _ _) (lt_of_lt_of_le hr (le_abs_self r))
+  have := integral_Ioi_of_hasDerivAt_of_tendsto hcf.continuousWithinAt (fun r _ => hderiv r)
+    hint hlim
+  simpa using this
+
+/-- The radial term gives `-2π α(w)`. -/
+private lemma integral_radDeriv_eq {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) {w : ℂ} {R : ℝ}
+    (hR : tsupport α ⊆ closedBall w R) :
+    ∫ p in Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi, radDeriv α w p = -(2 * Real.pi) • α w := by
+  have i1 := integrableOn_polarTarget_of_continuous (continuous_radDeriv hα w)
+    (radDeriv_eq_zero hR)
+  rw [Measure.volume_eq_prod, setIntegral_prod _ i1]
+  rw [integral_integral_swap (by rw [Measure.prod_restrict]; exact i1)]
+  rw [setIntegral_congr_fun measurableSet_Ioo (fun θ _ => integral_radDeriv_Ioi hα hR θ),
+    setIntegral_const]
+  rw [Measure.real, Real.volume_Ioo, ENNReal.toReal_ofReal (by linarith [Real.pi_pos]),
+    smul_neg, neg_smul]
+  ring_nf
+
 /-- The polar form of `∫ ∂̄α(z)/(w − z)`. -/
 lemma integral_dbar_div_eq {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (hc : HasCompactSupport α)
     (w : ℂ) : ∫ z, dbar α z / (w - z) = Real.pi * α w := by
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall w
-  have hDc : Continuous (fderiv ℝ α) := hα.continuous_fderiv one_ne_zero
-  have hαd : Differentiable ℝ α := hα.differentiable one_ne_zero
-  set h1 : ℝ × ℝ → ℂ := fun p => fderiv ℝ α (w + p.1 * unitVec p.2) (unitVec p.2)
-  set h2 : ℝ × ℝ → ℂ := fun p => fderiv ℝ α (w + p.1 * unitVec p.2) (I * unitVec p.2)
-  have hcu := continuous_unitVec
-  have h1c : Continuous h1 := by
-    refine (hDc.comp ?_).clm_apply (hcu.comp continuous_snd)
-    exact continuous_const.add
-      ((Complex.continuous_ofReal.comp continuous_fst).mul (hcu.comp continuous_snd))
-  have h2c : Continuous h2 := by
-    refine (hDc.comp ?_).clm_apply (continuous_const.mul (hcu.comp continuous_snd))
-    exact continuous_const.add
-      ((Complex.continuous_ofReal.comp continuous_fst).mul (hcu.comp continuous_snd))
-  have h1z : ∀ p : ℝ × ℝ, R < |p.1| → h1 p = 0 := fun p hp => by
-    simp only [h1]
-    rw [fderiv_eq_zero_of_closedBall_lt hR (by rwa [norm_add_ofReal_mul_unitVec_sub])]; rfl
-  have h2z : ∀ p : ℝ × ℝ, R < |p.1| → h2 p = 0 := fun p hp => by
-    simp only [h2]
-    rw [fderiv_eq_zero_of_closedBall_lt hR (by rwa [norm_add_ofReal_mul_unitVec_sub])]; rfl
-  have hT : polarCoord.target = Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi := polarCoord_target
-  have i1 := integrableOn_polarTarget_of_continuous h1c h1z
-  have i2 := integrableOn_polarTarget_of_continuous h2c h2z
-  -- Step 1: translation and polar coordinates
-  have step1 : ∫ z, dbar α z / (w - z) =
-      ∫ p in Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi, -(1/2 : ℂ) * (h1 p + I * h2 p) := by
-    have e := integral_add_left_eq_self (μ := volume) (fun z => dbar α z / (w - z)) w
-    rw [← e, ← Complex.integral_comp_polarCoord_symm, hT]
-    refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Ioo) (fun p hp => ?_)
-    have hp1 : (p.1 : ℂ) ≠ 0 := by
-      have : 0 < p.1 := hp.1
-      exact_mod_cast this.ne'
-    have hsym : Complex.polarCoord.symm p = p.1 * unitVec p.2 := by
-      simp [Complex.polarCoord_symm_apply, unitVec]
-    have key := two_dbar_mul_conj (fderiv ℝ α (w + p.1 * unitVec p.2)) p.2
-    have hconj : conj (unitVec p.2) = (unitVec p.2)⁻¹ :=
-      (inv_eq_of_mul_eq_one_right (unitVec_mul_conj p.2)).symm
-    have hu := unitVec_ne_zero p.2
-    simp only [hsym, h1, h2, ← key, dbar, Complex.real_smul, hconj]
-    field_simp
-    ring
-  -- Step 2: the angular term integrates to zero
-  have step2 : ∫ p in Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi, h2 p = 0 := by
-    rw [Measure.volume_eq_prod, setIntegral_prod _ i2]
-    refine (setIntegral_congr_fun measurableSet_Ioi (g := fun _ => (0:ℂ)) (fun r hr => ?_)).trans
-      (by simp)
-    have hr : 0 < r := hr
-    have hderiv : ∀ θ : ℝ,
-        HasDerivAt (fun θ : ℝ => α (w + (r:ℂ) * unitVec θ)) (r • h2 (r, θ)) θ := by
-      intro θ
-      have hγ : HasDerivAt (fun θ : ℝ => w + (r:ℂ) * unitVec θ) ((r:ℂ) * (I * unitVec θ)) θ :=
-        ((hasDerivAt_unitVec θ).const_mul (r:ℂ)).const_add w
-      have := (hαd (w + (r:ℂ) * unitVec θ)).hasFDerivAt.comp_hasDerivAt θ hγ
-      rw [show ((r:ℂ) * (I * unitVec θ)) = r • (I * unitVec θ) from (Complex.real_smul ..).symm,
-        map_smul] at this
-      exact this
-    have hcont : Continuous (fun θ : ℝ => r • h2 (r, θ)) :=
-      (h2c.comp (Continuous.prodMk continuous_const continuous_id)).const_smul r
-    have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun θ _ => hderiv θ)
-      (hcont.intervalIntegrable (-Real.pi) Real.pi)
-    rw [unitVec_pi, sub_self, intervalIntegral.integral_smul,
-      intervalIntegral.integral_of_le (by linarith [Real.pi_pos]), integral_Ioc_eq_integral_Ioo]
-      at hftc
-    exact (smul_eq_zero.mp hftc).resolve_left hr.ne'
-  -- Step 3: the radial term gives `-2π α(w)`
-  have step3 : ∫ p in Ioi (0:ℝ) ×ˢ Ioo (-Real.pi) Real.pi, h1 p = -(2 * Real.pi) • α w := by
-    rw [Measure.volume_eq_prod, setIntegral_prod _ i1]
-    rw [integral_integral_swap (by rw [Measure.prod_restrict]; exact i1)]
-    have inner : ∀ θ : ℝ, ∫ r in Ioi (0:ℝ), h1 (r, θ) = -α w := by
-      intro θ
-      have hderiv : ∀ r : ℝ, HasDerivAt (fun r : ℝ => α (w + (r:ℂ) * unitVec θ)) (h1 (r, θ)) r := by
-        intro r
-        have hγ : HasDerivAt (fun r : ℝ => w + (r:ℂ) * unitVec θ) (unitVec θ) r := by
-          have := (((hasDerivAt_id r).ofReal_comp).mul_const (unitVec θ)).const_add w
-          simpa using this
-        exact (hαd (w + (r:ℂ) * unitVec θ)).hasFDerivAt.comp_hasDerivAt r hγ
-      have hcf : Continuous (fun r : ℝ => α (w + (r:ℂ) * unitVec θ)) := by
-        exact hα.continuous.comp
-          (continuous_const.add (Complex.continuous_ofReal.mul continuous_const))
-      have hint : IntegrableOn (fun r => h1 (r, θ)) (Ioi 0) :=
-        integrableOn_Ioi_of_continuous_of_eq_zero
-          (h1c.comp (Continuous.prodMk continuous_id continuous_const))
-          (R := R) (fun r hr => h1z _ (lt_of_lt_of_le hr (le_abs_self r)))
-      have hlim : Filter.Tendsto (fun r : ℝ => α (w + (r:ℂ) * unitVec θ)) Filter.atTop (𝓝 0) := by
-        refine tendsto_const_nhds.congr' ?_
-        filter_upwards [Filter.eventually_gt_atTop (max R 0)] with r hr
-        symm
-        apply eq_zero_of_closedBall_lt hR
-        rw [norm_add_ofReal_mul_unitVec_sub]
-        exact lt_of_le_of_lt (le_max_left _ _) (lt_of_lt_of_le hr (le_abs_self r))
-      have := integral_Ioi_of_hasDerivAt_of_tendsto hcf.continuousWithinAt (fun r _ => hderiv r)
-        hint hlim
-      simpa using this
-    rw [setIntegral_congr_fun measurableSet_Ioo (fun θ _ => inner θ), setIntegral_const]
-    rw [Measure.real, Real.volume_Ioo, ENNReal.toReal_ofReal (by linarith [Real.pi_pos]),
-      smul_neg, neg_smul]
-    ring_nf
-  rw [step1, integral_const_mul, integral_add i1 (i2.const_mul I), integral_const_mul, step2, step3]
-  rw [Complex.real_smul]
+  have i1 := integrableOn_polarTarget_of_continuous (continuous_radDeriv hα w)
+    (radDeriv_eq_zero hR)
+  have i2 := integrableOn_polarTarget_of_continuous (continuous_angDeriv hα w)
+    (angDeriv_eq_zero hR)
+  rw [integral_dbar_div_eq_polar, integral_const_mul, integral_add i1 (i2.const_mul I),
+    integral_const_mul, integral_angDeriv_eq_zero hα hR, integral_radDeriv_eq hα hR,
+    Complex.real_smul]
   push_cast
   ring
 
