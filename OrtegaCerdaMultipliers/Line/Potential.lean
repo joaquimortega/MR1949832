@@ -96,7 +96,7 @@ theorem IsLineMeasure.m13_integrableOn_log {μ : Measure ℂ} (hμ : IsLineMeasu
       (Ioo (x - 1) (x + 1)).indicator (fun t ↦ ENNReal.ofReal (Real.log (1 / |t - x|))) t +
         ENNReal.ofReal B := by
     filter_upwards [hμ.m13_ae_ne x] with t htx ht
-    rw [Real.enorm_eq_ofReal_abs]
+    rw [Real.eNorm_eq_ofReal_abs]
     set y := ‖z - t‖
     have hy0 : 0 ≤ y := norm_nonneg _
     have hxt : |t - x| ≤ y := m13_norm_sub_ofReal_ge z t

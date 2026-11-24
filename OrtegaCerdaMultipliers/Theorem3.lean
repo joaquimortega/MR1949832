@@ -475,7 +475,7 @@ theorem measurableEmbedding_ofReal_complex : MeasurableEmbedding ((↑) : ℝ �
   Complex.isometry_ofReal.isClosedEmbedding.measurableEmbedding
 
 theorem cexMeasure_apply (s : Set ℂ) : cexMeasure s = 2 * volume (((↑) : ℝ → ℂ) ⁻¹' s) := by
-  rw [cexMeasure, Measure.smul_apply, measurableEmbedding_ofReal_complex.map_apply, smul_eq_mul]
+  rw [cexMeasure, smul_apply, measurableEmbedding_ofReal_complex.map_apply, smul_eq_mul]
 
 theorem cexMeasure_lineInterval (x r : ℝ) :
     cexMeasure (lineInterval x r) = 2 * ENNReal.ofReal (2 * r) := by
@@ -685,7 +685,7 @@ theorem isWeakDbarSol_mul_sub_poles {ι : Type*} [Fintype ι] (w : ι → ℂ) (
   have hν : ∫ z, E z * α z * σ z ∂(∑ k, ENNReal.ofReal (m k) • Measure.dirac (w k)) =
       ∑ k, (m k : ℂ) * (E (w k) * α (w k) * σ (w k)) := by
     rw [integral_finsetSum_measure fun k _ ↦
-      (integrable_dirac enorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
+      (integrable_dirac eNorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal (hm k), Complex.real_smul]
   have hint1 : Integrable (fun z ↦ u z * (E z * dbar α z)) :=
@@ -824,7 +824,7 @@ theorem cexE_mul_cexSigma_mul_cexM (N k : ℕ) :
 
 theorem isFiniteMeasure_cexNu (N : ℕ) : IsFiniteMeasure (cexNu N) := by
   constructor
-  simp only [cexNu, Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply,
+  simp only [cexNu, FunLike.coe_sum, Finset.sum_apply, smul_apply,
     Measure.dirac_apply_of_mem (mem_univ _), smul_eq_mul, mul_one]
   exact ENNReal.sum_lt_top.2 fun k _ ↦ ENNReal.ofReal_lt_top
 
@@ -832,7 +832,7 @@ theorem isCompact_cexL (N : ℕ) : IsCompact (cexL N) := (Set.finite_range _).is
 
 theorem cexNu_compl_cexL (N : ℕ) : cexNu N (cexL N)ᶜ = 0 := by
   have hm : MeasurableSet (cexL N)ᶜ := (isCompact_cexL N).isClosed.measurableSet.compl
-  simp only [cexNu, Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply,
+  simp only [cexNu, FunLike.coe_sum, Finset.sum_apply, smul_apply,
     Measure.dirac_apply' _ hm, smul_eq_mul]
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   rw [indicator_of_notMem (by simp [cexL]), mul_zero]

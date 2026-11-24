@@ -25,7 +25,7 @@ namespace OC
 
 theorem MeasClassDisc.hypBall_lt_top {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
     (hν : MeasClassDisc ν Cd R₀) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : ν (hypBall z r) < ∞ :=
-  (measure_mono fun _ hw ↦ closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩).trans_lt
+  (measure_mono (fun _ (hw : _ ∈ hypBall z r) ↦ closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩)).trans_lt
     (hν.finite _ (closedBall_tanh_subset_disc _) (isCompact_closedBall _ _))
 
 theorem MeasClassDisc.measure_singleton {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
@@ -104,7 +104,7 @@ theorem integrableOn_kerPlane_cell {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ
   have hpt : ∀ ζ ∈ R i, ‖kerPlane z ζ‖ₑ ≤ ENNReal.ofReal K +
       B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / dist z ζ))) ζ := by
     intro ζ hζ
-    rw [Real.enorm_eq_ofReal_abs, kerPlane]
+    rw [Real.eNorm_eq_ofReal_abs, kerPlane]
     by_cases hζz : ζ = z
     · simp [hζz]
     have hd : 0 < dist z ζ := dist_pos.2 (Ne.symm hζz)
@@ -167,7 +167,7 @@ theorem integrableOn_kerDisc_cell {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
       B1.indicator (fun ζ ↦ ENNReal.ofReal (Real.log (1 / hypDist z ζ))) ζ := by
     intro ζ hζ
     have hζ𝔻 := hC.subset_univ i hζ
-    rw [Real.enorm_eq_ofReal_abs, kerDisc]
+    rw [Real.eNorm_eq_ofReal_abs, kerDisc]
     by_cases hζz : ζ = z
     · simp [hζz, pseudoHyp_self]
     set β := hypDist z ζ

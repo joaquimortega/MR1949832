@@ -174,7 +174,11 @@ theorem laplacian_testFunction {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ
     hχ.continuous_iteratedFDeriv (WithTop.coe_le_coe.mpr (le_top : ((2 : ℕ) : ℕ∞) ≤ ⊤))
   refine ⟨?_, ?_⟩
   · rw [hfun]
-    exact ((continuous_eval_const _).comp hcont).add ((continuous_eval_const _).comp hcont)
+    have h1 : Continuous fun z ↦ iteratedFDeriv ℝ 2 χ z ![1, 1] :=
+      (continuous_eval_const (![1, 1] : Fin 2 → ℂ)).comp hcont
+    have h2 : Continuous fun z ↦ iteratedFDeriv ℝ 2 χ z ![I, I] :=
+      (continuous_eval_const (![I, I] : Fin 2 → ℂ)).comp hcont
+    exact h1.add h2
   · refine closure_minimal (fun z hz ↦ ?_) (isClosed_tsupport χ)
     apply tsupport_iteratedFDeriv_subset (𝕜 := ℝ) 2
     apply subset_tsupport
@@ -483,7 +487,7 @@ theorem isSubharmonicWeight_regularized {Ω : Set ℂ} {φ : ℂ → ℝ} {μ : 
     exact h.lintegral_smoothedDensity_lt_top hK hKc
   refine ⟨hφ.continuousOn.add h.continuousOn_localPot, ?_, ?_, ?_⟩
   · intro K hK hKc
-    rw [Measure.add_apply]
+    rw [add_apply]
     exact ENNReal.add_lt_top.2 ⟨(Measure.le_iff'.1 hν₀ K).trans_lt
       (hφ.finite_of_compact K hK hKc), hgK K hK hKc⟩
   · have h1 : ν₀ Ωᶜ = 0 := withDensity_absolutelyContinuous μ _ hφ.carried
@@ -491,7 +495,7 @@ theorem isSubharmonicWeight_regularized {Ω : Set ℂ} {φ : ℂ → ℝ} {μ : 
       rw [withDensity_apply _ hΩ.isClosed_compl.measurableSet,
         setLIntegral_congr_fun hΩ.isClosed_compl.measurableSet
           (fun x hx ↦ h.smoothedDensity_eq_zero hx), lintegral_zero]
-    rw [Measure.add_apply, h1, h2, add_zero]
+    rw [add_apply, h1, h2, add_zero]
   · intro χ hχ hc hs
     obtain ⟨hΔc, hΔs⟩ := laplacian_testFunction hχ
     have hΔcs : HasCompactSupport (Laplacian.laplacian χ) :=
@@ -534,7 +538,7 @@ theorem doubling_disc_add {μ ν₀ μ' : Measure ℂ} {Cd A : ℝ≥0}
       μ' (hypBall z (2 * r)) ≤ A * μ' (hypBall z r)) :
     IsLocallyDoublingDiscWith (ν₀ + μ') (max (2 * Cd) A) := by
   intro z hz r hr h2r
-  rw [Measure.add_apply, Measure.add_apply]
+  rw [add_apply, add_apply]
   refine add_le_max_mul ?_ (hμ' z hz r hr h2r)
   calc ν₀ (hypBall z (2 * r)) ≤ μ (hypBall z (2 * r)) := Measure.le_iff'.1 hν₀ _
     _ ≤ Cd * μ (hypBall z r) := hdC z hz r hr h2r
@@ -549,7 +553,7 @@ theorem smul_hypArea_le_withDensity {g : ℂ → ℝ≥0∞} {ε : ℝ} (hε : 0
     ENNReal.ofReal ε • hypArea ≤ volume.withDensity g := by
   rw [Measure.le_iff]
   intro s hs
-  rw [Measure.smul_apply, smul_eq_mul, hypArea, withDensity_apply _ hs,
+  rw [smul_apply, smul_eq_mul, hypArea, withDensity_apply _ hs,
     Measure.restrict_restrict hs, withDensity_apply _ hs,
     ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   calc ∫⁻ z in s ∩ 𝔻, ENNReal.ofReal ε * ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2)
@@ -565,7 +569,7 @@ theorem withDensity_le_smul_hypArea {g : ℂ → ℝ≥0∞} {K : ℝ} (hK : 0 �
     volume.withDensity g ≤ ENNReal.ofReal K • hypArea := by
   rw [Measure.le_iff]
   intro s hs
-  rw [Measure.smul_apply, smul_eq_mul, hypArea, withDensity_apply _ hs, withDensity_apply _ hs,
+  rw [smul_apply, smul_eq_mul, hypArea, withDensity_apply _ hs, withDensity_apply _ hs,
     Measure.restrict_restrict hs, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   calc ∫⁻ z in s, g z
       ≤ ∫⁻ z in s, 𝔻.indicator
@@ -597,7 +601,7 @@ theorem doubling_of_hypArea_sandwich {μ' : Measure ℂ} {ε K : ℝ} (hε : 0 <
   calc μ' (hypBall z (2 * r)) ≤ (ENNReal.ofReal K • hypArea) (hypBall z (2 * r)) :=
         Measure.le_iff'.1 hup _
     _ = ENNReal.ofReal (K * (Real.pi * Real.sinh (2 * r) ^ 2)) := by
-        rw [Measure.smul_apply, smul_eq_mul, hypArea_hypBall hz (by linarith),
+        rw [smul_apply, smul_eq_mul, hypArea_hypBall hz (by linarith),
           ENNReal.ofReal_mul hK]
     _ ≤ ENNReal.ofReal (4 * Real.cosh (1 / 2) ^ 2 * K / ε * (ε * (Real.pi * Real.sinh r ^ 2))) := by
         apply ENNReal.ofReal_le_ofReal
@@ -609,7 +613,7 @@ theorem doubling_of_hypArea_sandwich {μ' : Measure ℂ} {ε K : ℝ} (hε : 0 <
         gcongr
     _ = ENNReal.ofReal (4 * Real.cosh (1 / 2) ^ 2 * K / ε) *
           (ENNReal.ofReal ε • hypArea) (hypBall z r) := by
-        rw [Measure.smul_apply, smul_eq_mul, hypArea_hypBall hz hr.le,
+        rw [smul_apply, smul_eq_mul, hypArea_hypBall hz hr.le,
           ← ENNReal.ofReal_mul hε.le, ← ENNReal.ofReal_mul (by positivity)]
     _ ≤ _ := by gcongr
 
@@ -1053,7 +1057,7 @@ theorem doubling_plane_add {ν₀ μ' : Measure ℂ} {Cd A : ℝ≥0}
       μ' (ball z (2 * r)) ≤ A * μ' (ball z r)) :
     IsLocallyDoublingWith (ν₀ + μ') (max (2 * Cd) A) := by
   intro z r hr h2r
-  rw [Measure.add_apply, Measure.add_apply]
+  rw [add_apply, add_apply]
   refine add_le_max_mul ?_ (hμ' z r hr h2r)
   calc ν₀ (ball z (2 * r)) ≤ μ (ball z (2 * r)) := Measure.le_iff'.1 hν₀ _
     _ ≤ Cd * μ (ball z r) := hdC z r hr h2r
@@ -1337,9 +1341,9 @@ theorem lemma6_disc_quant (Cd : ℝ≥0) (R : ℝ) (hR : 0 < R) :
     have h1 : 1 < 2 * (ν₀ + volume.withDensity g) (hypBall z R) := by
       calc (1 : ℝ≥0∞) < μ (hypBall z R) := hμ.mass z hz
         _ ≤ ((2 : ℝ≥0∞) • ν₀) (hypBall z R) := Measure.le_iff'.1 h2 _
-        _ = 2 * ν₀ (hypBall z R) := by rw [Measure.smul_apply, smul_eq_mul]
+        _ = 2 * ν₀ (hypBall z R) := by rw [smul_apply, smul_eq_mul]
         _ ≤ 2 * (ν₀ + volume.withDensity g) (hypBall z R) := by
-            rw [Measure.add_apply]
+            rw [add_apply]
             gcongr
             exact le_self_add
     rw [one_div, ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat,

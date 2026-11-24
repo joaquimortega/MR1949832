@@ -167,7 +167,7 @@ theorem l4_massRadiusDisc_le {ν : Measure ℂ} {z : ℂ} {r : ℝ} (hr : 0 < r)
 theorem l4_smul_apply {ν : Measure ℂ} {N : ℕ} (hN : 1 ≤ N) (s : Set ℂ) :
     ν s = N * ((N : ℝ≥0∞)⁻¹ • ν) s := by
   have hNne : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (show N ≠ 0 by omega)
-  rw [Measure.smul_apply, smul_eq_mul, ← mul_assoc,
+  rw [smul_apply, smul_eq_mul, ← mul_assoc,
     ENNReal.mul_inv_cancel hNne (ENNReal.natCast_ne_top N), one_mul]
 
 /-- **Lemma 4 (plane)**, uniform form with the shape of the pieces. -/
@@ -207,7 +207,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   have hNne : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (show N ≠ 0 by omega)
   have hNtop : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
   have hμ'apply : ∀ s, μ' s = (N : ℝ≥0∞)⁻¹ * ν s := fun s ↦ by
-    rw [hμ', Measure.smul_apply, smul_eq_mul]
+    rw [hμ', smul_apply, smul_eq_mul]
   have hfinν : ∀ s : Set ℂ, Bornology.IsBounded s → ν s < ∞ := fun s hs ↦ by
     obtain ⟨r, hr⟩ := hs.subset_closedBall 0
     exact (measure_mono hr).trans_lt (hν.finite _ (isCompact_closedBall 0 r))
@@ -456,7 +456,7 @@ theorem l4_massRadiusM_discPull_smul (ν : Measure ℂ) (c : ℝ≥0∞) (a : HD
   unfold massRadiusM massRadiusDisc
   congr 1
   ext r
-  simp only [mem_ofPred_eq, Measure.smul_apply, smul_eq_mul, discPull_ball]
+  simp only [mem_ofPred_eq, smul_apply, smul_eq_mul, discPull_ball]
 
 /-- **Lemma 4 (disc)**, uniform form with the shape of the pieces. -/
 theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
@@ -512,7 +512,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   have hNne : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (show N ≠ 0 by omega)
   have hNtop : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
   have hμ'apply : ∀ s, μ' s = (N : ℝ≥0∞)⁻¹ * ν s := fun s ↦ by
-    rw [hμ', Measure.smul_apply, smul_eq_mul]
+    rw [hμ', smul_apply, smul_eq_mul]
   have hdbl' : ∀ z ∈ 𝔻, ∀ r : ℝ, 0 < r → 2 * r < 1 →
       μ' (hypBall z (2 * r)) ≤ Cd * μ' (hypBall z r) := fun z hz r hr h2r ↦ by
     rw [hμ'apply, hμ'apply, mul_left_comm]
