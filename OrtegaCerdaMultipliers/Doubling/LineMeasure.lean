@@ -98,7 +98,7 @@ theorem IsLineMeasure.measure_massRadiusLine {μ : Measure ℂ} (hμ : IsLineMea
 theorem IsLineMeasure.massRadiusLine_comparable {μ : Measure ℂ} (hμ : IsLineMeasure μ) (K : ℝ) :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ x t : ℝ, |x - t| ≤ K * max (massRadiusLine μ x) (massRadiusLine μ t) →
       massRadiusLine μ t ≤ C * massRadiusLine μ x := by
-  obtain ⟨C, hC, h⟩ := claim1_line hμ.doubling hμ.hfin_m03b hμ.hm_m03b K
+  obtain ⟨C, -, h⟩ := claim1_line hμ.doubling hμ.hfin_m03b hμ.hm_m03b K
   refine ⟨max C 1, le_max_right _ _, fun x t hxt ↦ ?_⟩
   have := h t x (by rwa [abs_sub_comm, max_comm])
   exact this.trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
@@ -129,11 +129,11 @@ theorem IsLineMeasure.length_comparable {μ : Measure ℂ} (hμ : IsLineMeasure 
       ENNReal.ofReal m₁ ≤ μ ((fun t : ℝ ↦ (t : ℂ)) '' Ioc a b) →
       μ ((fun t : ℝ ↦ (t : ℂ)) '' Ioc a b) ≤ ENNReal.ofReal m₂ →
       ∀ t ∈ Icc a b, massRadiusLine μ t ≤ b - a ∧ b - a ≤ C * massRadiusLine μ t := by
-  obtain ⟨r₂, hr₂, hgrow⟩ := exists_radius_lt_measure_lineInterval hμ.hm_m03b m₂.toNNReal
+  obtain ⟨r₂, -, hgrow⟩ := exists_radius_lt_measure_lineInterval hμ.hm_m03b m₂.toNNReal
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_lineInterval hμ.doubling r₂
   refine ⟨max 4 (2 * (m₂ / c) ^ (1 / δ)), le_trans (by norm_num) (le_max_left _ _),
     fun a b hab h1 h2 t ht ↦ ?_⟩
-  set L := b - a with hLdef
+  set L := b - a
   have hL : 0 < L := sub_pos.2 hab
   set J := (fun t : ℝ ↦ (t : ℂ)) '' Ioc a b with hJ
   -- the open interval has the same mass (no atoms)

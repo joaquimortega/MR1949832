@@ -662,7 +662,7 @@ theorem encard_le_of_disjoint_convex (a b L : ℝ) (ha : 0 < a) (hb : 0 < b) :
       (∀ i, ball (c i) (r i) ⊆ E i) → (∀ i, E i ⊆ ball (c i) (L * r i)) →
         {i | (E i ∩ ball z b).Nonempty}.encard ≤ M := by
   have hL1 : 0 < max L 0 + 1 := by linarith [le_max_right L 0]
-  set a' := min a (b / (max L 0 + 1)) with ha'
+  set a' := min a (b / (max L 0 + 1))
   have ha'0 : 0 < a' := lt_min ha (div_pos hb hL1)
   obtain ⟨M, hM⟩ := BallGeometry.encard_le_of_disjoint (X := ℂ) a' b (4 * b) ha'0
   refine ⟨M, fun {ι} E c r z hdisj hconv har hin hout ↦ ?_⟩
@@ -849,7 +849,7 @@ theorem M03b.logSmall_aux [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM
     (hA : 0 ≤ A) (hη : 0 < η) :
     ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ z ∈ K,
       ∫⁻ ζ in ball z δ, ENNReal.ofReal (A + Real.log (1 / dist z ζ)) ∂μ ≤ ENNReal.ofReal η := by
-  rcases K.eq_empty_or_nonempty with hKe | ⟨x₀, hx₀⟩
+  rcases K.eq_empty_or_nonempty with hKe | ⟨x₀, -⟩
   · exact ⟨1, one_pos, le_rfl, fun z hz ↦ by simp [hKe] at hz⟩
   obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_closedBall x₀).1 hK.isBounded
   set M := (μ (ball x₀ (R + 2))).toReal with hM
@@ -932,7 +932,6 @@ theorem M03b.logSmall_aux [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM
         rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hP0]; ring_nf
     _ ≤ ENNReal.ofReal η := by
         apply ENNReal.ofReal_le_ofReal
-        have h1 : P * δ ^ a < η' := hδ1
         calc P * δ ^ a / c * M ≤ η' / c * M := by gcongr
           _ = η * (M / (M + 1)) := by rw [hη']; field_simp
           _ ≤ η * 1 := by gcongr; rw [div_le_one (by linarith)]; linarith
@@ -1007,7 +1006,6 @@ theorem logSmall_disc {μ : Measure ℂ} (hd : IsLocallyDoublingDisc μ)
       nlinarith
     have hden : (1 - t) / 2 ≤ ‖1 - conj z * ζ‖ := by
       have := one_sub_mul_le_norm_one_sub_conj_mul z ζ
-      have hz1 : ‖z‖ ≤ 1 := hzt.trans ht1.le
       nlinarith [norm_nonneg ζ, norm_nonneg z]
     have hlow : hypDist z ζ / (10 / (1 - t)) ≤ ‖z - ζ‖ := by
       rw [hnorm]

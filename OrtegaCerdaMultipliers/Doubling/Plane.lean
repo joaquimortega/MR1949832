@@ -49,7 +49,8 @@ instance ballGeometry_normed (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ
     exact le_max_left _ _
   covering R ε hε := by
     classical
-    obtain ⟨t, -, htfin, hcov⟩ := finite_cover_balls_of_compact (isCompact_closedBall (0 : E) |R|) hε
+    obtain ⟨t, -, htfin, hcov⟩ :=
+      finite_cover_balls_of_compact (isCompact_closedBall (0 : E) |R|) hε
     refine ⟨htfin.toFinset.card, fun x ↦ ⟨htfin.toFinset.image (x + ·), Finset.card_image_le, ?_⟩⟩
     intro z hz
     have hz' : z - x ∈ closedBall (0 : E) |R| := by

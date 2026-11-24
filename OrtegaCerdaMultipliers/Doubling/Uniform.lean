@@ -96,13 +96,12 @@ theorem M03b.exists_doublingUpTo [BallGeometry X] (Cd : ℝ≥0) (R : ℝ) :
       (∀ x : X, ∀ r : ℝ, 0 < r → 2 * r < 1 → μ (ball x (2 * r)) ≤ Cd * μ (ball x r)) →
       M03b.DoublingUpTo μ C R := by
   obtain ⟨K, hK⟩ := BallGeometry.covering (X := X) (2 * R) (1 / 4) (by norm_num)
-  set C₀ : ℝ≥0 := max Cd 1 with hC₀
+  set C₀ : ℝ≥0 := max Cd 1
   have hC₀1 : 1 ≤ C₀ := le_max_right _ _
-  set n₀ : ℕ := ⌈8 * R + 1⌉₊ with hn₀
+  set n₀ : ℕ := ⌈8 * R + 1⌉₊
   refine ⟨max C₀ (K * C₀ ^ n₀), le_trans hC₀1 (le_max_left _ _), fun μ hμ x r hr hrR ↦ ?_⟩
   by_cases h2r : 2 * r < 1
   · exact (hμ x r hr h2r).trans (by gcongr; exact (le_max_left _ _).trans (le_max_left _ _))
-  have hr2 : 1 / 2 ≤ r := by linarith [not_lt.1 h2r]
   have hloc : M03b.DoublingUpTo μ C₀ (1 / 4) := M03b.doublingUpTo_of_local hμ (by norm_num)
   obtain ⟨s, hs, hcov⟩ := hK x
   have hsub : ball x (2 * r) ⊆ ⋃ y ∈ s, (ball y (1 / 4) ∩ ball x (2 * r)) := by
@@ -293,14 +292,12 @@ theorem M03b.DoublingUpTo.rpow_le_measure_ball [BallGeometry X] {μ : Measure X}
         _ = q := Real.rpow_logb (by norm_num) (by norm_num) hq0
     rw [hq, le_div_iff₀ hr'] at h1
     linarith
-  have hR0 : 0 ≤ R := by linarith
   have h1 := h.reverse_pow hC x' hr' k (by linarith)
   have h2 : μ (ball x' (2 ^ k * r')) ≤ C * μ (ball x r) := by
     calc μ (ball x' (2 ^ k * r')) ≤ μ (ball x (2 * r)) := measure_mono fun w hw ↦ by
           rw [mem_ball] at hw ⊢
           linarith [dist_triangle w x' x, dist_comm x x']
       _ ≤ C * μ (ball x r) := h x r (by linarith) (by linarith)
-  have hC0 : (0 : ℝ) < C := by exact_mod_cast (zero_lt_one.trans_le hC)
   have hη0 : (0 : ℝ) ≤ η := η.2
   -- `c q^δ ≤ (1+η)^k / C`
   have hreal : 1 / ((C : ℝ) * (1 + η)) * q ^ Real.logb 2 (1 + η) ≤ (1 + (η : ℝ)) ^ k / C := by
