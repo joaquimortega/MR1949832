@@ -282,7 +282,7 @@ structure LogModulusLocal (Ω : Set ℂ) (n : ℂ → ℕ) (v : ℂ → ℝ) : P
 `u_z - log |∏_{ζ ∈ F \ {z}} …|`), and `v = W + log |∏_{ζ ∈ F} …|` off `supp n`. -/
 theorem LogModulusLocal.ballwise {Ω : Set ℂ} {n : ℂ → ℕ} {v : ℂ → ℝ}
     (hd : LogModulusLocal Ω n v) (c : ℂ) : LogModulusBallwise Ω c n v := by
-  intro r hr hrΩ
+  intro r _ hrΩ
   have hfin := hd.finite_support _ hrΩ (isCompact_closedBall c r)
   set F := hfin.toFinset with hFdef
   have hF : ∀ z ∈ ball c r, n z ≠ 0 → z ∈ F := fun z hz hnz ↦ by
@@ -318,7 +318,8 @@ theorem LogModulusLocal.ballwise {Ω : Set ℂ} {n : ℂ → ℕ} {v : ℂ → �
       have hvw := hvu w (hΩ' w hw1) w (mem_ball_self (hε w (hΩ' w hw1))) hnw
       have hvz := hvu z hzΩ w hw2 hnw
       have hP : zeroProd n (F.erase w) w = zeroProd n F w := by
-        rw [zeroProd_eq_mul_erase (F := F) (a := w) (fun h ↦ absurd hnw h) w, hnw, pow_zero, one_mul]
+        rw [zeroProd_eq_mul_erase (F := F) (a := w) (fun h ↦ absurd hnw h) w, hnw, pow_zero,
+          one_mul]
       simp only [hP]
       rw [hlog z w (hF z hz) hwz hnw]
       push_cast [hnw] at hvw
@@ -383,7 +384,7 @@ See `blueprint/M07_LogModulus.md`, §3. -/
 theorem IsWeakLogModulus.ballwise (hweyl : WeylLaplacianStmt) (hker : LogKernelStmt)
     {Ω : Set ℂ} {n : ℂ → ℕ} {v : ℂ → ℝ} (hd : IsWeakLogModulus Ω n v) (c : ℂ) :
     LogModulusBallwise Ω c n v := by
-  intro r hr hrΩ
+  intro r _ hrΩ
   have hfin := hd.finite_support _ hrΩ (isCompact_closedBall c r)
   set F := hfin.toFinset with hFdef
   have hFmem : ∀ ζ, ζ ∈ F ↔ ζ ∈ closedBall c r ∧ n ζ ≠ 0 := fun ζ ↦ by

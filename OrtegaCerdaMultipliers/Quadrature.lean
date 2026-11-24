@@ -185,7 +185,7 @@ lemma norm_le_of_root (m : ℕ) (B : ℝ) (hB : 0 ≤ B) (c : Fin m → ℂ)
     (hz : z ^ m + ∑ i : Fin m, c i * z ^ (i : ℕ) = 0) : ‖z‖ ≤ 2 * B := by
   by_contra h
   replace h := lt_of_not_ge h
-  set t := ‖z‖ with ht_def
+  set t := ‖z‖
   have ht : 0 < t := by linarith
   have h1 : t ^ m ≤ ∑ i : Fin m, B ^ (m - (i : ℕ)) * t ^ (i : ℕ) := by
     have hzm : z ^ m = -∑ i : Fin m, c i * z ^ (i : ℕ) := eq_neg_of_add_eq_zero_left hz
@@ -323,7 +323,6 @@ theorem lemma5 (m k : ℕ) (hm : 0 < m) (hk : m ≤ k) (μ : Measure ℂ) (c : �
   have hreal : μ.real Set.univ = (m : ℝ) * k := by
     simp [Measure.real, hmass]
   have hk0 : k ≠ 0 := by omega
-  have hNpos : (0 : ℝ) < (m : ℝ) * k := by positivity
   -- normalised moments
   set q : ℕ → ℂ := fun t => (m : ℂ) * ((1 / ((m : ℂ) * k)) * ∫ z, (z - c) ^ t ∂μ) with hqdef
   have hq : ∀ t, ‖q t‖ ≤ m * r ^ t := by

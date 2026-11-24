@@ -143,7 +143,6 @@ theorem one_sub_normSq_le_of_mem_hypBall {z w : ℂ} (hz : z ∈ 𝔻) {r : ℝ}
   have hρ : pseudoHyp z w < 4 / 5 := by
     have h1 := (hypDist_lt_iff hz hwD r).1 hd
     have hE := exp_two_mul_lt_nine hr1
-    have hEpos := Real.exp_pos (2 * r)
     have : Real.tanh r < 4 / 5 := by
       rw [tanh_eq_exp_two_mul, div_lt_iff₀ (by positivity)]
       linarith
@@ -155,7 +154,6 @@ theorem one_sub_normSq_le_of_mem_hypBall {z w : ℂ} (hz : z ∈ 𝔻) {r : ℝ}
   have hz1 : ‖z‖ < 1 := by simpa using hz
   have hw1 : ‖w‖ < 1 := by simpa using hwD
   have hz0 := norm_nonneg z
-  have hw0 := norm_nonneg w
   -- `‖1 - z̄ w‖ ≥ 1 - ‖z‖`
   have hlow : 1 - ‖z‖ ≤ ‖1 - conj z * w‖ := by
     have h := norm_sub_norm_le (1 : ℂ) (conj z * w)
@@ -168,8 +166,6 @@ theorem one_sub_normSq_le_of_mem_hypBall {z w : ℂ} (hz : z ∈ 𝔻) {r : ℝ}
     have h1 : 9 / 25 ≤ 1 - pseudoHyp z w ^ 2 := by nlinarith
     have h2 : (1 - ‖z‖) ^ 2 ≤ ‖1 - conj z * w‖ ^ 2 := pow_le_pow_left₀ (by linarith) hlow 2
     nlinarith [sq_nonneg (1 - ‖z‖)]
-  have hpos : 0 < 1 - ‖z‖ := by linarith
-  have hzz : 1 - ‖z‖ ^ 2 ≤ 2 * (1 - ‖z‖) := by nlinarith
   have hzpos : 0 < 1 - ‖z‖ ^ 2 := by nlinarith
   -- `(9/100)(1-|z|²)² ≤ (1-|z|²)(1-|w|²)`
   have h100 : 9 / 100 * (1 - ‖z‖ ^ 2) ^ 2 ≤ (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) := by
@@ -252,7 +248,7 @@ theorem IsLocallyDoublingDisc.of_le_of_le {μ ν : Measure ℂ} (hμ : IsLocally
     {a b : ℝ≥0∞} (ha : a ≠ 0) (hb : b ≠ ∞) (h₁ : a • μ ≤ ν) (h₂ : ν ≤ b • μ) :
     IsLocallyDoublingDisc ν := by
   obtain ⟨Cd, hCd⟩ := hμ
-  set a' : ℝ≥0 := (min a 1).toNNReal with ha'
+  set a' : ℝ≥0 := (min a 1).toNNReal
   have ha'c : (a' : ℝ≥0∞) = min a 1 := ENNReal.coe_toNNReal (min_lt_of_right_lt
     ENNReal.one_lt_top).ne
   have ha'0 : a' ≠ 0 := by
@@ -357,7 +353,7 @@ theorem exists_aux_weight_disc_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
         ∃ (ψ : ℂ → ℝ) (μψ : Measure ℂ), IsSubharmonicWeight 𝔻 ψ μψ ∧ MeasClassDisc μψ Cd' R' ∧
           ∀ z ∈ 𝔻, |ψ z - (φ z + c * Real.log (1 - ‖z‖ ^ 2))| ≤ B := by
   obtain ⟨ε, B, Cd₁, R₁, hε, hB, hR₁, hL⟩ := lemma6_disc_quant Cd r hr
-  set c := min (ε / 8) (1 / 2) with hc
+  set c := min (ε / 8) (1 / 2)
   have hc0 : 0 < c := lt_min (by positivity) (by norm_num)
   have hc1 : c < 1 := (min_le_right _ _).trans_lt (by norm_num)
   have hcε : 8 * c ≤ ε := by have := min_le_left (ε / 8) (1 / 2); linarith
@@ -405,6 +401,27 @@ theorem exists_aux_weight_disc_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
       φ' z - φ z by ring, abs_sub_comm]
     exact hφφ' z hz
 
+/-- Final real-variable estimate in the bound of `exists_disc_solution_kernel_quant`: from the
+two-sided control of `‖h i ζ‖` by `exp ψ` and the bound of `exp (ψ z - ψ ζ)`, we get the claimed
+estimate for `‖h i z‖ / ‖h i ζ‖ * ((1 - ‖ζ‖²) / ‖1 - conj ζ z‖)`. -/
+private theorem disc_kernel_bound_aux {C : ℝ≥0} (hC : 1 ≤ C) {B c φz φζ ψz ψζ u v a b d : ℝ}
+    (hb : 0 ≤ b) (hd : 0 ≤ d) (hlow : (C : ℝ)⁻¹ * Real.exp ψζ ≤ v)
+    (hupz : u ≤ C * Real.exp ψz)
+    (hψ' : Real.exp (ψz - ψζ) ≤ Real.exp (2 * B) * Real.exp (φz - φζ) * (a / b) ^ c) :
+    u / v * (b / d) ≤ (C : ℝ) ^ 2 * Real.exp (2 * B) * Real.exp (φz - φζ) * (a / b) ^ c *
+      (b / d) := by
+  have hpos : 0 < (C : ℝ)⁻¹ * Real.exp ψζ :=
+    mul_pos (inv_pos.2 (lt_of_lt_of_le one_pos (by exact_mod_cast hC))) (Real.exp_pos _)
+  have hratio : u / v ≤ (C : ℝ) ^ 2 * Real.exp (ψz - ψζ) := by
+    calc u / v ≤ (C * Real.exp ψz) / ((C : ℝ)⁻¹ * Real.exp ψζ) :=
+          div_le_div₀ (by positivity) hupz hpos hlow
+      _ = (C : ℝ) ^ 2 * Real.exp (ψz - ψζ) := by
+          rw [Real.exp_sub]; field_simp
+  calc u / v * (b / d) ≤ (C : ℝ) ^ 2 * Real.exp (ψz - ψζ) * (b / d) := by gcongr
+    _ ≤ (C : ℝ) ^ 2 * (Real.exp (2 * B) * Real.exp (φz - φζ) * (a / b) ^ c) * (b / d) := by
+          gcongr
+    _ = _ := by ring
+
 /-- The kernel of Theorem 2, uniformly in the class `(Cd, r)`: from
 `exists_aux_weight_disc_quant`, `prop2_disc_quant` (M09) applied to the auxiliary weight, and
 `exists_measurable_partition`. -/
@@ -416,9 +433,8 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
         ∀ z ∈ 𝔻, ∀ ζ ∈ 𝔻, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) *
           ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
   classical
-  obtain ⟨c, B, Cd', R', hc0, hc1, hB, hR', haux⟩ := exists_aux_weight_disc_quant Cd r hr
+  obtain ⟨c, B, Cd', R', hc0, hc1, -, -, haux⟩ := exists_aux_weight_disc_quant Cd r hr
   obtain ⟨n, M, C, εP, -, hC, -, hP⟩ := prop2_disc_quant Cd' R'
-  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   refine ⟨c, (C : ℝ) ^ 2 * Real.exp (2 * B), hc0, hc1, by positivity, fun φ μ hφ hμ ↦ ?_⟩
   obtain ⟨ψ, μψ, hψ, hμψ, hψφ⟩ := haux φ μ hφ hμ
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hP ψ μψ ⟨hψ, hμψ⟩
@@ -491,12 +507,6 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
     have hζ0 := one_sub_normSq_pos hζ
     rw [hfor, hh'eq i z hz, hh'eq i ζ hζ, norm_mul, norm_div, norm_div, Complex.norm_real,
       Real.norm_of_nonneg hζ0.le]
-    have hratio : ‖h i z‖ / ‖h i ζ‖ ≤ (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) := by
-      have hpos : 0 < (C : ℝ)⁻¹ * Real.exp (ψ ζ) := by positivity
-      calc ‖h i z‖ / ‖h i ζ‖ ≤ (C * Real.exp (ψ z)) / ((C : ℝ)⁻¹ * Real.exp (ψ ζ)) := by
-            gcongr
-        _ = (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) := by
-            rw [Real.exp_sub]; field_simp
     have hψ' : Real.exp (ψ z - ψ ζ) ≤ Real.exp (2 * B) * Real.exp (φ z - φ ζ) *
         ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c := by
       have e1 : ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c =
@@ -507,17 +517,9 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
       have h1 := abs_le.1 (hψφ z hz)
       have h2 := abs_le.1 (hψφ ζ hζ)
       linarith
-    have hK : 0 ≤ (1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖ := by positivity
-    calc ‖h i z‖ / ‖h i ζ‖ * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖)
-        ≤ (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
-          gcongr
-      _ ≤ (C : ℝ) ^ 2 * (Real.exp (2 * B) * Real.exp (φ z - φ ζ) *
-            ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c) * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
-          gcongr
-      _ = (C : ℝ) ^ 2 * Real.exp (2 * B) * Real.exp (φ z - φ ζ) *
-            ((1 - ‖z‖ ^ 2) / (1 - ‖ζ‖ ^ 2)) ^ c * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
-          ring
+    exact disc_kernel_bound_aux hC hζ0.le (norm_nonneg _) hlow hupz hψ'
 
+/-! ## Per-weight forms -/
 /-! ## Per-weight forms -/
 
 theorem exists_aux_weight_disc (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmonicWeight 𝔻 φ μ)
@@ -808,7 +810,6 @@ theorem dbar_sup_estimate_C2_uniform {δ M : ℝ} (hδ : 0 < δ) :
     ((2 * ⌈1 / (2 * δ * Real.pi)⌉₊ + 1) * 1) (by positivity)
   refine ⟨2 * C₂, by positivity, fun ψ₀ hψ hlow hup g hg hgc hgs ↦ ?_⟩
   have hpos : ∀ z ∈ 𝔻, 0 ≤ lap ψ₀ z := fun z hz ↦ by
-    have ht : 0 < (1 - ‖z‖ ^ 2) ^ 2 := pow_pos (one_sub_normSq_pos hz) 2
     have h := hlow z hz
     unfold invLap at h
     by_contra hneg
@@ -836,7 +837,8 @@ theorem dbar_sup_estimate_C2_uniform {δ M : ℝ} (hδ : 0 < δ) :
   refine ⟨W, hW, fun B hB ↦ ?_⟩
   have hB0 : 0 ≤ B := by
     have := hB 0 (by simp)
-    have : 0 ≤ ‖g 0‖ * (1 - ‖(0 : ℂ)‖) * Real.exp (-ψ₀ 0 / 2) := by simp; positivity
+    have : 0 ≤ ‖g 0‖ * (1 - ‖(0 : ℂ)‖) * Real.exp (-ψ₀ 0 / 2) := by
+      simp only [norm_zero, sub_zero, mul_one]; positivity
     linarith
   -- the right-hand side is at most `2B`
   have hac : discMeasure ≪ volume.restrict 𝔻 := withDensity_absolutelyContinuous _ _
@@ -844,7 +846,6 @@ theorem dbar_sup_estimate_C2_uniform {δ M : ℝ} (hδ : 0 < δ) :
     rw [eLpNorm_exponent_top hFc.aestronglyMeasurable]
     refine eLpNormEssSup_le_of_ae_bound (hac.ae_le
       (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ ?_))
-    have hz0 := norm_nonneg z
     have hz1 : ‖z‖ < 1 := by simpa using hz
     have hexp := Real.exp_pos (-(ψ₀ z / 2))
     rw [hFdef, norm_mul, Complex.norm_real, Real.norm_of_nonneg

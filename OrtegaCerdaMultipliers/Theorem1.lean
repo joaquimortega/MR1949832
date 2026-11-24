@@ -36,7 +36,7 @@ theorem IsLocallyDoubling.of_le_of_le {μ ν : Measure ℂ} (hμ : IsLocallyDoub
     {a b : ℝ≥0∞} (ha : a ≠ 0) (hb : b ≠ ∞) (h₁ : a • μ ≤ ν) (h₂ : ν ≤ b • μ) :
     IsLocallyDoubling ν := by
   obtain ⟨Cd, hCd⟩ := hμ
-  set a' : ℝ≥0 := (min a 1).toNNReal with ha'
+  set a' : ℝ≥0 := (min a 1).toNNReal
   have ha'c : (a' : ℝ≥0∞) = min a 1 :=
     ENNReal.coe_toNNReal (min_lt_of_right_lt ENNReal.one_lt_top).ne
   have ha'0 : a' ≠ 0 := by
@@ -167,8 +167,7 @@ theorem exists_aux_weight_plane (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsS
       _ ≤ Cd * (2 * μψ (ball z s)) := by gcongr; exact hlow _
       _ = ((2 * Cd : ℝ≥0) : ℝ≥0∞) * μψ (ball z s) := by
           rw [ENNReal.coe_mul]; push_cast; ring
-  · have hpi := Real.pi_pos
-    refine ⟨Real.sqrt (4 / (ε * Real.pi)), Real.sqrt_pos.2 (by positivity), fun z ↦ ?_⟩
+  · refine ⟨Real.sqrt (4 / (ε * Real.pi)), Real.sqrt_pos.2 (by positivity), fun z ↦ ?_⟩
     have hR2 : Real.sqrt (4 / (ε * Real.pi)) ^ 2 = 4 / (ε * Real.pi) :=
       Real.sq_sqrt (by positivity)
     calc (1 : ℝ≥0∞) < 2 := by norm_num
@@ -203,7 +202,7 @@ theorem exists_plane_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
       (∀ ζ, Differentiable ℂ (fun z ↦ H z ζ)) ∧ (∀ ζ, H ζ ζ = 1) ∧
       ∀ z ζ, ‖H z ζ‖ ≤ A * Real.exp (φ z - φ ζ) * Real.exp (-c * ‖z - ζ‖ ^ 2) := by
   classical
-  obtain ⟨ψ, μψ, c, B, hc0, hB, hψ, hdψ, hmψ, hψφ⟩ := exists_aux_weight_plane φ μ hφ hd hm
+  obtain ⟨ψ, μψ, c, B, hc0, -, hψ, hdψ, hmψ, hψφ⟩ := exists_aux_weight_plane φ μ hφ hd hm
   obtain ⟨n, h, εP, C, -, hC0, hh, hcov, hup, hgood⟩ := prop2_plane_full ψ μψ hψ hdψ hmψ
   -- the good sets and the partition
   let G : Fin n → Set ℂ := fun i ↦
@@ -260,7 +259,6 @@ theorem exists_plane_solution_kernel (φ : ℂ → ℝ) (μ : Measure ℂ)
     have hupz := hup i z
     rw [hfor, norm_mul, norm_div, norm_exp_planeKernel_num]
     have hratio : ‖h i z‖ / ‖h i ζ‖ ≤ C ^ 2 * Real.exp (ψ z - ψ ζ) := by
-      have hpos : 0 < C⁻¹ * Real.exp (ψ ζ) := by positivity
       calc ‖h i z‖ / ‖h i ζ‖ ≤ (C * Real.exp (ψ z)) / (C⁻¹ * Real.exp (ψ ζ)) := by
             gcongr
         _ = C ^ 2 * Real.exp (ψ z - ψ ζ) := by
