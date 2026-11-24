@@ -277,15 +277,11 @@ theorem rect_exists_Ico_of_gap {x : ℤ → ℝ} {h : ℝ} (hh : 0 < h)
   have := hmax (k + 1) hle
   omega
 
-/-- Coarse step: slicing a horizontal strip into blocks of integer mass and width in `[h, 2h]`. -/
-theorem exists_strip_cuts {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
-    {y₁ y₂ h : ℝ} (hh : 0 < h) (hfin : ∀ a b : ℝ, ν (rect a b y₁ y₂) < ∞)
-    (hmass : ∀ a : ℝ, 1 ≤ ν (rect a (a + h) y₁ y₂)) :
-    ∃ x : ℤ → ℝ, StrictMono x ∧ (∀ k, h ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * h) ∧
-      (∀ t : ℝ, ∃ k, t ∈ Ico (x k) (x (k + 1))) ∧
-      ∀ k, ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := by
-  choose fR hfR using rect_strip_step_right hre hh hfin hmass
-  choose fL hfL using rect_strip_step_left hre hh hfin hmass
+/-- Gluing a step to the right `fR` and a step to the left `fL` into a bi-infinite sequence of cut
+points `x : ℤ → ℝ`, each consecutive pair satisfying the step relation `Q`. -/
+theorem rect_glue_steps {Q : ℝ → ℝ → Prop} {fR fL : ℝ → ℝ}
+    (hR : ∀ s, s < fR s ∧ Q s (fR s)) (hL : ∀ b, fL b < b ∧ Q (fL b) b) :
+    ∃ x : ℤ → ℝ, ∀ k : ℤ, x k < x (k + 1) ∧ Q (x k) (x (k + 1)) := by
   set x : ℤ → ℝ := fun k ↦ if 0 ≤ k then fR^[k.toNat] 0 else fL^[(-k).toNat] 0 with hx
   have hxpos : ∀ n : ℕ, x n = fR^[n] 0 := by
     intro n; simp [hx]
@@ -295,37 +291,50 @@ theorem exists_strip_cuts {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = 
     · simp [hx]
     · have : ¬ (0 ≤ -(n : ℤ)) := by omega
       simp only [hx, this, ite_false, neg_neg, Int.toNat_natCast]
-  -- each block is a step of `fR` or of `fL`
-  have hblock : ∀ k : ℤ, h ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * h ∧
-      ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := by
-    intro k
-    rcases Int.eq_nat_or_neg k with ⟨n, rfl | rfl⟩
-    · have e : x ((n : ℤ) + 1) = fR (x n) := by
-        rw [show ((n : ℤ) + 1) = ((n + 1 : ℕ) : ℤ) by push_cast; ring, hxpos, hxpos,
-          Function.iterate_succ_apply']
-      obtain ⟨h1, h2, hn⟩ := hfR (x n)
+  refine ⟨x, fun k ↦ ?_⟩
+  rcases Int.eq_nat_or_neg k with ⟨n, rfl | rfl⟩
+  · have e : x ((n : ℤ) + 1) = fR (x n) := by
+      rw [show ((n : ℤ) + 1) = ((n + 1 : ℕ) : ℤ) by push_cast; ring, hxpos, hxpos,
+        Function.iterate_succ_apply']
+    rw [e]
+    exact hR (x n)
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · have e : x ((0 : ℤ) + 1) = fR (x 0) := by
+        have := hxpos 1
+        simp only [Nat.cast_one, Function.iterate_one] at this
+        rw [zero_add, this]
+        congr 1
+      simp only [Nat.cast_zero, neg_zero]
       rw [e]
-      exact ⟨by linarith, by linarith, hn⟩
-    · rcases Nat.eq_zero_or_pos n with rfl | hn
-      · have e : x ((0 : ℤ) + 1) = fR (x 0) := by
-          have := hxpos 1
-          simp only [Nat.cast_one, Function.iterate_one] at this
-          rw [zero_add, this]
-          congr 1
-        simp only [Nat.cast_zero, neg_zero]
-        obtain ⟨h1, h2, hn⟩ := hfR (x 0)
-        rw [e]
-        exact ⟨by linarith, by linarith, hn⟩
-      · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
-        have e1 : -((0 + m + 1 : ℕ) : ℤ) + 1 = -(m : ℤ) := by push_cast; ring
-        have e2 : x (-((0 + m + 1 : ℕ) : ℤ)) = fL (x (-(m : ℤ))) := by
-          rw [hxneg, hxneg, show 0 + m + 1 = m + 1 by ring, Function.iterate_succ_apply']
-        rw [e1, e2]
-        obtain ⟨h1, h2, hn⟩ := hfL (x (-(m : ℤ)))
-        exact ⟨by linarith, by linarith, hn⟩
-  refine ⟨x, strictMono_int_of_lt_succ fun k ↦ by linarith [(hblock k).1],
-    fun k ↦ ⟨(hblock k).1, (hblock k).2.1⟩, rect_exists_Ico_of_gap hh (fun k ↦ (hblock k).1),
-    fun k ↦ (hblock k).2.2⟩
+      exact hR (x 0)
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
+      have e1 : -((0 + m + 1 : ℕ) : ℤ) + 1 = -(m : ℤ) := by push_cast; ring
+      have e2 : x (-((0 + m + 1 : ℕ) : ℤ)) = fL (x (-(m : ℤ))) := by
+        rw [hxneg, hxneg, show 0 + m + 1 = m + 1 by ring, Function.iterate_succ_apply']
+      rw [e1, e2]
+      exact hL (x (-(m : ℤ)))
+
+/-- Coarse step: slicing a horizontal strip into blocks of integer mass and width in `[h, 2h]`. -/
+theorem exists_strip_cuts {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
+    {y₁ y₂ h : ℝ} (hh : 0 < h) (hfin : ∀ a b : ℝ, ν (rect a b y₁ y₂) < ∞)
+    (hmass : ∀ a : ℝ, 1 ≤ ν (rect a (a + h) y₁ y₂)) :
+    ∃ x : ℤ → ℝ, StrictMono x ∧ (∀ k, h ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * h) ∧
+      (∀ t : ℝ, ∃ k, t ∈ Ico (x k) (x (k + 1))) ∧
+      ∀ k, ∃ n : ℕ, 1 ≤ n ∧ ν (rect (x k) (x (k + 1)) y₁ y₂) = n := by
+  choose fR hfR using rect_strip_step_right hre hh hfin hmass
+  choose fL hfL using rect_strip_step_left hre hh hfin hmass
+  obtain ⟨x, hblock⟩ := rect_glue_steps
+    (Q := fun a b ↦ h ≤ b - a ∧ b - a ≤ 2 * h ∧ ∃ n : ℕ, 1 ≤ n ∧ ν (rect a b y₁ y₂) = n)
+    (fR := fR) (fL := fL)
+    (fun s ↦ by
+      obtain ⟨h1, h2, hn⟩ := hfR s
+      exact ⟨by linarith, by linarith, by linarith, hn⟩)
+    (fun b ↦ by
+      obtain ⟨h1, h2, hn⟩ := hfL b
+      exact ⟨by linarith, by linarith, by linarith, hn⟩)
+  refine ⟨x, strictMono_int_of_lt_succ fun k ↦ (hblock k).1,
+    fun k ↦ ⟨(hblock k).2.1, (hblock k).2.2.1⟩,
+    rect_exists_Ico_of_gap hh (fun k ↦ (hblock k).2.1), fun k ↦ (hblock k).2.2.2⟩
 
 theorem rect_mem_ball_of_abs {z : ℂ} {a b s : ℝ} (hs : 0 < s) (h1 : |z.re - a| ≤ s / 2)
     (h2 : |z.im - b| ≤ s / 2) : z ∈ ball (⟨a, b⟩ : ℂ) s := by
@@ -983,7 +992,7 @@ theorem rectCore_combine {G : ℝ × ℝ × ℝ × ℝ → Prop} {n₁ n₂ : �
     | right a => simpa only [Fin.append_right] using hg₂ a
 
 /-- The conclusion of `exists_rect_partition` for one piece `g = (x₁, x₂, y₁, y₂)`. -/
-private def RectGood (ν : Measure ℂ) (P : ℝ → ℝ → ℝ → ℝ → Prop) (C₀ : ℕ) (L : ℝ)
+def RectGood (ν : Measure ℂ) (P : ℝ → ℝ → ℝ → ℝ → Prop) (C₀ : ℕ) (L : ℝ)
     (g : ℝ × ℝ × ℝ × ℝ) : Prop :=
   ν (rect g.1 g.2.1 g.2.2.1 g.2.2.2) = 1 ∧ IsRectLE L g.1 g.2.1 g.2.2.1 g.2.2.2 ∧
     ∃ x₁' x₂' y₁' y₂' : ℝ, IsRectLE 3 x₁' x₂' y₁' y₂' ∧ P x₁' x₂' y₁' y₂' ∧

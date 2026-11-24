@@ -213,47 +213,6 @@ theorem lineCut_step_left {μ : Measure ℂ} {R₁ : ℝ} {N : ℕ} (hN : 1 ≤ 
     linarith
   · exact h
 
-/-- Gluing the steps to the right and to the left into a bi-infinite sequence of cut points. -/
-theorem lineCut_cuts {μ : Measure ℂ} {R₁ : ℝ} {N : ℕ} {fR fL : ℝ → ℝ}
-    (hfR : ∀ s, s < fR s ∧ fR s ≤ s + R₁ ∧ μ (rect s (fR s) (-1) 1) = N)
-    (hfL : ∀ b, b - R₁ ≤ fL b ∧ fL b < b ∧ μ (rect (fL b) b (-1) 1) = N) :
-    ∃ x : ℤ → ℝ, ∀ k : ℤ, x k < x (k + 1) ∧ x (k + 1) - x k ≤ R₁ ∧
-      μ (rect (x k) (x (k + 1)) (-1) 1) = N := by
-  set x : ℤ → ℝ := fun k ↦ if 0 ≤ k then fR^[k.toNat] 0 else fL^[(-k).toNat] 0 with hx
-  have hxpos : ∀ n : ℕ, x n = fR^[n] 0 := by
-    intro n; simp [hx]
-  have hxneg : ∀ n : ℕ, x (-(n : ℤ)) = fL^[n] 0 := by
-    intro n
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp [hx]
-    · have : ¬ (0 ≤ -(n : ℤ)) := by omega
-      simp only [hx, this, ite_false, neg_neg, Int.toNat_natCast]
-  refine ⟨x, fun k ↦ ?_⟩
-  rcases Int.eq_nat_or_neg k with ⟨n, rfl | rfl⟩
-  · have e : x ((n : ℤ) + 1) = fR (x n) := by
-      rw [show ((n : ℤ) + 1) = ((n + 1 : ℕ) : ℤ) by push_cast; ring, hxpos, hxpos,
-        Function.iterate_succ_apply']
-    obtain ⟨h1, h2, hn⟩ := hfR (x n)
-    rw [e]
-    exact ⟨h1, by linarith, hn⟩
-  · rcases Nat.eq_zero_or_pos n with rfl | hn
-    · have e : x ((0 : ℤ) + 1) = fR (x 0) := by
-        have := hxpos 1
-        simp only [Nat.cast_one, Function.iterate_one] at this
-        rw [zero_add, this]
-        congr 1
-      simp only [Nat.cast_zero, neg_zero]
-      obtain ⟨h1, h2, hn⟩ := hfR (x 0)
-      rw [e]
-      exact ⟨h1, by linarith, hn⟩
-    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
-      have e1 : -((0 + m + 1 : ℕ) : ℤ) + 1 = -(m : ℤ) := by push_cast; ring
-      have e2 : x (-((0 + m + 1 : ℕ) : ℤ)) = fL (x (-(m : ℤ))) := by
-        rw [hxneg, hxneg, show 0 + m + 1 = m + 1 by ring, Function.iterate_succ_apply']
-      rw [e1, e2]
-      obtain ⟨h1, h2, hn⟩ := hfL (x (-(m : ℤ)))
-      exact ⟨h2, by linarith, hn⟩
-
 /-- The cut points escape to `±∞`, since consecutive blocks have mass `N ≥ 1`. -/
 theorem lineCut_escape {μ : Measure ℂ} {N : ℕ} {x : ℤ → ℝ} (hN : 1 ≤ N) (hmono : StrictMono x)
     (hblock : ∀ k : ℤ, μ (rect (x k) (x (k + 1)) (-1) 1) = N)
@@ -305,6 +264,15 @@ theorem lineCut_escape {μ : Measure ℂ} {N : ℕ} {x : ℤ → ℝ} (hN : 1 �
         _ ≤ n * N := by gcongr
     exact absurd (hn.trans_le (this.trans h1)) (lt_irrefl _)
 
+/-- From `c (r/ρ)^δ ≤ M` to `r ≤ (M/c)^{1/δ} ρ`. -/
+theorem l4_le_of_rpow {c δ M r ρ : ℝ} (hc : 0 < c) (hδ : 0 < δ) (hρ : 0 < ρ)
+    (hr : 0 ≤ r) (h : c * (r / ρ) ^ δ ≤ M) : r ≤ (M / c) ^ (1 / δ) * ρ := by
+  have h2 : (r / ρ) ^ δ ≤ M / c := by rw [le_div_iff₀ hc]; linarith
+  have h3 : r / ρ ≤ (M / c) ^ (1 / δ) := by
+    have h4 := Real.rpow_le_rpow (by positivity) h2 (show (0 : ℝ) ≤ 1 / δ by positivity)
+    rwa [← Real.rpow_mul (by positivity), mul_one_div_cancel hδ.ne', Real.rpow_one] at h4
+  rwa [div_le_iff₀ hρ] at h3
+
 /-- Two points of a piece `[x k, x (k+1))` are at distance `≤ A ρ` (via doubling at scale `L`). -/
 theorem lineCut_piece_dist {μ : Measure ℂ} {N : ℕ} {R₁ c δ M A : ℝ} {C₁ : ℝ≥0} {x : ℤ → ℝ} {k : ℤ}
     (hk1 : x k < x (k + 1)) (hk2 : x (k + 1) - x k ≤ R₁)
@@ -352,12 +320,8 @@ theorem lineCut_piece_dist {μ : Measure ℂ} {N : ℕ} {R₁ c δ M A : ℝ} {C
     rcases le_or_gt (massRadiusLine μ u) L with hle | hlt
     · have h1 := (hlow u L hle (by linarith)).trans hmassL
       rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
-      have h2 : (L / massRadiusLine μ u) ^ δ ≤ M / c := by
-        rw [le_div_iff₀ hc]; linarith
-      have h3 : L / massRadiusLine μ u ≤ (M / c) ^ (1 / δ) := by
-        have h4 := Real.rpow_le_rpow (by positivity) h2 (show (0 : ℝ) ≤ 1 / δ by positivity)
-        rwa [← Real.rpow_mul (by positivity), mul_one_div_cancel hδ.ne', Real.rpow_one] at h4
-      rw [div_le_iff₀ hρ] at h3
+      have h3 : L ≤ (M / c) ^ (1 / δ) * massRadiusLine μ u :=
+        l4_le_of_rpow hc hδ hρ hL0.le h1
       exact h3.trans (mul_le_mul_of_nonneg_right hA2 hρ.le)
     · exact hlt.le.trans (le_mul_of_one_le_left hρ.le hA1)
   exact hdist.trans hLA
@@ -451,7 +415,10 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;> simp <;> linarith [hu.1, hu.2]
   choose fR hfR using lineCut_step_right hN (by positivity) hre hfinR hbig
   choose fL hfL using lineCut_step_left hN (by positivity) hre hfinR hbig
-  obtain ⟨x, hblock⟩ := lineCut_cuts hfR hfL
+  obtain ⟨x, hblock⟩ := rect_glue_steps
+    (Q := fun a b ↦ b - a ≤ R₁ ∧ μ (rect a b (-1) 1) = N) (fR := fR) (fL := fL)
+    (fun s ↦ ⟨(hfR s).1, by linarith [(hfR s).2.1], (hfR s).2.2⟩)
+    (fun b ↦ ⟨(hfL b).2.1, by linarith [(hfL b).1], (hfL b).2.2⟩)
   have hmono : StrictMono x := strictMono_int_of_lt_succ fun k ↦ (hblock k).1
   obtain ⟨hup, hdown⟩ := lineCut_escape hN hmono (fun k ↦ (hblock k).2.2) hfinR
   -- the pieces

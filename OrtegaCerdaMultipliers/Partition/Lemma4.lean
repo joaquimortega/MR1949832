@@ -64,15 +64,6 @@ theorem l4_iter {f : ℝ → ℝ≥0∞} {C : ℝ≥0∞} {R₁ : ℝ}
       _ ≤ C * (C ^ k * f r) := by gcongr; exact ih r hr (by linarith)
       _ = C ^ (k + 1) * f r := by ring
 
-/-- From `c (r/ρ)^δ ≤ M` to `r ≤ (M/c)^{1/δ} ρ`. -/
-theorem l4_le_of_rpow {c δ M r ρ : ℝ} (hc : 0 < c) (hδ : 0 < δ) (hρ : 0 < ρ)
-    (hr : 0 ≤ r) (h : c * (r / ρ) ^ δ ≤ M) : r ≤ (M / c) ^ (1 / δ) * ρ := by
-  have h2 : (r / ρ) ^ δ ≤ M / c := by rw [le_div_iff₀ hc]; linarith
-  have h3 : r / ρ ≤ (M / c) ^ (1 / δ) := by
-    have h4 := Real.rpow_le_rpow (by positivity) h2 (show (0 : ℝ) ≤ 1 / δ by positivity)
-    rwa [← Real.rpow_mul (by positivity), mul_one_div_cancel hδ.ne', Real.rpow_one] at h4
-  rwa [div_le_iff₀ hρ] at h3
-
 /-- A countable family of finite partitions of disjoint blocks, reindexed by `ℕ`. -/
 theorem l4_sigma_partition {n : ℤ × ℤ → ℕ} (hn : ∀ jk, 1 ≤ n jk) (B : ℤ × ℤ → Set ℂ)
     (hB : Pairwise (Function.onFun Disjoint B)) (f : (Σ jk : ℤ × ℤ, Fin (n jk)) → Set ℂ)
@@ -177,6 +168,282 @@ theorem l4_smul_apply {ν : Measure ℂ} {N : ℕ} (hN : 1 ≤ N) (s : Set ℂ) 
   rw [smul_apply, smul_eq_mul, ← mul_assoc,
     ENNReal.mul_inv_cancel hNne (ENNReal.natCast_ne_top N), one_mul]
 
+/-- `C₁ ^ k ≤ ⌈C₁ ^ k⌉₊` in `ℝ≥0∞`. -/
+theorem l4_coe_pow_le_ceil (C₁ : ℝ≥0) (k : ℕ) :
+    (C₁ : ℝ≥0∞) ^ k ≤ ((⌈(C₁ : ℝ) ^ k⌉₊ : ℕ) : ℝ≥0∞) := by
+  rw [← ENNReal.coe_pow, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_natCast]
+  exact ENNReal.ofReal_le_ofReal (by push_cast; exact Nat.le_ceil _)
+
+/-- The mass of a piece of the normalised measure `N⁻¹ ν`. -/
+theorem l4_inv_smul_apply {ν : Measure ℂ} {N : ℕ} (s : Set ℂ) :
+    ((N : ℝ≥0∞)⁻¹ • ν) s = (N : ℝ≥0∞)⁻¹ * ν s := by
+  rw [smul_apply, smul_eq_mul]
+
+/-- Assembling the pieces: `ν`-mass-one rectangles inside the blocks
+`[X j k, X j (k+1)) × [lo j, hi j)`, reindexed by `ℕ`. -/
+theorem l4_assemble {ν : Measure ℂ} {P : ℝ → ℝ → ℝ → ℝ → Prop} {C₀ : ℕ} {L : ℝ}
+    (hpart : ∀ (n : ℕ) (x₁ x₂ y₁ y₂ : ℝ), 1 ≤ n → IsRectLE 3 x₁ x₂ y₁ y₂ → P x₁ x₂ y₁ y₂ →
+      ν (rect x₁ x₂ y₁ y₂) = n → ∃ q : Fin n → ℝ × ℝ × ℝ × ℝ,
+        Pairwise (Function.onFun Disjoint fun i ↦ rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) ∧
+        (⋃ i, rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = rect x₁ x₂ y₁ y₂ ∧
+        ∀ i, RectGood ν P C₀ L (q i))
+    (X : ℤ → ℤ → ℝ) (lo hi : ℤ → ℝ) (n : ℤ → ℤ → ℕ) (hn1 : ∀ j k, 1 ≤ n j k)
+    (hXmono : ∀ j, StrictMono (X j)) (hlohi : ∀ j j', j < j' → hi j ≤ lo j')
+    (hblock : ∀ j k, IsRectLE 3 (X j k) (X j (k + 1)) (lo j) (hi j) ∧
+      P (X j k) (X j (k + 1)) (lo j) (hi j) ∧
+      ν (rect (X j k) (X j (k + 1)) (lo j) (hi j)) = n j k) :
+    ∃ g : ℕ → ℝ × ℝ × ℝ × ℝ,
+      Pairwise (Function.onFun Disjoint fun i ↦ rect (g i).1 (g i).2.1 (g i).2.2.1 (g i).2.2.2) ∧
+      (⋃ i, rect (g i).1 (g i).2.1 (g i).2.2.1 (g i).2.2.2) =
+        ⋃ jk : ℤ × ℤ, rect (X jk.1 jk.2) (X jk.1 (jk.2 + 1)) (lo jk.1) (hi jk.1) ∧
+      ∀ i, RectGood ν P C₀ L (g i) := by
+  set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2
+  set B : ℤ × ℤ → Set ℂ := fun jk ↦
+    rect (X jk.1 jk.2) (X jk.1 (jk.2 + 1)) (lo jk.1) (hi jk.1) with hB
+  have hblock' : ∀ jk : ℤ × ℤ, ∃ q : Fin (nn jk) → ℝ × ℝ × ℝ × ℝ,
+      Pairwise (Function.onFun Disjoint fun i ↦ rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) ∧
+      (⋃ i, rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = B jk ∧
+      ∀ i, RectGood ν P C₀ L (q i) := fun ⟨j, k⟩ ↦
+    hpart (n j k) _ _ _ _ (hn1 j k) (hblock j k).1 (hblock j k).2.1 (hblock j k).2.2
+  choose q hqdisj hqunion hqgood using hblock'
+  have hBdisj : Pairwise (Function.onFun Disjoint B) := by
+    rintro ⟨j, k⟩ ⟨j', k'⟩ hne
+    simp only [Function.onFun, hB]
+    by_cases hj : j = j'
+    · subst hj
+      have hk : k ≠ k' := fun h ↦ hne (by rw [h])
+      rcases lt_or_gt_of_ne hk with h | h
+      · exact rect_disjoint_x ((hXmono j).monotone (by omega))
+      · exact (rect_disjoint_x ((hXmono j).monotone (by omega))).symm
+    · rcases lt_or_gt_of_ne hj with h | h
+      · exact rect_disjoint_y (hlohi _ _ h)
+      · exact (rect_disjoint_y (hlohi _ _ h)).symm
+  set f : (Σ jk : ℤ × ℤ, Fin (nn jk)) → Set ℂ := fun p ↦
+    rect (q p.1 p.2).1 (q p.1 p.2).2.1 (q p.1 p.2).2.2.1 (q p.1 p.2).2.2.2
+  obtain ⟨e, hedisj, heunion⟩ := l4_sigma_partition (fun jk ↦ hn1 jk.1 jk.2) B hBdisj f
+    (fun jk ↦ hqdisj jk) (fun jk ↦ hqunion jk)
+  exact ⟨fun i ↦ q (e i).1 (e i).2, hedisj, heunion, fun i ↦ hqgood _ _⟩
+
+/-- Plane: the normalised measure `N⁻¹ ν` is in the class `MeasClassM` with radius `(N+1) R₀`. -/
+theorem l4_plane_mu {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ} {N : ℕ} (hN : 1 ≤ N) (hR₀ : 0 < R₀)
+    (hν : MeasClassPlane ν Cd R₀) :
+    MeasClassM ((N : ℝ≥0∞)⁻¹ • ν) Cd (((N : ℝ) + 1) * R₀) ∧
+      ∀ s : Set ℂ, Bornology.IsBounded s → ((N : ℝ≥0∞)⁻¹ • ν) s < ∞ := by
+  have hNne : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (show N ≠ 0 by omega)
+  have hNtop : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
+  have hfinν : ∀ s : Set ℂ, Bornology.IsBounded s → ν s < ∞ := fun s hs ↦ by
+    obtain ⟨r, hr⟩ := hs.subset_closedBall 0
+    exact (measure_mono hr).trans_lt (hν.finite _ (isCompact_closedBall 0 r))
+  have hfin'b : ∀ s : Set ℂ, Bornology.IsBounded s → ((N : ℝ≥0∞)⁻¹ • ν) s < ∞ := fun s hs ↦ by
+    rw [l4_inv_smul_apply]
+    exact ENNReal.mul_lt_top (ENNReal.inv_lt_top.2 (by positivity)) (hfinν s hs)
+  refine ⟨⟨fun z r hr h2r ↦ ?_, fun z ↦ ?_, fun z r ↦ hfin'b _ Metric.isBounded_ball⟩, hfin'b⟩
+  · rw [l4_inv_smul_apply, l4_inv_smul_apply, mul_left_comm]
+    gcongr
+    exact hν.doubling z r hr h2r
+  · rw [l4_inv_smul_apply]
+    calc (1 : ℝ≥0∞) = (N : ℝ≥0∞)⁻¹ * N := (ENNReal.inv_mul_cancel hNne hNtop).symm
+      _ ≤ (N : ℝ≥0∞)⁻¹ * ν (ball z (((N : ℝ) + 1) * R₀)) := by
+          gcongr; exact (l4_growth_plane hR₀ hν.mass N z).le
+
+/-- Plane: a doubling measure of locally finite mass does not charge horizontal or vertical
+lines. -/
+theorem l4_plane_null {μ : Measure ℂ} (hd : IsLocallyDoubling μ)
+    (hfin : ∀ z r, μ (ball z r) < ∞) :
+    (∀ x : ℝ, μ {w | w.re = x} = 0) ∧ ∀ y : ℝ, μ {w | w.im = y} = 0 := by
+  refine ⟨fun x ↦ ?_, fun y ↦ ?_⟩
+  · have : {w : ℂ | w.re = x} = {z | ∃ t : ℝ, z = (x : ℂ) + t * I} := by
+      ext w
+      simp only [mem_ofPred_eq]
+      constructor
+      · intro h; exact ⟨w.im, Complex.ext (by simp [h]) (by simp)⟩
+      · rintro ⟨t, rfl⟩; simp
+    rw [this]
+    exact measure_eq_zero_of_isPorous_plane hd hfin (isPorous_line _ _)
+  · have : {w : ℂ | w.im = y} = {z | ∃ t : ℝ, z = (y : ℂ) * I + t * 1} := by
+      ext w
+      simp only [mem_ofPred_eq]
+      constructor
+      · intro h; exact ⟨w.re, Complex.ext (by simp) (by simp [h])⟩
+      · rintro ⟨t, rfl⟩; simp
+    rw [this]
+    exact measure_eq_zero_of_isPorous_plane hd hfin (isPorous_line _ _)
+
+/-- Plane: coarse rows `[jS, (j+1)S)`, cut into blocks of integer mass. -/
+theorem l4_plane_rows {μ : Measure ℂ} {R' S : ℝ} (hS : S = 2 * R') (hS0 : 0 < S)
+    (hre : ∀ x : ℝ, μ {w | w.re = x} = 0) (hmass : ∀ z, 1 ≤ μ (ball z R'))
+    (hfinR : ∀ x₁ x₂ y₁ y₂ : ℝ, μ (rect x₁ x₂ y₁ y₂) < ∞) (j : ℤ) :
+    ∃ x : ℤ → ℝ, StrictMono x ∧
+      (∀ k, S ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * S) ∧
+      (∀ t : ℝ, ∃ k, t ∈ Ico (x k) (x (k + 1))) ∧
+      ∀ k, ∃ n : ℕ, 1 ≤ n ∧ μ (rect (x k) (x (k + 1)) (j * S) ((j + 1) * S)) = n := by
+  refine exists_strip_cuts hre hS0 (fun a b ↦ hfinR _ _ _ _) fun a ↦ ?_
+  refine (hmass ((a + R' : ℝ) + ((j * S + R' : ℝ) : ℂ) * I)).trans (measure_mono ?_)
+  intro w hw
+  have h1 := (Complex.abs_re_le_norm _).trans_lt (mem_ball.1 hw |>.trans_le' (by
+    rw [Complex.dist_eq]))
+  have h2 := (Complex.abs_im_le_norm _).trans_lt (mem_ball.1 hw |>.trans_le' (by
+    rw [Complex.dist_eq]))
+  simp only [Complex.sub_re, Complex.sub_im, Complex.add_re, Complex.add_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
+    Complex.I_im] at h1 h2
+  rw [abs_lt] at h1 h2
+  refine ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+
+/-- Plane: a rectangle of mass `> C₀` has a middle third of mass `> 1`. -/
+theorem l4_plane_C0 {μ : Measure ℂ} {S : ℝ} {C₁ : ℝ≥0} {C₀ : ℕ}
+    (hpow : ∀ z (k : ℕ) r, 0 < r → 2 ^ k * r ≤ 2 * (16 * S) →
+      μ (ball z (2 ^ k * r)) ≤ (C₁ : ℝ≥0∞) ^ k * μ (ball z r))
+    (hC₁5 : (C₁ : ℝ≥0∞) ^ 5 ≤ (C₀ : ℝ≥0∞)) (x₁ x₂ y₁ y₂ : ℝ) (hg : IsRectLE 3 x₁ x₂ y₁ y₂)
+    (hP : x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S) (hlt : (C₀ : ℝ≥0∞) < μ (rect x₁ x₂ y₁ y₂)) :
+    1 < μ (midThird x₁ x₂ y₁ y₂) := by
+  obtain ⟨p, r, hr, h6r, hin, hout⟩ := rect_inner_outer (by norm_num : (1 : ℝ) ≤ 3) hg
+  have hrS : r ≤ S / 3 := by
+    have := max_le hP.1 hP.2; linarith
+  have h32 : μ (rect x₁ x₂ y₁ y₂) ≤ (C₁ : ℝ≥0∞) ^ 5 * μ (midThird x₁ x₂ y₁ y₂) := by
+    calc μ (rect x₁ x₂ y₁ y₂) ≤ μ (ball p (2 ^ 5 * r)) :=
+          measure_mono (hout.trans (ball_subset_ball (by nlinarith)))
+      _ ≤ (C₁ : ℝ≥0∞) ^ 5 * μ (ball p r) := hpow p 5 r hr (by nlinarith)
+      _ ≤ (C₁ : ℝ≥0∞) ^ 5 * μ (midThird x₁ x₂ y₁ y₂) := by gcongr
+  by_contra hle
+  push Not at hle
+  have := hlt.trans_le (h32.trans (by
+    calc (C₁ : ℝ≥0∞) ^ 5 * μ (midThird x₁ x₂ y₁ y₂) ≤ (C₁ : ℝ≥0∞) ^ 5 * 1 := by gcongr
+      _ ≤ (C₀ : ℝ≥0∞) := by rw [mul_one]; exact hC₁5))
+  exact lt_irrefl _ this
+
+/-- Plane: Euclidean doubling at scale `σ` inside admissible rectangles. -/
+theorem l4_plane_sigma {μ : Measure ℂ} {S C_E : ℝ} {C₁ : ℝ≥0} (hCE : C_E = (C₁ : ℝ) ^ 3)
+    (hpow : ∀ z (k : ℕ) r, 0 < r → 2 ^ k * r ≤ 2 * (16 * S) →
+      μ (ball z (2 ^ k * r)) ≤ (C₁ : ℝ≥0∞) ^ k * μ (ball z r)) (x₁ x₂ y₁ y₂ : ℝ)
+    (_ : IsRectLE 3 x₁ x₂ y₁ y₂) (hP : x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S) :
+    1 * max (x₂ - x₁) (y₂ - y₁) ≤ max (x₂ - x₁) (y₂ - y₁) ∧
+      ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ max (x₂ - x₁) (y₂ - y₁) →
+        μ (ball w (4 * r)) ≤ ENNReal.ofReal C_E * μ (ball w (r / 2)) := by
+  refine ⟨by rw [one_mul], fun w _ r hr hrσ ↦ ?_⟩
+  have hrS : r ≤ 2 * S := hrσ.trans (max_le hP.1 hP.2)
+  have := hpow w 3 (r / 2) (by positivity) (by nlinarith)
+  rw [show (2 : ℝ) ^ 3 * (r / 2) = 4 * r by ring] at this
+  rw [hCE, ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_coe_nnreal]
+  exact this
+
+/-- Plane: the pieces of the partition have `d`-diameter `≤ A' CN ρ_ν`. -/
+theorem l4_plane_size {μ ν : Measure ℂ} {S c δ M A' CN : ℝ} {C₁ : ℝ≥0} {C₀ : ℕ}
+    {x₁ x₂ y₁ y₂ : ℝ} {T : Set ℂ} (hc : 0 < c) (hδ : 0 < δ) (hM : M = (C₁ : ℝ) ^ 6 * C₀)
+    (hA'1 : 1 ≤ A') (hA'2 : (M / c) ^ (1 / δ) ≤ A')
+    (hpow : ∀ z (k : ℕ) r, 0 < r → 2 ^ k * r ≤ 2 * (16 * S) →
+      μ (ball z (2 ^ k * r)) ≤ (C₁ : ℝ≥0∞) ^ k * μ (ball z r))
+    (hlow : ∀ z r, massRadius μ z ≤ r → r ≤ 12 * S →
+      ENNReal.ofReal (c * (r / massRadius μ z) ^ δ) ≤ μ (ball z r))
+    (hρ' : ∀ z, 0 < massRadius μ z) (hCNz : ∀ z, massRadius μ z ≤ CN * massRadius ν z)
+    (hg : IsRectLE 3 x₁ x₂ y₁ y₂) (hPb : x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S)
+    (hμb : μ (rect x₁ x₂ y₁ y₂) ≤ C₀) (hsub : T ⊆ rect x₁ x₂ y₁ y₂) :
+    ∀ z ∈ T, ∀ w ∈ T, dist z w ≤ A' * CN * massRadius ν z := by
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  obtain ⟨p, r, hr, h6r, hin, hout⟩ := rect_inner_outer (by norm_num : (1 : ℝ) ≤ 3) hg
+  have hrS : r ≤ S / 3 := by
+    have := max_le hPb.1 hPb.2; linarith
+  have hgx := hg.1
+  intro z hz w hw
+  have hzp : dist z p < 18 * r := by
+    have := hout (hsub hz); rw [mem_ball] at this; linarith
+  have hwp : dist w p < 18 * r := by
+    have := hout (hsub hw); rw [mem_ball] at this; linarith
+  have hzw : dist z w < 36 * r := by
+    linarith [dist_triangle z p w, dist_comm w p]
+  have hball : μ (ball z (36 * r)) ≤ ENNReal.ofReal M := by
+    calc μ (ball z (36 * r)) ≤ μ (ball p (2 ^ 6 * r)) := by
+          refine measure_mono fun y hy ↦ ?_
+          rw [mem_ball] at hy ⊢
+          linarith [dist_triangle y z p]
+      _ ≤ (C₁ : ℝ≥0∞) ^ 6 * μ (ball p r) := hpow p 6 r hr (by nlinarith)
+      _ ≤ (C₁ : ℝ≥0∞) ^ 6 * C₀ := by
+          gcongr
+          exact (measure_mono (hin.trans (l4_midThird_subset hgx.le _ _))).trans hμb
+      _ = ENNReal.ofReal M := by
+          rw [hM, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
+            ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_natCast]
+  have h36 : 36 * r ≤ A' * massRadius μ z := by
+    rcases le_or_gt (massRadius μ z) (36 * r) with hle | hlt
+    · have h1 := (hlow z (36 * r) hle (by linarith)).trans hball
+      rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
+      exact (l4_le_of_rpow hc hδ (hρ' z) (by positivity) h1).trans
+        (mul_le_mul_of_nonneg_right hA'2 (hρ' z).le)
+    · exact hlt.le.trans (le_mul_of_one_le_left (hρ' z).le hA'1)
+  calc dist z w ≤ A' * massRadius μ z := hzw.le.trans h36
+    _ ≤ A' * (CN * massRadius ν z) :=
+        mul_le_mul_of_nonneg_left (hCNz z) (by linarith)
+    _ = A' * CN * massRadius ν z := by ring
+
+/-- Plane: every piece contains the ball of radius `ρ_ν(p) / (6 L)` around a point `p`. -/
+theorem l4_plane_fat {ν : Measure ℂ} {N : ℕ} {L : ℝ} {x₁ x₂ y₁ y₂ : ℝ} (hN : 1 ≤ N)
+    (hL1 : 1 ≤ L) (hLe : IsRectLE L x₁ x₂ y₁ y₂) (hμ1 : ν (rect x₁ x₂ y₁ y₂) = N) :
+    ∃ c ∈ rect x₁ x₂ y₁ y₂, {w | w ∈ (univ : Set ℂ) ∧ dist c w < 1 / (6 * L) * massRadius ν c} ⊆
+      rect x₁ x₂ y₁ y₂ := by
+  obtain ⟨p, r, hr, -, hin, hout⟩ := rect_inner_outer hL1 hLe
+  have hmid := l4_midThird_subset (x₁ := x₁) hLe.1.le y₁ y₂
+  have hpP : p ∈ rect x₁ x₂ y₁ y₂ := hmid (hin (mem_ball_self hr))
+  have hρ : massRadius ν p ≤ 6 * L * r := by
+    refine l4_massRadius_le (by positivity) ?_
+    calc (1 : ℝ≥0∞) ≤ N := by exact_mod_cast hN
+      _ = ν (rect x₁ x₂ y₁ y₂) := hμ1.symm
+      _ ≤ ν (ball p (6 * L * r)) := measure_mono hout
+  refine ⟨p, hpP, fun w ⟨_, hw⟩ ↦ hmid (hin ?_)⟩
+  rw [mem_ball, dist_comm]
+  calc dist p w < 1 / (6 * L) * massRadius ν p := hw
+    _ ≤ 1 / (6 * L) * (6 * L * r) := by gcongr
+    _ = r := by field_simp
+
+/-- Plane: the partition of `ℂ` into rectangles of mass one for `μ` (admissible rectangles have
+sides `≤ 2 S`), with side ratio `≤ rectRatioBound C₀ C_E 1`. -/
+theorem l4_plane_pieces {μ : Measure ℂ} {Cd : ℝ≥0} {R' S C_E : ℝ} {C₁ : ℝ≥0} {C₀ : ℕ}
+    (hS : S = 2 * R') (hR'0 : 0 < R') (hclass : MeasClassM μ Cd R')
+    (hfinB : ∀ s : Set ℂ, Bornology.IsBounded s → μ s < ∞)
+    (hC₁ : ∀ μ' : Measure ℂ, IsLocDoublingMWith μ' Cd → ∀ x : ℂ, ∀ r : ℝ, 0 < r →
+      r ≤ 16 * S → μ' (ball x (2 * r)) ≤ C₁ * μ' (ball x r))
+    (hC₀ : (C₁ : ℝ≥0∞) ^ 5 ≤ (C₀ : ℝ≥0∞)) (hCE : C_E = (C₁ : ℝ) ^ 3) :
+    ∃ g : ℕ → ℝ × ℝ × ℝ × ℝ,
+      Pairwise (Function.onFun Disjoint fun i ↦ rect (g i).1 (g i).2.1 (g i).2.2.1 (g i).2.2.2) ∧
+      (⋃ i, rect (g i).1 (g i).2.1 (g i).2.2.1 (g i).2.2.2) = univ ∧
+      ∀ i, RectGood μ (fun x₁ x₂ y₁ y₂ ↦ x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S) C₀
+        (rectRatioBound C₀ C_E 1) (g i) := by
+  have hS0 : 0 < S := by rw [hS]; positivity
+  obtain ⟨hre, him⟩ := l4_plane_null ⟨Cd, hclass.doubling⟩
+    (fun z r ↦ hfinB _ Metric.isBounded_ball)
+  have hfinR : ∀ x₁ x₂ y₁ y₂ : ℝ, μ (rect x₁ x₂ y₁ y₂) < ∞ := fun x₁ x₂ y₁ y₂ ↦
+    hfinB _ (Metric.isBounded_ball.subset (l4_rect_subset_ball x₁ x₂ y₁ y₂))
+  choose X hXmono hXgap hXcov hXn using fun j ↦ l4_plane_rows hS hS0 hre hclass.mass hfinR j
+  choose n hn1 hnμ using hXn
+  have hpow : ∀ z (k : ℕ) r, 0 < r → 2 ^ k * r ≤ 2 * (16 * S) →
+      μ (ball z (2 ^ k * r)) ≤ (C₁ : ℝ≥0∞) ^ k * μ (ball z r) := fun z ↦
+    l4_iter (f := fun r ↦ μ (ball z r)) (hC₁ μ hclass.doubling z)
+  have hpart := exists_rect_partition hre him
+    (fun x₁ x₂ y₁ y₂ ↦ x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S)
+    (fun x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' h h1 h2 h3 h4 ↦
+      ⟨by linarith [h.1], by linarith [h.2]⟩)
+    C₀ (l4_plane_C0 hpow hC₀) (fun x₁ x₂ y₁ y₂ ↦ max (x₂ - x₁) (y₂ - y₁)) C_E 1 one_pos
+    (l4_plane_sigma hCE hpow)
+  obtain ⟨g, hgdisj, hgunion, hgood⟩ := l4_assemble hpart X (fun j ↦ (j : ℝ) * S)
+    (fun j ↦ ((j : ℝ) + 1) * S) n hn1 hXmono
+    (fun j j' h ↦ by
+      have : (j : ℝ) + 1 ≤ j' := by exact_mod_cast h
+      nlinarith)
+    (fun j k ↦ by
+      have hg := hXgap j k
+      have hl : ((j : ℝ) + 1) * S - j * S = S := by ring
+      exact ⟨⟨hXmono j (lt_add_one k), by nlinarith, by rw [hl]; linarith, by rw [hl]; linarith⟩,
+        ⟨hg.2, by rw [hl]; linarith⟩, hnμ j k⟩)
+  refine ⟨g, hgdisj, ?_, hgood⟩
+  rw [hgunion]
+  refine eq_univ_of_forall fun z ↦ mem_iUnion.2 ?_
+  set j := ⌊z.im / S⌋
+  have hj1 : (j : ℝ) ≤ z.im / S := Int.floor_le _
+  have hj2 : z.im / S < j + 1 := Int.lt_floor_add_one _
+  rw [le_div_iff₀ hS0] at hj1
+  rw [div_lt_iff₀ hS0] at hj2
+  obtain ⟨k, hk⟩ := hXcov j z.re
+  exact ⟨(j, k), hk, ⟨hj1, hj2⟩⟩
+
 /-- **Lemma 4 (plane)**, uniform form with the shape of the pieces. -/
 theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     ∃ a A L : ℝ, 0 < a ∧ 0 < A ∧ 1 ≤ L ∧ ∀ ν : Measure ℂ, MeasClassPlane ν Cd R₀ →
@@ -193,8 +460,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   set R' : ℝ := ((N : ℝ) + 1) * R₀
   have hR'0 : 0 < R' := by positivity
   set S : ℝ := 2 * R'
-  have hS0 : 0 < S := by positivity
-  obtain ⟨C₁, hC₁1, hC₁⟩ := doubling_upTo_quant (X := ℂ) Cd (16 * S)
+  obtain ⟨C₁, -, hC₁⟩ := doubling_upTo_quant (X := ℂ) Cd (16 * S)
   set C₀ : ℕ := ⌈(C₁ : ℝ) ^ 5⌉₊
   set C_E : ℝ := (C₁ : ℝ) ^ 3 with hCE
   set L : ℝ := rectRatioBound C₀ C_E 1
@@ -203,226 +469,35 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     measure_ball_massRadiusM_bounds_quant (X := ℂ) Cd R' (12 * S)
   obtain ⟨CN, hCN1, hCN⟩ := massRadiusM_inv_smul_quant (X := ℂ) Cd R₀ N hN
   set M : ℝ := (C₁ : ℝ) ^ 6 * C₀ with hM
-  have hM0 : 0 ≤ M := by positivity
   set A' : ℝ := max 1 ((M / c) ^ (1 / δ))
   have hA'1 : 1 ≤ A' := le_max_left _ _
   have : 0 < L := by linarith
   have : 0 < CN := by linarith
   refine ⟨1 / (6 * L), A' * CN, L, by positivity, by positivity, hL1, fun ν hν ↦ ?_⟩
-  -- the measure `μ' = ν / N` and its properties
-  set μ' : Measure ℂ := (N : ℝ≥0∞)⁻¹ • ν with hμ'
-  have hNne : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (show N ≠ 0 by omega)
-  have hNtop : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
-  have hμ'apply : ∀ s, μ' s = (N : ℝ≥0∞)⁻¹ * ν s := fun s ↦ by
-    rw [hμ', smul_apply, smul_eq_mul]
-  have hfinν : ∀ s : Set ℂ, Bornology.IsBounded s → ν s < ∞ := fun s hs ↦ by
-    obtain ⟨r, hr⟩ := hs.subset_closedBall 0
-    exact (measure_mono hr).trans_lt (hν.finite _ (isCompact_closedBall 0 r))
-  have hfin'b : ∀ s : Set ℂ, Bornology.IsBounded s → μ' s < ∞ := fun s hs ↦ by
-    rw [hμ'apply]; exact ENNReal.mul_lt_top (ENNReal.inv_lt_top.2 (by positivity)) (hfinν s hs)
-  have hfin' : ∀ z r, μ' (ball z r) < ∞ := fun z r ↦ hfin'b _ Metric.isBounded_ball
-  have hdbl' : IsLocDoublingMWith μ' Cd := fun z r hr h2r ↦ by
-    rw [hμ'apply, hμ'apply, mul_left_comm]
-    gcongr
-    exact hν.doubling z r hr h2r
-  have hmass' : ∀ z, 1 ≤ μ' (ball z R') := fun z ↦ by
-    rw [hμ'apply]
-    calc (1 : ℝ≥0∞) = (N : ℝ≥0∞)⁻¹ * N := (ENNReal.inv_mul_cancel hNne hNtop).symm
-      _ ≤ (N : ℝ≥0∞)⁻¹ * ν (ball z R') := by gcongr; exact (l4_growth_plane hR₀ hν.mass N z).le
-  have hclass' : MeasClassM μ' Cd R' := ⟨hdbl', hmass', hfin'⟩
-  have hd' : IsLocallyDoubling μ' := ⟨Cd, hdbl'⟩
-  have hdC : ∀ z r, 0 < r → r ≤ 16 * S → μ' (ball z (2 * r)) ≤ C₁ * μ' (ball z r) :=
-    hC₁ μ' hdbl'
+  obtain ⟨hclass', hfin'b⟩ := l4_plane_mu hN hR₀ hν
+  obtain ⟨g, hgdisj, hgcover, hgood⟩ := l4_plane_pieces rfl hR'0 hclass' hfin'b hC₁
+    (l4_coe_pow_le_ceil C₁ 5) hCE
+  have hfin' : ∀ z r, ((N : ℝ≥0∞)⁻¹ • ν) (ball z r) < ∞ := fun z r ↦
+    hfin'b _ Metric.isBounded_ball
+  have hρ' : ∀ z, 0 < massRadius ((N : ℝ≥0∞)⁻¹ • ν) z := fun z ↦
+    massRadius_pos ⟨Cd, hclass'.doubling⟩ hfin' ⟨R', hR'0, hclass'.mass⟩ z
   have hpow : ∀ z (k : ℕ) r, 0 < r → 2 ^ k * r ≤ 2 * (16 * S) →
-      μ' (ball z (2 ^ k * r)) ≤ (C₁ : ℝ≥0∞) ^ k * μ' (ball z r) := fun z ↦
-    l4_iter (f := fun r ↦ μ' (ball z r)) (hdC z)
-  have hre' : ∀ x : ℝ, μ' {w | w.re = x} = 0 := by
-    intro x
-    have : {w : ℂ | w.re = x} = {z | ∃ t : ℝ, z = (x : ℂ) + t * I} := by
-      ext w
-      simp only [mem_ofPred_eq]
-      constructor
-      · intro h; exact ⟨w.im, Complex.ext (by simp [h]) (by simp)⟩
-      · rintro ⟨t, rfl⟩; simp
-    rw [this]
-    exact measure_eq_zero_of_isPorous_plane hd' hfin' (isPorous_line _ _)
-  have him' : ∀ y : ℝ, μ' {w | w.im = y} = 0 := by
-    intro y
-    have : {w : ℂ | w.im = y} = {z | ∃ t : ℝ, z = (y : ℂ) * I + t * 1} := by
-      ext w
-      simp only [mem_ofPred_eq]
-      constructor
-      · intro h; exact ⟨w.re, Complex.ext (by simp) (by simp [h])⟩
-      · rintro ⟨t, rfl⟩; simp
-    rw [this]
-    exact measure_eq_zero_of_isPorous_plane hd' hfin' (isPorous_line _ _)
-  have hfinR : ∀ x₁ x₂ y₁ y₂ : ℝ, μ' (rect x₁ x₂ y₁ y₂) < ∞ := fun x₁ x₂ y₁ y₂ ↦
-    hfin'b _ (Metric.isBounded_ball.subset (l4_rect_subset_ball x₁ x₂ y₁ y₂))
-  -- coarse rows `[jS, (j+1)S)`
-  have hrow : ∀ j : ℤ, ∃ x : ℤ → ℝ, StrictMono x ∧
-      (∀ k, S ≤ x (k + 1) - x k ∧ x (k + 1) - x k ≤ 2 * S) ∧
-      (∀ t : ℝ, ∃ k, t ∈ Ico (x k) (x (k + 1))) ∧
-      ∀ k, ∃ n : ℕ, 1 ≤ n ∧ μ' (rect (x k) (x (k + 1)) (j * S) ((j + 1) * S)) = n := by
-    intro j
-    refine exists_strip_cuts hre' hS0 (fun a b ↦ hfinR _ _ _ _) fun a ↦ ?_
-    refine (hmass' ((a + R' : ℝ) + ((j * S + R' : ℝ) : ℂ) * I)).trans (measure_mono ?_)
-    intro w hw
-    have h1 := (Complex.abs_re_le_norm _).trans_lt (mem_ball.1 hw |>.trans_le' (by
-      rw [Complex.dist_eq]))
-    have h2 := (Complex.abs_im_le_norm _).trans_lt (mem_ball.1 hw |>.trans_le' (by
-      rw [Complex.dist_eq]))
-    simp only [Complex.sub_re, Complex.sub_im, Complex.add_re, Complex.add_im,
-      Complex.ofReal_re, Complex.ofReal_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
-      Complex.I_im] at h1 h2
-    rw [abs_lt] at h1 h2
-    refine ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
-  choose X hXmono hXgap hXcov hXn using hrow
-  choose n hn1 hnμ using hXn
-  -- admissibility, the threshold `C₀` and the doubling scale
-  set P : ℝ → ℝ → ℝ → ℝ → Prop := fun x₁ x₂ y₁ y₂ ↦ x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S
-  have hPher : ∀ x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ, P x₁ x₂ y₁ y₂ → x₁ ≤ x₁' → x₂' ≤ x₂ →
-      y₁ ≤ y₁' → y₂' ≤ y₂ → P x₁' x₂' y₁' y₂' := by
-    intro x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' h h1 h2 h3 h4
-    exact ⟨by linarith [h.1], by linarith [h.2]⟩
-  have hC₁5 : ((C₁ : ℝ≥0∞)) ^ 5 ≤ (C₀ : ℝ≥0∞) := by
-    rw [← ENNReal.coe_pow, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_natCast]
-    exact ENNReal.ofReal_le_ofReal (by push_cast; exact Nat.le_ceil _)
-  have hC₀' : ∀ x₁ x₂ y₁ y₂ : ℝ, IsRectLE 3 x₁ x₂ y₁ y₂ → P x₁ x₂ y₁ y₂ →
-      (C₀ : ℝ≥0∞) < μ' (rect x₁ x₂ y₁ y₂) → 1 < μ' (midThird x₁ x₂ y₁ y₂) := by
-    intro x₁ x₂ y₁ y₂ hg hP hlt
-    obtain ⟨p, r, hr, h6r, hin, hout⟩ := rect_inner_outer (by norm_num : (1 : ℝ) ≤ 3) hg
-    have hrS : r ≤ S / 3 := by
-      have := max_le hP.1 hP.2; linarith
-    have h32 : μ' (rect x₁ x₂ y₁ y₂) ≤ (C₁ : ℝ≥0∞) ^ 5 * μ' (midThird x₁ x₂ y₁ y₂) := by
-      calc μ' (rect x₁ x₂ y₁ y₂) ≤ μ' (ball p (2 ^ 5 * r)) :=
-            measure_mono (hout.trans (ball_subset_ball (by nlinarith)))
-        _ ≤ (C₁ : ℝ≥0∞) ^ 5 * μ' (ball p r) := hpow p 5 r hr (by nlinarith)
-        _ ≤ (C₁ : ℝ≥0∞) ^ 5 * μ' (midThird x₁ x₂ y₁ y₂) := by gcongr
-    by_contra hle
-    push Not at hle
-    have := hlt.trans_le (h32.trans (by
-      calc (C₁ : ℝ≥0∞) ^ 5 * μ' (midThird x₁ x₂ y₁ y₂) ≤ (C₁ : ℝ≥0∞) ^ 5 * 1 := by gcongr
-        _ ≤ (C₀ : ℝ≥0∞) := by rw [mul_one]; exact hC₁5))
-    exact lt_irrefl _ this
-  have hσ' : ∀ x₁ x₂ y₁ y₂ : ℝ, IsRectLE 3 x₁ x₂ y₁ y₂ → P x₁ x₂ y₁ y₂ →
-      1 * max (x₂ - x₁) (y₂ - y₁) ≤ max (x₂ - x₁) (y₂ - y₁) ∧
-      ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ max (x₂ - x₁) (y₂ - y₁) →
-        μ' (ball w (4 * r)) ≤ ENNReal.ofReal C_E * μ' (ball w (r / 2)) := by
-    intro x₁ x₂ y₁ y₂ _ hP
-    refine ⟨by rw [one_mul], fun w _ r hr hrσ ↦ ?_⟩
-    have hrS : r ≤ 2 * S := hrσ.trans (max_le hP.1 hP.2)
-    have := hpow w 3 (r / 2) (by positivity) (by nlinarith)
-    rw [show (2 : ℝ) ^ 3 * (r / 2) = 4 * r by ring] at this
-    rw [hCE, ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_coe_nnreal]
-    exact this
-  have hpart := exists_rect_partition hre' him' P hPher C₀ hC₀'
-    (fun x₁ x₂ y₁ y₂ ↦ max (x₂ - x₁) (y₂ - y₁)) C_E 1 one_pos hσ'
-  -- the blocks
-  set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2
-  set B : ℤ × ℤ → Set ℂ := fun jk ↦
-    rect (X jk.1 jk.2) (X jk.1 (jk.2 + 1)) (jk.1 * S) ((jk.1 + 1) * S) with hB
-  have hblock : ∀ jk : ℤ × ℤ, ∃ q : Fin (nn jk) → ℝ × ℝ × ℝ × ℝ,
-      Pairwise (Function.onFun Disjoint fun i ↦ rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) ∧
-      (⋃ i, rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = B jk ∧
-      ∀ i, μ' (rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = 1 ∧
-        IsRectLE L (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ∧
-        ∃ x₁' x₂' y₁' y₂' : ℝ, IsRectLE 3 x₁' x₂' y₁' y₂' ∧ P x₁' x₂' y₁' y₂' ∧
-          μ' (rect x₁' x₂' y₁' y₂') ≤ C₀ ∧
-          rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ⊆ rect x₁' x₂' y₁' y₂' := by
-    rintro ⟨j, k⟩
-    have hg := hXgap j k
-    have hl : ((j : ℝ) + 1) * S - j * S = S := by ring
-    exact hpart (n j k) _ _ _ _ (hn1 j k)
-      ⟨hXmono j (lt_add_one k), by nlinarith, by rw [hl]; linarith, by rw [hl]; linarith⟩
-      ⟨hg.2, by rw [hl]; linarith⟩ (hnμ j k)
-  choose q hqdisj hqunion hqprops using hblock
-  have hBdisj : Pairwise (Function.onFun Disjoint B) := by
-    rintro ⟨j, k⟩ ⟨j', k'⟩ hne
-    simp only [Function.onFun, hB]
-    by_cases hj : j = j'
-    · subst hj
-      have hk : k ≠ k' := fun h ↦ hne (by rw [h])
-      rcases lt_or_gt_of_ne hk with h | h
-      · exact rect_disjoint_x ((hXmono j).monotone (by omega))
-      · exact (rect_disjoint_x ((hXmono j).monotone (by omega))).symm
-    · rcases lt_or_gt_of_ne hj with h | h
-      · have : ((j : ℝ) + 1) ≤ j' := by exact_mod_cast h
-        exact rect_disjoint_y (by nlinarith)
-      · have : ((j' : ℝ) + 1) ≤ j := by exact_mod_cast h
-        exact (rect_disjoint_y (by nlinarith)).symm
-  have hBcover : ⋃ jk, B jk = univ := by
-    refine eq_univ_of_forall fun z ↦ mem_iUnion.2 ?_
-    set j := ⌊z.im / S⌋
-    have hj1 : (j : ℝ) ≤ z.im / S := Int.floor_le _
-    have hj2 : z.im / S < j + 1 := Int.lt_floor_add_one _
-    rw [le_div_iff₀ hS0] at hj1
-    rw [div_lt_iff₀ hS0] at hj2
-    obtain ⟨k, hk⟩ := hXcov j z.re
-    exact ⟨(j, k), hk, ⟨hj1, hj2⟩⟩
-  set f : (Σ jk : ℤ × ℤ, Fin (nn jk)) → Set ℂ := fun p ↦
-    rect (q p.1 p.2).1 (q p.1 p.2).2.1 (q p.1 p.2).2.2.1 (q p.1 p.2).2.2.2
-  obtain ⟨e, hedisj, heunion⟩ := l4_sigma_partition (fun jk ↦ hn1 jk.1 jk.2) B hBdisj f
-    (fun jk ↦ hqdisj jk) (fun jk ↦ hqunion jk)
-  refine ⟨fun i ↦ f (e i), ⟨fun i ↦ measurableSet_rect _ _ _ _, hedisj,
-    by rw [heunion, hBcover], fun i ↦ ?_, fun i ↦ ?_, fun i ↦ ?_⟩, fun i ↦ ?_⟩
-  · -- mass `N`
-    rw [l4_smul_apply hN, ← hμ', (hqprops _ _).1, mul_one]
+      ((N : ℝ≥0∞)⁻¹ • ν) (ball z (2 ^ k * r)) ≤
+        (C₁ : ℝ≥0∞) ^ k * ((N : ℝ≥0∞)⁻¹ • ν) (ball z r) := fun z ↦
+    l4_iter (f := fun r ↦ ((N : ℝ≥0∞)⁻¹ • ν) (ball z r)) (hC₁ _ hclass'.doubling z)
+  have hmass : ∀ i, ν (rect (g i).1 (g i).2.1 (g i).2.2.1 (g i).2.2.2) = N := fun i ↦ by
+    rw [l4_smul_apply hN, (hgood i).1, mul_one]
+  refine ⟨fun i ↦ rect (g i).1 (g i).2.1 (g i).2.2.1 (g i).2.2.2,
+    ⟨fun i ↦ measurableSet_rect _ _ _ _, hgdisj, hgcover, hmass, fun i ↦ ?_, fun i ↦ ?_⟩,
+    fun i ↦ ?_⟩
   · -- upper size
-    obtain ⟨-, -, x₁', x₂', y₁', y₂', hg, hPb, hμb, hsub⟩ := hqprops (e i).1 (e i).2
-    obtain ⟨p, r, hr, h6r, hin, hout⟩ := rect_inner_outer (by norm_num : (1 : ℝ) ≤ 3) hg
-    have hrS : r ≤ S / 3 := by
-      have := max_le hPb.1 hPb.2; linarith
-    have hgx := hg.1
-    have := hg.2.1
-    intro z hz w hw
-    have hzp : dist z p < 18 * r := by
-      have := hout (hsub hz); rw [mem_ball] at this; linarith
-    have hwp : dist w p < 18 * r := by
-      have := hout (hsub hw); rw [mem_ball] at this; linarith
-    have hzw : dist z w < 36 * r := by
-      linarith [dist_triangle z p w, dist_comm w p]
-    have hball : μ' (ball z (36 * r)) ≤ ENNReal.ofReal M := by
-      calc μ' (ball z (36 * r)) ≤ μ' (ball p (2 ^ 6 * r)) := by
-            refine measure_mono fun y hy ↦ ?_
-            rw [mem_ball] at hy ⊢
-            linarith [dist_triangle y z p]
-        _ ≤ (C₁ : ℝ≥0∞) ^ 6 * μ' (ball p r) := hpow p 6 r hr (by nlinarith)
-        _ ≤ (C₁ : ℝ≥0∞) ^ 6 * C₀ := by
-            gcongr
-            exact (measure_mono (hin.trans (l4_midThird_subset hgx.le _ _))).trans hμb
-        _ = ENNReal.ofReal M := by
-            rw [hM, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
-              ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_natCast]
-    have hρ' : 0 < massRadius μ' z := massRadius_pos hd' hfin' ⟨R', hR'0, hmass'⟩ z
-    have h36 : 36 * r ≤ A' * massRadius μ' z := by
-      rcases le_or_gt (massRadius μ' z) (36 * r) with hle | hlt
-      · have h1 := ((hb μ' hclass' z (36 * r) hle (by linarith)).1).trans hball
-        rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
-        exact (l4_le_of_rpow hc hδ hρ' (by positivity) h1).trans
-          (mul_le_mul_of_nonneg_right (le_max_right _ _) hρ'.le)
-      · exact hlt.le.trans (le_mul_of_one_le_left hρ'.le hA'1)
-    have hCNz := (hCN ν hν.measClassM z).2
-    calc dist z w ≤ A' * massRadius μ' z := hzw.le.trans h36
-      _ ≤ A' * (CN * massRadius ν z) := by gcongr; exact hCNz
-      _ = A' * CN * massRadius ν z := by ring
+    obtain ⟨-, -, x₁', x₂', y₁', y₂', hg, hPb, hμb, hsub⟩ := hgood i
+    exact l4_plane_size hc hδ hM hA'1 (le_max_right _ _) hpow
+      (fun z r h1 h2 ↦ (hb _ hclass' z r h1 h2).1) hρ'
+      (fun z ↦ (hCN ν hν.measClassM z).2) hg hPb hμb hsub
   · -- fatness
-    obtain ⟨hμ1, hLe, -⟩ := hqprops (e i).1 (e i).2
-    obtain ⟨p, r, hr, -, hin, hout⟩ := rect_inner_outer hL1 hLe
-    have hmid := l4_midThird_subset (x₁ := (q (e i).1 (e i).2).1) hLe.1.le
-      (q (e i).1 (e i).2).2.2.1 (q (e i).1 (e i).2).2.2.2
-    have hpP : p ∈ f (e i) := hmid (hin (mem_ball_self hr))
-    have hρ : massRadius ν p ≤ 6 * L * r := by
-      refine l4_massRadius_le (by positivity) ?_
-      calc (1 : ℝ≥0∞) ≤ N := by exact_mod_cast hN
-        _ = ν (f (e i)) := by rw [l4_smul_apply hN, ← hμ', hμ1, mul_one]
-        _ ≤ ν (ball p (6 * L * r)) := measure_mono hout
-    refine ⟨p, hpP, fun w ⟨_, hw⟩ ↦ hmid (hin ?_)⟩
-    rw [mem_ball, dist_comm]
-    calc dist p w < 1 / (6 * L) * massRadius ν p := hw
-      _ ≤ 1 / (6 * L) * (6 * L * r) := by gcongr
-      _ = r := by field_simp
-  · obtain ⟨-, hLe, -⟩ := hqprops (e i).1 (e i).2
-    exact ⟨_, _, _, _, hLe, rfl⟩
+    exact l4_plane_fat hN hL1 (hgood i).2.1 (hmass i)
+  · exact ⟨_, _, _, _, (hgood i).2.1, rfl⟩
 
 /-- Coordinates of nested non-degenerate rectangles. -/
 theorem l4_rect_subset_coords {x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ} (hx : x₁ < x₂) (hy : y₁ < y₂)
