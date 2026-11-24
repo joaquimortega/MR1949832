@@ -90,7 +90,7 @@ theorem isSubharmonicWeight_sub_normSq {φ' : ℂ → ℝ} {ν : Measure ℂ} {�
   refine ⟨hφ'.continuousOn.sub (continuousOn_const.mul (continuous_norm.pow 2).continuousOn),
     fun K hK hKc ↦ (hle K).trans_lt (hφ'.finite_of_compact K hK hKc), by simp,
     fun χ hχ hχc _ ↦ ?_⟩
-  have hL := Reg.laplacian_testFunction hχ
+  have hL := laplacian_testFunction hχ
   have hΔc : HasCompactSupport (Laplacian.laplacian χ) :=
     hχc.mono' ((subset_tsupport _).trans hL.2)
   have i1 := integrable_mul_of_tsupport_subset_real isOpen_univ hφ'.continuousOn hL.1 hΔc

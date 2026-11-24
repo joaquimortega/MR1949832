@@ -42,27 +42,6 @@ theorem measurable_hypAreaDensity :
     Measurable fun z : ℂ ↦ ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2) := by
   fun_prop
 
-theorem hypArea_lt_top_of_isCompact {K : Set ℂ} (hK : K ⊆ 𝔻) (hKc : IsCompact K) :
-    hypArea K < ∞ := by
-  obtain ⟨r', hr'1, hKr'⟩ := exists_lt_subset_ball hKc.isClosed hK
-  calc hypArea K ≤ hypArea (ball 0 r') := measure_mono hKr'
-    _ = ∫⁻ z in ball 0 r' ∩ 𝔻, ENNReal.ofReal ((1 - ‖z‖ ^ 2)⁻¹ ^ 2) := by
-        rw [hypArea, withDensity_apply _ measurableSet_ball, Measure.restrict_restrict
-          measurableSet_ball]
-    _ ≤ ∫⁻ _ in ball 0 r' ∩ 𝔻, ENNReal.ofReal ((1 - r' ^ 2)⁻¹ ^ 2) := by
-        apply setLIntegral_mono measurable_const
-        intro z hz
-        apply ENNReal.ofReal_le_ofReal
-        have hz' : ‖z‖ < r' := by simpa using hz.1
-        have hz0 := norm_nonneg z
-        have h1 : 0 < 1 - r' ^ 2 := by nlinarith
-        have h2 : 1 - r' ^ 2 ≤ 1 - ‖z‖ ^ 2 := by nlinarith
-        have h3 : 0 ≤ (1 - ‖z‖ ^ 2)⁻¹ := inv_nonneg.2 (by linarith)
-        gcongr
-    _ = ENNReal.ofReal ((1 - r' ^ 2)⁻¹ ^ 2) * volume (ball 0 r' ∩ 𝔻) := setLIntegral_const _ _
-    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
-        ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top)
-
 /-- A continuous function with compact support in `𝔻` is integrable against any measure that is
 finite on the compact subsets of `𝔻`. -/
 theorem integrable_of_tsupport_subset_disc {μ : Measure ℂ}
@@ -73,27 +52,6 @@ theorem integrable_of_tsupport_subset_disc {μ : Measure ℂ}
   rw [← integrableOn_iff_integrable_of_support_subset (subset_tsupport χ)]
   exact Measure.integrableOn_of_bounded hfin.ne hχ.aestronglyMeasurable
     (Filter.Eventually.of_forall hC)
-
-/-- Real version of `integrable_mul_of_tsupport_subset`. -/
-theorem integrable_mul_of_tsupport_subset_real {Ω : Set ℂ} (hΩ : IsOpen Ω) {h β : ℂ → ℝ}
-    (hh : ContinuousOn h Ω) (hβ : Continuous β) (hc : HasCompactSupport β)
-    (hs : tsupport β ⊆ Ω) : Integrable (fun x ↦ h x * β x) := by
-  have hcont : Continuous (fun x ↦ h x * β x) := by
-    rw [continuous_iff_continuousAt]
-    intro x
-    by_cases hx : x ∈ Ω
-    · exact (hh.continuousAt (hΩ.mem_nhds hx)).mul hβ.continuousAt
-    · have hx' : x ∉ tsupport β := fun h' ↦ hx (hs h')
-      rw [notMem_tsupport_iff_eventuallyEq] at hx'
-      have : (fun _ ↦ (0 : ℝ)) =ᶠ[nhds x] fun x ↦ h x * β x := by
-        filter_upwards [hx'] with y hy
-        simp [hy]
-      exact continuousAt_const.congr this
-  exact hcont.integrable_of_hasCompactSupport (hc.mul_left (f := h))
-
-theorem hasCompactSupport_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ)
-    (hc : HasCompactSupport χ) : HasCompactSupport (Laplacian.laplacian χ) :=
-  hc.mono' ((subset_tsupport _).trans (laplacian_testFunction hχ).2)
 
 theorem contDiffOn_log_one_sub_normSq :
     ContDiffOn ℝ 2 (fun z : ℂ ↦ Real.log (1 - ‖z‖ ^ 2)) 𝔻 :=
@@ -186,30 +144,6 @@ theorem sinh_le_two_mul_of_le_one {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) : Re
   have h3 := (abs_le.1 h1).2
   nlinarith
 
-theorem cosh_le_two_of_le_one {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) : Real.cosh r ≤ 2 := by
-  have h1 := Real.abs_exp_sub_one_sub_id_le (x := r) (by rw [abs_of_nonneg hr0]; exact hr1)
-  have h2 : Real.exp (-r) ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
-  rw [Real.cosh_eq]
-  have h3 := (abs_le.1 h1).2
-  nlinarith
-
-theorem isLocallyDoublingDiscWith_hypArea : IsLocallyDoublingDiscWith hypArea 16 := by
-  intro z hz s hs h2s
-  rw [hypArea_hypBall hz (by linarith), hypArea_hypBall hz hs.le, Real.sinh_two_mul]
-  have hc := cosh_le_two_of_le_one hs.le (by linarith)
-  have hc0 := Real.cosh_pos s
-  have : Real.pi * (2 * Real.sinh s * Real.cosh s) ^ 2 ≤ 16 * (Real.pi * Real.sinh s ^ 2) := by
-    have : (2 * Real.sinh s * Real.cosh s) ^ 2 = 4 * Real.sinh s ^ 2 * Real.cosh s ^ 2 := by ring
-    rw [this]
-    have hcs : Real.cosh s ^ 2 ≤ 4 := by nlinarith
-    have := sq_nonneg (Real.sinh s)
-    have := Real.pi_pos
-    nlinarith [mul_le_mul_of_nonneg_left hcs (mul_nonneg this.le (sq_nonneg (Real.sinh s)))]
-  calc ENNReal.ofReal (Real.pi * (2 * Real.sinh s * Real.cosh s) ^ 2)
-      ≤ ENNReal.ofReal (16 * (Real.pi * Real.sinh s ^ 2)) := ENNReal.ofReal_le_ofReal this
-    _ = ((16 : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (Real.pi * Real.sinh s ^ 2) := by
-        rw [ENNReal.ofReal_mul (by norm_num)]; simp
-
 end Thm2
 
 theorem hypArea_hypBall_ge {z : ℂ} (hz : z ∈ 𝔻) {r : ℝ} (hr0 : 0 < r) :
@@ -268,7 +202,7 @@ theorem IsLocallyDoublingDisc.of_le_of_le {μ ν : Measure ℂ} (hμ : IsLocally
   exact ⟨_, IsLocallyDoublingDiscWith.of_le_of_le hCd ha'0 h₁' (by rw [hbc]; exact h₂)⟩
 
 theorem isLocallyDoublingDisc_hypArea : IsLocallyDoublingDisc hypArea :=
-  ⟨16, isLocallyDoublingDiscWith_hypArea⟩
+  ⟨16, Prop2.isLocallyDoublingDiscWith_hypArea⟩
 
 /-! ## The auxiliary weight -/
 
@@ -288,14 +222,14 @@ theorem isSubharmonicWeight_add_log {φ' : ℂ → ℝ} {ν : Measure ℂ} {ε c
     fun K hK hKc ↦ (hle K).trans_lt (hφ'.finite_of_compact K hK hKc),
     nonpos_iff_eq_zero.1 (hφ'.carried ▸ hle _), fun χ hχ hχc hχs ↦ ?_⟩
   have hL := laplacian_testFunction hχ
-  have hΔc := Thm2.hasCompactSupport_laplacian hχ hχc
+  have hΔc := hasCompactSupport_laplacian hχc
   have hΔs : tsupport (Laplacian.laplacian χ) ⊆ 𝔻 := hL.2.trans hχs
   have i1 := integrable_mul_of_tsupport_subset_real isOpen_ball hφ'.continuousOn hL.1 hΔc hΔs
   have i2 := integrable_mul_of_tsupport_subset_real isOpen_ball
     contDiffOn_log_one_sub_normSq.continuousOn hL.1 hΔc hΔs
   have iν : Integrable χ ν := integrable_of_tsupport_subset_disc hνfin hχ.continuous hχc hχs
   have iA : Integrable χ hypArea := integrable_of_tsupport_subset_disc
-    (fun K hK hKc ↦ hypArea_lt_top_of_isCompact hK hKc) hχ.continuous hχc hχs
+    (fun K hK hKc ↦ Prop2.hypArea_lt_top_of_isCompact hK hKc) hχ.continuous hχc hχs
   calc ∫ z, (φ' z + c * Real.log (1 - ‖z‖ ^ 2)) * Laplacian.laplacian χ z
       = (∫ z, φ' z * Laplacian.laplacian χ z) +
           c * ∫ z, Real.log (1 - ‖z‖ ^ 2) * Laplacian.laplacian χ z := by
@@ -313,28 +247,6 @@ theorem isSubharmonicWeight_add_log {φ' : ℂ → ℝ} {ν : Measure ℂ} {ε c
           ENNReal.toReal_ofReal (by linarith), smul_eq_mul]
 
 /-! ## The partition and the kernel -/
-
-theorem measurableSet_goodSet_disc (Z : Set ℂ) (ρ : ℂ → ℝ) (ε : ℝ) :
-    MeasurableSet {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} := by
-  have hU : IsOpen (⋃ w ∈ Z ∩ 𝔻, 𝔻 ∩ pseudoHyp w ⁻¹' Iio (Real.tanh (ε * ρ w))) :=
-    isOpen_biUnion fun w hw ↦
-      (continuousOn_pseudoHyp hw.2).isOpen_inter_preimage isOpen_ball isOpen_Iio
-  have heq : {z | z ∈ 𝔻 ∧ ∀ w ∈ Z, w ∈ 𝔻 → ε * ρ w ≤ hypDist z w} =
-      𝔻 \ ⋃ w ∈ Z ∩ 𝔻, 𝔻 ∩ pseudoHyp w ⁻¹' Iio (Real.tanh (ε * ρ w)) := by
-    ext z
-    simp only [mem_ofPred_eq, mem_sdiff, mem_iUnion, mem_inter_iff, mem_preimage, mem_Iio,
-      exists_prop, not_exists, not_and]
-    constructor
-    · rintro ⟨hz, h⟩
-      refine ⟨hz, fun w ⟨hwZ, hwD⟩ _ hlt ↦ ?_⟩
-      rw [pseudoHyp_comm, ← hypDist_lt_iff hz hwD] at hlt
-      exact absurd (h w hwZ hwD) (not_le.2 hlt)
-    · rintro ⟨hz, h⟩
-      refine ⟨hz, fun w hwZ hwD ↦ not_lt.1 fun hlt ↦ h w ⟨hwZ, hwD⟩ hz ?_⟩
-      rw [pseudoHyp_comm, ← hypDist_lt_iff hz hwD]
-      exact hlt
-  rw [heq]
-  exact measurableSet_ball.diff hU.measurableSet
 
 /-- The holomorphic factor of the kernel of Theorem 2:
 `H(z, ζ) = ∑ᵢ χ_{Ωᵢ}(ζ) hᵢ(z)/hᵢ(ζ) · (1 - |ζ|²)/(1 - ζ̄ z)`. -/
@@ -447,7 +359,7 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
   let G : Fin n → Set ℂ := fun i ↦
     {z | z ∈ 𝔻 ∧ ∀ w ∈ {w | h i w = 0}, w ∈ 𝔻 → εP * massRadiusDisc μψ w ≤ hypDist z w}
   obtain ⟨Ω, hΩm, hΩG, hΩu⟩ := exists_measurable_partition measurableSet_ball G
-    (fun i ↦ measurableSet_goodSet_disc _ _ _) (fun z hz ↦ by
+    (fun i ↦ Prop2.measurableSet_goodSet_disc _ _ _) (fun z hz ↦ by
       obtain ⟨i, hi⟩ := hcov z hz
       exact ⟨i, hz, fun w hw0 hwD ↦ hi w hwD hw0⟩)
   have hform : ∀ ζ ∈ 𝔻, ∃ i, ζ ∈ Ω i ∧ ∀ z, thm2H h' Ω z ζ =
@@ -782,10 +694,10 @@ only on the comparison constants. -/
 theorem measClassDisc_of_le_hypArea {a b : ℝ} (ha : 0 < a) {μ : Measure ℂ}
     (h₁ : ENNReal.ofReal a • hypArea ≤ μ) (h₂ : μ ≤ ENNReal.ofReal b • hypArea) :
     MeasClassDisc μ (b.toNNReal * 16 / a.toNNReal) ((2 * ⌈1 / (a * Real.pi)⌉₊ + 1) * 1) := by
-  refine ⟨isLocallyDoublingDiscWith_hypArea.of_le_of_le (by simpa using ha) h₁ h₂,
+  refine ⟨Prop2.isLocallyDoublingDiscWith_hypArea.of_le_of_le (by simpa using ha) h₁ h₂,
     fun z hz ↦ one_lt_measure_hypBall_of_le ha h₁ hz, fun K hK hKc ↦ (h₂ K).trans_lt ?_⟩
   rw [smul_apply, smul_eq_mul]
-  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hypArea_lt_top_of_isCompact hK hKc)
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (Prop2.hypArea_lt_top_of_isCompact hK hKc)
 
 theorem bridge_isLocallyDoublingDisc {ψ₀ : ℂ → ℝ} {δ M : ℝ} (hδ : 0 < δ)
     (hlow : ∀ z ∈ 𝔻, δ ≤ invLap ψ₀ z) (hup : ∀ z ∈ 𝔻, invLap ψ₀ z ≤ M) :

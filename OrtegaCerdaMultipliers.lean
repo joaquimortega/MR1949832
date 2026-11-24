@@ -19,6 +19,7 @@ import OrtegaCerdaMultipliers.Potential.Fundamental
 import OrtegaCerdaMultipliers.Potential.Weyl
 import OrtegaCerdaMultipliers.Potential.Local
 import OrtegaCerdaMultipliers.Potential.GlobalKernels
+import OrtegaCerdaMultipliers.Doubling.AbstractBase
 import OrtegaCerdaMultipliers.Doubling.Abstract
 import OrtegaCerdaMultipliers.Doubling.Plane
 import OrtegaCerdaMultipliers.Doubling.Line
@@ -35,6 +36,7 @@ import OrtegaCerdaMultipliers.Partition.Properties
 import OrtegaCerdaMultipliers.Quadrature
 import OrtegaCerdaMultipliers.LogModulus
 import OrtegaCerdaMultipliers.LogModulusWeak
+import OrtegaCerdaMultipliers.ModelKernelsBase
 import OrtegaCerdaMultipliers.ModelKernels
 import OrtegaCerdaMultipliers.Multiplier.Defs
 import OrtegaCerdaMultipliers.Multiplier.CellBounds
@@ -42,6 +44,7 @@ import OrtegaCerdaMultipliers.Multiplier.Basic
 import OrtegaCerdaMultipliers.Multiplier.Kernel
 import OrtegaCerdaMultipliers.Multiplier.Cells
 import OrtegaCerdaMultipliers.Multiplier.NearField
+import OrtegaCerdaMultipliers.Multiplier.Assembly
 import OrtegaCerdaMultipliers.Multiplier.Potential
 import OrtegaCerdaMultipliers.Multiplier.Estimates
 import OrtegaCerdaMultipliers.Multiplier.Nodes

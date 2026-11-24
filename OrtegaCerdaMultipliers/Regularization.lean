@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joaquim Ortega-Cerdà
 -/
 import OrtegaCerdaMultipliers.Potential.Local
+import OrtegaCerdaMultipliers.LogModulus
 import OrtegaCerdaMultipliers.Doubling.Quant
 import OrtegaCerdaMultipliers.Foundations.HyperbolicExtra
 
@@ -166,30 +167,6 @@ theorem integrable_of_tsupport {ν : Measure ℂ} {χ : ℂ → ℝ} (hχ : Cont
     Measure.integrableOn_of_bounded hν.ne hχ.aestronglyMeasurable
       (ae_of_all _ fun x ↦ hC x)
   exact (integrableOn_iff_integrable_of_support_subset (subset_tsupport χ)).1 hon
-
-/-- Test functions: `Δχ` is continuous and supported in `tsupport χ` (copy of M07's
-`laplacian_testFunction`, which this file does not import). -/
-theorem laplacian_testFunction {χ : ℂ → ℝ} (hχ : ContDiff ℝ (⊤ : ℕ∞) χ) :
-    Continuous (Laplacian.laplacian χ) ∧ tsupport (Laplacian.laplacian χ) ⊆ tsupport χ := by
-  have hfun : Laplacian.laplacian χ =
-      fun z ↦ iteratedFDeriv ℝ 2 χ z ![1, 1] + iteratedFDeriv ℝ 2 χ z ![I, I] :=
-    InnerProductSpace.laplacian_eq_iteratedFDeriv_complexPlane χ
-  have hcont : Continuous (iteratedFDeriv ℝ 2 χ) :=
-    hχ.continuous_iteratedFDeriv (WithTop.coe_le_coe.mpr (le_top : ((2 : ℕ) : ℕ∞) ≤ ⊤))
-  refine ⟨?_, ?_⟩
-  · rw [hfun]
-    have h1 : Continuous fun z ↦ iteratedFDeriv ℝ 2 χ z ![1, 1] :=
-      (continuous_eval_const (![1, 1] : Fin 2 → ℂ)).comp hcont
-    have h2 : Continuous fun z ↦ iteratedFDeriv ℝ 2 χ z ![I, I] :=
-      (continuous_eval_const (![I, I] : Fin 2 → ℂ)).comp hcont
-    exact h1.add h2
-  · refine closure_minimal (fun z hz ↦ ?_) (isClosed_tsupport χ)
-    apply tsupport_iteratedFDeriv_subset (𝕜 := ℝ) 2
-    apply subset_tsupport
-    intro h0
-    apply hz
-    rw [hfun]
-    simp [h0]
 
 /-- `a + b ≤ max A B * (x + y)` from `a ≤ A x`, `b ≤ B y`. -/
 theorem add_le_max_mul {a b x y : ℝ≥0∞} {A B : ℝ≥0} (ha : a ≤ A * x) (hb : b ≤ B * y) :
