@@ -162,15 +162,15 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
       linarith
     rw [he, measure_empty] at h
     exact absurd h (not_lt.2 (zero_le))
-  set rN : ℝ := ((N : ℝ) + 1) * R₀ with hrN
+  set rN : ℝ := ((N : ℝ) + 1) * R₀
   have hrN0 : 0 < rN := by positivity
-  set R₁ : ℝ := 2 * rN with hR₁
+  set R₁ : ℝ := 2 * rN
   obtain ⟨C₁, hC₁1, hC₁⟩ := doubling_upTo_quant (X := ℝ) Cd R₁
   obtain ⟨c, Cb, δ, sb, hc, -, hδ, -, hb⟩ :=
     measure_ball_massRadiusM_bounds_quant (X := ℝ) Cd R₀ R₁
   set M : ℝ := (C₁ : ℝ) ^ 2 * N with hM
   have hM0 : 0 ≤ M := by positivity
-  set A : ℝ := max 1 ((M / c) ^ (1 / δ)) with hA
+  set A : ℝ := max 1 ((M / c) ^ (1 / δ))
   refine ⟨1 / 2, A, by norm_num, lt_of_lt_of_le one_pos (le_max_left _ _), fun μ hμ ↦ ?_⟩
   -- per-measure facts
   have hcar : μ {z | z.im ≠ 0} = 0 := hμ.doubling.1
@@ -209,7 +209,8 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     rw [mem_closedBall_zero_iff]
     refine (Complex.norm_le_abs_re_add_abs_im z).trans ?_
     have : |z.re| ≤ |a| + |b| := by
-      rw [abs_le]; constructor <;> linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
+      rw [abs_le]
+      constructor <;> linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
     have : |z.im| ≤ 1 := by rw [abs_le]; constructor <;> linarith
     linarith
   have hgrow : ∀ x : ℝ, (N : ℝ≥0∞) < μ (lineInterval x rN) := lineCut_growth hR₀ hμ.mass N
@@ -308,7 +309,8 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     | zero => simp [rect_eq_empty_of_le le_rfl]
     | succ n ih =>
       have := measure_rect_add_x μ (y₁ := -1) (y₂ := 1)
-        (hmono.monotone (show (0 : ℤ) ≤ n by omega)) (hmono.monotone (show (n : ℤ) ≤ n + 1 by omega))
+        (hmono.monotone (show (0 : ℤ) ≤ n by omega))
+        (hmono.monotone (show (n : ℤ) ≤ n + 1 by omega))
       rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring, this, ih, (hblock n).2.2]
       push_cast; ring
   have hmassL : ∀ n : ℕ, μ (rect (x (-(n : ℤ))) (x 0) (-1) 1) = n * N := by
@@ -370,7 +372,7 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
   have hPdist : ∀ k, ∀ z ∈ P k, ∀ w ∈ P k, dist z w ≤ A * massRadiusLine μ z.re := by
     rintro k z ⟨u, hu, rfl⟩ w ⟨v, hv, rfl⟩
     obtain ⟨hk1, hk2, -⟩ := hblock k
-    set L := x (k + 1) - x k with hL
+    set L := x (k + 1) - x k
     have hL0 : 0 < L := by linarith
     simp only [Complex.ofReal_re]
     rw [prop_dist_ofReal_line]

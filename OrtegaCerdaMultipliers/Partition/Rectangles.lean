@@ -95,7 +95,7 @@ theorem measure_rect_add_y (ν : Measure ℂ) {x₁ x₂ a b c : ℝ} (hab : a �
 theorem rect_eq_empty_of_le {x₁ x₂ y₁ y₂ : ℝ} (h : x₂ ≤ x₁) : rect x₁ x₂ y₁ y₂ = ∅ := by
   ext w
   simp only [rect_mem_iff, mem_empty_iff_false, iff_false, not_and]
-  intro h1 h2
+  intro h1 _
   linarith
 
 /-- Continuity of the mass of a rectangle in its right edge. -/
@@ -227,7 +227,8 @@ theorem rect_strip_step_left {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re
   set m := ⌈G (b - h)⌉₊
   have hm1 : G (b - h) ≤ m := Nat.le_ceil _
   have hm2 : (m : ℝ) < G (b - h) + 1 := Nat.ceil_lt_add_one (by linarith)
-  obtain ⟨t, ⟨ht1, ht2⟩, hGt'⟩ := intermediate_value_Icc' (show c ≤ b - h by simp only [c]; linarith)
+  obtain ⟨t, ⟨ht1, ht2⟩, hGt'⟩ :=
+    intermediate_value_Icc' (show c ≤ b - h by simp only [c]; linarith)
     hc.continuousOn ⟨hm1, by linarith⟩
   refine ⟨t, ht1, ht2, m, Nat.one_le_ceil_iff.2 (by linarith), ?_⟩
   rw [hGt t ht1 (by linarith)] at hGt'
@@ -511,12 +512,12 @@ theorem rect_inner_outer {L : ℝ} (hL : 1 ≤ L) {x₁ x₂ y₁ y₂ : ℝ} (h
     ∃ (p : ℂ) (r : ℝ), 0 < r ∧ 6 * r ≤ max (x₂ - x₁) (y₂ - y₁) ∧
       ball p r ⊆ midThird x₁ x₂ y₁ y₂ ∧ rect x₁ x₂ y₁ y₂ ⊆ ball p (6 * L * r) := by
   obtain ⟨hx, hy, hxL, hyL⟩ := h
-  set w := x₂ - x₁ with hw
-  set l := y₂ - y₁ with hl
+  set w := x₂ - x₁
+  set l := y₂ - y₁
   have hw0 : 0 < w := sub_pos.2 hx
   have hl0 : 0 < l := sub_pos.2 hy
   set m := min w l with hm
-  have hm0 : 0 < m := lt_min hw0 hl0
+  have : 0 < m := lt_min hw0 hl0
   set p : ℂ := ⟨(x₁ + x₂) / 2, (y₁ + y₂) / 2⟩ with hp
   refine ⟨p, m / 6, by positivity, by
     rw [show 6 * (m / 6) = m by ring]; exact (min_le_left _ _).trans (le_max_left _ _), ?_, ?_⟩
@@ -576,7 +577,7 @@ theorem one_le_rectRatioBound (C₀ : ℕ) (C_E κ : ℝ) : 1 ≤ rectRatioBound
 theorem rectCore_continuousOn {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = x} = 0)
     {x₁ x₂ y₁ y₂ : ℝ} (hQ : ν (rect x₁ x₂ y₁ y₂) < ∞) :
     ContinuousOn (fun t ↦ (ν (rect x₁ t y₁ y₂)).toReal) (Icc x₁ x₂) := by
-  set Q := rect x₁ x₂ y₁ y₂ with hQdef
+  set Q := rect x₁ x₂ y₁ y₂
   have hre' : ∀ x : ℝ, ν.restrict Q {w | w.re = x} = 0 := fun x ↦
     nonpos_iff_eq_zero.1 ((Measure.restrict_apply_le _ _).trans (hre x).le)
   have hfin' : ∀ b, ν.restrict Q (rect x₁ b y₁ y₂) < ∞ := fun b ↦
@@ -595,7 +596,7 @@ theorem rectCore_bisect_x {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.re = 
   set F : ℝ → ℝ := fun t ↦ (ν (rect x₁ t y₁ y₂)).toReal with hF
   have hc := rectCore_continuousOn hre hQf
   set a := x₁ + (x₂ - x₁) / 3 with ha
-  set b := x₂ - (x₂ - x₁) / 3 with hb
+  set b := x₂ - (x₂ - x₁) / 3
   have hxa : x₁ ≤ a := by linarith
   have hab : a ≤ b := by linarith
   have hbx : b ≤ x₂ := by linarith
@@ -747,7 +748,7 @@ theorem rectCore_slices_y {t : ℕ → ℝ} (n : ℕ) (htm : Monotone t) (x₁ x
 
 theorem rectCore_pow_ge (C₀ : ℕ) (C_E : ℝ) :
     (C₀ : ℝ) + 1 ≤ (1 + 1 / (2 * max C_E 1)) ^ rectRatioK₀ C₀ C_E := by
-  have hC : 1 ≤ max C_E 1 := le_max_right _ _
+  have : 1 ≤ max C_E 1 := le_max_right _ _
   have hlog : 0 < Real.log (1 + 1 / (2 * max C_E 1)) :=
     Real.log_pos (by have : 0 < 1 / (2 * max C_E 1) := by positivity
                      linarith)
@@ -778,11 +779,11 @@ theorem rectCore_slice_wide {ν : Measure ℂ} {C₀ : ℕ} {C_E κ x₁ x₂ y�
     (hED : ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ κ * (x₂ - x₁) →
       ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2))) :
     min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E * (x₂ - x₁) ≤ t' - t := by
-  set C := max C_E 1 with hCdef
+  set C := max C_E 1
   have hC : 1 ≤ C := le_max_right _ _
-  set k₀ := rectRatioK₀ C₀ C_E with hk₀
-  have hw : 0 < x₂ - x₁ := by linarith
-  have hs : 0 < t' - t := sub_pos.2 htt'
+  set k₀ := rectRatioK₀ C₀ C_E
+  have : 0 < x₂ - x₁ := by linarith
+  have : 0 < t' - t := sub_pos.2 htt'
   have h3 : (0 : ℝ) < 3 ^ k₀ := by positivity
   by_contra hcon
   push Not at hcon
@@ -840,7 +841,7 @@ theorem rectCore_slice_wide {ν : Measure ℂ} {C₀ : ℕ} {C_E κ x₁ x₂ y�
   · -- grow to the left
     have h30 : t' - t ≤ 3 ^ k₀ * (t' - t) := by
       have := h3i 0 (Nat.zero_le _); simpa using this
-    have hroom : (x₂ - x₁) / 4 ≤ t - x₁ := by linarith
+    have : (x₂ - x₁) / 4 ≤ t - x₁ := by linarith
     set A : ℕ → ℝ := fun i ↦ (ν (rect (t' - 3 ^ i * (t' - t)) t' y₁ y₂)).toReal with hA
     set B : ℕ → ℝ := fun i ↦
       (ν (rect (t' - 3 * (3 ^ i * (t' - t))) (t' - 3 ^ i * (t' - t)) y₁ y₂)).toReal with hB
@@ -1009,9 +1010,9 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
           ∃ x₁' x₂' y₁' y₂' : ℝ, IsRectLE 3 x₁' x₂' y₁' y₂' ∧ P x₁' x₂' y₁' y₂' ∧
             ν (rect x₁' x₂' y₁' y₂') ≤ C₀ ∧
             rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ⊆ rect x₁' x₂' y₁' y₂' := by
-  set L := rectRatioBound C₀ C_E κ with hLdef
+  set L := rectRatioBound C₀ C_E κ
   set cs := min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E with hcs
-  have hmin : 0 < min (1 / 4) κ := lt_min (by norm_num) hκ
+  have : 0 < min (1 / 4) κ := lt_min (by norm_num) hκ
   have hcs0 : 0 < cs := by positivity
   have hL3 : 3 ≤ L := le_max_left _ _
   have hLcs : 1 / cs ≤ L := by rw [hcs, one_div_div]; exact le_max_right _ _
@@ -1019,7 +1020,7 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
   have hratio : ∀ {s w l : ℝ}, 0 < s → cs * w ≤ s → s ≤ w → l ≤ w → w ≤ 3 * l →
       s ≤ L * l ∧ l ≤ L * s := by
     intro s w l hs hsw hsw' hlw hwl
-    have hl : 0 ≤ l := by linarith
+    have : 0 ≤ l := by linarith
     refine ⟨by nlinarith, ?_⟩
     have h1 : w ≤ s / cs := by rw [le_div_iff₀ hcs0]; linarith
     have h2 : s / cs ≤ L * s := by

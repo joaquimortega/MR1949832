@@ -108,7 +108,7 @@ theorem pseudoHyp_cayleyInv {w₁ w₂ : ℂ} (h₁ : 0 < w₁.im) (h₂ : 0 < w
     have := congrArg Complex.im h
     simp at this
     linarith
-  have hcw' : conj w₁ - w₂ ≠ 0 := by
+  have : conj w₁ - w₂ ≠ 0 := by
     intro h; apply hcw
     have := congrArg conj h
     simpa using this
@@ -296,7 +296,7 @@ theorem cay_euclid_doubling (Cd : ℝ≥0) :
       ∀ w : ℂ, 0 < w.im → ∀ r : ℝ, 0 < r → r ≤ w.im / 16 →
         (μ.restrict 𝔻).map cayley (ball w (4 * r)) ≤
           ENNReal.ofReal C_E * (μ.restrict 𝔻).map cayley (ball w (r / 2)) := by
-  set C' : ℝ≥0 := max Cd 1 with hC'
+  set C' : ℝ≥0 := max Cd 1
   refine ⟨(C' : ℝ) ^ 4, by positivity, fun μ hd w hw r hr hrw ↦ ?_⟩
   set y := w.im with hy
   have hden : 0 < 2 * y - 4 * r := by linarith
@@ -304,7 +304,7 @@ theorem cay_euclid_doubling (Cd : ℝ≥0) :
   set tO := 4 * r / (2 * y - 4 * r) with htO
   have htO0 : 0 < tO := by positivity
   have htO1 : tO ≤ 1 / 7 := by rw [htO, div_le_iff₀ hden]; linarith
-  set βo := Real.artanh tO with hβo
+  set βo := Real.artanh tO
   have hβo0 : 0 < βo := Real.artanh_pos ⟨htO0, by linarith⟩
   have htanh : Real.tanh βo = tO := Real.tanh_artanh ⟨by linarith, by linarith⟩
   have hβo_le : βo ≤ tO / (1 - tO) := cay_artanh_le htO0.le (by linarith)
@@ -331,7 +331,7 @@ theorem cay_euclid_doubling (Cd : ℝ≥0) :
     rw [← Real.artanh_le_artanh_iff ⟨Real.neg_one_lt_tanh _, Real.tanh_lt_one _⟩
       ⟨by linarith, hti1⟩, Real.artanh_tanh]
     exact hβi_le
-  set p := cayleyInv w with hp
+  set p := cayleyInv w
   have hpD : p ∈ 𝔻 := cayleyInv_mem hw
   rw [cay_map_apply μ measurableSet_ball, cay_map_apply μ measurableSet_ball]
   have hout : cayleyPre (ball w (4 * r)) ⊆ hypBall p βo := by
@@ -381,9 +381,9 @@ theorem cay_ratio_arith {P Q K y : ℝ} (hy : 0 < y) (hP : 0 ≤ P) (hQ : 0 < Q)
   have e1 : 1 - P / Q = (Q - P) / Q := by field_simp
   rw [e1, div_le_div_iff₀ hK hQ]
   have e2 : 4 * y ^ 2 ≤ (Q - P) * (2 * Q) := by nlinarith
-  have e3 : (Q - P) * Q ^ 2 ≤ (Q - P) * (K * y ^ 2) :=
+  have : (Q - P) * Q ^ 2 ≤ (Q - P) * (K * y ^ 2) :=
     mul_le_mul_of_nonneg_left hQsq (by linarith)
-  have e4 : 2 * y ^ 2 * Q ≤ (Q - P) * Q ^ 2 := by nlinarith
+  have : 2 * y ^ 2 * Q ≤ (Q - P) * Q ^ 2 := by nlinarith
   by_contra hcon
   push Not at hcon
   nlinarith
@@ -424,7 +424,7 @@ theorem discBox_inner_outer (Λ L : ℝ) (hΛ : 0 < Λ) (hL : 1 ≤ L) :
   have hl0 : 0 < y₂ - y₁ := sub_pos.2 hy
   set m := min (x₂ - x₁) (y₂ - y₁) with hm
   have hm0 : 0 < m := lt_min hw0 hl0
-  have hmw : m ≤ x₂ - x₁ := min_le_left _ _
+  have : m ≤ x₂ - x₁ := min_le_left _ _
   have hml : m ≤ y₂ - y₁ := min_le_right _ _
   set M := max (x₂ - x₁) (y₂ - y₁) with hMdef
   have hMm : M ≤ L * m := by
@@ -441,7 +441,7 @@ theorem discBox_inner_outer (Λ L : ℝ) (hΛ : 0 < Λ) (hL : 1 ≤ L) :
   have ht₁0 : 0 < t₁ := by positivity
   have h1t : 1 - t₁ = 12 * yc / (12 * yc + m) := by rw [ht₁]; field_simp; ring
   have ht₁1 : t₁ < 1 := by rw [ht₁, div_lt_one (by positivity)]; linarith
-  set β := Real.artanh t₁ with hβ
+  set β := Real.artanh t₁
   have hβ0 : 0 < β := Real.artanh_pos ⟨ht₁0, ht₁1⟩
   have htanh : Real.tanh β = t₁ := Real.tanh_artanh ⟨by linarith, ht₁1⟩
   refine ⟨cayleyInv c, cayleyInv_mem hc, β, hβ0, ?_, ?_, ?_⟩
@@ -470,8 +470,8 @@ theorem discBox_inner_outer (Λ L : ℝ) (hΛ : 0 < Λ) (hL : 1 ≤ L) :
     have hv : 0 < (cayley z).im := cayley_im_pos hz
     obtain ⟨⟨hv1, hv2⟩, ⟨hv3, hv4⟩⟩ := hzQ
     set v := cayley z with hv_def
-    set P := ‖c - v‖ with hP_def
-    set Q := ‖c - conj v‖ with hQ_def
+    set P := ‖c - v‖
+    set Q := ‖c - conj v‖
     have hP0 : 0 ≤ P := norm_nonneg _
     have hPM : P ≤ M := by
       have h0 := Complex.norm_le_abs_re_add_abs_im (c - v)
@@ -589,7 +589,7 @@ theorem exists_hypBall_subset_discBox_row {R : ℝ} (hR : 0 < R) {y₁ : ℝ} (h
   obtain ⟨hzD, hzd⟩ := hz
   have h1 := (cay_hypDist_lt_iff hc hzD R).1 hzd
   rw [← ht] at h1
-  set v := cayley z with hv_def
+  set v := cayley z
   have hv : 0 < v.im := cayley_im_pos hzD
   have hvert := cay_im_bound ht0 ht1.le hc hv h1
   have hhor := cay_norm_lt_of_tau_lt hc ht1 h1
@@ -636,7 +636,7 @@ theorem exists_hypBall_subset_discBox_row {R : ℝ} (hR : 0 < R) {y₁ : ℝ} (h
 /-- A horocyclic box with `0 < y₁` lies in a compact subset of `𝔻`. -/
 theorem exists_isCompact_discBox_subset (x₁ x₂ : ℝ) {y₁ : ℝ} (hy : 0 < y₁) (y₂ : ℝ) :
     ∃ K : Set ℂ, IsCompact K ∧ K ⊆ 𝔻 ∧ discBox x₁ x₂ y₁ y₂ ⊆ K := by
-  set K₀ : Set ℂ := {w | w.re ∈ Icc x₁ x₂ ∧ w.im ∈ Icc y₁ y₂} with hK₀
+  set K₀ : Set ℂ := {w | w.re ∈ Icc x₁ x₂ ∧ w.im ∈ Icc y₁ y₂}
   have hK₀c : IsCompact K₀ := by
     refine Metric.isCompact_of_isClosed_isBounded ?_ ?_
     · exact (isClosed_Icc.preimage Complex.continuous_re).inter
