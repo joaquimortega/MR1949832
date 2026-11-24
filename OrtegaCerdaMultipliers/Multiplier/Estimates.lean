@@ -112,7 +112,6 @@ theorem sum_multiset_le_of_distinguished {G : Finset ℕ} {Λ : ℕ → Multiset
   nlinarith
 
 
-set_option maxHeartbeats 800000 in
 /-- Estimate (2), corrected: `M log(d/ρ) − C ≤ S(z) ≤ log(d/ρ) + C` off the nodes, and
 `d(z, Λ) ≤ C ρ(z)` everywhere.  Here `ρ = massRadius (lapNorm μ)`. -/
 theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
@@ -223,7 +222,7 @@ theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
         by_contra hi₀
         rw [hmemG, not_lt] at hi₀
         have := (hC4 i₀ hi₀).2 w₀ hw₀
-        nlinarith
+        linarith
       have hw₀z : w₀ ≠ z := fun e ↦ hzN (e ▸ ⟨i₀, hw₀⟩)
       have h1 := sum_multiset_le_of_distinguished hNd.card hP hfP hi₀ hw₀
       have h2 : kerPlane z w₀ - L ≤ ℓ := by
@@ -241,7 +240,7 @@ theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
           _ = G.card * N * P := by rw [Finset.sum_const, nsmul_eq_mul]; ring
           _ ≤ (G.card + 1) * N * P := by
               have := mul_nonneg (Nat.cast_nonneg N : (0:ℝ) ≤ N) hP
-              nlinarith
+              linarith
       have h2 : Real.log (δ / 2) ≤ ℓ := by
         apply Real.log_le_log (by positivity)
         rw [le_div_iff₀ hρz]; linarith
@@ -318,7 +317,7 @@ theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
       have hsub : R i ⊆ ball z s := fun ζ hζ ↦ by
         have h2 := hRpt i hi ζ hζ
         rw [mem_ball, dist_comm]
-        exact h2.trans_lt (by rw [hs]; nlinarith)
+        exact h2.trans_lt (by rw [hs]; linarith)
       have hI : IntegrableOn (fun ζ ↦ kerPlane z ζ - L) (R i) ν :=
         (hint i).sub (integrableOn_const (hC.measure_lt_top i).ne)
       have hI' : IntegrableOn (fun ζ ↦ kerPlane z ζ - L - c₀) (R i) ν :=
@@ -346,24 +345,24 @@ theorem multPot_bounds_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
     calc -(Mc * ((Cχ : ℝ) * CB + |c₀| * N)) ≤ -(G.card * ((Cχ : ℝ) * CB + |c₀| * N)) := by
           have : (G.card : ℝ) ≤ Mc := by exact_mod_cast hGcard
           have h0 : 0 ≤ (Cχ : ℝ) * CB + |c₀| * N := by positivity
-          nlinarith
+          exact neg_le_neg (mul_le_mul_of_nonneg_right this h0)
       _ = ∑ i ∈ G, (-((Cχ : ℝ) * CB + |c₀| * N)) := by
           rw [Finset.sum_const, nsmul_eq_mul]; ring
       _ ≤ ∑ i ∈ G, (c₀ * N - (Cχ : ℝ) * CB) := Finset.sum_le_sum fun i _ ↦ by
           have := neg_abs_le c₀
           have hN0 : (0 : ℝ) ≤ N := Nat.cast_nonneg N
-          nlinarith
+          have h5 := mul_le_mul_of_nonneg_right this hN0
+          linarith
       _ ≤ T₂ := Finset.sum_le_sum hcell
   have htail' := abs_le.1 htail
   rw [hSG] at htail'
   constructor
   · have h0 : 0 ≤ |Real.log (δ / 2)| + (Mc + 1) * N * P + C₃ + 1 := by positivity
     have h1 : 0 ≤ (Mc : ℝ) * ((Cχ : ℝ) * CB + |c₀| * N) := by positivity
-    rw [hCdef]; nlinarith
+    rw [hCdef]; linarith
   · have h0 : 0 ≤ (M : ℝ) * P + Mc * N * P + C₃ + 1 := by positivity
     rw [hCdef]; nlinarith
 
-set_option maxHeartbeats 800000 in
 /-- Estimate (3), corrected (disc, hyperbolic distance). -/
 theorem multPot_bounds_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (hη : 0 < η) (hA : 0 < A)
     (hB : 0 ≤ B) (hρ₀ : 0 < ρ₀) (hN : 1 ≤ N) :
@@ -503,7 +502,7 @@ theorem multPot_bounds_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
         by_contra hi₀
         rw [hmemG, not_lt] at hi₀
         have := (hC4 i₀ hi₀).2 w₀ hw₀
-        nlinarith
+        linarith
       have hw₀z : w₀ ≠ z := fun e ↦ hzN (e ▸ ⟨i₀, hw₀⟩)
       have h1 := sum_multiset_le_of_distinguished hNd.card hP hfP hi₀ hw₀
       obtain ⟨hw₀𝔻, -, hw₀C, -⟩ := hnode i₀ hi₀ w₀ hw₀
@@ -522,7 +521,7 @@ theorem multPot_bounds_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
           _ = G.card * N * P := by rw [Finset.sum_const, nsmul_eq_mul]; ring
           _ ≤ (G.card + 1) * N * P := by
               have := mul_nonneg (Nat.cast_nonneg N : (0:ℝ) ≤ N) hP
-              nlinarith
+              linarith
       have h2 : Real.log (δ / 2) ≤ ℓ := by
         apply Real.log_le_log (by positivity)
         rw [le_div_iff₀ hρz]; linarith
@@ -609,7 +608,7 @@ theorem multPot_bounds_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
       intro i hi
       have hsub : R i ⊆ hypBall z s := fun ζ hζ ↦ by
         obtain ⟨h1, h2⟩ := hRpt i hi ζ hζ
-        exact ⟨h1, h2.trans_lt (by rw [hs]; nlinarith)⟩
+        exact ⟨h1, h2.trans_lt (by rw [hs]; linarith)⟩
       have hI : IntegrableOn (fun ζ ↦ kerDisc z ζ - L) (R i) ν :=
         (hint i).sub (integrableOn_const (hC.measure_lt_top i).ne)
       have hI' : IntegrableOn (fun ζ ↦ kerDisc z ζ - L - c₀) (R i) ν :=
@@ -639,12 +638,13 @@ theorem multPot_bounds_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
     calc -(Mc * ((Cχ : ℝ) * CB + |c₀| * N)) ≤ -(G.card * ((Cχ : ℝ) * CB + |c₀| * N)) := by
           have : (G.card : ℝ) ≤ Mc := by exact_mod_cast hGcard
           have h0 : 0 ≤ (Cχ : ℝ) * CB + |c₀| * N := by positivity
-          nlinarith
+          exact neg_le_neg (mul_le_mul_of_nonneg_right this h0)
       _ = ∑ i ∈ G, (-((Cχ : ℝ) * CB + |c₀| * N)) := by rw [Finset.sum_const, nsmul_eq_mul]; ring
       _ ≤ ∑ i ∈ G, (c₀ * N - (Cχ : ℝ) * CB) := Finset.sum_le_sum fun i _ ↦ by
           have := neg_abs_le c₀
           have hN0 : (0 : ℝ) ≤ N := Nat.cast_nonneg N
-          nlinarith
+          have h5 := mul_le_mul_of_nonneg_right this hN0
+          linarith
       _ ≤ T₂ := Finset.sum_le_sum hcell
   -- conclusion
   have htail' := abs_le.1 htail
@@ -652,8 +652,8 @@ theorem multPot_bounds_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
   constructor
   · have h0 : 0 ≤ |Real.log (δ / 2)| + (Mc + 1) * N * P + C₃ + 1 := by positivity
     have h1 : 0 ≤ (Mc : ℝ) * ((Cχ : ℝ) * CB + |c₀| * N) := by positivity
-    rw [hCdef]; nlinarith
+    rw [hCdef]; linarith
   · have h0 : 0 ≤ (M : ℝ) * P + Mc * N * |Real.log cS| + Mc * N * P + C₃ + 1 := by positivity
-    rw [hCdef]; nlinarith
+    rw [hCdef]; linarith
 
 end OC
