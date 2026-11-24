@@ -982,6 +982,99 @@ theorem rectCore_combine {G : ℝ × ℝ × ℝ × ℝ → Prop} {n₁ n₂ : �
     | left a => simpa only [Fin.append_left] using hg₁ a
     | right a => simpa only [Fin.append_right] using hg₂ a
 
+/-- The conclusion of `exists_rect_partition` for one piece `g = (x₁, x₂, y₁, y₂)`. -/
+private def RectGood (ν : Measure ℂ) (P : ℝ → ℝ → ℝ → ℝ → Prop) (C₀ : ℕ) (L : ℝ)
+    (g : ℝ × ℝ × ℝ × ℝ) : Prop :=
+  ν (rect g.1 g.2.1 g.2.2.1 g.2.2.2) = 1 ∧ IsRectLE L g.1 g.2.1 g.2.2.1 g.2.2.2 ∧
+    ∃ x₁' x₂' y₁' y₂' : ℝ, IsRectLE 3 x₁' x₂' y₁' y₂' ∧ P x₁' x₂' y₁' y₂' ∧
+      ν (rect x₁' x₂' y₁' y₂') ≤ C₀ ∧ rect g.1 g.2.1 g.2.2.1 g.2.2.2 ⊆ rect x₁' x₂' y₁' y₂'
+
+/-- The side-ratio bound for a slice of relative width `≥ cs`. -/
+private theorem rect_slice_ratio {cs L s w l : ℝ} (hcs0 : 0 < cs) (hL3 : 3 ≤ L)
+    (hLcs : 1 / cs ≤ L)
+    (hs : 0 < s) (hsw : cs * w ≤ s) (hsw' : s ≤ w) (hlw : l ≤ w) (hwl : w ≤ 3 * l) :
+    s ≤ L * l ∧ l ≤ L * s := by
+  have : 0 ≤ l := by linarith
+  refine ⟨by nlinarith, ?_⟩
+  have h1 : w ≤ s / cs := by rw [le_div_iff₀ hcs0]; linarith
+  have h2 : s / cs ≤ L * s := by
+    rw [div_eq_mul_one_div, mul_comm]; exact mul_le_mul_of_nonneg_right hLcs hs.le
+  linarith
+
+/-- Constants of `exists_rect_partition`: `0 < cs` and `1 / cs ≤ L`. -/
+private theorem rect_partition_consts {C₀ : ℕ} {C_E κ : ℝ} (hκ : 0 < κ) :
+    0 < min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E ∧
+      3 ≤ rectRatioBound C₀ C_E κ ∧
+        1 / (min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E) ≤ rectRatioBound C₀ C_E κ := by
+  have : 0 < min (1 / 4) κ := lt_min (by norm_num) hκ
+  exact ⟨by positivity, le_max_left _ _, by rw [one_div_div]; exact le_max_right _ _⟩
+
+/-- Case B of `exists_rect_partition` for a wide block: slice along the `x`-axis. -/
+private theorem rect_partition_slice_x {ν : Measure ℂ} {P : ℝ → ℝ → ℝ → ℝ → Prop} {C₀ n : ℕ}
+    {C_E κ σ x₁ x₂ y₁ y₂ : ℝ} (hκ : 0 < κ) (hn : 1 ≤ n)
+    (hQ : ν (rect x₁ x₂ y₁ y₂) = n) (hQg : IsRectLE 3 x₁ x₂ y₁ y₂) (hQP : P x₁ x₂ y₁ y₂)
+    (hnC : n ≤ C₀) (hσκ : κ * max (x₂ - x₁) (y₂ - y₁) ≤ σ)
+    (hED : ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ σ →
+      ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2)))
+    (hre : ∀ x : ℝ, ν {w | w.re = x} = 0) (hlw : y₂ - y₁ ≤ x₂ - x₁) :
+    ∃ q : Fin n → ℝ × ℝ × ℝ × ℝ,
+      Pairwise (Function.onFun Disjoint fun i ↦ rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) ∧
+      (⋃ i, rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = rect x₁ x₂ y₁ y₂ ∧
+      ∀ i, RectGood ν P C₀ (rectRatioBound C₀ C_E κ) (q i) := by
+  obtain ⟨hcs0, hL3, hLcs⟩ := rect_partition_consts (C₀ := C₀) (C_E := C_E) hκ
+  obtain ⟨hx, hy, hw3, -⟩ := id hQg
+  have hQC : ν (rect x₁ x₂ y₁ y₂) ≤ C₀ := by rw [hQ]; exact_mod_cast hnC
+  obtain ⟨t, ht0, htn, htm, htlt, hmass⟩ := rectCore_slice_x hre hx hn hQ
+  have hwide : ∀ i < n,
+      min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E * (x₂ - x₁) ≤ t (i + 1) - t i := fun i hi ↦
+    rectCore_slice_wide hlw hw3 (ht0 ▸ htm (Nat.zero_le i)) (htlt i hi)
+      (htn ▸ htm (by omega)) hQC (hmass i hi) fun w hw r hr hrκ ↦ hED w hw r hr (by
+        rw [max_eq_left hlw] at hσκ; linarith)
+  obtain ⟨hdisj, hunion⟩ := rectCore_slices_x n htm y₁ y₂
+  rw [ht0, htn] at hunion
+  refine ⟨fun i ↦ (t i, t (i + 1), y₁, y₂), hdisj, hunion, fun i ↦
+    ⟨hmass i i.2, ?_, x₁, x₂, y₁, y₂, hQg, hQP, hQC, ?_⟩⟩
+  · have hs := htlt i i.2
+    have hle : t (i + 1) - t i ≤ x₂ - x₁ := by
+      have := htm (Nat.zero_le i); have := htm (show i + 1 ≤ n by omega)
+      rw [ht0] at *; rw [htn] at *; linarith
+    obtain ⟨h1, h2⟩ := rect_slice_ratio hcs0 hL3 hLcs (sub_pos.2 hs) (hwide i i.2) hle hlw hw3
+    exact ⟨hs, hy, h1, h2⟩
+  · exact rect_subset_rect (ht0 ▸ htm (Nat.zero_le _)) (htn ▸ htm (by omega)) le_rfl le_rfl
+
+/-- Case B of `exists_rect_partition` for a tall block: slice along the `y`-axis. -/
+private theorem rect_partition_slice_y {ν : Measure ℂ} {P : ℝ → ℝ → ℝ → ℝ → Prop} {C₀ n : ℕ}
+    {C_E κ σ x₁ x₂ y₁ y₂ : ℝ} (hκ : 0 < κ) (hn : 1 ≤ n)
+    (hQ : ν (rect x₁ x₂ y₁ y₂) = n) (hQg : IsRectLE 3 x₁ x₂ y₁ y₂) (hQP : P x₁ x₂ y₁ y₂)
+    (hnC : n ≤ C₀) (hσκ : κ * max (x₂ - x₁) (y₂ - y₁) ≤ σ)
+    (hED : ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ σ →
+      ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2)))
+    (him : ∀ y : ℝ, ν {w | w.im = y} = 0) (hlw : x₂ - x₁ < y₂ - y₁) :
+    ∃ q : Fin n → ℝ × ℝ × ℝ × ℝ,
+      Pairwise (Function.onFun Disjoint fun i ↦ rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) ∧
+      (⋃ i, rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2) = rect x₁ x₂ y₁ y₂ ∧
+      ∀ i, RectGood ν P C₀ (rectRatioBound C₀ C_E κ) (q i) := by
+  obtain ⟨hcs0, hL3, hLcs⟩ := rect_partition_consts (C₀ := C₀) (C_E := C_E) hκ
+  obtain ⟨hx, hy, -, hl3⟩ := id hQg
+  have hQC : ν (rect x₁ x₂ y₁ y₂) ≤ C₀ := by rw [hQ]; exact_mod_cast hnC
+  obtain ⟨t, ht0, htn, htm, htlt, hmass⟩ := rectCore_slice_y him hy hn hQ
+  have hwide : ∀ i < n,
+      min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E * (y₂ - y₁) ≤ t (i + 1) - t i := fun i hi ↦
+    rectCore_slice_wide_y hlw.le hl3 (ht0 ▸ htm (Nat.zero_le i)) (htlt i hi)
+      (htn ▸ htm (by omega)) hQC (hmass i hi) fun w hw r hr hrκ ↦ hED w hw r hr (by
+        rw [max_eq_right hlw.le] at hσκ; linarith)
+  obtain ⟨hdisj, hunion⟩ := rectCore_slices_y n htm x₁ x₂
+  rw [ht0, htn] at hunion
+  refine ⟨fun i ↦ (x₁, x₂, t i, t (i + 1)), hdisj, hunion, fun i ↦
+    ⟨hmass i i.2, ?_, x₁, x₂, y₁, y₂, hQg, hQP, hQC, ?_⟩⟩
+  · have hs := htlt i i.2
+    have hle : t (i + 1) - t i ≤ y₂ - y₁ := by
+      have := htm (Nat.zero_le i); have := htm (show i + 1 ≤ n by omega)
+      rw [ht0] at *; rw [htn] at *; linarith
+    obtain ⟨h1, h2⟩ := rect_slice_ratio hcs0 hL3 hLcs (sub_pos.2 hs) (hwide i i.2) hle hlw.le hl3
+    exact ⟨hx, hs, h2, h1⟩
+  · exact rect_subset_rect le_rfl le_rfl (ht0 ▸ htm (Nat.zero_le _)) (htn ▸ htm (by omega))
+
 /-- **Bisection + slicing** (the core of Lemma 4).  `P` is a hereditary admissibility predicate,
 `C₀` is such that admissible good rectangles of mass `> C₀` have middle third of mass `> 1`, and
 `ν` is Euclidean doubling at the scale `σ` inside admissible rectangles; then every admissible
@@ -1011,64 +1104,17 @@ theorem exists_rect_partition {ν : Measure ℂ} (hre : ∀ x : ℝ, ν {w | w.r
             ν (rect x₁' x₂' y₁' y₂') ≤ C₀ ∧
             rect (q i).1 (q i).2.1 (q i).2.2.1 (q i).2.2.2 ⊆ rect x₁' x₂' y₁' y₂' := by
   set L := rectRatioBound C₀ C_E κ
-  set cs := min (1 / 4) κ / 3 ^ rectRatioK₀ C₀ C_E with hcs
-  have : 0 < min (1 / 4) κ := lt_min (by norm_num) hκ
-  have hcs0 : 0 < cs := by positivity
-  have hL3 : 3 ≤ L := le_max_left _ _
-  have hLcs : 1 / cs ≤ L := by rw [hcs, one_div_div]; exact le_max_right _ _
-  -- the side-ratio bound for a slice of relative width `≥ cs`
-  have hratio : ∀ {s w l : ℝ}, 0 < s → cs * w ≤ s → s ≤ w → l ≤ w → w ≤ 3 * l →
-      s ≤ L * l ∧ l ≤ L * s := by
-    intro s w l hs hsw hsw' hlw hwl
-    have : 0 ≤ l := by linarith
-    refine ⟨by nlinarith, ?_⟩
-    have h1 : w ≤ s / cs := by rw [le_div_iff₀ hcs0]; linarith
-    have h2 : s / cs ≤ L * s := by
-      rw [div_eq_mul_one_div, mul_comm]; exact mul_le_mul_of_nonneg_right hLcs hs.le
-    linarith
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro x₁ x₂ y₁ y₂ hn hQg hQP hQ
-  have hQg' := hQg
-  obtain ⟨hx, hy, hw3, hl3⟩ := hQg'
+  obtain ⟨hx, hy, hw3, hl3⟩ := id hQg
   by_cases hnC : n ≤ C₀
   · -- Case B: slice the block into `n` pieces of mass one along its longer side
-    have hQC : ν (rect x₁ x₂ y₁ y₂) ≤ C₀ := by rw [hQ]; exact_mod_cast hnC
     obtain ⟨hσκ, hED⟩ := hσ x₁ x₂ y₁ y₂ hQg hQP
     rcases le_or_gt (y₂ - y₁) (x₂ - x₁) with hlw | hlw
-    · obtain ⟨t, ht0, htn, htm, htlt, hmass⟩ := rectCore_slice_x hre hx hn hQ
-      have hwide : ∀ i < n, cs * (x₂ - x₁) ≤ t (i + 1) - t i := fun i hi ↦
-        rectCore_slice_wide hlw hw3 (ht0 ▸ htm (Nat.zero_le i)) (htlt i hi)
-          (htn ▸ htm (by omega)) hQC (hmass i hi) fun w hw r hr hrκ ↦ hED w hw r hr (by
-            rw [max_eq_left hlw] at hσκ; linarith)
-      obtain ⟨hdisj, hunion⟩ := rectCore_slices_x n htm y₁ y₂
-      rw [ht0, htn] at hunion
-      refine ⟨fun i ↦ (t i, t (i + 1), y₁, y₂), hdisj, hunion, fun i ↦
-        ⟨hmass i i.2, ?_, x₁, x₂, y₁, y₂, hQg, hQP, hQC, ?_⟩⟩
-      · have hs := htlt i i.2
-        have hle : t (i + 1) - t i ≤ x₂ - x₁ := by
-          have := htm (Nat.zero_le i); have := htm (show i + 1 ≤ n by omega)
-          rw [ht0] at *; rw [htn] at *; linarith
-        obtain ⟨h1, h2⟩ := hratio (sub_pos.2 hs) (hwide i i.2) hle hlw hw3
-        exact ⟨hs, hy, h1, h2⟩
-      · exact rect_subset_rect (ht0 ▸ htm (Nat.zero_le _)) (htn ▸ htm (by omega)) le_rfl le_rfl
-    · obtain ⟨t, ht0, htn, htm, htlt, hmass⟩ := rectCore_slice_y him hy hn hQ
-      have hwide : ∀ i < n, cs * (y₂ - y₁) ≤ t (i + 1) - t i := fun i hi ↦
-        rectCore_slice_wide_y hlw.le hl3 (ht0 ▸ htm (Nat.zero_le i)) (htlt i hi)
-          (htn ▸ htm (by omega)) hQC (hmass i hi) fun w hw r hr hrκ ↦ hED w hw r hr (by
-            rw [max_eq_right hlw.le] at hσκ; linarith)
-      obtain ⟨hdisj, hunion⟩ := rectCore_slices_y n htm x₁ x₂
-      rw [ht0, htn] at hunion
-      refine ⟨fun i ↦ (x₁, x₂, t i, t (i + 1)), hdisj, hunion, fun i ↦
-        ⟨hmass i i.2, ?_, x₁, x₂, y₁, y₂, hQg, hQP, hQC, ?_⟩⟩
-      · have hs := htlt i i.2
-        have hle : t (i + 1) - t i ≤ y₂ - y₁ := by
-          have := htm (Nat.zero_le i); have := htm (show i + 1 ≤ n by omega)
-          rw [ht0] at *; rw [htn] at *; linarith
-        obtain ⟨h1, h2⟩ := hratio (sub_pos.2 hs) (hwide i i.2) hle hlw.le hl3
-        exact ⟨hx, hs, h2, h1⟩
-      · exact rect_subset_rect le_rfl le_rfl (ht0 ▸ htm (Nat.zero_le _)) (htn ▸ htm (by omega))
+    · exact rect_partition_slice_x hκ hn hQ hQg hQP hnC hσκ hED hre hlw
+    · exact rect_partition_slice_y hκ hn hQ hQg hQP hnC hσκ hED him hlw
   · -- Case A: bisect through the middle third of the longer side
     push Not at hnC
     have hmid := hC₀ x₁ x₂ y₁ y₂ hQg hQP (by rw [hQ]; exact_mod_cast hnC)
