@@ -62,8 +62,10 @@ def nodeCount (Λ : ℕ → Multiset ℂ) (w : ℂ) : ℕ := ∑ᶠ i, (Λ i).co
 /-- The set of all nodes. -/
 def nodeSet (Λ : ℕ → Multiset ℂ) : Set ℂ := {w | ∃ i, w ∈ Λ i}
 
-/-- Kernels: `log|z − ζ|` and the Green kernel `log |(z − ζ)/(1 − ζ̄ z)|`. -/
+/-- The plane kernel `log|z − ζ|`. -/
 def kerPlane (z ζ : ℂ) : ℝ := Real.log ‖z - ζ‖
+
+/-- The disc (Green) kernel `log |(z − ζ)/(1 − ζ̄ z)|`. -/
 def kerDisc (z ζ : ℂ) : ℝ := Real.log (pseudoHyp ζ z)
 
 /-- Potential of `Σ_{λ∈Λ i} δ_λ − ν|R i` at `z`. -/
