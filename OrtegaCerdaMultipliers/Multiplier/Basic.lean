@@ -59,8 +59,7 @@ namespace OC
 theorem tanh_div_one_sub_tanh_eq (s : ℝ) :
     Real.tanh s / (1 - Real.tanh s) = (Real.exp (2 * s) - 1) / 2 := by
   rw [tanh_eq_exp_two_mul]
-  have h := Real.exp_pos (2 * s)
-  field_simp
+  field_simp [(Real.exp_pos (2 * s)).ne']
   ring
 
 theorem exp_two_mul_sub_one_le (s : ℝ) :

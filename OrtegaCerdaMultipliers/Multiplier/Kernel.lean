@@ -32,7 +32,7 @@ theorem norm_pow_sub_pow_le' {a b : ℂ} (hab : ‖b‖ ≤ ‖a‖) (k : ℕ) :
   have h : ‖∑ i ∈ Finset.range k, a ^ i * b ^ (k - 1 - i)‖ ≤ k * ‖a‖ ^ (k - 1) := by
     refine (norm_sum_le _ _).trans ?_
     calc ∑ i ∈ Finset.range k, ‖a ^ i * b ^ (k - 1 - i)‖
-        ≤ ∑ i ∈ Finset.range k, ‖a‖ ^ (k - 1) := by
+        ≤ ∑ _ ∈ Finset.range k, ‖a‖ ^ (k - 1) := by
           refine Finset.sum_le_sum fun i hi ↦ ?_
           have hi' : i ≤ k - 1 := by have := Finset.mem_range.1 hi; omega
           rw [norm_mul, norm_pow, norm_pow]
@@ -290,7 +290,7 @@ theorem abs_kerDisc_sub_taylorDisc_two_le {z c ζ : ℂ} (hz : z ∈ 𝔻) {Bd :
         (sub_ne_zero.2 (hseg x hx).2.symm)).trans (hB x hx))
       (convex_segment c ζ) hcS hξ
   -- (2) the one-variable function along the segment
-  set γ : ℝ → ℂ := fun t ↦ c + t * (ζ - c) with hγ
+  set γ : ℝ → ℂ := fun t ↦ c + t * (ζ - c)
   have hγS : ∀ t ∈ Icc (0 : ℝ) 1, γ t ∈ S := by
     intro t ht
     rw [hSdef, segment_eq_image]
@@ -300,7 +300,7 @@ theorem abs_kerDisc_sub_taylorDisc_two_le {z c ζ : ℂ} (hz : z ∈ 𝔻) {Bd :
   set K : ℝ := ((ζ - c) / (z - c) - conj z * (ζ - c) / (1 - conj z * c)).re with hK
   set φ : ℝ → ℝ := fun t ↦ Real.log ‖(z - c) + t * (-(ζ - c))‖ -
     Real.log ‖(1 - conj z * c) + t * (-(conj z * (ζ - c)))‖ - Real.log (pseudoHyp c z) +
-      t * K with hφ
+      t * K
   have hφd : ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt φ
       (((ζ - c) * (kerDiscGrad z (γ t) - kerDiscGrad z c)).re) (Icc 0 1) t := by
     intro t ht

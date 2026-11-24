@@ -30,7 +30,8 @@ namespace OC
 
 theorem MeasClassDisc.hypBall_lt_top {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
     (hν : MeasClassDisc ν Cd R₀) {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) : ν (hypBall z r) < ∞ :=
-  (measure_mono (fun _ (hw : _ ∈ hypBall z r) ↦ closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩)).trans_lt
+  (measure_mono (fun _ (hw : _ ∈ hypBall z r) ↦
+    closedHypBall_subset_closedBall hz r ⟨hw.1, hw.2.le⟩)).trans_lt
     (hν.finite _ (closedBall_tanh_subset_disc _) (isCompact_closedBall _ _))
 
 theorem MeasClassDisc.measure_singleton {ν : Measure ℂ} {Cd : ℝ≥0} {R₀ : ℝ}
@@ -356,7 +357,6 @@ theorem abs_cellPot_le_disc_near {ν : Measure ℂ} {N : ℕ} {η A B : ℝ} {R 
       rw [div_le_iff₀ hDpos]
       have := one_sub_mul_le_norm_one_sub_conj_mul z (c i)
       nlinarith [norm_nonneg z, norm_nonneg (c i)]
-    have hr0 : 0 ≤ ‖ζ - c i‖ / ‖z - c i‖ := by positivity
     calc 2 * (1 - ‖z‖ ^ 2) * ‖ζ - c i‖ ^ 3 / (‖z - c i‖ ^ 3 * ‖1 - conj z * c i‖)
         = 2 * ((1 - ‖z‖ ^ 2) / ‖1 - conj z * c i‖) * (‖ζ - c i‖ / ‖z - c i‖) ^ 3 := by
           field_simp
@@ -491,10 +491,8 @@ theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
       ∀ z ∈ 𝔻, ∀ F : Finset ℕ, (∀ i ∈ F, K₀ * massRadiusDisc ν (c i) ≤ hypDist z (c i)) →
         ∑ i ∈ F, |cellPot kerDisc ν R Λ i z| ≤ C := by
   set K₀ := 64 * (A + B + 1) with hK₀
-  have hK₀1 : 1 ≤ K₀ := by rw [hK₀]; nlinarith
-  set ρ₀' := min ρ₀ (1 / (8 * (A + B + 1))) with hρ₀'
-  have hρ₀'pos : 0 < ρ₀' := lt_min hρ₀ (by positivity)
-  set M₀ := min (1 / 4) (K₀ * ρ₀') with hM₀def
+  set ρ₀' := min ρ₀ (1 / (8 * (A + B + 1)))
+  set M₀ := min (1 / 4) (K₀ * ρ₀')
   have hM₀ : 0 < M₀ := lt_min (by norm_num) (by positivity)
   obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_disc Cd R₀ K₀ (by linarith)
   obtain ⟨C₁, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
@@ -525,11 +523,6 @@ theorem nonNear_sum_le_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : ℕ) (
           obtain ⟨hρi, hβi⟩ := hcond i hi
           have hK := hF i (Finset.mem_filter.1 hi).1
           have hρ₀le : massRadiusDisc ν (c i) ≤ ρ₀ := hρi.le.trans (min_le_left _ _)
-          have hs : (A + B) * massRadiusDisc ν (c i) ≤ 1 / 8 := by
-            have h8 : massRadiusDisc ν (c i) ≤ 1 / (8 * (A + B + 1)) :=
-              hρi.le.trans (min_le_right _ _)
-            rw [le_div_iff₀ (by positivity)] at h8
-            nlinarith [(hρ i).1]
           exact abs_cellPot_le_disc_near hC hN hA hB (hm3 i hρ₀le) hz
             (integrableOn_kerDisc_cell hν hC i hz) (hρ i).1 hβi
             (le_trans (by rw [hK₀]; nlinarith [(hρ i).1]) hK)
@@ -570,7 +563,6 @@ theorem nonNear_sum_le_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (hη :
       ∀ z : ℂ, ∀ F : Finset ℕ, (∀ i ∈ F, K₀ * massRadius ν (c i) ≤ dist z (c i)) →
         ∑ i ∈ F, |cellPot kerPlane ν R Λ i z| ≤ C := by
   set K₀ := 2 * (A + B) + 1 with hK₀
-  have hK₀1 : 1 ≤ K₀ := by rw [hK₀]; linarith
   obtain ⟨δ, hδ, -, hδK⟩ := claim1_nonNear_plane Cd R₀ K₀ (by linarith)
   obtain ⟨C₁, -, hcl⟩ := claim1_plane_quant Cd R₀ 0
   obtain ⟨Cn, hCn⟩ := nearField_sum_le_plane Cd R₀ η A δ hη hδ
