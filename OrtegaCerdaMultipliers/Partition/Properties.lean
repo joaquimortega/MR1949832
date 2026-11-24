@@ -118,7 +118,8 @@ theorem claim2_lower_plane (hP : IsMassPartition μ univ dist (massRadius μ) N 
 theorem claim2_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball z r) < ∞)
     (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ (ball z R₀)) (K : ℝ) :
     ∃ C : ℝ, 0 < C ∧ ∀ i j, ∀ z ∈ R i, ∀ w ∈ R j,
-      dist z w ≤ K * max (massRadius μ z) (massRadius μ w) → massRadius μ w ≤ C * massRadius μ z := by
+      dist z w ≤ K * max (massRadius μ z) (massRadius μ w) →
+        massRadius μ w ≤ C * massRadius μ z := by
   obtain ⟨C, hC, h⟩ := claim1_plane hd hfin hm K
   refine ⟨C, hC, fun i j z _ w _ hzw ↦ h w z ?_⟩
   rwa [dist_comm, max_comm]
@@ -136,7 +137,7 @@ theorem finite_near_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball 
     have : 0 ≤ K' := le_max_right _ _
     have : 0 ≤ A' := le_max_right _ _
     nlinarith
-  obtain ⟨c, C, δ, s, -, hC, -, -, hb⟩ :=
+  obtain ⟨c, C, δ, s, -, -, -, -, hb⟩ :=
     measure_ball_massRadius_bounds_plane hd hfin ⟨R₀, hR₀, hm'⟩ (K₂ * R₀)
   refine ⟨⌈C * K₂ ^ s⌉₊, fun z ↦ ?_⟩
   have hρ := massRadius_pos hd hfin ⟨R₀, hR₀, hm'⟩ z
@@ -155,7 +156,7 @@ theorem finite_near_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ (ball 
       linarith [le_abs_self (massRadius μ w - massRadius μ z)]
     have h3 : dist z w ≤ K' * massRadius μ z :=
       hzw.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ.le)
-    have hA' : 0 ≤ A' := le_max_right _ _
+    have : 0 ≤ A' := le_max_right _ _
     calc dist z w' ≤ dist z w + dist w w' := dist_triangle _ _ _
       _ ≤ K' * massRadius μ z + A' * (massRadius μ z + K' * massRadius μ z) := by
           gcongr
@@ -172,8 +173,8 @@ theorem finite_neighbours_plane (hd : IsLocallyDoubling μ) (hfin : ∀ z r, μ 
     ∃ M : ℕ, ∀ i, {j | ∃ z ∈ R i, ∃ w ∈ R j, dist z w ≤ K * massRadius μ z}.encard ≤ M := by
   set K' := max K 0
   set A' := max A 0
-  have hK' : 0 ≤ K' := le_max_right _ _
-  have hA' : 0 ≤ A' := le_max_right _ _
+  have : 0 ≤ K' := le_max_right _ _
+  have : 0 ≤ A' := le_max_right _ _
   obtain ⟨M, hM⟩ := finite_near_plane hd hfin hm hP hN (A' + K' * (1 + A'))
   have hlip := lipschitzWith_massRadius (μ := μ) hm
   refine ⟨M, fun i ↦ ?_⟩
@@ -202,7 +203,7 @@ theorem far_comparable_plane (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ 
     ∃ C : ℝ, 0 < C ∧ ∀ (z : ℂ) (i : ℕ), (∀ w ∈ R i, η * massRadius μ z ≤ dist z w) →
       ∀ w ∈ R i, ∀ w' ∈ R i, dist z w' ≤ C * dist z w := by
   set A' := max A 0
-  have hA' : 0 ≤ A' := le_max_right _ _
+  have : 0 ≤ A' := le_max_right _ _
   have hlip := lipschitzWith_massRadius (μ := μ) hm
   refine ⟨1 + A' + A' / η, by positivity, fun z i hfar w hw w' hw' ↦ ?_⟩
   have h1 : dist w w' ≤ A' * massRadius μ w :=
@@ -213,7 +214,7 @@ theorem far_comparable_plane (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z, 1 ≤ μ 
     rw [Real.dist_eq, NNReal.coe_one, one_mul, dist_comm] at this
     linarith [le_abs_self (massRadius μ w - massRadius μ z)]
   have h3 : massRadius μ z ≤ dist z w / η := by rw [le_div_iff₀ hη, mul_comm]; exact hfar w hw
-  have hd0 : 0 ≤ dist z w := dist_nonneg
+  have : 0 ≤ dist z w := dist_nonneg
   calc dist z w' ≤ dist z w + dist w w' := dist_triangle _ _ _
     _ ≤ dist z w + A' * (dist z w / η + dist z w) := by
         gcongr
@@ -225,7 +226,7 @@ theorem far_comparable_disc (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z ∈ 𝔻, 1
     ∃ C : ℝ, 0 < C ∧ ∀ z ∈ 𝔻, ∀ i : ℕ, (∀ w ∈ R i, η * massRadiusDisc μ z ≤ hypDist z w) →
       ∀ w ∈ R i, ∀ w' ∈ R i, hypDist z w' ≤ C * hypDist z w := by
   set A' := max A 0
-  have hA' : 0 ≤ A' := le_max_right _ _
+  have : 0 ≤ A' := le_max_right _ _
   refine ⟨1 + A' + A' / η, by positivity, fun z hz i hfar w hw w' hw' ↦ ?_⟩
   have hwD := hP.subset_of_mem i hw
   have hw'D := hP.subset_of_mem i hw'
@@ -237,7 +238,7 @@ theorem far_comparable_disc (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z ∈ 𝔻, 1
     linarith [neg_abs_le (massRadiusDisc μ z - massRadiusDisc μ w)]
   have h3 : massRadiusDisc μ z ≤ hypDist z w / η := by
     rw [le_div_iff₀ hη, mul_comm]; exact hfar w hw
-  have hd0 : 0 ≤ hypDist z w := hypDist_nonneg _ _
+  have : 0 ≤ hypDist z w := hypDist_nonneg _ _
   calc hypDist z w' ≤ hypDist z w + hypDist w w' := hypDist_triangle hz hwD hw'D
     _ ≤ hypDist z w + A' * (hypDist z w / η + hypDist z w) := by
         gcongr
@@ -257,7 +258,7 @@ theorem finite_near_disc (hd : IsLocallyDoublingDisc μ)
     have : 0 ≤ K' := le_max_right _ _
     have : 0 ≤ A' := le_max_right _ _
     nlinarith
-  obtain ⟨c, C, δ, s, -, hC, -, -, hb⟩ :=
+  obtain ⟨c, C, δ, s, -, -, -, -, hb⟩ :=
     measure_hypBall_massRadiusDisc_bounds hd hfin ⟨R₀, hR₀, hm'⟩ (K₂ * R₀)
   refine ⟨⌈C * K₂ ^ s⌉₊, fun z hz ↦ ?_⟩
   have hρ := massRadiusDisc_pos hd hfin ⟨R₀, hR₀, hm'⟩ hz
@@ -276,7 +277,7 @@ theorem finite_near_disc (hd : IsLocallyDoublingDisc μ)
       linarith [neg_abs_le (massRadiusDisc μ z - massRadiusDisc μ w)]
     have h3 : hypDist z w ≤ K' * massRadiusDisc μ z :=
       hzw.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ.le)
-    have hA' : 0 ≤ A' := le_max_right _ _
+    have : 0 ≤ A' := le_max_right _ _
     calc hypDist z w' ≤ hypDist z w + hypDist w w' := hypDist_triangle hz hwD hw'D
       _ ≤ K' * massRadiusDisc μ z + A' * (massRadiusDisc μ z + K' * massRadiusDisc μ z) := by
           gcongr
@@ -313,8 +314,8 @@ theorem finite_neighbours_disc (hd : IsLocallyDoublingDisc μ)
     ∃ M : ℕ, ∀ i, {j | ∃ z ∈ R i, ∃ w ∈ R j, hypDist z w ≤ K * massRadiusDisc μ z}.encard ≤ M := by
   set K' := max K 0
   set A' := max A 0
-  have hK' : 0 ≤ K' := le_max_right _ _
-  have hA' : 0 ≤ A' := le_max_right _ _
+  have : 0 ≤ K' := le_max_right _ _
+  have : 0 ≤ A' := le_max_right _ _
   obtain ⟨M, hM⟩ := finite_near_disc hd hfin hm hP hN (A' + K' * (1 + A'))
   refine ⟨M, fun i ↦ ?_⟩
   obtain ⟨z₀, hz₀⟩ := hP.nonempty hN i
@@ -341,7 +342,8 @@ theorem finite_neighbours_disc (hd : IsLocallyDoublingDisc μ)
 /-! Line versions (`Ω = ℝ ⊆ ℂ`, `ρ(z) = massRadiusLine μ z.re`). -/
 
 theorem claim2_lower_line
-    (hP : IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A R)
+    (hP : IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A
+      R)
     (hN : 1 ≤ N) (i : ℕ) {z : ℂ} (hz : z ∈ R i) {r : ℝ} (hr : R i ⊆ closedBall z r) :
     massRadiusLine μ z.re ≤ r := by
   have hr0 : 0 ≤ r := by simpa using hr hz
@@ -356,7 +358,8 @@ theorem claim2_lower_line
 theorem finite_near_line (hd : IsLocallyDoublingLine μ)
     (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞)
     (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R₀))
-    (hP : IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A R)
+    (hP : IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A
+      R)
     (hN : 1 ≤ N) (K : ℝ) :
     ∃ M : ℕ, ∀ x : ℝ, {i | ∃ w ∈ R i, dist (x : ℂ) w ≤ K * massRadiusLine μ x}.encard ≤ M := by
   obtain ⟨R₀, hR₀, hm'⟩ := hm
@@ -367,7 +370,7 @@ theorem finite_near_line (hd : IsLocallyDoublingLine μ)
     have : 0 ≤ K' := le_max_right _ _
     have : 0 ≤ A' := le_max_right _ _
     nlinarith
-  obtain ⟨c, C, δ, s, -, hC, -, -, hb⟩ :=
+  obtain ⟨c, C, δ, s, -, -, -, -, hb⟩ :=
     measure_lineInterval_massRadiusLine_bounds hd hfin ⟨R₀, hR₀, hm'⟩ (K₂ * R₀)
   have hlip := lipschitzWith_massRadiusLine (μ := μ) ⟨R₀, hR₀, hm'⟩
   refine ⟨⌈C * K₂ ^ s⌉₊, fun x ↦ ?_⟩
@@ -388,7 +391,7 @@ theorem finite_near_line (hd : IsLocallyDoublingLine μ)
       linarith [le_abs_self (massRadiusLine μ w.re - massRadiusLine μ x), abs_sub_comm w.re x]
     have h3 : dist (x : ℂ) w ≤ K' * massRadiusLine μ x :=
       hzw.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ.le)
-    have hA' : 0 ≤ A' := le_max_right _ _
+    have : 0 ≤ A' := le_max_right _ _
     have hlt : dist (x : ℂ) w' < K₂ * massRadiusLine μ x :=
       calc dist (x : ℂ) w' ≤ dist (x : ℂ) w + dist w w' := dist_triangle _ _ _
         _ ≤ K' * massRadiusLine μ x + A' * (massRadiusLine μ x + K' * massRadiusLine μ x) := by
@@ -402,12 +405,13 @@ theorem finite_near_line (hd : IsLocallyDoublingLine μ)
     exact prop_ofReal_le_ceil _
 
 theorem far_comparable_line (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ x : ℝ, 1 ≤ μ (lineInterval x R₀))
-    (hP : IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A R)
+    (hP : IsMassPartition μ (range fun t : ℝ ↦ (t : ℂ)) dist (fun z ↦ massRadiusLine μ z.re) N a A
+      R)
     {η : ℝ} (hη : 0 < η) :
     ∃ C : ℝ, 0 < C ∧ ∀ (x : ℝ) (i : ℕ), (∀ w ∈ R i, η * massRadiusLine μ x ≤ dist (x : ℂ) w) →
       ∀ w ∈ R i, ∀ w' ∈ R i, dist (x : ℂ) w' ≤ C * dist (x : ℂ) w := by
   set A' := max A 0
-  have hA' : 0 ≤ A' := le_max_right _ _
+  have : 0 ≤ A' := le_max_right _ _
   have hlip := lipschitzWith_massRadiusLine (μ := μ) hm
   refine ⟨1 + A' + A' / η, by positivity, fun x i hfar w hw w' hw' ↦ ?_⟩
   have hwR := prop_eq_ofReal_re (hP.subset_of_mem i hw)
@@ -421,7 +425,7 @@ theorem far_comparable_line (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ x : ℝ, 1 �
     linarith [le_abs_self (massRadiusLine μ w.re - massRadiusLine μ x), abs_sub_comm w.re x]
   have h3 : massRadiusLine μ x ≤ dist (x : ℂ) w / η := by
     rw [le_div_iff₀ hη, mul_comm]; exact hfar w hw
-  have hd0 : 0 ≤ dist (x : ℂ) w := dist_nonneg
+  have : 0 ≤ dist (x : ℂ) w := dist_nonneg
   calc dist (x : ℂ) w' ≤ dist (x : ℂ) w + dist w w' := dist_triangle _ _ _
     _ ≤ dist (x : ℂ) w + A' * (dist (x : ℂ) w / η + dist (x : ℂ) w) := by
         gcongr
@@ -442,7 +446,7 @@ theorem euclid_size_disc (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z ∈ 𝔻, 1 �
   have hρ0 := prop_massRadiusDisc_nonneg μ z
   have hρR := massRadiusDisc_le hR₀ hm' hzD
   set u := A' * massRadiusDisc μ z with hu
-  have hu0 : 0 ≤ u := by positivity
+  have : 0 ≤ u := by positivity
   have hdist : hypDist z w ≤ u :=
     (hP.dist_le i z hz w hw).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ0)
   have hkey := norm_sub_le_of_hypDist_le hzD hwD hdist (Real.tanh_lt_one u)
@@ -453,7 +457,7 @@ theorem euclid_size_disc (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ z ∈ 𝔻, 1 �
   -- `tanh u / (1 - tanh u) = (e^{2u} - 1)/2 ≤ u e^{2u}`
   have hf : Real.tanh u / (1 - Real.tanh u) ≤ u * Real.exp (2 * u) := by
     have he : Real.tanh u / (1 - Real.tanh u) = (Real.exp (2 * u) - 1) / 2 := by
-      have hpos : 0 < Real.exp (2 * u) + 1 := by positivity
+      have : 0 < Real.exp (2 * u) + 1 := by positivity
       rw [tanh_eq_exp_two_mul]
       field_simp
       ring
