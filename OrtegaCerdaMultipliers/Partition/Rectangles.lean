@@ -432,7 +432,7 @@ theorem rect_slab_core {ν : Measure ℂ} {C_E u s y₁ y₂ v : ℝ} {T : Set �
         (measure_union_le _ _).trans (add_le_add (measure_iUnion_le _) le_rfl)
     _ ≤ ∑' j, ENNReal.ofReal C_E * ν (D j) +
           ENNReal.ofReal C_E * ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2)) :=
-        add_le_add (ENNReal.tsum_le_tsum hEj) htop
+        add_le_add (tsum_le_tsum hEj) htop
     _ = ENNReal.ofReal C_E * (∑' j, ν (D j) + ν (ball (⟨v, y₂ - s / 2⟩ : ℂ) (s / 2))) := by
         rw [ENNReal.tsum_mul_left, mul_add]
     _ ≤ ENNReal.ofReal C_E * (ν T + ν T) := by gcongr

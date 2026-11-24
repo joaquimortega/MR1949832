@@ -475,7 +475,7 @@ theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
       setIntegral_mono_set (hint.sub (integrableOn_const hMfin.ne))
         ((ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun t ht ↦
           by simp only [Pi.zero_apply]; linarith [ht.1]))
-        (LE.le.eventuallyLE (show _ ≤ Ioc a b from fun x hx ↦ ⟨by linarith [hx.1], hx.2.le⟩))
+        (Filter.Eventually.of_forall (p := fun x ↦ x ∈ Ioo ((a + b) / 2) b → x ∈ Ioc a b) fun x hx ↦ ⟨by linarith [hx.1], hx.2.le⟩)
     have h2 := setIntegral_ge_of_const_le_real (f := fun t ↦ t - a) (c := (b - a) / 2)
       (μ := linePull μ) measurableSet_Ioo hfinR (fun t ht ↦ by linarith [ht.1])
       ((hint.sub (integrableOn_const hMfin.ne)).mono_set
@@ -489,7 +489,7 @@ theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
       setIntegral_mono_set ((integrableOn_const hMfin.ne).sub hint)
         ((ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun t ht ↦
           by simp only [Pi.zero_apply]; linarith [ht.2]))
-        (LE.le.eventuallyLE (show _ ≤ Ioc a b from fun x hx ↦ ⟨hx.1, by linarith [hx.2]⟩))
+        (Filter.Eventually.of_forall (p := fun x ↦ x ∈ Ioo a ((a + b) / 2) → x ∈ Ioc a b) fun x hx ↦ ⟨hx.1, by linarith [hx.2]⟩)
     have h2 := setIntegral_ge_of_const_le_real (f := fun t ↦ b - t) (c := (b - a) / 2)
       (μ := linePull μ) measurableSet_Ioo hfinL (fun t ht ↦ by linarith [ht.2])
       (((integrableOn_const hMfin.ne).sub hint).mono_set
@@ -539,9 +539,9 @@ theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
   clear_value P I mR mL M a b
   constructor
   · rw [le_div_iff₀ (by positivity), e5]
-    nlinarith
+    linarith
   · rw [div_le_iff₀ (by positivity), e6]
-    nlinarith
+    linarith
 
 end LineHyp
 

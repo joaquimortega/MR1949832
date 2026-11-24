@@ -665,7 +665,7 @@ theorem M03b.lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
           ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ :=
         add_le_add hinner (lintegral_iUnion_le _ _)
     _ ≤ ENNReal.ofReal ((2 / δ) ^ m) + ∑' n : ℕ, ENNReal.ofReal (K₁ * q ^ n) :=
-        add_le_add le_rfl (ENNReal.tsum_le_tsum hAn)
+        add_le_add le_rfl (tsum_le_tsum hAn)
     _ = ENNReal.ofReal ((2 / δ) ^ m) + ENNReal.ofReal K₁ * (1 - ENNReal.ofReal q)⁻¹ := by
         congr 1
         rw [← ENNReal.tsum_geometric, ← ENNReal.tsum_mul_left]
@@ -754,7 +754,7 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
     _ ≤ B₁ + ∑' y : s, ∫⁻ z in ball (y : X) r₀ \ ball w r₀,
           ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ :=
         add_le_add (hfine₁ μ h w) (lintegral_iUnion_le _ _)
-    _ ≤ B₁ + ∑' _y : s, B₂ := add_le_add le_rfl (ENNReal.tsum_le_tsum hcoarse)
+    _ ≤ B₁ + ∑' _y : s, B₂ := add_le_add le_rfl (tsum_le_tsum hcoarse)
     _ = B₁ + s.card * B₂ := by
         rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul]
     _ ≤ B₁ + K * B₂ := by gcongr
@@ -863,7 +863,7 @@ theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
         rw [hsing]
         exact add_le_add le_rfl (lintegral_iUnion_le _ _)
     _ ≤ 0 + ∑' k : ℕ, ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) :=
-        add_le_add le_rfl (ENNReal.tsum_le_tsum hAk)
+        add_le_add le_rfl (tsum_le_tsum hAk)
     _ = ENNReal.ofReal (Real.log 2 * ∑' k : ℕ, ((k : ℝ) + 1) * q ^ k) * μ (ball x R) := by
         rw [zero_add, ENNReal.tsum_mul_right,
           ← ENNReal.ofReal_tsum_of_nonneg hnn (hsum.mul_left _), tsum_mul_left]
@@ -881,7 +881,7 @@ theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) 
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast (by omega : N ≠ 0)
   have hNt : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
   have hsmul : ∀ s, ((N : ℝ≥0∞)⁻¹ • μ) s = (N : ℝ≥0∞)⁻¹ * μ s := fun s ↦ by
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [smul_apply, smul_eq_mul]
   have hRN : 0 < (2 * (N : ℝ) + 1) * R₀ := by positivity
   have hgrow : (N : ℝ≥0∞) ≤ μ (ball x ((2 * N + 1) * R₀)) := by
     refine le_trans ?_ (M03b.sum_le_measure_ball_of_le hR₀ h.mass x N)
@@ -989,7 +989,7 @@ theorem M03b.eight_le_measure_ball_of_mass {X : Type*} [MetricSpace X] [Measurab
 
 theorem M03b.lapNorm_apply (μ : Measure ℂ) (s : Set ℂ) :
     lapNorm μ s = (ENNReal.ofReal (2 * Real.pi))⁻¹ * μ s := by
-  rw [lapNorm, Measure.smul_apply, smul_eq_mul]
+  rw [lapNorm, smul_apply, smul_eq_mul]
 
 theorem M03b.ofReal_two_pi_ne_zero : ENNReal.ofReal (2 * Real.pi) ≠ 0 :=
   (ENNReal.ofReal_pos.2 (by positivity)).ne'
@@ -1081,9 +1081,9 @@ theorem massRadius_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 �
   · exact M03b.massRadiusM_le_of_le (fun r ↦ M03b.lapNorm_le_self μ _)
       ⟨15 * R₀, by positivity, (hL.mass z).le⟩
   · refine le_trans (M03b.massRadiusM_le_of_le (fun r ↦ by
-      rw [Measure.smul_apply, smul_eq_mul]; exact M03b.inv_seven_mul_le_lapNorm μ _) ?_) h7.2
+      rw [smul_apply, smul_eq_mul]; exact M03b.inv_seven_mul_le_lapNorm μ _) ?_) h7.2
     refine ⟨15 * R₀, by positivity, ?_⟩
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [smul_apply, smul_eq_mul]
     exact M03b.one_le_inv_seven_mul (M03b.eight_le_measure_ball_of_mass hR₀ (fun y ↦ hM.mass y) z)
 theorem massRadiusDisc_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 1 ≤ C ∧
     ∀ μ : Measure ℂ, MeasClassDisc μ Cd R₀ → ∀ z ∈ 𝔻,
@@ -1101,10 +1101,10 @@ theorem massRadiusDisc_lapNorm_quant (Cd : ℝ≥0) (R₀ : ℝ) : ∃ C : ℝ, 
     rw [discPull_ball, discPull_ball]
     exact M03b.lapNorm_le_self μ _
   · refine le_trans (M03b.massRadiusM_le_of_le (fun r ↦ ?_) ?_) h7.2
-    · rw [Measure.smul_apply, smul_eq_mul, discPull_ball, discPull_ball]
+    · rw [smul_apply, smul_eq_mul, discPull_ball, discPull_ball]
       exact M03b.inv_seven_mul_le_lapNorm μ _
     · refine ⟨15 * R₀, by positivity, ?_⟩
-      rw [Measure.smul_apply, smul_eq_mul]
+      rw [smul_apply, smul_eq_mul]
       exact M03b.one_le_inv_seven_mul (M03b.eight_le_measure_ball_of_mass hR₀ (fun y ↦ hM.mass y) _)
 
 /-- (M03, quantitative Claim 1 + positivity/upper bound of `ρ`). -/

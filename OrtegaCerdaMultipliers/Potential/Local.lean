@@ -64,13 +64,20 @@ theorem continuousOn_bumpPot_uncurry :
   have h : ContinuousOn (fun p : ℝ × ℂ ↦ (4 * Real.pi)⁻¹ *
       (Real.log (p.1 ^ 2 / ‖p.2‖ ^ 2) - sFun (1 / 4) 1 (‖p.2‖ ^ 2 / p.1 ^ 2)))
       {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} := by
+    have hn : Continuous (fun p : ℝ × ℂ ↦ p.1 ^ 2) := by fun_prop
+    have hd : Continuous (fun p : ℝ × ℂ ↦ ‖p.2‖ ^ 2) := by fun_prop
+    have hq : ContinuousOn (fun p : ℝ × ℂ ↦ p.1 ^ 2 / ‖p.2‖ ^ 2)
+        {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} :=
+      hn.continuousOn.div hd.continuousOn fun p hp ↦ by
+        have := hp.2; positivity
+    have hq' : ContinuousOn (fun p : ℝ × ℂ ↦ ‖p.2‖ ^ 2 / p.1 ^ 2)
+        {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} :=
+      hd.continuousOn.div hn.continuousOn fun p hp ↦ by
+        have := hp.1; positivity
     refine continuousOn_const.mul (ContinuousOn.sub ?_ ?_)
-    · refine ContinuousOn.log ?_ fun p hp ↦ ?_
-      · exact ContinuousOn.div (by fun_prop) (by fun_prop) fun p hp ↦ by
-          have := hp.2; positivity
-      · have := hp.1; have := hp.2; positivity
-    · exact hS.comp_continuousOn (ContinuousOn.div (by fun_prop) (by fun_prop) fun p hp ↦ by
-        have := hp.1; positivity)
+    · refine hq.log fun p hp ↦ ?_
+      have := hp.1; have := hp.2; positivity
+    · exact hS.comp_continuousOn hq'
   refine h.congr fun p hp ↦ ?_
   exact bumpPot_eq hp.1 hp.2
 
@@ -516,8 +523,8 @@ theorem continuousOn_localPot (h : IsLocalPotData Ω σ s) : ContinuousOn (local
     · filter_upwards [closedBall_mem_nhds z₀ hr₀] with z hz using hg_bound z hz
     · filter_upwards [hae z₀] with ζ ⟨hζ, hne⟩
       have hopen : IsOpen {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} :=
-        (isOpen_lt continuous_const continuous_fst).inter
-          (isOpen_ne_fun continuous_snd continuous_const)
+        (isOpen_lt continuous_const continuous_fst : IsOpen {p : ℝ × ℂ | 0 < p.1}).inter
+          (isOpen_ne_fun continuous_snd continuous_const : IsOpen {p : ℝ × ℂ | p.2 ≠ 0})
       have hmem : (s ζ, z₀ - ζ) ∈ {p : ℝ × ℂ | 0 < p.1 ∧ p.2 ≠ 0} :=
         ⟨h.pos ζ hζ, sub_ne_zero.2 hne.symm⟩
       have hca : ContinuousAt (Function.uncurry bumpPot) (s ζ, z₀ - ζ) :=
