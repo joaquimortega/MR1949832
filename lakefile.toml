@@ -20,6 +20,10 @@ name = "OrtegaCerdaSeip"
 
 [[lean_lib]]
 name = "OrtegaCerdaMultipliers"
+[lean_lib.leanOptions]
+weak.linter.mathlibStandardSet = true
+weak.linter.unusedVariables.analyzeTactics = true
+weak.linter.style.longFile = 1500
 
 # Self-contained statements file and its solution, checked by `comparator` (see comparator/).
 [[lean_lib]]
