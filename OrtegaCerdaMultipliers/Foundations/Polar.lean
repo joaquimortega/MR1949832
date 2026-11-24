@@ -71,7 +71,7 @@ theorem lintegral_eq_lintegral_circle (c : ℂ) {f : ℂ → ℝ≥0∞} (hf : M
     (ENNReal.measurable_ofReal.comp measurable_fst).smul
       (hf.comp (continuous_circleMap_prod c).measurable)
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, lintegral_prod _ hm.aemeasurable]
-  refine setLIntegral_congr_fun measurableSet_Ioi (fun s hs ↦ ?_)
+  refine setLIntegral_congr_fun measurableSet_Ioi (fun s _ ↦ ?_)
   simp only [smul_eq_mul]
   have hm' : Measurable fun θ ↦ f (circleMap c s θ) :=
     hf.comp (continuous_circleMap c s).measurable

@@ -140,7 +140,8 @@ theorem laplacian_twoRadiiTest (hs₁ : 0 < s₁) (hs₂ : 0 < s₂) (w : ℂ) :
       4 * Real.pi * (bumpKernel s₁ (w - y) - bumpKernel s₂ (w - y)) := by
   have e : twoRadiiTest s₁ s₂ y = (fun w : ℂ ↦ sFun (s₂ ^ 2 / 4) (s₂ ^ 2) (‖w - y‖ ^ 2)) -
       (fun w : ℂ ↦ sFun (s₁ ^ 2 / 4) (s₁ ^ 2) (‖w - y‖ ^ 2)) := rfl
-  rw [e, ((contDiff_sFun_normSq_sub hs₂ y).of_le (WithTop.coe_le_coe.2 le_top)).contDiffAt.laplacian_sub
+  rw [e,
+    ((contDiff_sFun_normSq_sub hs₂ y).of_le (WithTop.coe_le_coe.2 le_top)).contDiffAt.laplacian_sub
     ((contDiff_sFun_normSq_sub hs₁ y).of_le (WithTop.coe_le_coe.2 le_top)).contDiffAt,
     laplacian_sFun_normSq_sub hs₂, laplacian_sFun_normSq_sub hs₁]
   ring
@@ -188,7 +189,8 @@ theorem integral_bumpKernel_mul_eq_of_weakHarmonic' {U : Set ℂ} {f : ℂ → �
   · rfl
   · exact (integral_bumpKernel_mul_eq_of_weakHarmonic hf h hs₂ h12 h1).symm
 
-/-- **Lebesgue points.** For a locally integrable `g`, `∫ k_s(w − x) g(w) dw → g(x)` for a.e. `x`. -/
+/-- **Lebesgue points.** For a locally integrable `g`, `∫ k_s(w − x) g(w) dw → g(x)` for a.e. `x`.
+-/
 theorem ae_tendsto_integral_bumpKernel_mul {g : ℂ → ℝ} (hg : LocallyIntegrable g) :
     ∀ᵐ x₀, Tendsto (fun s ↦ ∫ w, bumpKernel s (w - x₀) * g w) (𝓝[>] 0) (𝓝 (g x₀)) := by
   filter_upwards [(Besicovitch.vitaliFamily (volume : Measure ℂ)).ae_tendsto_average_norm_sub hg]
@@ -263,12 +265,12 @@ theorem harmonicAt_and_ae_eq_integral_bumpKernel {U : Set ℂ} {f : ℂ → ℝ}
         InnerProductSpace.HarmonicAt (fun y ↦ ∫ w, bumpKernel R (w - y) * f w) y) ∧
       ∀ᵐ y, y ∈ ball z₀ R → f y = ∫ w, bumpKernel R (w - y) * f w := by
   set K := closedBall z₀ (2 * R)
-  set F : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel R (w - y) * f w with hF
+  set F : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel R (w - y) * f w
   have hfK : IntegrableOn f K := hf.integrableOn_compact_subset hsub (isCompact_closedBall _ _)
   set f' : ℂ → ℝ := K.indicator f
   have hf'i : Integrable f' := (integrable_indicator_iff measurableSet_closedBall).2 hfK
   have hf'l : LocallyIntegrable f' := hf'i.locallyIntegrable
-  set G : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel R (w - y) * f' w with hG
+  set G : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel R (w - y) * f' w
   -- `closedBall y R ⊆ K` near `z₀`
   have hballK : ∀ y ∈ ball z₀ R, ∀ s ≤ R, closedBall y s ⊆ K := by
     intro y hy s hs w hw
@@ -281,7 +283,7 @@ theorem harmonicAt_and_ae_eq_integral_bumpKernel {U : Set ℂ} {f : ℂ → ℝ}
   -- `G` is smooth
   have hGconv : G = convolution f' (bumpKernel R) (ContinuousLinearMap.lsmul ℝ ℝ) volume := by
     funext y
-    show (∫ w, bumpKernel R (w - y) * f' w) = _
+    change (∫ w, bumpKernel R (w - y) * f' w) = _
     rw [convolution_def]
     congr 1; funext w
     rw [ContinuousLinearMap.lsmul_apply, smul_eq_mul, bumpKernel_sub_comm, mul_comm]
@@ -351,7 +353,7 @@ theorem exists_harmonicOnNhd_ae_eq_of_weakHarmonic_aux {U : Set ℂ} (hU : IsOpe
     obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU y hy
     exact ⟨ε / 2, half_pos hε, (closedBall_subset_ball (half_lt_self hε)).trans hεU⟩
   choose! r hr hrU using hrad
-  set u : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel (r y) (w - y) * f w with hu
+  set u : ℂ → ℝ := fun y ↦ ∫ w, bumpKernel (r y) (w - y) * f w
   have hsub2 : ∀ z₀ ∈ U, closedBall z₀ (2 * (r z₀ / 2)) ⊆ U := fun z₀ hz₀ ↦ by
     rw [mul_div_cancel₀ _ two_ne_zero]; exact hrU z₀ hz₀
   have hloc : ∀ z₀ ∈ U, ∀ y ∈ ball z₀ (r z₀ / 2),

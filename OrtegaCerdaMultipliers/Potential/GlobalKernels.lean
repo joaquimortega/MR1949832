@@ -62,7 +62,6 @@ theorem kDisc_eq {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) :
   rw [add_assoc]
   congr 2
   rw [pseudoHyp, div_pow, hX, hvn, hNn]
-  have hN' : ‖1 - conj ζ * z‖ ^ 2 ≠ 0 := by rw [← hNn]; exact hN
   field_simp
   linear_combination -key
 
@@ -72,7 +71,7 @@ theorem abs_kDisc_le {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) (hne : z
       (1 + Real.log (1 / pseudoHyp ζ z)) := by
   rw [kDisc_eq hz hζ]
   set ρ := pseudoHyp ζ z with hρdef
-  set D := ‖1 - conj ζ * z‖ with hDdef
+  set D := ‖1 - conj ζ * z‖
   set A := (1 - ‖ζ‖ ^ 2) / D with hAdef
   set L := Real.log (1 / ρ) with hLdef
   have hD : 0 < D := norm_one_sub_conj_mul_pos hζ hz
@@ -157,7 +156,6 @@ theorem abs_kDisc_le {z ζ : ℂ} (hz : z ∈ 𝔻) (hζ : ζ ∈ 𝔻) (hne : z
             have e : 16 * A ^ 2 * (1 + L) = 16 * A ^ 2 + 16 * A ^ 2 * L := by ring
             rw [e]
             linarith
-  have hπ : 0 < Real.pi := Real.pi_pos
   rw [abs_mul, abs_of_pos (by positivity)]
   calc (4 * Real.pi)⁻¹ * |Real.log (ρ ^ 2) + (1 - ρ ^ 2) +
         ‖z‖ ^ 2 * (1 - ‖ζ‖ ^ 2) ^ 2 / D ^ 2|
@@ -207,8 +205,8 @@ theorem abs_kPlane_le {z ζ : ℂ} (hζ : 1 ≤ ‖ζ‖) (hzζ : 2 * ‖z‖ �
   have hnorm : ‖z - ζ‖ = ‖ζ‖ * ‖1 - w‖ := by rw [hzζe, norm_mul, norm_neg]
   have hk : kPlane z ζ = (2 * Real.pi)⁻¹ * (Complex.log (1 - w) + w + w ^ 2 / 2).re := by
     unfold kPlane
-    rw [ite_eq_left_iff.2 (fun h ↦ absurd hζ h), hnorm, mul_pow, Real.log_mul (by positivity) (by positivity), Real.log_pow,
-      Real.log_pow]
+    rw [ite_eq_left_iff.2 (fun h ↦ absurd hζ h), hnorm, mul_pow,
+      Real.log_mul (by positivity) (by positivity), Real.log_pow, Real.log_pow]
     have e2 : z ^ 2 / (2 * ζ ^ 2) = w ^ 2 / 2 := by rw [hw]; field_simp
     rw [e2, ← hw]
     simp only [Complex.add_re, Complex.log_re]

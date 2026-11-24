@@ -39,7 +39,8 @@ theorem integrableOn_log_norm_sub_closedBall (ζ : ℂ) {R : ℝ} (hR : 0 ≤ R)
       simp [hF, indicator_of_mem (show t ∈ Iic (R ^ 2) from ht.2)]
     have h3 : IntegrableOn F (Ioi (R ^ 2)) :=
       (integrableOn_zero).congr_fun (fun t ht ↦ by
-        rw [hF, indicator_of_notMem (show t ∉ Iic (R ^ 2) from fun h ↦ (not_le.2 ht) (mem_Iic.1 h))])
+        rw [hF, indicator_of_notMem
+          (show t ∉ Iic (R ^ 2) from fun h ↦ (not_le.2 ht) (mem_Iic.1 h))])
         measurableSet_Ioi
     refine (integrableOn_union.2 ⟨h2, h3⟩).mono_set ?_
     intro t ht
@@ -276,8 +277,9 @@ theorem integral_log_normSq_sub_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff
     rw [hW, integral_add hlogint (hSint s hs), integral_sFun_mul_laplacian hs hχ hc ζ, ← hL]
     ring
   -- limits
-  obtain ⟨C, hC0, hC⟩ := exists_abs_wFun_bump_le
-  have hbound : Integrable (fun z ↦ (‖Real.log (‖z - ζ‖ ^ 2)‖ + C) * ‖Laplacian.laplacian χ z‖) := by
+  obtain ⟨C, -, hC⟩ := exists_abs_wFun_bump_le
+  have hbound : Integrable
+      (fun z ↦ (‖Real.log (‖z - ζ‖ ^ 2)‖ + C) * ‖Laplacian.laplacian χ z‖) := by
     have h1 : LocallyIntegrable (fun z : ℂ ↦ ‖Real.log (‖z - ζ‖ ^ 2)‖ + C) :=
       (locallyIntegrable_norm_of hlogloc).add (locallyIntegrable_const C)
     simpa [smul_eq_mul] using
@@ -304,7 +306,8 @@ theorem integral_log_normSq_sub_mul_laplacian {χ : ℂ → ℝ} (hχ : ContDiff
   have hlimK : Tendsto (fun s ↦ ∫ z, kernel (s ^ 2 / 4) (s ^ 2) (z - ζ) * χ z)
       (𝓝[>] 0) (𝓝 (χ ζ)) :=
     tendsto_integral_kernel_bump_mul one_pos
-      (hχ.continuous.continuousOn.integrableOn_compact (isCompact_closedBall ζ 1)) hχ.continuous.continuousAt
+      (hχ.continuous.continuousOn.integrableOn_compact (isCompact_closedBall ζ 1))
+      hχ.continuous.continuousAt
   have hlim := hlimW.add (hlimK.const_mul (4 * Real.pi))
   rw [zero_add] at hlim
   have hev : (fun s ↦ (∫ z, wFun (s ^ 2 / 4) (s ^ 2) (z - ζ) * Laplacian.laplacian χ z) +

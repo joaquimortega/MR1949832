@@ -376,7 +376,8 @@ theorem lap_log_normSq {z : ℂ} (hz : z ≠ 0) : lap (fun w ↦ Real.log (‖w�
   ring
 
 theorem lap_const_mul_normSq (α : ℝ) (z : ℂ) : lap (fun w ↦ α * ‖w‖ ^ 2) z = α := by
-  have h := lap_comp_normSq (F := fun t ↦ α * t) (z := z) (contDiff_const.mul contDiff_id).contDiffAt
+  have h := lap_comp_normSq (F := fun t ↦ α * t) (z := z)
+    (contDiff_const.mul contDiff_id).contDiffAt
   rw [h]
   have : deriv (fun t : ℝ ↦ α * t) = fun _ ↦ α := by
     ext t; simp

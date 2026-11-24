@@ -78,7 +78,8 @@ theorem norm_sq_le_lintegral_ball {g : ℂ → ℂ} {a : ℂ} {r : ℝ} (hr : 0 
           rw [abs_of_pos hs.1]; exact closedBall_subset_ball hs.2
         refine (ofReal_two_pi_mul_norm_sq_le_lintegral_circle hg hsub).trans_eq ?_
         refine setLIntegral_congr_fun measurableSet_Ioc (fun θ _ ↦ ?_)
-        rw [hf_def, indicator_of_mem (hsub (sphere_subset_closedBall (circleMap_mem_sphere' a s θ)))]
+        rw [hf_def, indicator_of_mem
+          (hsub (sphere_subset_closedBall (circleMap_mem_sphere' a s θ)))]
 theorem norm_deriv_sq_le {g : ℂ → ℂ} {a z : ℂ} {R : ℝ} (hR : 0 < R)
     (hg : DifferentiableOn ℂ g (Metric.ball a R)) (hz : z ∈ Metric.ball a (R / 2)) :
     ENNReal.ofReal (‖deriv g z‖ ^ 2) ≤
@@ -86,7 +87,7 @@ theorem norm_deriv_sq_le {g : ℂ → ℂ} {a z : ℂ} {R : ℝ} (hR : 0 < R)
         ∫⁻ w in Metric.ball a R, ENNReal.ofReal (‖g w‖ ^ 2) := by
   set I := ∫⁻ w in Metric.ball a R, ENNReal.ofReal (‖g w‖ ^ 2) with hI_def
   by_cases hI : I = ∞
-  · rw [hI, ENNReal.mul_top (by simp; positivity)]; exact le_top
+  · rw [hI, ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne']; exact le_top
   rw [mem_ball] at hz
   have hball : ∀ w ∈ sphere z (R / 4), ball w (R / 4) ⊆ ball a R := by
     intro w hw u hu

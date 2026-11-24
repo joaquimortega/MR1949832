@@ -64,7 +64,7 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
       ∀ᵐ z ∂(volume.restrict (ball a (R / 2))), u z = H z := by
   -- the cut-off `χ`
   let φ : ContDiffBump a := ⟨R / 2, R, half_pos hR, half_lt_self hR⟩
-  set χ : ℂ → ℂ := fun z ↦ ((φ z : ℝ) : ℂ) with hχdef
+  set χ : ℂ → ℂ := fun z ↦ ((φ z : ℝ) : ℂ)
   have hχs : ContDiff ℝ (⊤ : ℕ∞) χ := Complex.ofRealCLM.contDiff.comp φ.contDiff
   have hχ1 : ContDiff ℝ 1 χ := contDiff_one_of_top hχs
   have hχc : HasCompactSupport χ := φ.hasCompactSupport.comp_left Complex.ofReal_zero
@@ -83,7 +83,7 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
   have hsub : ball a (R / 2) ⊆ Ω :=
     (ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))).trans hball
   -- the function `g = u ∂̄χ` and `H = C[g]`
-  set g : ℂ → ℂ := fun z ↦ u z * dbar χ z with hg
+  set g : ℂ → ℂ := fun z ↦ u z * dbar χ z
   have hgi : Integrable g :=
     integrable_mul_dbar_of_locallyIntegrableOn hu hχ1 hχc (hχt.trans hball)
   have hgt : tsupport g ⊆ (ball a (R / 2))ᶜ := by
@@ -103,7 +103,7 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
     filter_upwards [key] with z hz hzb
     exact sub_eq_zero.mp (hz hzb)
   intro ψ hψ hψc hψs
-  set β : ℂ → ℂ := fun z ↦ ((ψ z : ℝ) : ℂ) with hβdef
+  set β : ℂ → ℂ := fun z ↦ ((ψ z : ℝ) : ℂ)
   have hβs : ContDiff ℝ (⊤ : ℕ∞) β := Complex.ofRealCLM.contDiff.comp hψ
   have hβ1 := contDiff_one_of_top hβs
   have hβc : HasCompactSupport β := hψc.comp_left Complex.ofReal_zero
@@ -113,7 +113,7 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
   have hBs : ContDiff ℝ (⊤ : ℕ∞) B := contDiff_cauchyTransform hβs hβc
   have hdB : ∀ z, dbar B z = β z := dbar_cauchyTransform hβs hβc
   -- the test function `χ B`
-  set α : ℂ → ℂ := fun z ↦ χ z * B z with hαdef
+  set α : ℂ → ℂ := fun z ↦ χ z * B z
   have hαs : ContDiff ℝ (⊤ : ℕ∞) α := hχs.mul hBs
   have hαc : HasCompactSupport α := hχc.mul_right
   have hαt : tsupport α ⊆ Ω := (tsupport_mul_subset_left).trans (hχt.trans hball)
@@ -151,7 +151,7 @@ lemma weyl_local {Ω : Set ℂ} {u : ℂ → ℂ} (hu : LocallyIntegrableOn u Ω
   have e3 : (fun x ↦ ψ x • (u x - H x)) = fun x ↦ u x * β x - H x * β x := by
     ext x; simp only [β, Complex.real_smul]; ring
   rw [e1, e2] at h0
-  show ∫ x, ψ x • (u x - H x) = 0
+  change ∫ x, ψ x • (u x - H x) = 0
   rw [e3, integral_sub i_uβ i_Hβ]
   linear_combination h0
 
@@ -252,7 +252,7 @@ lemma pi_mul_norm_sq_le_of_lintegral_div_normSq {u : ℂ → ℂ} {a : ℂ} {R :
     {z : ℂ} (hz : z ∈ ball a (R / 3)) (hza : z ≠ a) :
     Real.pi * ‖u z‖ ^ 2 ≤
       9 * (∫⁻ w in Metric.ball a R, ENNReal.ofReal (‖u w‖ ^ 2 / ‖w - a‖ ^ 2)).toReal := by
-  set I := ∫⁻ w in Metric.ball a R, ENNReal.ofReal (‖u w‖ ^ 2 / ‖w - a‖ ^ 2) with hI
+  set I := ∫⁻ w in Metric.ball a R, ENNReal.ofReal (‖u w‖ ^ 2 / ‖w - a‖ ^ 2)
   set d := ‖z - a‖ with hd_def
   have hd : 0 < d := norm_pos_iff.mpr (sub_ne_zero.mpr hza)
   have hdR : d < R / 3 := by rw [hd_def, ← dist_eq_norm]; exact hz
@@ -345,7 +345,7 @@ theorem removable_of_lintegral_div_normSq {u : ℂ → ℂ} {a : ℂ} {R : ℝ} 
   have hLpos : 0 < ‖L‖ := norm_pos_iff.mpr hLne
   have hcont : ContinuousAt U a := (hUd.differentiableAt (ball_mem_nhds a hR)).continuousAt
   obtain ⟨δ, hδ, hδU⟩ := Metric.continuousAt_iff.mp hcont (‖L‖ / 2) (half_pos hLpos)
-  set ρ := min δ R with hρ
+  set ρ := min δ R
   have hρpos : 0 < ρ := lt_min hδ hR
   have hlow : ∀ z ∈ ball a ρ,
       ENNReal.ofReal (‖L‖ ^ 2 / 4 * ‖z - a‖⁻¹ ^ 2) ≤ ENNReal.ofReal (‖u z‖ ^ 2 / ‖z - a‖ ^ 2) := by
@@ -372,7 +372,7 @@ theorem removable_of_lintegral_div_normSq {u : ℂ → ℂ} {a : ℂ} {R : ℝ} 
       ENNReal.ofReal_mul (by positivity)
     simp_rw [e]
     rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, htop]
-    exact ENNReal.mul_top (by simp; positivity)
+    exact ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne'
   have : ∞ ≤ I := by
     rw [← hinf]
     calc ∫⁻ z in ball a ρ, ENNReal.ofReal (‖L‖ ^ 2 / 4 * ‖z - a‖⁻¹ ^ 2)

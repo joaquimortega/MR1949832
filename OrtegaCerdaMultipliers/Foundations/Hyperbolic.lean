@@ -39,10 +39,6 @@ namespace OC
 /-- The addition formula `tanh (a + b) = (tanh a + tanh b) / (1 + tanh a tanh b)`. -/
 theorem tanh_add (a b : ℝ) :
     Real.tanh (a + b) = (Real.tanh a + Real.tanh b) / (1 + Real.tanh a * Real.tanh b) := by
-  have ha := Real.cosh_pos a
-  have hb := Real.cosh_pos b
-  have hab : 0 < Real.cosh a * Real.cosh b + Real.sinh a * Real.sinh b := by
-    rw [← Real.cosh_add]; exact Real.cosh_pos _
   rw [Real.tanh_eq_sinh_div_cosh, Real.tanh_eq_sinh_div_cosh, Real.tanh_eq_sinh_div_cosh,
     Real.sinh_add, Real.cosh_add]
   field_simp
@@ -55,7 +51,6 @@ theorem tanh_eq_exp_two_mul (r : ℝ) :
   have h2 : Real.exp r * Real.exp (-r) = 1 := by
     rw [← Real.exp_add]; simp
   have hp := Real.exp_pos r
-  have hn := Real.exp_pos (-r)
   rw [Real.tanh_eq, h1, div_eq_div_iff (by positivity) (by positivity)]
   nlinarith [h2]
 
@@ -104,7 +99,6 @@ theorem pseudoHyp_le_norm_add_norm_div {p q : ℂ} (hp : p ∈ 𝔻) (hq : q ∈
   have hD2 : D ^ 2 ≤ (1 + x * y) ^ 2 := pow_le_pow_left₀ hD.le hDle 2
   have hle : (1 - x ^ 2) * (1 - y ^ 2) / (1 + x * y) ^ 2 ≤ (1 - x ^ 2) * (1 - y ^ 2) / D ^ 2 :=
     div_le_div_of_nonneg_left hnum (by positivity) hD2
-  have hxy : 0 < 1 + x * y := by positivity
   have hid : 1 - (1 - x ^ 2) * (1 - y ^ 2) / (1 + x * y) ^ 2 = ((x + y) / (1 + x * y)) ^ 2 := by
     field_simp
     ring
@@ -368,7 +362,6 @@ theorem exp_two_mul_lt_nine {r : ℝ} (hr1 : r ≤ 1) : Real.exp (2 * r) < 9 := 
 theorem div_five_le_tanh {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) : r / 5 ≤ Real.tanh r := by
   have hE := exp_two_mul_lt_nine hr1
   have hE1 := Real.add_one_le_exp (2 * r)
-  have hEpos := Real.exp_pos (2 * r)
   rw [tanh_eq_exp_two_mul, le_div_iff₀ (by positivity)]
   nlinarith
 

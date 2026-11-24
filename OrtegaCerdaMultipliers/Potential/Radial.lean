@@ -106,7 +106,7 @@ theorem le_profMass (ha : 0 < a) (hab : a < b) : a ≤ profMass a b := by
 theorem profMass_le (ha : 0 < a) (hab : a < b) : profMass a b ≤ b := by
   unfold profMass
   have hc := continuous_cutProfile a b
-  calc ∫ t in (0 : ℝ)..b, cutProfile a b t ≤ ∫ t in (0 : ℝ)..b, (1 : ℝ) :=
+  calc ∫ t in (0 : ℝ)..b, cutProfile a b t ≤ ∫ _ in (0 : ℝ)..b, (1 : ℝ) :=
         intervalIntegral.integral_mono_on (by linarith) (hc.intervalIntegrable _ _)
           intervalIntegrable_const (fun t _ ↦ (cutProfile_mem_Icc a b t).2)
     _ = b := by simp
@@ -439,8 +439,9 @@ theorem sFn_le_sFn_of_gFn_le_of_le {p₁ p₂ : ℝ → ℝ} {b₁ b₂ : ℝ} (
     (h₂ : IsProfile p₂ b₂) {t : ℝ} (hg : ∀ τ, t ≤ τ → gFn p₂ τ ≤ gFn p₁ τ) :
     sFn p₂ b₂ t ≤ sFn p₁ b₁ t := by
   have hT : t ≤ max (max b₁ b₂) t := le_max_right _ _
-  rw [h₁.sFn_eq_of_le (le_max_of_le_left (le_max_left _ _)) t,
-    h₂.sFn_eq_of_le (le_max_of_le_left (le_max_right _ _)) t]
+  have hb₁ : b₁ ≤ max (max b₁ b₂) t := le_max_of_le_left (le_max_left _ _)
+  have hb₂ : b₂ ≤ max (max b₁ b₂) t := le_max_of_le_left (le_max_right _ _)
+  rw [h₁.sFn_eq_of_le hb₁ t, h₂.sFn_eq_of_le hb₂ t]
   have : ∫ τ in t..max (max b₁ b₂) t, gFn p₂ τ ≤ ∫ τ in t..max (max b₁ b₂) t, gFn p₁ τ :=
     intervalIntegral.integral_mono_on hT (h₂.continuous_gFn.intervalIntegrable _ _)
       (h₁.continuous_gFn.intervalIntegrable _ _) (fun τ hτ ↦ hg τ hτ.1)
@@ -504,7 +505,7 @@ theorem lap_wFun (ha : 0 < a) (hab : a < b) {z : ℂ} (hz : z ≠ 0) :
     (Real.contDiffAt_log.2 (by positivity)).comp z hn
   have h2 : ContDiffAt ℝ 2 (fun w : ℂ ↦ sFn (planeProfile a b) b (‖w‖ ^ 2)) z :=
     (hp.contDiff_sFn.contDiffAt.of_le (by simp)).comp z hn
-  show lap (fun w ↦ Real.log (‖w‖ ^ 2) + sFn (planeProfile a b) b (‖w‖ ^ 2)) z = _
+  change lap (fun w ↦ Real.log (‖w‖ ^ 2) + sFn (planeProfile a b) b (‖w‖ ^ 2)) z = _
   rw [lap_add h1 h2, lap_log_normSq hz, zero_add]
   exact lap_sFun_normSq ha hab z
 theorem exists_wFun_ge (ha : 0 < a) (hab : a < b) {η : ℝ} (hη : 0 < η) :
@@ -530,7 +531,6 @@ theorem cutProfile_scale (hab : a < b) {ε : ℝ} (hε : 0 < ε) (t : ℝ) :
     cutProfile (ε ^ 2 * a) (ε ^ 2 * b) t = cutProfile a b (t / ε ^ 2) := by
   unfold cutProfile
   have h1 : b - a ≠ 0 := sub_ne_zero.2 hab.ne'
-  have hε2 : ε ^ 2 ≠ 0 := by positivity
   rw [← mul_sub]
   congr 2
   field_simp

@@ -70,7 +70,7 @@ theorem lintegral_hypBall_eq_lintegral_ball {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ
 theorem lintegral_ball_zero_hypDensity {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
     ∫⁻ w in ball (0 : ℂ) t, ENNReal.ofReal ((1 - ‖w‖ ^ 2)⁻¹ ^ 2) =
       ENNReal.ofReal (Real.pi * (t ^ 2 / (1 - t ^ 2))) := by
-  set T := t ^ 2 with hT
+  set T := t ^ 2
   have hT0 : 0 ≤ T := by positivity
   have hT1 : T < 1 := by nlinarith
   set F : ℝ → ℝ≥0∞ := (Iio T).indicator fun u ↦ ENNReal.ofReal ((1 - u)⁻¹ ^ 2) with hF
@@ -122,7 +122,6 @@ theorem lintegral_ball_zero_hypDensity {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
 /-- `tanh² r / (1 - tanh² r) = sinh² r`. -/
 theorem tanh_sq_div_one_sub_tanh_sq (r : ℝ) :
     Real.tanh r ^ 2 / (1 - Real.tanh r ^ 2) = Real.sinh r ^ 2 := by
-  have hc := Real.cosh_pos r
   have hcs := Real.cosh_sq r
   rw [Real.tanh_eq_sinh_div_cosh]
   have : Real.cosh r ^ 2 - Real.sinh r ^ 2 = 1 := by linarith
@@ -242,7 +241,6 @@ theorem norm_sub_le_of_hypDist_le {c w : ℂ} (hc : c ∈ 𝔻) (hw : w ∈ 𝔻
 /-- `(1 + tanh s) / (1 - tanh s) = e^{2s}`. -/
 theorem one_add_tanh_div_one_sub_tanh (s : ℝ) :
     (1 + Real.tanh s) / (1 - Real.tanh s) = Real.exp (2 * s) := by
-  have hE := Real.exp_pos (2 * s)
   rw [tanh_eq_exp_two_mul]
   field_simp
   ring
@@ -268,8 +266,6 @@ theorem norm_one_sub_conj_mul_le_exp {z a b : ℂ} (hz : z ∈ 𝔻) (ha : a ∈
         rw [norm_mul, Complex.norm_conj]
         gcongr
         exact mul_le_of_le_one_left (norm_nonneg _) hz1.le
-  have ht1' : 0 < 1 - t := by linarith
-  have hq : 0 ≤ t / (1 - t) := div_nonneg ht0 ht1'.le
   rw [← one_add_tanh_div_one_sub_tanh]
   have e : (1 + t) / (1 - t) = 1 + 2 * (t / (1 - t)) := by field_simp; ring
   rw [e]

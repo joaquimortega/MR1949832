@@ -104,7 +104,6 @@ theorem mobius_mem_disc {a ζ : ℂ} (ha : a ∈ 𝔻) (hζ : ζ ∈ 𝔻) : mob
     have := one_sub_normSq_pos hζ
     positivity
   rw [mem_disc_iff_norm_lt_one]
-  have h2 : ‖mobius a ζ‖ ^ 2 < 1 := by linarith
   nlinarith [norm_nonneg (mobius a ζ)]
 
 theorem mobius_self (a : ℂ) : mobius a a = 0 := by
@@ -241,11 +240,6 @@ theorem mobius_mobius_mobius {a u v : ℂ} (ha : a ∈ 𝔻) (hu : u ∈ 𝔻) (
   have h2 := one_sub_conj_mul_ne_zero_of_mem ha hv
   have h3 := one_sub_conj_mul_ne_zero_of_mem hu hv
   have h4 := one_sub_conj_mul_self_ne_zero ha
-  have h5 : 1 - a * conj u ≠ 0 := by
-    intro h
-    apply h1
-    have := congrArg conj h
-    simpa using this
   have h6 : 1 - conj u * v ≠ 0 := h3
   rw [show mobius (mobius a u) (mobius a v) =
       (mobius a u - mobius a v) / (1 - conj (mobius a u) * mobius a v) from rfl,
@@ -283,7 +277,6 @@ theorem pseudoHyp_le_norm_add_norm {p q : ℂ} (hp : p ∈ 𝔻) (hq : q ∈ �
     apply pow_le_pow_left₀ hD.le hDle
   have hle : (1 - x ^ 2) * (1 - y ^ 2) / (1 + x * y) ^ 2 ≤ (1 - x ^ 2) * (1 - y ^ 2) / D ^ 2 :=
     div_le_div_of_nonneg_left hnum (by positivity) hD2
-  have hxy : 0 < 1 + x * y := by positivity
   have hid : 1 - (1 - x ^ 2) * (1 - y ^ 2) / (1 + x * y) ^ 2 = (x + y) ^ 2 / (1 + x * y) ^ 2 := by
     field_simp
     ring
@@ -549,11 +542,10 @@ theorem finite_and_ncard_pseudoBall_le {Γ : Set ℂ} {ε : ℝ} (hΓ𝔻 : Γ �
     {w ∈ Γ | pseudoHyp z w < s}.Finite ∧
       {w ∈ Γ | pseudoHyp z w < s}.ncard ≤ ⌊(4 * s * (1 + s) / (ε * (1 - s) ^ 2) + 1) ^ 2⌋₊ := by
   have hz' := one_sub_normSq_pos hz
-  have hs1' : 0 < 1 - s := by linarith
   have hδ : 0 < ε * ((1 - s) / (1 + s) * (1 - ‖z‖ ^ 2)) / 2 := by positivity
   have hsep : ∀ a ∈ {w ∈ Γ | pseudoHyp z w < s}, ∀ b ∈ {w ∈ Γ | pseudoHyp z w < s}, a ≠ b →
       ε * ((1 - s) / (1 + s) * (1 - ‖z‖ ^ 2)) / 2 ≤ dist a b := by
-    rintro a ⟨haΓ, haρ⟩ b ⟨hbΓ, hbρ⟩ hab
+    rintro a ⟨haΓ, haρ⟩ b ⟨hbΓ, -⟩ hab
     have ha𝔻 := hΓ𝔻 haΓ
     have hb𝔻 := hΓ𝔻 hbΓ
     have hcomp := (one_sub_normSq_comparable hz ha𝔻 hs1 haρ).1

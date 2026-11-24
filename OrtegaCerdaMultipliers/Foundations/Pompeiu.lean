@@ -131,8 +131,8 @@ lemma integral_dbar_div_eq {α : ℂ → ℂ} (hα : ContDiff ℝ 1 α) (hc : Ha
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall w
   have hDc : Continuous (fderiv ℝ α) := hα.continuous_fderiv one_ne_zero
   have hαd : Differentiable ℝ α := hα.differentiable one_ne_zero
-  set h1 : ℝ × ℝ → ℂ := fun p => fderiv ℝ α (w + p.1 * unitVec p.2) (unitVec p.2) with hh1
-  set h2 : ℝ × ℝ → ℂ := fun p => fderiv ℝ α (w + p.1 * unitVec p.2) (I * unitVec p.2) with hh2
+  set h1 : ℝ × ℝ → ℂ := fun p => fderiv ℝ α (w + p.1 * unitVec p.2) (unitVec p.2)
+  set h2 : ℝ × ℝ → ℂ := fun p => fderiv ℝ α (w + p.1 * unitVec p.2) (I * unitVec p.2)
   have hcu := continuous_unitVec
   have h1c : Continuous h1 := by
     refine (hDc.comp ?_).clm_apply (hcu.comp continuous_snd)
@@ -287,7 +287,7 @@ lemma lintegral_inv_norm_sub_le_of_set (K : Set ℂ) (z : ℂ) :
       _ = ENNReal.ofReal (2 * Real.pi) := by
         rw [lintegral_inv_norm_sub_ball z 1, mul_one]
   · calc ∫⁻ w in K \ ball z 1, ENNReal.ofReal ‖w - z‖⁻¹
-        ≤ ∫⁻ w in K \ ball z 1, 1 := by
+        ≤ ∫⁻ _ in K \ ball z 1, 1 := by
           refine setLIntegral_mono measurable_const (fun w hw ↦ ?_)
           have : 1 ≤ ‖w - z‖ := by
             have := hw.2; rw [mem_ball, dist_eq_norm, not_lt] at this; exact this
