@@ -34,9 +34,6 @@ theorem M03b.le_rpow_one_div_of_rpow_le {q M δ : ℝ} (hq : 0 ≤ q) (hδ : 0 <
 
 /-! ### Finiteness from `IsSubharmonicWeight` -/
 
-theorem M03b.dist_ofReal_ofReal (x y : ℝ) : dist (x : ℂ) (y : ℂ) = |x - y| := by
-  rw [Complex.isometry_ofReal.dist_eq, Real.dist_eq]
-
 /-- Hyperbolic balls lie in a Euclidean closed disc of radius `< 1` (hence in a compact subset
 of `𝔻`). -/
 theorem M03b.hypBall_subset_closedBall_tanh {z : ℂ} (hz : z ∈ 𝔻) (r : ℝ) :
@@ -70,7 +67,7 @@ theorem IsSubharmonicWeight.measure_lineInterval_lt_top {φ : ℂ → ℝ} {μ :
   refine (measure_mono ?_).trans_lt
     (h.finite_of_compact _ (subset_univ _) (isCompact_closedBall (x : ℂ) r))
   rintro _ ⟨t, ht, rfl⟩
-  rw [mem_closedBall, M03b.dist_ofReal_ofReal]
+  rw [mem_closedBall, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
   rw [Set.mem_Ioo] at ht
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
@@ -466,16 +463,13 @@ end Disc
 
 /-! ### Line (intervals) -/
 
-theorem M03b.measurableEmbedding_ofReal : MeasurableEmbedding (fun x : ℝ ↦ (x : ℂ)) :=
-  Complex.isometry_ofReal.isClosedEmbedding.measurableEmbedding
-
 theorem M03b.lineInterval_eq_image_ball (x r : ℝ) :
     lineInterval x r = (fun t : ℝ ↦ (t : ℂ)) '' ball x r := by
   rw [Real.ball_eq_Ioo]; rfl
 
 theorem M03b.lintegral_linePull (μ : Measure ℂ) (g : ℂ → ℝ≥0∞) (s : Set ℝ) :
     ∫⁻ t in s, g (t : ℂ) ∂(linePull μ) = ∫⁻ z in (fun t : ℝ ↦ (t : ℂ)) '' s, g z ∂μ :=
-  M03b.lintegral_comap_image M03b.measurableEmbedding_ofReal μ g s
+  M03b.lintegral_comap_image measurableEmbedding_ofReal' μ g s
 
 theorem M03b.linePull_hfin {μ : Measure ℂ} (hfin : ∀ x r : ℝ, μ (lineInterval x r) < ∞) :
     ∀ (x : ℝ) (r : ℝ), linePull μ (ball x r) < ∞ := fun x r ↦ by
@@ -787,11 +781,11 @@ theorem lineInterval_eq (x r : ℝ) :
   constructor
   · rintro ⟨t, ht, rfl⟩
     refine ⟨?_, t, rfl⟩
-    rw [mem_ball, M03b.dist_ofReal_ofReal]
+    rw [mem_ball, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
     rw [mem_Ioo] at ht
     exact abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
   · rintro ⟨hz, t, rfl⟩
-    rw [mem_ball, M03b.dist_ofReal_ofReal] at hz
+    rw [mem_ball, Complex.isometry_ofReal.dist_eq, Real.dist_eq] at hz
     obtain ⟨h1, h2⟩ := abs_sub_lt_iff.1 hz
     exact ⟨t, ⟨by linarith, by linarith⟩, rfl⟩
 

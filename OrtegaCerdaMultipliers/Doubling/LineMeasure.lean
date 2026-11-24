@@ -204,7 +204,7 @@ theorem IsLineMeasure.lintegral_log_le {μ : Measure ℂ} (hμ : IsLineMeasure �
   refine ⟨C, fun x R hR hRA ↦ ?_⟩
   refine le_of_eq_of_le (setLIntegral_congr_fun ?_ fun ζ hζ ↦ ?_) (hC x R hR hRA)
   · rw [M03b.lineInterval_eq_image_ball]
-    exact M03b.measurableEmbedding_ofReal.measurableSet_image.2 measurableSet_ball
+    exact measurableEmbedding_ofReal'.measurableSet_image.2 measurableSet_ball
   · obtain ⟨t, -, rfl⟩ := hζ
     simp only [Complex.ofReal_re]
     rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
