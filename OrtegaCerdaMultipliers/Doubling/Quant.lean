@@ -143,7 +143,6 @@ theorem M03b.decay_algebra {c CU δ s a b : ℝ} (hc : 0 < c) (hCU : 0 < CU) (h�
       (by rw [div_le_div_iff₀ hb (by positivity)]; linarith) hδ.le
   rw [Real.div_rpow zero_le_one hb.le, Real.one_rpow] at h1
   rw [Real.div_rpow (by norm_num) ha.le] at h
-  have hbδ : 0 < b ^ δ := Real.rpow_pos_of_pos hb δ
   have has : 0 < a ^ s := Real.rpow_pos_of_pos ha s
   have has' := has.ne'
   have h2 : c * (1 / b ^ δ) ≤ CU * (3 ^ s / a ^ s) :=
@@ -173,10 +172,9 @@ theorem measure_ball_le_rpow_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) 
     ∃ C s : ℝ, 0 < C ∧ 0 < s ∧ ∀ μ : Measure X, IsLocDoublingMWith μ Cd →
       ∀ (x x' : X) (r r' : ℝ), 0 < r' → r' ≤ r → r ≤ R₁ → dist x x' ≤ r →
         μ (ball x r) ≤ ENNReal.ofReal (C * (r / r') ^ s) * μ (ball x' r') := by
-  obtain ⟨C₁, hC₁, hup⟩ := M03b.exists_doublingUpTo (X := X) Cd R₁
+  obtain ⟨C₁, -, hup⟩ := M03b.exists_doublingUpTo (X := X) Cd R₁
   obtain ⟨C', hC'1, hC'2⟩ : ∃ C' : ℝ≥0, C₁ ≤ C' ∧ 2 ≤ C' := ⟨max C₁ 2, le_max_left _ _,
     le_max_right _ _⟩
-  have hC2 : (2 : ℝ) ≤ C' := by exact_mod_cast hC'2
   refine ⟨(C' : ℝ) ^ 2, Real.logb 2 C', pow_pos (by linarith) 2,
     Real.logb_pos (by norm_num) (by linarith), fun μ hμ x x' r r' hr' hrr hrR hxx' ↦ ?_⟩
   exact ((hup μ hμ).mono hC'1 le_rfl).measure_ball_le_rpow (le_trans (by norm_num) hC'2)
@@ -205,12 +203,12 @@ theorem lemma1_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
         r / r' ≤ A * ((μ (ball x r)).toReal / (μ (ball x' r')).toReal) ^ (1 / γ) := by
   obtain ⟨CU, s, hCU, hs, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd R₁
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_ball_quant (X := X) Cd R₁
-  set γ := min 1 (min (1 / s) δ) with hγ
+  set γ := min 1 (min (1 / s) δ)
   have hγpos : 0 < γ := lt_min one_pos (lt_min (by positivity) hδ)
   have hγ1 : γ ≤ 1 := min_le_left _ _
   have hγs : γ ≤ 1 / s := (min_le_right _ _).trans (min_le_left _ _)
   have hγδ : γ ≤ δ := (min_le_right _ _).trans (min_le_right _ _)
-  set A := max (max CU 1) ((1 / c) ^ (1 / δ)) with hA
+  set A := max (max CU 1) ((1 / c) ^ (1 / δ))
   have hA1 : 1 ≤ A := (le_max_right _ _).trans (le_max_left _ _)
   refine ⟨γ, A, hγpos, hγ1, by linarith, fun μ hμ x x' r r' hr' hrR hdist hpos hfin ↦ ?_⟩
   have hd0 := dist_nonneg (x := x) (y := x')
@@ -220,11 +218,11 @@ theorem lemma1_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     rw [mem_ball] at hw ⊢
     linarith [dist_triangle w x' x, dist_comm x x']
   have hfin' : μ (ball x' r') < ∞ := (measure_mono hsub).trans_lt hfin
-  set a := (μ (ball x r)).toReal with ha
-  set b := (μ (ball x' r')).toReal with hb
+  set a := (μ (ball x r)).toReal
+  set b := (μ (ball x' r')).toReal
   have hb0 : 0 < b := ENNReal.toReal_pos hpos.ne' hfin'.ne
   have hba : b ≤ a := ENNReal.toReal_mono hfin.ne (measure_mono hsub)
-  set q := r / r' with hq
+  set q := r / r'
   have hq1 : 1 ≤ q := (one_le_div hr').2 hrr
   have hQ1 : 1 ≤ a / b := (one_le_div hb0).2 hba
   have hU : a / b ≤ CU * q ^ s := by
@@ -289,7 +287,7 @@ theorem measure_ball_massRadiusM_bounds_quant [BallGeometry X]
 theorem measure_ball_massRadiusM_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K : ℝ) :
     ∃ C : ℝ≥0, ∀ μ : Measure X, MeasClassM μ Cd R₀ → ∀ x : X,
       μ (ball x (K * massRadiusM μ x)) ≤ C := by
-  obtain ⟨CU, s, hCU, hs, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd (max K 1 * R₀)
+  obtain ⟨CU, s, -, -, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd (max K 1 * R₀)
   refine ⟨Real.toNNReal (CU * (max K 1) ^ s), fun μ h x ↦ ?_⟩
   have hρ := h.massRadiusM_pos_m03b x
   have hρR := h.massRadiusM_le_m03b x
@@ -312,9 +310,9 @@ theorem claim1_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ K : ℝ) :
       0 < massRadiusM μ x ∧ massRadiusM μ x ≤ R₀ ∧
       (dist x y ≤ K * max (massRadiusM μ x) (massRadiusM μ y) →
         massRadiusM μ x ≤ C * massRadiusM μ y) := by
-  set K' := max K 0 with hK'def
+  set K' := max K 0
   have hK'0 : 0 ≤ K' := le_max_right _ _
-  obtain ⟨CU, s, hCU, hs, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd ((K' + 2) * R₀)
+  obtain ⟨CU, s, hCU, -, hup⟩ := measure_ball_le_rpow_quant (X := X) Cd ((K' + 2) * R₀)
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_ball_quant (X := X) Cd ((K' + 2) * R₀)
   set B := (CU * (K' + 1) ^ s / c) ^ (1 / δ) with hB
   refine ⟨max 2 (2 * B), le_trans (by norm_num) (le_max_left _ _),
@@ -373,7 +371,7 @@ theorem massRadiusM_div_dist_le_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀
   obtain ⟨c, δ, hc, hδ, hlow⟩ := rpow_le_measure_ball_quant (X := X) Cd (3 * M₀)
   refine ⟨(CU * 3 ^ s / c) ^ (1 / s), min 1 (δ / s), by positivity,
     lt_min one_pos (by positivity), min_le_left _ _, fun μ h z ζ h1 h2 ↦ ?_⟩
-  set d := dist z ζ with hd
+  set d := dist z ζ
   have hρz := h.massRadiusM_pos_m03b z
   have hρζ := h.massRadiusM_pos_m03b ζ
   have hd0 : 0 < d := hρz.trans_le h1
@@ -407,7 +405,7 @@ theorem decay_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ M₀ : ℝ) :
     ∃ C θ : ℝ, 0 < C ∧ 0 < θ ∧ θ < 1 ∧ ∀ μ : Measure X, MeasClassM μ Cd R₀ →
       ∀ (z ζ : X) (n : ℕ), 2 ^ n * massRadiusM μ z ≤ dist z ζ → dist z ζ ≤ M₀ →
         massRadiusM μ ζ / dist z ζ ≤ C * θ ^ n := by
-  obtain ⟨C, α, hC, hα, hα1, h⟩ := massRadiusM_div_dist_le_quant (X := X) Cd R₀ M₀
+  obtain ⟨C, α, hC, hα, -, h⟩ := massRadiusM_div_dist_le_quant (X := X) Cd R₀ M₀
   refine ⟨C, (1 / 2) ^ α, hC, by positivity, Real.rpow_lt_one (by norm_num) (by norm_num) hα,
     fun μ hμ z ζ n h1 h2 ↦ ?_⟩
   have hρz := hμ.massRadiusM_pos_m03b z
@@ -478,6 +476,163 @@ theorem M03b.lemma3_sum {V CU c s δr : ℝ} {m n : ℕ} (hs : 0 < s) (hms : s <
   rw [e1, mul_assoc (5 ^ m * CU ^ ((m : ℝ) / s)), ← e2]
   gcongr
 
+/-- Lemma 3 (fine part), inner ball: on `B(w, ρ(w))` the integrand is at most `(2/δ)^m`. -/
+private theorem M03b.lemma3_inner [BallGeometry X] {μ : Measure X} {Cd : ℝ≥0} {R₀ : ℝ} {m : ℕ}
+    (h : MeasClassM μ Cd R₀) {δ : ℝ} (hδ : 0 < δ) (w : X) :
+    ∫⁻ z in ball w (massRadiusM μ w),
+      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
+      ENNReal.ofReal ((2 / δ) ^ m) := by
+  have hρw := h.massRadiusM_pos_m03b w
+  have hpt : ∀ z ∈ ball w (massRadiusM μ w),
+      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
+        ENNReal.ofReal ((2 / δ) ^ m) := by
+    intro z hz
+    rw [mem_ball] at hz
+    have hρz := h.massRadiusM_pos_m03b z
+    have hlip := h.le_add_dist_m03b w z
+    rw [dist_comm] at hlip
+    have hδρ : 0 < δ * massRadiusM μ w := mul_pos hδ hρw
+    apply ENNReal.ofReal_le_ofReal
+    apply pow_le_pow_left₀ (div_nonneg hρz.le (hδρ.le.trans (le_max_right _ _)))
+    calc massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)
+        ≤ massRadiusM μ z / (δ * massRadiusM μ w) :=
+          div_le_div_of_nonneg_left hρz.le hδρ (le_max_right _ _)
+      _ ≤ 2 / δ := by
+          rw [div_le_div_iff₀ hδρ hδ]
+          nlinarith
+  calc ∫⁻ z in ball w (massRadiusM μ w),
+        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
+      ≤ ∫⁻ _z in ball w (massRadiusM μ w), ENNReal.ofReal ((2 / δ) ^ m) ∂μ :=
+        setLIntegral_mono' measurableSet_ball hpt
+    _ = ENNReal.ofReal ((2 / δ) ^ m) * μ (ball w (massRadiusM μ w)) := setLIntegral_const _ _
+    _ ≤ ENNReal.ofReal ((2 / δ) ^ m) * 1 := by
+        gcongr; exact measure_ball_massRadiusM_le_one μ w
+    _ = _ := mul_one _
+
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
+/-- Dyadic annuli cover `B(w, ε) ∖ B(w, ρ)`. -/
+private theorem M03b.lemma3_cover {ρ : ℝ} (hρw : 0 < ρ) (w : X) (ε : ℝ) :
+    ball w ε ⊆ ball w ρ ∪ ⋃ n : ℕ, (ball w (2 ^ (n + 1) * ρ) ∩ ball w ε) \ ball w (2 ^ n * ρ) := by
+  intro z hz
+  by_cases hzw : dist z w < ρ
+  · exact Or.inl hzw
+  right
+  replace hzw := not_lt.1 hzw
+  have hex : ∃ n : ℕ, dist z w < 2 ^ (n + 1) * ρ := by
+    obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (dist z w / ρ)
+      (by norm_num : (1 : ℝ) < 2)
+    refine ⟨k, ?_⟩
+    rw [div_lt_iff₀ hρw] at hk
+    have : (2 : ℝ) ^ k ≤ 2 ^ (k + 1) := pow_le_pow_right₀ (by norm_num) (Nat.le_succ k)
+    nlinarith
+  classical
+  have hn1 := Nat.find_spec hex
+  have hn2 : 2 ^ (Nat.find hex) * ρ ≤ dist z w := by
+    rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
+    · rw [h0, pow_zero, one_mul]; exact hzw
+    · have := Nat.find_min hex (Nat.sub_lt hpos one_pos)
+      rw [not_lt, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
+      exact this
+  exact mem_iUnion.2 ⟨Nat.find hex, ⟨mem_ball.2 hn1, hz⟩, fun h' ↦ not_lt.2 hn2 (mem_ball.1 h')⟩
+
+/-- Lemma 3 (fine part), annulus `2^n ρ(w) ≤ d(z, w) < 2^(n+1) ρ(w)`: the integral is at most
+`K₁ q^n`. -/
+private theorem M03b.lemma3_annulus [BallGeometry X] {μ : Measure X} {Cd : ℝ≥0} {R₀ : ℝ} {m : ℕ}
+    (h : MeasClassM μ Cd R₀) {C₀ : ℝ≥0} (hC₀1 : (1 : ℝ≥0) ≤ C₀)
+    (hD : M03b.DoublingUpTo μ C₀ (1 / 4)) (hD' : M03b.DoublingUpTo μ C₀ (2 * (1 / 8)))
+    {s CU c δr e q K₁ : ℝ} (hsdef : s = Real.logb 2 (C₀ : ℝ)) (hCUdef : CU = (C₀ : ℝ) ^ 2)
+    (hcdef : c = 1 / ((C₀ : ℝ) * (1 + ((C₀ : ℝ) ^ 3)⁻¹)))
+    (hδrdef : δr = Real.logb 2 (1 + ((C₀ : ℝ) ^ 3)⁻¹)) (hedef : e = 1 - (m : ℝ) / s)
+    (hqdef : q = (2 : ℝ) ^ (δr * e)) (hK₁def : K₁ = 5 ^ m * CU ^ ((m : ℝ) / s) * c ^ e)
+    (hs : 0 < s) (hm : s < m) (hc : 0 < c) (hCU : 0 < CU) (hδr : 0 < δr) {δ : ℝ} (w : X) (n : ℕ) :
+    ∫⁻ z in (ball w (2 ^ (n + 1) * massRadiusM μ w) ∩ ball w (1 / 40)) \
+        ball w (2 ^ n * massRadiusM μ w),
+      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
+      ENNReal.ofReal (K₁ * q ^ n) := by
+  have hρw := h.massRadiusM_pos_m03b w
+  set A : ℕ → Set X := fun n ↦
+    (ball w (2 ^ (n + 1) * massRadiusM μ w) ∩ ball w (1 / 40)) \
+      ball w (2 ^ n * massRadiusM μ w)
+  change ∫⁻ z in A n, _ ∂μ ≤ _
+  by_cases ht : 2 ^ n * massRadiusM μ w < 1 / 40
+  swap
+  · have hempty : A n = ∅ := by
+      ext z
+      simp only [mem_empty_iff_false, iff_false]
+      intro hz
+      have h1 : dist z w < 1 / 40 := hz.1.2
+      have h2 : ¬ dist z w < 2 ^ n * massRadiusM μ w := hz.2
+      exact h2 (by linarith [not_lt.1 ht])
+    rw [hempty, Measure.restrict_empty, lintegral_zero_measure]
+    positivity
+  set t := 2 ^ n * massRadiusM μ w with htdef
+  have ht0 : 0 < t := by positivity
+  have h2n : (1 : ℝ) ≤ 2 ^ n := one_le_pow₀ (by norm_num)
+  have hVfin := h.finite w (5 * t)
+  set V := (μ (ball w (5 * t))).toReal with hVdef
+  have hVlow : c * ((2 : ℝ) ^ n) ^ δr ≤ V := by
+    have key := hD'.rpow_le_measure_ball hC₀1 w w (r := 5 * t) (r' := 2 * massRadiusM μ w)
+      (by positivity) (by rw [htdef]; nlinarith) (by linarith) (by rw [dist_self]; positivity)
+    rw [← hcdef, ← hδrdef] at key
+    have h1 : ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) ≤ μ (ball w (5 * t)) :=
+      le_trans (by
+        calc ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr)
+            = ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) * 1 := (mul_one _).symm
+          _ ≤ _ := by gcongr; exact h.one_le_two_m03b w) key
+    have h2 := (ENNReal.ofReal_le_iff_le_toReal hVfin.ne).1 h1
+    have h3 : ((2 : ℝ) ^ n) ^ δr ≤ (5 * t / (2 * massRadiusM μ w)) ^ δr := by
+      apply Real.rpow_le_rpow (by positivity) _ hδr.le
+      rw [htdef, le_div_iff₀ (by positivity)]
+      nlinarith
+    calc c * ((2 : ℝ) ^ n) ^ δr ≤ c * (5 * t / (2 * massRadiusM μ w)) ^ δr := by gcongr
+      _ ≤ V := h2
+  have hV0 : 0 < V := lt_of_lt_of_le (by positivity) hVlow
+  have hpt : ∀ z ∈ A n,
+      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
+        ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) := by
+    intro z hz
+    have hz1 : dist z w < 2 * t := by
+      have := hz.1.1; rw [mem_ball, pow_succ] at this; rw [htdef]; linarith
+    have hz2 : t ≤ dist z w := not_lt.1 fun h' ↦ hz.2 (mem_ball.2 h')
+    have hρz := h.massRadiusM_pos_m03b z
+    have hlip := h.le_add_dist_m03b w z
+    rw [dist_comm] at hlip
+    have hρwt : massRadiusM μ w ≤ t := by rw [htdef]; nlinarith
+    have hup := hD.measure_ball_le_rpow hC₀1 w z (r := 5 * t) (r' := massRadiusM μ z) hρz
+      (by linarith) (by linarith) (by rw [dist_comm]; linarith)
+    rw [← hCUdef, ← hsdef] at hup
+    have hup2 : μ (ball w (5 * t)) ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) := by
+      calc μ (ball w (5 * t)) ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) *
+            μ (ball z (massRadiusM μ z)) := hup
+        _ ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) * 1 := by
+            gcongr; exact measure_ball_massRadiusM_le_one μ z
+        _ = _ := mul_one _
+    have hup3 : V ≤ CU * (5 * t / massRadiusM μ z) ^ s :=
+      ENNReal.toReal_le_of_le_ofReal (by positivity) hup2
+    exact ENNReal.ofReal_le_ofReal
+      (M03b.lemma3_pt hρz ht0 (le_max_of_le_left hz2) hV0 hCU hs hup3)
+  have hμA : μ (A n) ≤ ENNReal.ofReal V := by
+    rw [hVdef, ENNReal.ofReal_toReal hVfin.ne]
+    refine measure_mono fun z hz ↦ ?_
+    have := hz.1.1
+    rw [mem_ball, pow_succ] at this
+    rw [mem_ball, htdef]
+    nlinarith
+  have hmeasA : MeasurableSet (A n) :=
+    (measurableSet_ball.inter measurableSet_ball).diff measurableSet_ball
+  calc ∫⁻ z in A n,
+        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
+      ≤ ∫⁻ _z in A n, ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) ∂μ :=
+        setLIntegral_mono' hmeasA hpt
+    _ = ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) * μ (A n) := setLIntegral_const _ _
+    _ ≤ ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) * ENNReal.ofReal V := by gcongr
+    _ = ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s) * V) :=
+        (ENNReal.ofReal_mul (by positivity)).symm
+    _ ≤ ENNReal.ofReal (K₁ * q ^ n) := by
+        apply ENNReal.ofReal_le_ofReal
+        rw [hK₁def, hqdef, hedef]
+        exact M03b.lemma3_sum hs hm hc hCU hVlow
+
 /-- **Lemma 3, fine part** (§3.14 (F)), uniform: the integral over `B(w, 1/40)`. -/
 theorem M03b.lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
     (hm : Real.logb 2 ((max Cd 2 : ℝ≥0) : ℝ) < m) {δ : ℝ} (hδ : 0 < δ) :
@@ -519,143 +674,17 @@ theorem M03b.lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
       (max_le_max le_rfl one_le_two) le_rfl
   have hD' : M03b.DoublingUpTo μ C₀ (2 * (1 / 8)) := hD.mono le_rfl (by norm_num)
   have hρw := h.massRadiusM_pos_m03b w
-  -- inner part
-  have hinner : ∫⁻ z in ball w (massRadiusM μ w),
-      ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
-      ENNReal.ofReal ((2 / δ) ^ m) := by
-    have hpt : ∀ z ∈ ball w (massRadiusM μ w),
-        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
-          ENNReal.ofReal ((2 / δ) ^ m) := by
-      intro z hz
-      rw [mem_ball] at hz
-      have hρz := h.massRadiusM_pos_m03b z
-      have hlip := h.le_add_dist_m03b w z
-      rw [dist_comm] at hlip
-      have hδρ : 0 < δ * massRadiusM μ w := mul_pos hδ hρw
-      apply ENNReal.ofReal_le_ofReal
-      apply pow_le_pow_left₀ (div_nonneg hρz.le (hδρ.le.trans (le_max_right _ _)))
-      calc massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)
-          ≤ massRadiusM μ z / (δ * massRadiusM μ w) :=
-            div_le_div_of_nonneg_left hρz.le hδρ (le_max_right _ _)
-        _ ≤ 2 / δ := by
-            rw [div_le_div_iff₀ hδρ hδ]
-            nlinarith
-    calc ∫⁻ z in ball w (massRadiusM μ w),
-          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
-        ≤ ∫⁻ _z in ball w (massRadiusM μ w), ENNReal.ofReal ((2 / δ) ^ m) ∂μ :=
-          setLIntegral_mono' measurableSet_ball hpt
-      _ = ENNReal.ofReal ((2 / δ) ^ m) * μ (ball w (massRadiusM μ w)) := setLIntegral_const _ _
-      _ ≤ ENNReal.ofReal ((2 / δ) ^ m) * 1 := by
-          gcongr; exact measure_ball_massRadiusM_le_one μ w
-      _ = _ := mul_one _
-  -- annuli
+  have hinner := M03b.lemma3_inner (m := m) h hδ w
   set A : ℕ → Set X := fun n ↦
     (ball w (2 ^ (n + 1) * massRadiusM μ w) ∩ ball w (1 / 40)) \
-      ball w (2 ^ n * massRadiusM μ w) with hA
-  have hcover : ball w (1 / 40) ⊆ ball w (massRadiusM μ w) ∪ ⋃ n, A n := by
-    intro z hz
-    by_cases hzw : dist z w < massRadiusM μ w
-    · exact Or.inl hzw
-    right
-    replace hzw := not_lt.1 hzw
-    have hex : ∃ n : ℕ, dist z w < 2 ^ (n + 1) * massRadiusM μ w := by
-      obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (dist z w / massRadiusM μ w)
-        (by norm_num : (1 : ℝ) < 2)
-      refine ⟨k, ?_⟩
-      rw [div_lt_iff₀ hρw] at hk
-      have : (2 : ℝ) ^ k ≤ 2 ^ (k + 1) := pow_le_pow_right₀ (by norm_num) (Nat.le_succ k)
-      nlinarith
-    classical
-    have hn1 := Nat.find_spec hex
-    have hn2 : 2 ^ (Nat.find hex) * massRadiusM μ w ≤ dist z w := by
-      rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
-      · rw [h0, pow_zero, one_mul]; exact hzw
-      · have := Nat.find_min hex (Nat.sub_lt hpos one_pos)
-        rw [not_lt, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
-        exact this
-    exact mem_iUnion.2 ⟨Nat.find hex, ⟨mem_ball.2 hn1, hz⟩, fun h' ↦ not_lt.2 hn2 (mem_ball.1 h')⟩
+      ball w (2 ^ n * massRadiusM μ w)
+  have hcover : ball w (1 / 40) ⊆ ball w (massRadiusM μ w) ∪ ⋃ n, A n :=
+    M03b.lemma3_cover hρw w _
   have hAn : ∀ n : ℕ, ∫⁻ z in A n,
       ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ ≤
-      ENNReal.ofReal (K₁ * q ^ n) := by
-    intro n
-    by_cases ht : 2 ^ n * massRadiusM μ w < 1 / 40
-    swap
-    · have hempty : A n = ∅ := by
-        ext z
-        simp only [mem_empty_iff_false, iff_false]
-        intro hz
-        have h1 : dist z w < 1 / 40 := hz.1.2
-        have h2 : ¬ dist z w < 2 ^ n * massRadiusM μ w := hz.2
-        exact h2 (by linarith [not_lt.1 ht])
-      rw [hempty, Measure.restrict_empty, lintegral_zero_measure]
-      positivity
-    set t := 2 ^ n * massRadiusM μ w with htdef
-    have ht0 : 0 < t := by positivity
-    have h2n : (1 : ℝ) ≤ 2 ^ n := one_le_pow₀ (by norm_num)
-    have hVfin := h.finite w (5 * t)
-    set V := (μ (ball w (5 * t))).toReal with hVdef
-    have hVlow : c * ((2 : ℝ) ^ n) ^ δr ≤ V := by
-      have key := hD'.rpow_le_measure_ball hC₀1 w w (r := 5 * t) (r' := 2 * massRadiusM μ w)
-        (by positivity) (by rw [htdef]; nlinarith) (by linarith) (by rw [dist_self]; positivity)
-      rw [← hcdef, ← hδrdef] at key
-      have h1 : ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) ≤ μ (ball w (5 * t)) :=
-        le_trans (by
-          calc ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr)
-              = ENNReal.ofReal (c * (5 * t / (2 * massRadiusM μ w)) ^ δr) * 1 := (mul_one _).symm
-            _ ≤ _ := by gcongr; exact h.one_le_two_m03b w) key
-      have h2 := (ENNReal.ofReal_le_iff_le_toReal hVfin.ne).1 h1
-      have h3 : ((2 : ℝ) ^ n) ^ δr ≤ (5 * t / (2 * massRadiusM μ w)) ^ δr := by
-        apply Real.rpow_le_rpow (by positivity) _ hδr.le
-        rw [htdef, le_div_iff₀ (by positivity)]
-        nlinarith
-      calc c * ((2 : ℝ) ^ n) ^ δr ≤ c * (5 * t / (2 * massRadiusM μ w)) ^ δr := by gcongr
-        _ ≤ V := h2
-    have hV0 : 0 < V := lt_of_lt_of_le (by positivity) hVlow
-    have hpt : ∀ z ∈ A n,
-        ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
-          ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) := by
-      intro z hz
-      have hz1 : dist z w < 2 * t := by
-        have := hz.1.1; rw [mem_ball, pow_succ] at this; rw [htdef]; linarith
-      have hz2 : t ≤ dist z w := not_lt.1 fun h' ↦ hz.2 (mem_ball.2 h')
-      have hρz := h.massRadiusM_pos_m03b z
-      have hlip := h.le_add_dist_m03b w z
-      rw [dist_comm] at hlip
-      have hρwt : massRadiusM μ w ≤ t := by rw [htdef]; nlinarith
-      have hup := hD.measure_ball_le_rpow hC₀1 w z (r := 5 * t) (r' := massRadiusM μ z) hρz
-        (by linarith) (by linarith) (by rw [dist_comm]; linarith)
-      rw [← hCUdef, ← hsdef] at hup
-      have hup2 : μ (ball w (5 * t)) ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) := by
-        calc μ (ball w (5 * t)) ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) *
-              μ (ball z (massRadiusM μ z)) := hup
-          _ ≤ ENNReal.ofReal (CU * (5 * t / massRadiusM μ z) ^ s) * 1 := by
-              gcongr; exact measure_ball_massRadiusM_le_one μ z
-          _ = _ := mul_one _
-      have hup3 : V ≤ CU * (5 * t / massRadiusM μ z) ^ s :=
-        ENNReal.toReal_le_of_le_ofReal (by positivity) hup2
-      exact ENNReal.ofReal_le_ofReal
-        (M03b.lemma3_pt hρz ht0 (le_max_of_le_left hz2) hV0 hCU hs hup3)
-    have hμA : μ (A n) ≤ ENNReal.ofReal V := by
-      rw [hVdef, ENNReal.ofReal_toReal hVfin.ne]
-      refine measure_mono fun z hz ↦ ?_
-      have := hz.1.1
-      rw [mem_ball, pow_succ] at this
-      rw [mem_ball, htdef]
-      nlinarith
-    have hmeasA : MeasurableSet (A n) :=
-      (measurableSet_ball.inter measurableSet_ball).diff measurableSet_ball
-    calc ∫⁻ z in A n,
-          ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
-        ≤ ∫⁻ _z in A n, ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) ∂μ :=
-          setLIntegral_mono' hmeasA hpt
-      _ = ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) * μ (A n) := setLIntegral_const _ _
-      _ ≤ ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s)) * ENNReal.ofReal V := by gcongr
-      _ = ENNReal.ofReal (5 ^ m * (CU / V) ^ ((m : ℝ) / s) * V) :=
-          (ENNReal.ofReal_mul (by positivity)).symm
-      _ ≤ ENNReal.ofReal (K₁ * q ^ n) := by
-          apply ENNReal.ofReal_le_ofReal
-          rw [hK₁def, hqdef, hedef]
-          exact M03b.lemma3_sum hs hm hc hCU hVlow
+      ENNReal.ofReal (K₁ * q ^ n) := fun n ↦
+    M03b.lemma3_annulus h hC₀1 hD hD' hsdef hCUdef hcdef hδrdef hedef hqdef hK₁def hs hm hc hCU
+      hδr w n
   calc ∫⁻ z in ball w (1 / 40),
         ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ∂μ
       ≤ ∫⁻ z in ball w (massRadiusM μ w) ∪ ⋃ n, A n,
@@ -787,7 +816,7 @@ theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
   refine ⟨Real.toNNReal (Real.log 2 * ∑' k : ℕ, ((k : ℝ) + 1) * q ^ k),
     fun μ hμ x R hR hR1 ↦ ?_⟩
   have hD := hup μ hμ
-  set A : ℕ → Set X := fun k ↦ ball x (R / 2 ^ k) \ ball x (R / 2 ^ (k + 1)) with hA
+  set A : ℕ → Set X := fun k ↦ ball x (R / 2 ^ k) \ ball x (R / 2 ^ (k + 1))
   have hcover : ball x R ⊆ {x} ∪ ⋃ k, A k := by
     intro y hy
     by_cases hyx : y = x
@@ -897,7 +926,7 @@ theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) 
     calc (1 : ℝ≥0∞) = (N : ℝ≥0∞)⁻¹ * N := (ENNReal.inv_mul_cancel hN0 hNt).symm
       _ ≤ (N : ℝ≥0∞)⁻¹ * μ (ball x ((2 * N + 1) * R₀)) := by gcongr
   constructor
-  · show sInf _ ≤ sInf _
+  · change sInf _ ≤ sInf _
     refine csInf_le_csInf ⟨0, fun r hr ↦ hr.1.le⟩ ⟨_, hRN, hneN⟩ ?_
     rintro r ⟨hr, h1⟩
     refine ⟨hr, ?_⟩
@@ -906,8 +935,8 @@ theorem massRadiusM_inv_smul_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) 
       _ = N * 1 := (mul_one _).symm
       _ ≤ N * ((N : ℝ≥0∞)⁻¹ * μ (ball x r)) := by gcongr
       _ = μ (ball x r) := by rw [← mul_assoc, ENNReal.mul_inv_cancel hN0 hNt, one_mul]
-  · set ρ := massRadiusM μ x with hρdef
-    set ρN := massRadiusM ((N : ℝ≥0∞)⁻¹ • μ) x with hρNdef
+  · set ρ := massRadiusM μ x
+    set ρN := massRadiusM ((N : ℝ≥0∞)⁻¹ • μ) x
     have hρ : 0 < ρ := h.massRadiusM_pos_m03b x
     have hρN : ρN ≤ (2 * N + 1) * R₀ := massRadiusM_le hRN hneN
     by_cases hcase : ρN ≤ 4 * ρ
