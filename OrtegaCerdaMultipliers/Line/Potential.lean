@@ -28,7 +28,8 @@ noncomputable section
 
 namespace OC
 
-/-- `T_k(z) = (1/2π) ∫_{I_k} (½ log|z−ν₊| + ½ log|z−ν₋| − log|z−t|) dσ_α(t)`, using `σ_α(I_k) = 4π`. -/
+/-- `T_k(z) = (1/2π) ∫_{I_k} (½ log|z−ν₊| + ½ log|z−ν₋| − log|z−t|) dσ_α(t)`,
+using `σ_α(I_k) = 4π`. -/
 def lineTerm (μ : Measure ℂ) (α s : ℝ) (k : ℤ) (z : ℂ) : ℝ :=
   Real.log ‖z - lineNode μ α s k true‖ + Real.log ‖z - lineNode μ α s k false‖ -
     (1 / (2 * Real.pi)) *
@@ -181,7 +182,7 @@ theorem IsLineMeasure.m13_setIntegral_logR_bounds {ν : Measure ℂ} (hν : IsLi
   calc ∫⁻ t in Ioc a b, ENNReal.ofReal (Real.log R - Real.log ‖z - t‖) ∂linePull ν
       ≤ ∫⁻ t in Ioc a b, ENNReal.ofReal (Real.log (R / |t - x|)) ∂linePull ν := by
         refine setLIntegral_mono_ae' measurableSet_Ioc ?_
-        filter_upwards [hν.m13_ae_ne x] with t htx ht
+        filter_upwards [hν.m13_ae_ne x] with t htx _
         have hxt : |t - x| ≤ ‖z - t‖ := m13_norm_sub_ofReal_ge z t
         have hxt0 : 0 < |t - x| := abs_pos.2 (sub_ne_zero.2 htx)
         apply ENNReal.ofReal_le_ofReal
@@ -222,7 +223,6 @@ theorem lineTerm_eq_R (s : ℝ) (k : ℤ) (z : ℂ) (R : ℝ) :
     integral_sub (integrableOn_const measure_Ioc_lt_top.ne) (m13_integrableOn_log_volume z _ _),
     setIntegral_const, setIntegral_const, measureReal_def, measureReal_def,
     hl.toReal_linePull_Ioc_lineKnot, Real.volume_Ioc, ENNReal.toReal_ofReal (by linarith)]
-  have hπ := Real.pi_pos
   unfold lineLength
   field_simp
   ring
@@ -271,7 +271,8 @@ theorem near_geom {c₀ : ℝ} (hc₀ : 0 ≤ c₀) (hcen : ∀ k : ℤ,
 /-- The mass of `I(x, 3a_k)` for `x` near the cell is bounded (four doublings). -/
 theorem near_mass {C : ℝ≥0}
     (hC : ∀ x ρ : ℝ, 0 < ρ → ρ ≤ 208 * r → μ (lineInterval x (2 * ρ)) ≤ C * μ (lineInterval x ρ))
-    (k : ℤ) {x : ℝ} (hx : |x - (lineKnot μ α k + lineKnot μ α (k + 1)) / 2| ≤ 5 * lineLength μ α k) :
+    (k : ℤ) {x : ℝ}
+    (hx : |x - (lineKnot μ α k + lineKnot μ α (k + 1)) / 2| ≤ 5 * lineLength μ α k) :
     μ (lineInterval x (3 * lineLength μ α k)) ≤ C ^ 4 * ENNReal.ofReal (4 * Real.pi + 13) := by
   set ℓ := lineLength μ α k
   have hp : 0 < ℓ := hl.lineLength_pos k
@@ -319,11 +320,9 @@ include hc
 theorem near_upper : ∃ C : ℝ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → ∀ s : ℝ, 0 ≤ s → s ≤ 1 / 2 →
     ∀ (k : ℤ) (z : ℂ), ‖z - lineCentre μ α k‖ < 2 * lineLength μ α k →
       (∀ b : Bool, z ≠ lineNode μ α s k b) → lineTerm μ α s k z ≤ C := by
-  have hr := hc.hr
   obtain ⟨CD, -, hCD⟩ := hc.hμ.doubling_le (208 * r)
   obtain ⟨CL, hCL⟩ := hc.hμ.m13_lintegral_log_line (156 * r)
   obtain ⟨CB, hCB⟩ := isLineMeasure_lebLine.m13_lintegral_log_line (156 * r)
-  have hπ := Real.pi_pos
   refine ⟨1 / (2 * Real.pi) * (CL * ((CD : ℝ) ^ 4 * (4 * Real.pi + 13))),
     fun α hα hα' s hs hs' k z hz hnode ↦ ?_⟩
   have hl := hc.hyp hα hα'
@@ -360,13 +359,11 @@ theorem near_lower : ∃ C : ℝ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → �
       ‖z - lineCentre μ α k‖ < 2 * lineLength μ α k →
       (∀ b : Bool, η * massRadiusLine μ (lineNode μ α s k b) ≤ ‖z - lineNode μ α s k b‖) →
       2 * Real.log η - C ≤ lineTerm μ α s k z := by
-  have hr := hc.hr
   obtain ⟨CL, hCL⟩ := hc.hμ.m13_lintegral_log_line (156 * r)
   obtain ⟨CB, hCB⟩ := isLineMeasure_lebLine.m13_lintegral_log_line (156 * r)
-  have hπ := Real.pi_pos
   have hC₂ := hc.hC₂
   refine ⟨2 * Real.log (3 * C₂) + 39 / Real.pi * CB,
-    fun α hα hα' s hs hs' η hη hη1 k z hz hnode ↦ ?_⟩
+    fun α hα hα' s hs hs' η hη _ k z hz hnode ↦ ?_⟩
   have hl := hc.hyp hα hα'
   have hs'' : s ≤ 1 / 2 := by linarith [hc.hc₀']
   obtain ⟨g1, -, -⟩ := hl.near_geom hc.hc₀.le (hc.centre α hα hα') hs hs'' hz
@@ -385,8 +382,6 @@ theorem near_lower : ∃ C : ℝ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → �
     have hmem : lineNode μ α s k b ∈ Icc (lineKnot μ α k) (lineKnot μ α (k + 1)) := by
       rw [he]; constructor <;> linarith
     have hrho := (hc.rho α hα hα' k _ hmem).2
-    have hρpos : 0 < massRadiusLine μ (lineNode μ α s k b) := by
-      by_contra h0; push Not at h0; nlinarith
     have hlow : η * ℓ / C₂ ≤ ‖z - lineNode μ α s k b‖ := by
       refine le_trans ?_ (hnode b)
       rw [div_le_iff₀ (by linarith)]
@@ -406,7 +401,6 @@ theorem near_lower : ∃ C : ℝ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ → �
   have hY : 2 * α * ∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)),
       (Real.log (3 * ℓ) - Real.log ‖z - t‖) ≤ 78 * CB := by
     have := mul_le_mul_of_nonneg_left hleb (by positivity : (0 : ℝ) ≤ 2 * α)
-    have hCB0 : (0 : ℝ) ≤ CB := CB.coe_nonneg
     nlinarith
   have key : -(39 / Real.pi * CB) ≤ 1 / (2 * Real.pi) *
       ((∫ t in Ioc (lineKnot μ α k) (lineKnot μ α (k + 1)),
@@ -431,7 +425,6 @@ theorem m13_abs_log_norm_one_sub_add_re_le {w : ℂ} (hw : ‖w‖ ≤ 1 / 2) :
   rw [e]
   refine (Complex.abs_re_le_norm _).trans (h.trans ?_)
   rw [norm_neg]
-  have hw0 := norm_nonneg w
   have : (1 - ‖w‖)⁻¹ ≤ 2 := by
     rw [inv_le_comm₀ (by linarith) (by norm_num)]; linarith
   have := mul_le_mul_of_nonneg_left this (sq_nonneg ‖w‖)
@@ -462,6 +455,54 @@ theorem m13_abs_log_norm_sub_remainder_le {z : ℂ} {lam t : ℝ} (hd : 0 < ‖z
     = Real.log ‖1 - w‖ + w.re by rw [hre]; ring]
   exact m13_abs_log_norm_one_sub_add_re_le hw
 
+/-- The integral of the remainder `log |z - t| - log d + c (t - λ)` over a cell. -/
+private theorem integral_remainder_eq {z : ℂ} {a b d c lam : ℝ} {m₀ : Measure ℝ}
+    (hfin : m₀ (Ioc a b) < ∞)
+    (hl1 : IntegrableOn (fun t : ℝ ↦ Real.log ‖z - t‖) (Ioc a b) m₀)
+    (hl2 : IntegrableOn (fun t : ℝ ↦ t) (Ioc a b) m₀) :
+    ∫ t in Ioc a b, (Real.log ‖z - t‖ - Real.log d + c * (t - lam)) ∂m₀ =
+      (∫ t in Ioc a b, Real.log ‖z - t‖ ∂m₀) - Real.log d * (m₀ (Ioc a b)).toReal +
+        c * ((∫ t in Ioc a b, t ∂m₀) - lam * (m₀ (Ioc a b)).toReal) := by
+  have i1 : IntegrableOn (fun t : ℝ ↦ Real.log ‖z - t‖ - Real.log d) (Ioc a b) m₀ :=
+    hl1.sub (integrableOn_const hfin.ne)
+  have i2 : IntegrableOn (fun t : ℝ ↦ c * (t - lam)) (Ioc a b) m₀ :=
+    (hl2.sub (integrableOn_const hfin.ne)).const_mul c
+  rw [integral_add i1 i2, integral_sub hl1
+    (integrableOn_const hfin.ne), integral_const_mul, integral_sub hl2
+    (integrableOn_const hfin.ne), setIntegral_const, setIntegral_const, measureReal_def,
+    smul_eq_mul, smul_eq_mul]
+  ring
+
+/-- Final arithmetic of the far-field estimate. -/
+private theorem far_field_arith {α ℓ q e₁ e₂ Iμ Iv : ℝ} (hα : 0 ≤ α) (hp : 0 < ℓ) (hq0 : 0 ≤ q)
+    (he₁ : |e₁| ≤ q / 4) (he₂ : |e₂| ≤ q / 4) (bμ : |Iμ| ≤ q * (4 * Real.pi + 2 * α * ℓ))
+    (bv : |Iv| ≤ q * ℓ) (hαℓ : α * ℓ ≤ 13 / 2) :
+    |e₁ + e₂ - (1 / (2 * Real.pi)) * (Iμ - 2 * α * Iv)| ≤ 8 * q := by
+  have hπ3 := Real.pi_gt_three
+  have i1 : |(1 / (2 * Real.pi)) * (Iμ - 2 * α * Iv)| ≤
+      (1 / (2 * Real.pi)) * (q * (4 * Real.pi + 4 * α * ℓ)) := by
+    rw [abs_mul, abs_of_pos (by positivity)]
+    gcongr
+    calc |Iμ - 2 * α * Iv| ≤ |Iμ| + |2 * α * Iv| := abs_sub _ _
+      _ ≤ q * (4 * Real.pi + 2 * α * ℓ) + 2 * α * (q * ℓ) := by
+          rw [abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * α)]
+          gcongr
+      _ = q * (4 * Real.pi + 4 * α * ℓ) := by ring
+  have i2 : (1 / (2 * Real.pi)) * (q * (4 * Real.pi + 4 * α * ℓ)) ≤ 7 * q := by
+    rw [show (1 / (2 * Real.pi)) * (q * (4 * Real.pi + 4 * α * ℓ)) =
+      q * 2 + q * (α * ℓ) * (2 / Real.pi) by field_simp; ring]
+    have : 2 / Real.pi ≤ 2 / 3 := by gcongr
+    have := mul_le_mul (mul_le_mul_of_nonneg_left hαℓ hq0) this (by positivity)
+      (by positivity)
+    nlinarith
+  calc |e₁ + e₂ - (1 / (2 * Real.pi)) * (Iμ - 2 * α * Iv)|
+      ≤ |e₁| + |e₂| + |(1 / (2 * Real.pi)) * (Iμ - 2 * α * Iv)| := by
+        refine (abs_sub _ _).trans ?_
+        gcongr
+        exact abs_add_le _ _
+    _ ≤ q / 4 + q / 4 + 7 * q := by linarith
+    _ ≤ 8 * q := by linarith
+
 namespace LineConsts
 
 variable {μ : Measure ℂ} {r C₂ c₀ α₁ : ℝ} (hc : LineConsts μ r C₂ c₀ α₁)
@@ -491,7 +532,7 @@ theorem far_field {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (h
     intro t ht
     have h1 : |t - lam| ≤ ℓ := by rw [abs_le]; constructor <;> linarith [ht.1, ht.2]
     refine (m13_abs_log_norm_sub_remainder_le hd (by linarith)).trans ?_
-    show (|t - lam| / d) ^ 2 ≤ (ℓ / d) ^ 2
+    change (|t - lam| / d) ^ 2 ≤ (ℓ / d) ^ 2
     gcongr
   have hEν : ∀ bb : Bool, |E (lineNode μ α s k bb)| ≤ q / 4 := by
     intro bb
@@ -520,23 +561,13 @@ theorem far_field {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (h
         Real.log d * (m₀ (Ioc a b)).toReal +
           c * ((∫ t in Ioc a b, t ∂m₀) - lam * (m₀ (Ioc a b)).toReal) := by
     intro m₀ hfin hl1 hl2
-    simp only [E]
-    have i1 : IntegrableOn (fun t : ℝ ↦ Real.log ‖z - t‖ - Real.log d) (Ioc a b) m₀ :=
-      hl1.sub (integrableOn_const hfin.ne)
-    have i2 : IntegrableOn (fun t : ℝ ↦ c * (t - lam)) (Ioc a b) m₀ :=
-      (hl2.sub (integrableOn_const hfin.ne)).const_mul c
-    rw [integral_add i1 i2, integral_sub hl1
-      (integrableOn_const hfin.ne), integral_const_mul, integral_sub hl2
-      (integrableOn_const hfin.ne), setIntegral_const, setIntegral_const, measureReal_def,
-      smul_eq_mul, smul_eq_mul]
-    ring
+    exact integral_remainder_eq hfin hl1 hl2
   have hEμ := hEint hmfin hint_log hint_id
   have hEv := hEint measure_Ioc_lt_top hint_logv hint_idv
   rw [Real.volume_Ioc, ENNReal.toReal_ofReal (by linarith)] at hEv
   have hm := hl.toReal_linePull_Ioc_lineKnot k
   have hlam : lam * (4 * Real.pi) = (∫ t in Ioc a b, t ∂linePull μ) -
       2 * α * ∫ t in Ioc a b, t := by
-    have hπ := Real.pi_pos
     simp only [lam, lineCentre]
     rw [intervalIntegral.integral_of_le hab]
     field_simp
@@ -568,36 +599,8 @@ theorem far_field {α : ℝ} (hα : 0 ≤ α) (hα' : α ≤ α₁) {s : ℝ} (h
   have hαℓ : α * ℓ ≤ 13 / 2 := by
     have := hl.lineLength_le k
     nlinarith [hl.hαr, hl.hα]
-  have hπ := Real.pi_pos
-  have hπ3 := Real.pi_gt_three
   rw [hT]
-  have i1 : |(1 / (2 * Real.pi)) * ((∫ t in Ioc a b, E t ∂linePull μ) -
-      2 * α * ∫ t in Ioc a b, E t)| ≤ (1 / (2 * Real.pi)) * (q * (4 * Real.pi + 4 * α * ℓ)) := by
-    rw [abs_mul, abs_of_pos (by positivity)]
-    gcongr
-    calc |(∫ t in Ioc a b, E t ∂linePull μ) - 2 * α * ∫ t in Ioc a b, E t|
-        ≤ |∫ t in Ioc a b, E t ∂linePull μ| + |2 * α * ∫ t in Ioc a b, E t| := abs_sub _ _
-      _ ≤ q * (4 * Real.pi + 2 * α * ℓ) + 2 * α * (q * ℓ) := by
-          rw [abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * α)]
-          gcongr
-      _ = q * (4 * Real.pi + 4 * α * ℓ) := by ring
-  have i2 : (1 / (2 * Real.pi)) * (q * (4 * Real.pi + 4 * α * ℓ)) ≤ 7 * q := by
-    rw [show (1 / (2 * Real.pi)) * (q * (4 * Real.pi + 4 * α * ℓ)) =
-      q * 2 + q * (α * ℓ) * (2 / Real.pi) by field_simp; ring]
-    have : 2 / Real.pi ≤ 2 / 3 := by gcongr
-    have := mul_le_mul (mul_le_mul_of_nonneg_left hαℓ hq0) this (by positivity)
-      (by positivity)
-    nlinarith
-  calc |E (lineNode μ α s k true) + E (lineNode μ α s k false) -
-        (1 / (2 * Real.pi)) * ((∫ t in Ioc a b, E t ∂linePull μ) - 2 * α * ∫ t in Ioc a b, E t)|
-      ≤ |E (lineNode μ α s k true)| + |E (lineNode μ α s k false)| +
-          |(1 / (2 * Real.pi)) * ((∫ t in Ioc a b, E t ∂linePull μ) -
-            2 * α * ∫ t in Ioc a b, E t)| := by
-        refine (abs_sub _ _).trans ?_
-        gcongr
-        exact abs_add_le _ _
-    _ ≤ q / 4 + q / 4 + 7 * q := by linarith [hEν true, hEν false]
-    _ ≤ 8 * q := by linarith
+  exact far_field_arith hα hp hq0 (hEν true) (hEν false) bμ bv hαℓ
 
 end LineConsts
 
@@ -610,10 +613,8 @@ theorem m13_majorant_aux {ρ ρt ℓ u q A C₁ C₂ Cg γ : ℝ} (hρ : 0 < ρ)
     (hL5 : u < ρ → ρ ≤ C₁ * ρt) (hL6 : ρ ≤ u → u ≤ 1 → ρt ≤ Cg * ρ ^ γ * u ^ (1 - γ)) :
     ℓ / q ^ 2 ≤ 4 * (C₁ + C₂ * Cg) * (ρ ^ γ / (ρ + u) ^ (1 + γ)) + 4 * A / (1 + u) ^ 2 := by
   have hℓ : 0 < ℓ := hρt.trans_le h1
-  have hq : 0 < q := hℓ.trans_le hqℓ
   have hA0 : 0 < A := hℓ.trans_le hA
   have hργ : 0 < ρ ^ γ := Real.rpow_pos_of_pos hρ γ
-  have hT1 : 0 ≤ ρ ^ γ / (ρ + u) ^ (1 + γ) := by positivity
   have hT2 : 0 ≤ 4 * A / (1 + u) ^ 2 := by positivity
   have h4 : (2 : ℝ) ^ (1 + γ) ≤ 4 := by
     calc (2 : ℝ) ^ (1 + γ) ≤ 2 ^ (2 : ℝ) := Real.rpow_le_rpow_of_exponent_le (by norm_num)
@@ -648,7 +649,6 @@ theorem m13_majorant_aux {ρ ρt ℓ u q A C₁ C₂ Cg γ : ℝ} (hρ : 0 < ρ)
       have e1 : ℓ / q ^ 2 ≤ C₂ * Cg * (ρ ^ γ / u ^ (1 + γ)) := by
         have hsplit : u ^ (1 - γ) * u ^ (1 + γ) = u ^ 2 := by
           rw [← Real.rpow_add hu0, show 1 - γ + (1 + γ) = (2 : ℝ) by ring, Real.rpow_two]
-        have hpos : 0 < u ^ (1 + γ) := by positivity
         calc ℓ / q ^ 2 ≤ ℓ / u ^ 2 := by gcongr
           _ ≤ C₂ * (Cg * ρ ^ γ * u ^ (1 - γ)) / u ^ 2 := by
               gcongr; exact h2.trans (mul_le_mul_of_nonneg_left hρt' hC₂)
@@ -743,13 +743,10 @@ theorem far_sum : ∃ Cf : ℝ, 0 ≤ Cf ∧ ∀ α : ℝ, 0 ≤ α → α ≤ �
   obtain ⟨γ, Cg, hγ, hγ1, hCg, hL6⟩ := hc.hμ.massRadiusLine_le_rpow
   set K₁ := ∫ v : ℝ, (1 + ‖v‖) ^ (-(1 + γ))
   set K₂ := ∫ v : ℝ, (1 + ‖v‖) ^ (-(2 : ℝ))
-  have hK₁ : 0 ≤ K₁ := integral_nonneg fun v ↦ by positivity
-  have hK₂ : 0 ≤ K₂ := integral_nonneg fun v ↦ by positivity
   have hr := hc.hr
   have hC₂ := hc.hC₂
   set A := 52 * r
   set Ch := 4 * (C₁ + C₂ * Cg)
-  have hCh : 0 ≤ Ch := by positivity
   refine ⟨9 / 4 * (Ch * K₁ + 4 * A * K₂), by positivity, fun α hα hα' z F hF ↦ ?_⟩
   have hl := hc.hyp hα hα'
   set x := z.re
@@ -784,7 +781,8 @@ theorem far_sum : ∃ Cf : ℝ, 0 ≤ Cf ∧ ∀ α : ℝ, 0 ≤ α → α ≤ �
       (hint.integrableOn.const_mul _) measurableSet_Ioc (fun t ht ↦ ?_)
     set q := ‖z - t‖
     have hlt : |lam - t| ≤ ℓ := by
-      rw [abs_le]; simp only [ℓ, lineLength]; constructor <;> linarith [ht.1, ht.2, hlamI.1, hlamI.2]
+      rw [abs_le]; simp only [ℓ, lineLength]
+      constructor <;> linarith [ht.1, ht.2, hlamI.1, hlamI.2]
     have hq1 : q ≤ d + ℓ := by
       calc q ≤ ‖z - lam‖ + ‖((lam : ℝ) : ℂ) - t‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
         _ = d + |lam - t| := by rw [m13_norm_ofReal_sub_ofReal]
@@ -805,7 +803,8 @@ theorem far_sum : ∃ Cf : ℝ, 0 ≤ Cf ∧ ∀ α : ℝ, 0 ≤ α → α ≤ �
       (fun h1 h2 ↦ by rw [abs_sub_comm] at h1 h2 ⊢; exact hL6 x t h1 h2)
     have hq : 0 < q := by linarith
     have hqd : ℓ / d ^ 2 ≤ 9 / 4 * (ℓ / q ^ 2) := by
-      rw [div_le_iff₀ (by positivity), mul_div_assoc', div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+      rw [div_le_iff₀ (by positivity), mul_div_assoc', div_mul_eq_mul_div,
+        le_div_iff₀ (by positivity)]
       have : q ^ 2 ≤ (9 / 4) * d ^ 2 := by nlinarith
       nlinarith
     calc ℓ / d ^ 2 ≤ 9 / 4 * (ℓ / q ^ 2) := hqd
@@ -864,7 +863,8 @@ theorem near_count : ∃ N₀ : ℕ, ∀ α : ℝ, 0 ≤ α → α ≤ α₁ →
     refine ⟨?_, fun t ht ↦ ?_⟩
     · rw [div_le_iff₀ hC5]; nlinarith
     · have hlt : |t - lam| ≤ ℓ := by
-        rw [abs_le]; simp only [ℓ, lineLength]; constructor <;> linarith [ht.1, ht.2, hlamI.1, hlamI.2]
+        rw [abs_le]; simp only [ℓ, lineLength]
+        constructor <;> linarith [ht.1, ht.2, hlamI.1, hlamI.2]
       have hℓ : ℓ ≤ C₂ * C₅ * ρ := by nlinarith
       have : |t - x| < 3 * C₂ * C₅ * ρ := by
         calc |t - x| ≤ |t - lam| + |lam - x| := abs_sub_le _ _ _
@@ -952,7 +952,8 @@ theorem lineTerm_split {Cf : ℝ} (hCf : ∀ α : ℝ, 0 ≤ α → α ≤ α₁
       |∑' k, (if 2 * lineLength μ α k ≤ ‖z - lineCentre μ α k‖ then lineTerm μ α s k z
         else 0)| ≤ 8 * Cf ∧
       linePotential μ α s z = ∑' k, (if 2 * lineLength μ α k ≤ ‖z - lineCentre μ α k‖ then
-        lineTerm μ α s k z else 0) + ∑ k ∈ (hc.near_finite hα hα' z).toFinset, lineTerm μ α s k z := by
+        lineTerm μ α s k z else 0) +
+        ∑ k ∈ (hc.near_finite hα hα' z).toFinset, lineTerm μ α s k z := by
   obtain ⟨hf, hfle, hf0⟩ := far_summable hCf hα hα' z
   set f : ℤ → ℝ := fun k ↦ if 2 * lineLength μ α k ≤ ‖z - lineCentre μ α k‖ then
       (lineLength μ α k / ‖z - lineCentre μ α k‖) ^ 2 else 0
@@ -1050,9 +1051,7 @@ theorem IsLineMeasure.linePotential_bounds {μ : Measure ℂ} (hμ : IsLineMeasu
   obtain ⟨Cl, hCl⟩ := hc.near_lower
   set Cu' := max Cu 0
   set Cl' := max Cl 0
-  have hCu' : 0 ≤ Cu' := le_max_right _ _
   have hCl' : 0 ≤ Cl' := le_max_right _ _
-  have hN0 : (0 : ℝ) ≤ N₀ := Nat.cast_nonneg _
   refine ⟨α₁, c₀ / 2, 8 * Cf + N₀ * (Cu' + Cl') + 2 * N₀, hc.hα₁, by linarith [hc.hc₀],
     by linarith [hc.hc₀'], fun α hα hα' s hs hs' ↦ ⟨fun z hz ↦ ?_, fun η hη hη1 z hz ↦ ?_⟩⟩
   · have hs'' : s ≤ 1 / 2 := by linarith [hc.hc₀']
@@ -1061,7 +1060,7 @@ theorem IsLineMeasure.linePotential_bounds {μ : Measure ℂ} (hμ : IsLineMeasu
     have hcard : (N.card : ℝ) ≤ N₀ := by
       exact_mod_cast hN₀ α hα hα' z N (fun k hk ↦ (hc.near_finite hα hα' z).mem_toFinset.1 hk)
     have hnear : ∑ k ∈ N, lineTerm μ α s k z ≤ N₀ * Cu' := by
-      calc ∑ k ∈ N, lineTerm μ α s k z ≤ ∑ k ∈ N, Cu' := by
+      calc ∑ k ∈ N, lineTerm μ α s k z ≤ ∑ _ ∈ N, Cu' := by
             refine Finset.sum_le_sum fun k hk ↦ (hCu α hα hα' s hs hs'' k z
               ((hc.near_finite hα hα' z).mem_toFinset.1 hk) (fun b hb ↦ hz ?_)).trans
               (le_max_left _ _)

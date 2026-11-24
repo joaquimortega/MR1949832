@@ -115,7 +115,7 @@ theorem isLineMeasure_lebLine : IsLineMeasure lebLine where
     rw [lebLine_apply]
     exact (Complex.isometry_ofReal.isClosedEmbedding.isCompact_preimage hK).measure_lt_top
   doubling := by
-    refine ⟨?_, 2, fun x r hr _ ↦ ?_⟩
+    refine ⟨?_, 2, fun x r _ _ ↦ ?_⟩
     · rw [lebLine_apply]
       convert measure_empty (μ := (volume : Measure ℝ))
       ext t; simp

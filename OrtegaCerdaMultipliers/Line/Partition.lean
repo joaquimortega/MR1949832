@@ -63,7 +63,8 @@ theorem lineCDF_sub {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ) {a b 
   · rw [ite_eq_left ha, ite_eq_left (ha.trans hab), hμ.m13_toReal_Ioc_add ha hab]; ring
   rcases le_or_gt 0 b with hb | hb
   · rw [ite_eq_right (not_le.2 ha), ite_eq_left hb, hμ.m13_toReal_Ioc_add ha.le hb]; ring
-  · rw [ite_eq_right (not_le.2 ha), ite_eq_right (not_le.2 hb), hμ.m13_toReal_Ioc_add hab hb.le]; ring
+  · rw [ite_eq_right (not_le.2 ha), ite_eq_right (not_le.2 hb),
+      hμ.m13_toReal_Ioc_add hab hb.le]; ring
 
 theorem lineCDF_eq (μ : Measure ℂ) (α t : ℝ) : lineCDF μ α t = lineCDF μ 0 t - 2 * α * t := by
   simp [lineCDF]
@@ -101,7 +102,8 @@ theorem continuous_lineCDF {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ
     refine ⟨u / 2, by simp at hu; linarith, fun t ht ↦ ?_⟩
     have hδ : linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2)) < ENNReal.ofReal ε :=
       hsub ⟨by simp at hu; linarith, by simp at hu; linarith⟩
-    have hfin := (hμ.m13_linePull_compact_lt_top (isCompact_Icc (a := t₀ - u / 2) (b := t₀ + u / 2)))
+    have hfin := hμ.m13_linePull_compact_lt_top
+      (isCompact_Icc (a := t₀ - u / 2) (b := t₀ + u / 2))
     have hlt : (linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2))).toReal < ε := by
       rw [← ENNReal.toReal_ofReal hε.le]
       exact (ENNReal.toReal_lt_toReal hfin.ne ENNReal.ofReal_ne_top).2 hδ
@@ -109,12 +111,16 @@ theorem continuous_lineCDF {μ : Measure ℂ} (hμ : IsLineMeasure μ) (α : ℝ
     have habs := abs_lt.1 ht
     rcases le_total t₀ t with h1 | h1
     · have := lineCDF_sub hμ 0 h1
-      have hle : (linePull μ (Ioc t₀ t)).toReal ≤ (linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2))).toReal :=
-        ENNReal.toReal_mono hfin.ne (measure_mono (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩))
+      have hle : (linePull μ (Ioc t₀ t)).toReal ≤
+          (linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2))).toReal :=
+        ENNReal.toReal_mono hfin.ne
+          (measure_mono (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩))
       rw [abs_lt]; constructor <;> nlinarith [ENNReal.toReal_nonneg (a := linePull μ (Ioc t₀ t))]
     · have := lineCDF_sub hμ 0 h1
-      have hle : (linePull μ (Ioc t t₀)).toReal ≤ (linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2))).toReal :=
-        ENNReal.toReal_mono hfin.ne (measure_mono (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩))
+      have hle : (linePull μ (Ioc t t₀)).toReal ≤
+          (linePull μ (Icc (t₀ - u / 2) (t₀ + u / 2))).toReal :=
+        ENNReal.toReal_mono hfin.ne
+          (measure_mono (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩))
       rw [abs_lt]; constructor <;> nlinarith [ENNReal.toReal_nonneg (a := linePull μ (Ioc t t₀))]
   have : lineCDF μ α = fun t ↦ lineCDF μ 0 t - 2 * α * t := funext (lineCDF_eq μ α)
   rw [this]
@@ -169,7 +175,7 @@ theorem eventually_gt (s : ℝ) : ∃ T : ℝ, ∀ t, T ≤ t → s < lineCDF μ
   obtain ⟨N, hN⟩ := exists_nat_gt (2 * (s - lineCDF μ α m) + 2)
   refine ⟨2 * r * N, fun t ht ↦ ?_⟩
   have hr := h.hr
-  set n := ⌊t / (2 * r)⌋₊ with hn
+  set n := ⌊t / (2 * r)⌋₊
   have ht0 : 0 ≤ t := le_trans (by positivity) ht
   have hq : 0 ≤ t / (2 * r) := by positivity
   have h1 : (n : ℝ) ≤ t / (2 * r) := Nat.floor_le hq
@@ -195,7 +201,7 @@ theorem eventually_lt (s : ℝ) : ∃ T : ℝ, ∀ t, t ≤ T → lineCDF μ α 
   obtain ⟨N, hN⟩ := exists_nat_gt (2 * (lineCDF μ α m - s) + 2)
   refine ⟨-(2 * r * N), fun t ht ↦ ?_⟩
   have hr := h.hr
-  set n := ⌊-t / (2 * r)⌋₊ with hn
+  set n := ⌊-t / (2 * r)⌋₊
   have ht0 : 0 ≤ -t := by have : (0:ℝ) ≤ 2 * r * N := by positivity
                           linarith
   have hq : 0 ≤ -t / (2 * r) := by positivity
@@ -420,7 +426,6 @@ theorem measure_Ioc_le_half {C : ℝ≥0}
     linePull μ (Ioc a b) ≤ C ^ 2 * linePull μ (Ioo ((a + b) / 2) b) ∧
       linePull μ (Ioc a b) ≤ C ^ 2 * linePull μ (Ioo a ((a + b) / 2)) := by
   set ℓ := b - a
-  have hℓ : 0 < ℓ := sub_pos.2 hab
   have key : ∀ c : ℝ, Ioc a b ⊆ Ioo (c - ℓ) (c + ℓ) → linePull μ (Ioc a b) ≤
       C ^ 2 * linePull μ (Ioo (c - ℓ / 4) (c + ℓ / 4)) := by
     intro c hc
@@ -436,6 +441,44 @@ theorem measure_Ioc_le_half {C : ℝ≥0}
     convert this using 4 <;> simp only [ℓ] <;> ring
   · have := key (a + ℓ / 4) (fun x hx ↦ ⟨by linarith [hx.1], by linarith [hx.2]⟩)
     convert this using 4 <;> simp only [ℓ] <;> ring
+
+omit h in
+/-- The right half of a cell carries at least half of the first moment about the left end. -/
+private theorem half_integral_right {ν : Measure ℝ} {a b : ℝ} (hab : a < b)
+    (hint : IntegrableOn (fun t : ℝ ↦ t) (Ioc a b) ν) (hMfin : ν (Ioc a b) < ∞)
+    (hfinR : ν (Ioo ((a + b) / 2) b) ≠ ∞) :
+    (b - a) / 2 * (ν (Ioo ((a + b) / 2) b)).toReal ≤ ∫ t in Ioc a b, (t - a) ∂ν := by
+  have h1 : ∫ t in Ioo ((a + b) / 2) b, (t - a) ∂ν ≤ ∫ t in Ioc a b, (t - a) ∂ν :=
+    setIntegral_mono_set (hint.sub (integrableOn_const hMfin.ne))
+      ((ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun t ht ↦
+        by simp only [Pi.zero_apply]; linarith [ht.1]))
+      (Filter.Eventually.of_forall (p := fun x ↦ x ∈ Ioo ((a + b) / 2) b → x ∈ Ioc a b)
+        fun x hx ↦ ⟨by linarith [hx.1], hx.2.le⟩)
+  have h2 := setIntegral_ge_of_const_le_real (f := fun t ↦ t - a) (c := (b - a) / 2)
+    (μ := ν) measurableSet_Ioo hfinR (fun t ht ↦ by linarith [ht.1])
+    ((hint.sub (integrableOn_const hMfin.ne)).mono_set
+      (fun x hx ↦ ⟨by linarith [hx.1], hx.2.le⟩))
+  rw [measureReal_def] at h2
+  linarith
+
+omit h in
+/-- The left half of a cell carries at least half of the first moment about the right end. -/
+private theorem half_integral_left {ν : Measure ℝ} {a b : ℝ} (hab : a < b)
+    (hint : IntegrableOn (fun t : ℝ ↦ t) (Ioc a b) ν) (hMfin : ν (Ioc a b) < ∞)
+    (hfinL : ν (Ioo a ((a + b) / 2)) ≠ ∞) :
+    (b - a) / 2 * (ν (Ioo a ((a + b) / 2))).toReal ≤ ∫ t in Ioc a b, (b - t) ∂ν := by
+  have h1 : ∫ t in Ioo a ((a + b) / 2), (b - t) ∂ν ≤ ∫ t in Ioc a b, (b - t) ∂ν :=
+    setIntegral_mono_set ((integrableOn_const hMfin.ne).sub hint)
+      ((ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun t ht ↦
+        by simp only [Pi.zero_apply]; linarith [ht.2]))
+      (Filter.Eventually.of_forall (p := fun x ↦ x ∈ Ioo a ((a + b) / 2) → x ∈ Ioc a b)
+        fun x hx ↦ ⟨hx.1, by linarith [hx.2]⟩)
+  have h2 := setIntegral_ge_of_const_le_real (f := fun t ↦ b - t) (c := (b - a) / 2)
+    (μ := ν) measurableSet_Ioo hfinL (fun t ht ↦ by linarith [ht.2])
+    (((integrableOn_const hMfin.ne).sub hint).mono_set
+      (fun x hx ↦ ⟨hx.1, by linarith [hx.2]⟩))
+  rw [measureReal_def] at h2
+  linarith
 
 /-- The signed barycentre stays in the middle of its cell. -/
 theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
@@ -473,34 +516,8 @@ theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
   have hπ := Real.pi_pos
   have hα := h.hα
   -- integrals over the halves
-  have hIR : (b - a) / 2 * (linePull μ (Ioo ((a + b) / 2) b)).toReal ≤
-      ∫ t in Ioc a b, (t - a) ∂linePull μ := by
-    have h1 : ∫ t in Ioo ((a + b) / 2) b, (t - a) ∂linePull μ ≤
-        ∫ t in Ioc a b, (t - a) ∂linePull μ :=
-      setIntegral_mono_set (hint.sub (integrableOn_const hMfin.ne))
-        ((ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun t ht ↦
-          by simp only [Pi.zero_apply]; linarith [ht.1]))
-        (Filter.Eventually.of_forall (p := fun x ↦ x ∈ Ioo ((a + b) / 2) b → x ∈ Ioc a b) fun x hx ↦ ⟨by linarith [hx.1], hx.2.le⟩)
-    have h2 := setIntegral_ge_of_const_le_real (f := fun t ↦ t - a) (c := (b - a) / 2)
-      (μ := linePull μ) measurableSet_Ioo hfinR (fun t ht ↦ by linarith [ht.1])
-      ((hint.sub (integrableOn_const hMfin.ne)).mono_set
-        (fun x hx ↦ ⟨by linarith [hx.1], hx.2.le⟩))
-    rw [measureReal_def] at h2
-    linarith
-  have hIL : (b - a) / 2 * (linePull μ (Ioo a ((a + b) / 2))).toReal ≤
-      ∫ t in Ioc a b, (b - t) ∂linePull μ := by
-    have h1 : ∫ t in Ioo a ((a + b) / 2), (b - t) ∂linePull μ ≤
-        ∫ t in Ioc a b, (b - t) ∂linePull μ :=
-      setIntegral_mono_set ((integrableOn_const hMfin.ne).sub hint)
-        ((ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun t ht ↦
-          by simp only [Pi.zero_apply]; linarith [ht.2]))
-        (Filter.Eventually.of_forall (p := fun x ↦ x ∈ Ioo a ((a + b) / 2) → x ∈ Ioc a b) fun x hx ↦ ⟨hx.1, by linarith [hx.2]⟩)
-    have h2 := setIntegral_ge_of_const_le_real (f := fun t ↦ b - t) (c := (b - a) / 2)
-      (μ := linePull μ) measurableSet_Ioo hfinL (fun t ht ↦ by linarith [ht.2])
-      (((integrableOn_const hMfin.ne).sub hint).mono_set
-        (fun x hx ↦ ⟨hx.1, by linarith [hx.2]⟩))
-    rw [measureReal_def] at h2
-    linarith
+  have hIR := half_integral_right hab hint hMfin hfinR
+  have hIL := half_integral_left hab hint hMfin hfinL
   have e1 : ∫ t in Ioc a b, (t - a) ∂linePull μ = (∫ t in Ioc a b, t ∂linePull μ) - M * a := by
     rw [integral_sub hint (integrableOn_const hMfin.ne), setIntegral_const, measureReal_def,
       smul_eq_mul]
@@ -518,7 +535,8 @@ theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
   have hLr' : 4 * Real.pi / (C : ℝ) ^ 2 ≤ (linePull μ (Ioo a ((a + b) / 2))).toReal := by
     rw [div_le_iff₀ hC2]; nlinarith
   have hπC : Real.pi / (C : ℝ) ^ 2 * (C : ℝ) ^ 2 = Real.pi := div_mul_cancel₀ _ hC2.ne'
-  have hc : 1 / (4 * (C : ℝ) ^ 2) * (b - a) * (4 * Real.pi) = (b - a) * (Real.pi / (C : ℝ) ^ 2) := by
+  have hc : 1 / (4 * (C : ℝ) ^ 2) * (b - a) * (4 * Real.pi) =
+      (b - a) * (Real.pi / (C : ℝ) ^ 2) := by
     field_simp
   have hMa : M * a = 4 * Real.pi * a + 2 * α * (b - a) * a := by rw [hM]; ring
   have hMb : M * b = 4 * Real.pi * b + 2 * α * (b - a) * b := by rw [hM]; ring
@@ -537,9 +555,11 @@ theorem centre_mem {C : ℝ≥0} (hC1 : 1 ≤ C)
   set mL := (linePull μ (Ioo a ((a + b) / 2))).toReal
   have e4 : 4 * Real.pi / (C : ℝ) ^ 2 = 4 * P := by simp only [P]; ring
   rw [e4] at p1 p2
-  have e5 : (a + 1 / (4 * (C : ℝ) ^ 2) * (b - a)) * (4 * Real.pi) = 4 * Real.pi * a + (b - a) * P := by
+  have e5 : (a + 1 / (4 * (C : ℝ) ^ 2) * (b - a)) * (4 * Real.pi) =
+      4 * Real.pi * a + (b - a) * P := by
     rw [add_mul, hc]; ring
-  have e6 : (b - 1 / (4 * (C : ℝ) ^ 2) * (b - a)) * (4 * Real.pi) = 4 * Real.pi * b - (b - a) * P := by
+  have e6 : (b - 1 / (4 * (C : ℝ) ^ 2) * (b - a)) * (4 * Real.pi) =
+      4 * Real.pi * b - (b - a) * P := by
     rw [sub_mul, hc]; ring
   clear_value P I mR mL M a b
   constructor
@@ -576,8 +596,6 @@ theorem IsLineMeasure.exists_lineConsts {μ : Measure ℂ} (hμ : IsLineMeasure 
   obtain ⟨C₂, hC₂, hL7⟩ := hμ.length_comparable (m₁ := 4 * Real.pi) (m₂ := 4 * Real.pi + 13)
     (by nlinarith [Real.pi_gt_three])
   obtain ⟨C, hC1, hC⟩ := hμ.doubling_le (26 * r)
-  have hC0 : (0 : ℝ) < (C : ℝ) := by exact_mod_cast (zero_lt_one.trans_le hC1)
-  have hC1' : (1 : ℝ) ≤ (C : ℝ) := by exact_mod_cast hC1
   refine ⟨r, C₂, 1 / (4 * (C : ℝ) ^ 2), min (1 / (8 * r)) (Real.pi / (52 * r * (C : ℝ) ^ 2)),
     ⟨hμ, hr, hmr, hC₂, by positivity, ?_, by positivity, ?_, ?_, ?_⟩⟩
   · rw [div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith
