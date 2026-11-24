@@ -139,6 +139,254 @@ theorem lineCut_exists_Ico {x : ℤ → ℝ} (hmono : StrictMono x) (hup : ∀ T
   have := hmax (k + 1) hle
   omega
 
+/-- Rectangles across the axis have finite mass for a locally finite measure. -/
+theorem lineCut_finite_rect {μ : Measure ℂ} (hfin : ∀ K : Set ℂ, IsCompact K → μ K < ∞)
+    (a b : ℝ) : μ (rect a b (-1) 1) < ∞ := by
+  refine (measure_mono ?_).trans_lt (hfin _ (isCompact_closedBall (0 : ℂ) (|a| + |b| + 1)))
+  rintro z ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
+  rw [mem_closedBall_zero_iff]
+  refine (Complex.norm_le_abs_re_add_abs_im z).trans ?_
+  have : |z.re| ≤ |a| + |b| := by
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
+  have : |z.im| ≤ 1 := by rw [abs_le]; constructor <;> linarith
+  linarith
+
+/-- A measure carried by `ℝ` and without atoms on the axis does not charge vertical lines. -/
+theorem lineCut_measure_re_eq_zero {μ : Measure ℂ} (hd : IsLocallyDoublingLine μ)
+    (hfinI : ∀ x r : ℝ, μ (lineInterval x r) < ∞) (x : ℝ) : μ {w : ℂ | w.re = x} = 0 := by
+  refine measure_mono_null (t := {(x : ℂ)} ∪ {z | z.im ≠ 0}) ?_
+    (measure_union_null (measure_singleton_line hd hfinI _) hd.1)
+  intro w hw
+  by_cases him : w.im = 0
+  · left; exact Complex.ext (by simpa using hw) (by simpa using him)
+  · right; exact him
+
+/-- Cutting step to the right: a rectangle `[s, t) × [-1, 1]` of mass `N` with `t ≤ s + R₁`. -/
+theorem lineCut_step_right {μ : Measure ℂ} {R₁ : ℝ} {N : ℕ} (hN : 1 ≤ N) (hR₁ : 0 ≤ R₁)
+    (hre : ∀ x : ℝ, μ {w : ℂ | w.re = x} = 0) (hfinR : ∀ a b : ℝ, μ (rect a b (-1) 1) < ∞)
+    (hbig : ∀ s : ℝ, (N : ℝ≥0∞) < μ (rect s (s + R₁) (-1) 1)) (s : ℝ) :
+    ∃ t, s < t ∧ t ≤ s + R₁ ∧ μ (rect s t (-1) 1) = N := by
+  have hc' := rect_continuous_toReal hre (hfinR s)
+  have h0 : (μ (rect s s (-1) 1)).toReal = 0 := by simp [rect_eq_empty_of_le le_rfl]
+  have h1 : (N : ℝ) < (μ (rect s (s + R₁) (-1) 1)).toReal := by
+    have := (ENNReal.toReal_lt_toReal (ENNReal.natCast_ne_top N) (hfinR _ _).ne).2 (hbig s)
+    simpa using this
+  obtain ⟨t, ⟨ht1, ht2⟩, hFt⟩ := intermediate_value_Icc (show s ≤ s + R₁ by linarith)
+    hc'.continuousOn (show (N : ℝ) ∈ Icc _ _ from ⟨by rw [h0]; positivity, h1.le⟩)
+  refine ⟨t, ?_, ht2, rect_eq_natCast_of_toReal (hfinR _ _) hFt⟩
+  rcases eq_or_lt_of_le ht1 with rfl | h
+  · change (μ (rect s s (-1) 1)).toReal = N at hFt
+    rw [h0] at hFt
+    have : (1 : ℝ) ≤ N := by exact_mod_cast hN
+    linarith
+  · exact h
+
+/-- Cutting step to the left: a rectangle `[t, b) × [-1, 1]` of mass `N` with `b - R₁ ≤ t`. -/
+theorem lineCut_step_left {μ : Measure ℂ} {R₁ : ℝ} {N : ℕ} (hN : 1 ≤ N) (hR₁ : 0 ≤ R₁)
+    (hre : ∀ x : ℝ, μ {w : ℂ | w.re = x} = 0) (hfinR : ∀ a b : ℝ, μ (rect a b (-1) 1) < ∞)
+    (hbig : ∀ s : ℝ, (N : ℝ≥0∞) < μ (rect s (s + R₁) (-1) 1)) (b : ℝ) :
+    ∃ t, b - R₁ ≤ t ∧ t < b ∧ μ (rect t b (-1) 1) = N := by
+  set a := b - R₁
+  set G : ℝ → ℝ := fun t ↦ (μ (rect a b (-1) 1)).toReal - (μ (rect a t (-1) 1)).toReal
+    with hG
+  have hcG : Continuous G := continuous_const.sub (rect_continuous_toReal hre (hfinR a))
+  have hGt : ∀ t, a ≤ t → t ≤ b → G t = (μ (rect t b (-1) 1)).toReal := by
+    intro t h1 h2
+    simp only [hG]
+    rw [rect_toReal_add_x μ h1 h2 (hfinR _ _)]
+    ring
+  have hab : a ≤ b := by simp only [a]; linarith
+  have hGb : G b = 0 := by rw [hGt b hab le_rfl]; simp [rect_eq_empty_of_le le_rfl]
+  have hGa : (N : ℝ) < G a := by
+    rw [hGt a le_rfl hab]
+    have := (ENNReal.toReal_lt_toReal (ENNReal.natCast_ne_top N) (hfinR _ _).ne).2 (hbig a)
+    simpa [a] using this
+  obtain ⟨t, ⟨ht1, ht2⟩, hGt'⟩ := intermediate_value_Icc' hab hcG.continuousOn
+    (show (N : ℝ) ∈ Icc (G b) (G a) from ⟨by rw [hGb]; positivity, hGa.le⟩)
+  rw [hGt t ht1 ht2] at hGt'
+  refine ⟨t, ht1, ?_, rect_eq_natCast_of_toReal (hfinR _ _) hGt'⟩
+  rcases eq_or_lt_of_le ht2 with rfl | h
+  · rw [rect_eq_empty_of_le le_rfl] at hGt'
+    simp at hGt'
+    have : (1 : ℝ) ≤ N := by exact_mod_cast hN
+    linarith
+  · exact h
+
+/-- Gluing the steps to the right and to the left into a bi-infinite sequence of cut points. -/
+theorem lineCut_cuts {μ : Measure ℂ} {R₁ : ℝ} {N : ℕ} {fR fL : ℝ → ℝ}
+    (hfR : ∀ s, s < fR s ∧ fR s ≤ s + R₁ ∧ μ (rect s (fR s) (-1) 1) = N)
+    (hfL : ∀ b, b - R₁ ≤ fL b ∧ fL b < b ∧ μ (rect (fL b) b (-1) 1) = N) :
+    ∃ x : ℤ → ℝ, ∀ k : ℤ, x k < x (k + 1) ∧ x (k + 1) - x k ≤ R₁ ∧
+      μ (rect (x k) (x (k + 1)) (-1) 1) = N := by
+  set x : ℤ → ℝ := fun k ↦ if 0 ≤ k then fR^[k.toNat] 0 else fL^[(-k).toNat] 0 with hx
+  have hxpos : ∀ n : ℕ, x n = fR^[n] 0 := by
+    intro n; simp [hx]
+  have hxneg : ∀ n : ℕ, x (-(n : ℤ)) = fL^[n] 0 := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp [hx]
+    · have : ¬ (0 ≤ -(n : ℤ)) := by omega
+      simp only [hx, this, ite_false, neg_neg, Int.toNat_natCast]
+  refine ⟨x, fun k ↦ ?_⟩
+  rcases Int.eq_nat_or_neg k with ⟨n, rfl | rfl⟩
+  · have e : x ((n : ℤ) + 1) = fR (x n) := by
+      rw [show ((n : ℤ) + 1) = ((n + 1 : ℕ) : ℤ) by push_cast; ring, hxpos, hxpos,
+        Function.iterate_succ_apply']
+    obtain ⟨h1, h2, hn⟩ := hfR (x n)
+    rw [e]
+    exact ⟨h1, by linarith, hn⟩
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · have e : x ((0 : ℤ) + 1) = fR (x 0) := by
+        have := hxpos 1
+        simp only [Nat.cast_one, Function.iterate_one] at this
+        rw [zero_add, this]
+        congr 1
+      simp only [Nat.cast_zero, neg_zero]
+      obtain ⟨h1, h2, hn⟩ := hfR (x 0)
+      rw [e]
+      exact ⟨h1, by linarith, hn⟩
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
+      have e1 : -((0 + m + 1 : ℕ) : ℤ) + 1 = -(m : ℤ) := by push_cast; ring
+      have e2 : x (-((0 + m + 1 : ℕ) : ℤ)) = fL (x (-(m : ℤ))) := by
+        rw [hxneg, hxneg, show 0 + m + 1 = m + 1 by ring, Function.iterate_succ_apply']
+      rw [e1, e2]
+      obtain ⟨h1, h2, hn⟩ := hfL (x (-(m : ℤ)))
+      exact ⟨h2, by linarith, hn⟩
+
+/-- The cut points escape to `±∞`, since consecutive blocks have mass `N ≥ 1`. -/
+theorem lineCut_escape {μ : Measure ℂ} {N : ℕ} {x : ℤ → ℝ} (hN : 1 ≤ N) (hmono : StrictMono x)
+    (hblock : ∀ k : ℤ, μ (rect (x k) (x (k + 1)) (-1) 1) = N)
+    (hfinR : ∀ a b : ℝ, μ (rect a b (-1) 1) < ∞) :
+    (∀ T, ∃ k, T < x k) ∧ ∀ T, ∃ k, x k ≤ T := by
+  have hmassR : ∀ n : ℕ, μ (rect (x 0) (x n) (-1) 1) = n * N := by
+    intro n
+    induction n with
+    | zero => simp [rect_eq_empty_of_le le_rfl]
+    | succ n ih =>
+      have := measure_rect_add_x μ (y₁ := -1) (y₂ := 1)
+        (hmono.monotone (show (0 : ℤ) ≤ n by omega))
+        (hmono.monotone (show (n : ℤ) ≤ n + 1 by omega))
+      rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring, this, ih, hblock n]
+      push_cast; ring
+  have hmassL : ∀ n : ℕ, μ (rect (x (-(n : ℤ))) (x 0) (-1) 1) = n * N := by
+    intro n
+    induction n with
+    | zero => simp [rect_eq_empty_of_le le_rfl]
+    | succ n ih =>
+      have := measure_rect_add_x μ (y₁ := -1) (y₂ := 1)
+        (hmono.monotone (show -((n + 1 : ℕ) : ℤ) ≤ -(n : ℤ) by omega))
+        (hmono.monotone (show -(n : ℤ) ≤ 0 by omega))
+      rw [this, ih]
+      have hb := hblock (-((n + 1 : ℕ) : ℤ))
+      rw [show -((n + 1 : ℕ) : ℤ) + 1 = -(n : ℤ) by push_cast; ring] at hb
+      rw [hb]
+      push_cast; ring
+  have hN1 : (1 : ℝ≥0∞) ≤ N := by exact_mod_cast hN
+  refine ⟨fun T ↦ ?_, fun T ↦ ?_⟩
+  · by_contra hcon
+    push Not at hcon
+    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (hfinR (x 0) T).ne
+    have h1 : μ (rect (x 0) (x n) (-1) 1) ≤ μ (rect (x 0) T (-1) 1) :=
+      measure_mono (rect_subset_rect le_rfl (hcon n) le_rfl le_rfl)
+    rw [hmassR] at h1
+    have : (n : ℝ≥0∞) ≤ n * N := by
+      calc (n : ℝ≥0∞) = n * 1 := (mul_one _).symm
+        _ ≤ n * N := by gcongr
+    exact absurd (hn.trans_le (this.trans h1)) (lt_irrefl _)
+  · by_contra hcon
+    push Not at hcon
+    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (hfinR T (x 0)).ne
+    have h1 : μ (rect (x (-(n : ℤ))) (x 0) (-1) 1) ≤ μ (rect T (x 0) (-1) 1) :=
+      measure_mono (rect_subset_rect (hcon _).le le_rfl le_rfl le_rfl)
+    rw [hmassL] at h1
+    have : (n : ℝ≥0∞) ≤ n * N := by
+      calc (n : ℝ≥0∞) = n * 1 := (mul_one _).symm
+        _ ≤ n * N := by gcongr
+    exact absurd (hn.trans_le (this.trans h1)) (lt_irrefl _)
+
+/-- Two points of a piece `[x k, x (k+1))` are at distance `≤ A ρ` (via doubling at scale `L`). -/
+theorem lineCut_piece_dist {μ : Measure ℂ} {N : ℕ} {R₁ c δ M A : ℝ} {C₁ : ℝ≥0} {x : ℤ → ℝ} {k : ℤ}
+    (hk1 : x k < x (k + 1)) (hk2 : x (k + 1) - x k ≤ R₁)
+    (hPmass : μ ((fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1))) = N)
+    (hdbl : ∀ x r : ℝ, 0 < r → r ≤ R₁ →
+      μ (lineInterval x (2 * r)) ≤ C₁ * μ (lineInterval x r))
+    (hlow : ∀ x r : ℝ, massRadiusLine μ x ≤ r → r ≤ R₁ →
+      ENNReal.ofReal (c * (r / massRadiusLine μ x) ^ δ) ≤ μ (lineInterval x r))
+    (hpos : ∀ x, 0 < massRadiusLine μ x) (hc : 0 < c) (hδ : 0 < δ) (hM : M = (C₁ : ℝ) ^ 2 * N)
+    (hA1 : 1 ≤ A) (hA2 : (M / c) ^ (1 / δ) ≤ A) :
+    ∀ z ∈ (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)),
+      ∀ w ∈ (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)),
+        dist z w ≤ A * massRadiusLine μ z.re := by
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  rintro z ⟨u, hu, rfl⟩ w ⟨v, hv, rfl⟩
+  set L := x (k + 1) - x k
+  have hL0 : 0 < L := by linarith
+  simp only [Complex.ofReal_re]
+  rw [prop_dist_ofReal_line]
+  have hdist : |u - v| ≤ L := by
+    rw [abs_le]; constructor <;> linarith [hu.1, hu.2, hv.1, hv.2]
+  set m := (x k + x (k + 1)) / 2 with hm
+  have hsub1 : lineInterval u L ⊆ lineInterval m (2 * L) := by
+    simp only [lineCut_lineInterval_eq]
+    rintro z ⟨h0, h1, h2⟩
+    exact ⟨h0, by linarith [hu.1, hu.2], by linarith [hu.1, hu.2]⟩
+  have hsub2 : lineInterval m (L / 2) ⊆ (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)) := by
+    simp only [lineCut_lineInterval_eq, lineCut_image_Ico]
+    rintro z ⟨h0, h1, h2⟩
+    exact ⟨h0, by linarith, by linarith⟩
+  have hmassL : μ (lineInterval u L) ≤ ENNReal.ofReal M := by
+    calc μ (lineInterval u L) ≤ μ (lineInterval m (2 * L)) := measure_mono hsub1
+      _ ≤ C₁ * μ (lineInterval m L) := hdbl m L hL0 (by linarith)
+      _ ≤ C₁ * (C₁ * μ (lineInterval m (L / 2))) := by
+          gcongr
+          have := hdbl m (L / 2) (by positivity) (by linarith)
+          rwa [show 2 * (L / 2) = L by ring] at this
+      _ ≤ C₁ * (C₁ * N) := by gcongr; exact (measure_mono hsub2).trans hPmass.le
+      _ = ENNReal.ofReal M := by
+          rw [hM, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
+            ENNReal.ofReal_natCast, ENNReal.ofReal_coe_nnreal]
+          ring
+  have hρ := hpos u
+  have hLA : L ≤ A * massRadiusLine μ u := by
+    rcases le_or_gt (massRadiusLine μ u) L with hle | hlt
+    · have h1 := (hlow u L hle (by linarith)).trans hmassL
+      rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
+      have h2 : (L / massRadiusLine μ u) ^ δ ≤ M / c := by
+        rw [le_div_iff₀ hc]; linarith
+      have h3 : L / massRadiusLine μ u ≤ (M / c) ^ (1 / δ) := by
+        have h4 := Real.rpow_le_rpow (by positivity) h2 (show (0 : ℝ) ≤ 1 / δ by positivity)
+        rwa [← Real.rpow_mul (by positivity), mul_one_div_cancel hδ.ne', Real.rpow_one] at h4
+      rw [div_le_iff₀ hρ] at h3
+      exact h3.trans (mul_le_mul_of_nonneg_right hA2 hρ.le)
+    · exact hlt.le.trans (le_mul_of_one_le_left hρ.le hA1)
+  exact hdist.trans hLA
+
+/-- Each piece `[x k, x (k+1))` contains the ball of radius `ρ(m) / 2` around its midpoint. -/
+theorem lineCut_piece_inner {μ : Measure ℂ} {N : ℕ} {x : ℤ → ℝ} {k : ℤ} (hN : 1 ≤ N)
+    (hk1 : x k < x (k + 1))
+    (hPmass : μ ((fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1))) = N) :
+    ∃ c ∈ (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)),
+      {w | w ∈ range (fun t : ℝ ↦ (t : ℂ)) ∧ dist c w < 1 / 2 * massRadiusLine μ c.re} ⊆
+        (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)) := by
+  set m := (x k + x (k + 1)) / 2 with hm
+  have hmP : (m : ℂ) ∈ (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)) :=
+    ⟨m, ⟨by linarith, by linarith⟩, rfl⟩
+  have hρm : massRadiusLine μ m ≤ x (k + 1) - x k := by
+    refine prop_massRadiusLine_le_line (by linarith) ?_
+    refine le_trans ?_ (measure_mono (show (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)) ⊆
+      lineInterval m (x (k + 1) - x k) from ?_))
+    · rw [hPmass]; exact_mod_cast hN
+    · simp only [lineCut_image_Ico, lineCut_lineInterval_eq]
+      rintro z ⟨h0, h1, h2⟩
+      exact ⟨h0, by linarith, by linarith⟩
+  refine ⟨m, hmP, ?_⟩
+  rintro w ⟨⟨v, rfl⟩, hw⟩
+  simp only [Complex.ofReal_re] at hw
+  rw [prop_dist_ofReal_line] at hw
+  have := abs_lt.1 hw
+  exact ⟨v, ⟨by linarith, by linarith⟩, rfl⟩
+
 /-- **Lemma 4 (line)**, uniform form with the fields of `IsMassPartition` spelled out: intervals
 `[s, t)` of mass `N`, with constants depending only on `(Cd, R₀, N)`. -/
 theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
@@ -163,13 +411,12 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     rw [he, measure_empty] at h
     exact absurd h (not_lt.2 (zero_le))
   set rN : ℝ := ((N : ℝ) + 1) * R₀
-  have hrN0 : 0 < rN := by positivity
+  have : 0 < rN := by positivity
   set R₁ : ℝ := 2 * rN
-  obtain ⟨C₁, hC₁1, hC₁⟩ := doubling_upTo_quant (X := ℝ) Cd R₁
+  obtain ⟨C₁, -, hC₁⟩ := doubling_upTo_quant (X := ℝ) Cd R₁
   obtain ⟨c, Cb, δ, sb, hc, -, hδ, -, hb⟩ :=
     measure_ball_massRadiusM_bounds_quant (X := ℝ) Cd R₀ R₁
   set M : ℝ := (C₁ : ℝ) ^ 2 * N with hM
-  have hM0 : 0 ≤ M := by positivity
   set A : ℝ := max 1 ((M / c) ^ (1 / δ))
   refine ⟨1 / 2, A, by norm_num, lt_of_lt_of_le one_pos (le_max_left _ _), fun μ hμ ↦ ?_⟩
   -- per-measure facts
@@ -194,163 +441,19 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     constructor <;> linarith [hu.1, hu.2]
   have hpos : ∀ x, 0 < massRadiusLine μ x :=
     massRadiusLine_pos hd hfinI ⟨R₀, hR₀, fun x ↦ (hμ.mass x).le⟩
-  have hre : ∀ x : ℝ, μ {w : ℂ | w.re = x} = 0 := by
-    intro x
-    refine measure_mono_null (t := {(x : ℂ)} ∪ {z | z.im ≠ 0}) ?_
-      (measure_union_null (measure_singleton_line hd hfinI _) hcar)
-    intro w hw
-    by_cases him : w.im = 0
-    · left; exact Complex.ext (by simpa using hw) (by simpa using him)
-    · right; exact him
-  have hfinR : ∀ a b : ℝ, μ (rect a b (-1) 1) < ∞ := by
-    intro a b
-    refine (measure_mono ?_).trans_lt (hμ.finite _ (isCompact_closedBall (0 : ℂ) (|a| + |b| + 1)))
-    rintro z ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
-    rw [mem_closedBall_zero_iff]
-    refine (Complex.norm_le_abs_re_add_abs_im z).trans ?_
-    have : |z.re| ≤ |a| + |b| := by
-      rw [abs_le]
-      constructor <;> linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
-    have : |z.im| ≤ 1 := by rw [abs_le]; constructor <;> linarith
-    linarith
+  have hre : ∀ x : ℝ, μ {w : ℂ | w.re = x} = 0 := lineCut_measure_re_eq_zero hd hfinI
+  have hfinR := lineCut_finite_rect hμ.finite
   have hgrow : ∀ x : ℝ, (N : ℝ≥0∞) < μ (lineInterval x rN) := lineCut_growth hR₀ hμ.mass N
   have hbig : ∀ s : ℝ, (N : ℝ≥0∞) < μ (rect s (s + R₁) (-1) 1) := by
     intro s
     refine (hgrow (s + rN)).trans_le (measure_mono ?_)
     rintro z ⟨u, hu, rfl⟩
     refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;> simp <;> linarith [hu.1, hu.2]
-  -- one step to the right / to the left
-  have hstepR : ∀ s : ℝ, ∃ t, s < t ∧ t ≤ s + R₁ ∧ μ (rect s t (-1) 1) = N := by
-    intro s
-    have hc' := rect_continuous_toReal hre (hfinR s)
-    have h0 : (μ (rect s s (-1) 1)).toReal = 0 := by simp [rect_eq_empty_of_le le_rfl]
-    have h1 : (N : ℝ) < (μ (rect s (s + R₁) (-1) 1)).toReal := by
-      have := (ENNReal.toReal_lt_toReal (ENNReal.natCast_ne_top N) (hfinR _ _).ne).2 (hbig s)
-      simpa using this
-    obtain ⟨t, ⟨ht1, ht2⟩, hFt⟩ := intermediate_value_Icc (show s ≤ s + R₁ by linarith)
-      hc'.continuousOn (show (N : ℝ) ∈ Icc _ _ from ⟨by rw [h0]; positivity, h1.le⟩)
-    refine ⟨t, ?_, ht2, rect_eq_natCast_of_toReal (hfinR _ _) hFt⟩
-    rcases eq_or_lt_of_le ht1 with rfl | h
-    · change (μ (rect s s (-1) 1)).toReal = N at hFt
-      rw [h0] at hFt
-      have : (1 : ℝ) ≤ N := by exact_mod_cast hN
-      linarith
-    · exact h
-  have hstepL : ∀ b : ℝ, ∃ t, b - R₁ ≤ t ∧ t < b ∧ μ (rect t b (-1) 1) = N := by
-    intro b
-    set a := b - R₁
-    set G : ℝ → ℝ := fun t ↦ (μ (rect a b (-1) 1)).toReal - (μ (rect a t (-1) 1)).toReal
-      with hG
-    have hcG : Continuous G := continuous_const.sub (rect_continuous_toReal hre (hfinR a))
-    have hGt : ∀ t, a ≤ t → t ≤ b → G t = (μ (rect t b (-1) 1)).toReal := by
-      intro t h1 h2
-      simp only [hG]
-      rw [rect_toReal_add_x μ h1 h2 (hfinR _ _)]
-      ring
-    have hab : a ≤ b := by simp only [a]; linarith
-    have hGb : G b = 0 := by rw [hGt b hab le_rfl]; simp [rect_eq_empty_of_le le_rfl]
-    have hGa : (N : ℝ) < G a := by
-      rw [hGt a le_rfl hab]
-      have := (ENNReal.toReal_lt_toReal (ENNReal.natCast_ne_top N) (hfinR _ _).ne).2 (hbig a)
-      simpa [a] using this
-    obtain ⟨t, ⟨ht1, ht2⟩, hGt'⟩ := intermediate_value_Icc' hab hcG.continuousOn
-      (show (N : ℝ) ∈ Icc (G b) (G a) from ⟨by rw [hGb]; positivity, hGa.le⟩)
-    rw [hGt t ht1 ht2] at hGt'
-    refine ⟨t, ht1, ?_, rect_eq_natCast_of_toReal (hfinR _ _) hGt'⟩
-    rcases eq_or_lt_of_le ht2 with rfl | h
-    · rw [rect_eq_empty_of_le le_rfl] at hGt'
-      simp at hGt'
-      have : (1 : ℝ) ≤ N := by exact_mod_cast hN
-      linarith
-    · exact h
-  choose fR hfR using hstepR
-  choose fL hfL using hstepL
-  set x : ℤ → ℝ := fun k ↦ if 0 ≤ k then fR^[k.toNat] 0 else fL^[(-k).toNat] 0 with hx
-  have hxpos : ∀ n : ℕ, x n = fR^[n] 0 := by
-    intro n; simp [hx]
-  have hxneg : ∀ n : ℕ, x (-(n : ℤ)) = fL^[n] 0 := by
-    intro n
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp [hx]
-    · have : ¬ (0 ≤ -(n : ℤ)) := by omega
-      simp only [hx, this, ite_false, neg_neg, Int.toNat_natCast]
-  have hblock : ∀ k : ℤ, x k < x (k + 1) ∧ x (k + 1) - x k ≤ R₁ ∧
-      μ (rect (x k) (x (k + 1)) (-1) 1) = N := by
-    intro k
-    rcases Int.eq_nat_or_neg k with ⟨n, rfl | rfl⟩
-    · have e : x ((n : ℤ) + 1) = fR (x n) := by
-        rw [show ((n : ℤ) + 1) = ((n + 1 : ℕ) : ℤ) by push_cast; ring, hxpos, hxpos,
-          Function.iterate_succ_apply']
-      obtain ⟨h1, h2, hn⟩ := hfR (x n)
-      rw [e]
-      exact ⟨h1, by linarith, hn⟩
-    · rcases Nat.eq_zero_or_pos n with rfl | hn
-      · have e : x ((0 : ℤ) + 1) = fR (x 0) := by
-          have := hxpos 1
-          simp only [Nat.cast_one, Function.iterate_one] at this
-          rw [zero_add, this]
-          congr 1
-        simp only [Nat.cast_zero, neg_zero]
-        obtain ⟨h1, h2, hn⟩ := hfR (x 0)
-        rw [e]
-        exact ⟨h1, by linarith, hn⟩
-      · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
-        have e1 : -((0 + m + 1 : ℕ) : ℤ) + 1 = -(m : ℤ) := by push_cast; ring
-        have e2 : x (-((0 + m + 1 : ℕ) : ℤ)) = fL (x (-(m : ℤ))) := by
-          rw [hxneg, hxneg, show 0 + m + 1 = m + 1 by ring, Function.iterate_succ_apply']
-        rw [e1, e2]
-        obtain ⟨h1, h2, hn⟩ := hfL (x (-(m : ℤ)))
-        exact ⟨h2, by linarith, hn⟩
+  choose fR hfR using lineCut_step_right hN (by positivity) hre hfinR hbig
+  choose fL hfL using lineCut_step_left hN (by positivity) hre hfinR hbig
+  obtain ⟨x, hblock⟩ := lineCut_cuts hfR hfL
   have hmono : StrictMono x := strictMono_int_of_lt_succ fun k ↦ (hblock k).1
-  -- masses of consecutive blocks add up, so the cut points escape to `±∞`
-  have hmassR : ∀ n : ℕ, μ (rect (x 0) (x n) (-1) 1) = n * N := by
-    intro n
-    induction n with
-    | zero => simp [rect_eq_empty_of_le le_rfl]
-    | succ n ih =>
-      have := measure_rect_add_x μ (y₁ := -1) (y₂ := 1)
-        (hmono.monotone (show (0 : ℤ) ≤ n by omega))
-        (hmono.monotone (show (n : ℤ) ≤ n + 1 by omega))
-      rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring, this, ih, (hblock n).2.2]
-      push_cast; ring
-  have hmassL : ∀ n : ℕ, μ (rect (x (-(n : ℤ))) (x 0) (-1) 1) = n * N := by
-    intro n
-    induction n with
-    | zero => simp [rect_eq_empty_of_le le_rfl]
-    | succ n ih =>
-      have := measure_rect_add_x μ (y₁ := -1) (y₂ := 1)
-        (hmono.monotone (show -((n + 1 : ℕ) : ℤ) ≤ -(n : ℤ) by omega))
-        (hmono.monotone (show -(n : ℤ) ≤ 0 by omega))
-      rw [this, ih]
-      have hb := (hblock (-((n + 1 : ℕ) : ℤ))).2.2
-      rw [show -((n + 1 : ℕ) : ℤ) + 1 = -(n : ℤ) by push_cast; ring] at hb
-      rw [hb]
-      push_cast; ring
-  have hN1 : (1 : ℝ≥0∞) ≤ N := by exact_mod_cast hN
-  have hup : ∀ T, ∃ k, T < x k := by
-    intro T
-    by_contra hcon
-    push Not at hcon
-    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (hfinR (x 0) T).ne
-    have h1 : μ (rect (x 0) (x n) (-1) 1) ≤ μ (rect (x 0) T (-1) 1) :=
-      measure_mono (rect_subset_rect le_rfl (hcon n) le_rfl le_rfl)
-    rw [hmassR] at h1
-    have : (n : ℝ≥0∞) ≤ n * N := by
-      calc (n : ℝ≥0∞) = n * 1 := (mul_one _).symm
-        _ ≤ n * N := by gcongr
-    exact absurd (hn.trans_le (this.trans h1)) (lt_irrefl _)
-  have hdown : ∀ T, ∃ k, x k ≤ T := by
-    intro T
-    by_contra hcon
-    push Not at hcon
-    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (hfinR T (x 0)).ne
-    have h1 : μ (rect (x (-(n : ℤ))) (x 0) (-1) 1) ≤ μ (rect T (x 0) (-1) 1) :=
-      measure_mono (rect_subset_rect (hcon _).le le_rfl le_rfl le_rfl)
-    rw [hmassL] at h1
-    have : (n : ℝ≥0∞) ≤ n * N := by
-      calc (n : ℝ≥0∞) = n * 1 := (mul_one _).symm
-        _ ≤ n * N := by gcongr
-    exact absurd (hn.trans_le (this.trans h1)) (lt_irrefl _)
+  obtain ⟨hup, hdown⟩ := lineCut_escape hN hmono (fun k ↦ (hblock k).2.2) hfinR
   -- the pieces
   set P : ℤ → Set ℂ := fun k ↦ (fun u : ℝ ↦ (u : ℂ)) '' Ico (x k) (x (k + 1)) with hP
   have hPmass : ∀ k, μ (P k) = N := fun k ↦ by
@@ -369,69 +472,12 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
     · rintro z ⟨t, rfl⟩
       obtain ⟨k, hk⟩ := lineCut_exists_Ico hmono hup hdown t
       exact mem_iUnion.2 ⟨k, t, hk, rfl⟩
-  have hPdist : ∀ k, ∀ z ∈ P k, ∀ w ∈ P k, dist z w ≤ A * massRadiusLine μ z.re := by
-    rintro k z ⟨u, hu, rfl⟩ w ⟨v, hv, rfl⟩
-    obtain ⟨hk1, hk2, -⟩ := hblock k
-    set L := x (k + 1) - x k
-    have hL0 : 0 < L := by linarith
-    simp only [Complex.ofReal_re]
-    rw [prop_dist_ofReal_line]
-    have hdist : |u - v| ≤ L := by
-      rw [abs_le]; constructor <;> linarith [hu.1, hu.2, hv.1, hv.2]
-    set m := (x k + x (k + 1)) / 2 with hm
-    have hsub1 : lineInterval u L ⊆ lineInterval m (2 * L) := by
-      simp only [lineCut_lineInterval_eq]
-      rintro z ⟨h0, h1, h2⟩
-      exact ⟨h0, by linarith [hu.1, hu.2], by linarith [hu.1, hu.2]⟩
-    have hsub2 : lineInterval m (L / 2) ⊆ P k := by
-      simp only [lineCut_lineInterval_eq, hP, lineCut_image_Ico]
-      rintro z ⟨h0, h1, h2⟩
-      exact ⟨h0, by linarith, by linarith⟩
-    have hmassL : μ (lineInterval u L) ≤ ENNReal.ofReal M := by
-      calc μ (lineInterval u L) ≤ μ (lineInterval m (2 * L)) := measure_mono hsub1
-        _ ≤ C₁ * μ (lineInterval m L) := hdbl m L hL0 (by linarith)
-        _ ≤ C₁ * (C₁ * μ (lineInterval m (L / 2))) := by
-            gcongr
-            have := hdbl m (L / 2) (by positivity) (by linarith)
-            rwa [show 2 * (L / 2) = L by ring] at this
-        _ ≤ C₁ * (C₁ * N) := by gcongr; exact (measure_mono hsub2).trans (hPmass k).le
-        _ = ENNReal.ofReal M := by
-            rw [hM, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
-              ENNReal.ofReal_natCast, ENNReal.ofReal_coe_nnreal]
-            ring
-    have hρ := hpos u
-    have hLA : L ≤ A * massRadiusLine μ u := by
-      rcases le_or_gt (massRadiusLine μ u) L with hle | hlt
-      · have h1 := (hlow u L hle (by linarith)).trans hmassL
-        rw [ENNReal.ofReal_le_ofReal_iff hM0] at h1
-        have h2 : (L / massRadiusLine μ u) ^ δ ≤ M / c := by
-          rw [le_div_iff₀ hc]; linarith
-        have h3 : L / massRadiusLine μ u ≤ (M / c) ^ (1 / δ) := by
-          have h4 := Real.rpow_le_rpow (by positivity) h2 (show (0 : ℝ) ≤ 1 / δ by positivity)
-          rwa [← Real.rpow_mul (by positivity), mul_one_div_cancel hδ.ne', Real.rpow_one] at h4
-        rw [div_le_iff₀ hρ] at h3
-        exact h3.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hρ.le)
-      · exact hlt.le.trans (le_mul_of_one_le_left hρ.le (le_max_left _ _))
-    exact hdist.trans hLA
+  have hPdist : ∀ k, ∀ z ∈ P k, ∀ w ∈ P k, dist z w ≤ A * massRadiusLine μ z.re := fun k ↦
+    lineCut_piece_dist (hblock k).1 (hblock k).2.1 (hPmass k) hdbl hlow hpos hc hδ hM
+      (le_max_left _ _) (le_max_right _ _)
   have hPinner : ∀ k, ∃ c ∈ P k, {w | w ∈ range (fun t : ℝ ↦ (t : ℂ)) ∧
-      dist c w < 1 / 2 * massRadiusLine μ c.re} ⊆ P k := by
-    intro k
-    obtain ⟨hk1, -, -⟩ := hblock k
-    set m := (x k + x (k + 1)) / 2 with hm
-    have hmP : (m : ℂ) ∈ P k := ⟨m, ⟨by linarith, by linarith⟩, rfl⟩
-    have hρm : massRadiusLine μ m ≤ x (k + 1) - x k := by
-      refine prop_massRadiusLine_le_line (by linarith) ?_
-      refine le_trans ?_ (measure_mono (show P k ⊆ lineInterval m (x (k + 1) - x k) from ?_))
-      · rw [hPmass]; exact_mod_cast hN
-      · simp only [hP, lineCut_image_Ico, lineCut_lineInterval_eq]
-        rintro z ⟨h0, h1, h2⟩
-        exact ⟨h0, by linarith, by linarith⟩
-    refine ⟨m, hmP, ?_⟩
-    rintro w ⟨⟨v, rfl⟩, hw⟩
-    simp only [Complex.ofReal_re] at hw
-    rw [prop_dist_ofReal_line] at hw
-    have := abs_lt.1 hw
-    exact ⟨v, ⟨by linarith, by linarith⟩, rfl⟩
+      dist c w < 1 / 2 * massRadiusLine μ c.re} ⊆ P k := fun k ↦
+    lineCut_piece_inner hN (hblock k).1 (hPmass k)
   -- reindex `ℤ ≃ ℕ`
   set e := Equiv.intEquivNat
   refine ⟨fun i ↦ P (e.symm i), fun i ↦ lineCut_measurableSet_image_Ico _ _, ?_, ?_,
