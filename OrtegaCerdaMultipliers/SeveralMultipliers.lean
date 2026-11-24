@@ -8,7 +8,7 @@ import OrtegaCerdaMultipliers.Multiplier.Theorem4
 /-!
 # M09 (SeveralMultipliers) — Proposition 2: several multipliers with disjoint exceptional sets
 
-See `blueprint/M09_SeveralMultipliers.md`.  **Status: sorry-free**, modulo the upstream
+See `blueprint/M09_SeveralMultipliers.md`.  **Status: complete**, relying on the upstream
 interface (M03: `claim1_*_quant`, `measure_*_massRadius_quant`, `massRadius*_lapNorm_quant`,
 `MeasClass*.lapNorm`; M05: `lemma4_*_quant`; M08: `IsMassPartition.exists_cells`,
 `exists_nodes_*`, `multiplier_of_nodes_*`; M01: `hypArea_hypBall`).  The comparator statements
@@ -63,8 +63,8 @@ theorem greedy_spec (adj : ℕ → ℕ → Prop) (D : ℕ) (hdeg : ∀ i, {j | a
     (i : ℕ) : ∀ j < i, adj i j → greedy adj D hdeg j ≠ greedy adj D hdeg i := by
   intro j hj hadj
   have hspec := Classical.choose_spec (exists_free_colour adj D hdeg i
-    fun j ↦ if h : j < i then greedy adj D hdeg j else 0) j hj hadj
-  simp only [hj, dite_true] at hspec
+    fun j ↦ if j < i then greedy adj D hdeg j else 0) j hj hadj
+  simp only [hj, ↓reduceIte] at hspec
   convert hspec using 1
   rw [greedy, Nat.strongRec_eq]
   rfl
@@ -83,8 +83,8 @@ theorem exists_coloring_nat (adj : ℕ → ℕ → Prop) (hsymm : ∀ i j, adj i
 namespace Prop2
 
 /-- Bounded degree from a uniform bound on finite neighbourhoods. -/
-theorem encard_le_of_finset {S : Set ℕ} {D : ℕ} (h : ∀ F : Finset ℕ, (↑F : Set ℕ) ⊆ S → F.card ≤ D) :
-    S.encard ≤ D := by
+theorem encard_le_of_finset {S : Set ℕ} {D : ℕ}
+    (h : ∀ F : Finset ℕ, (↑F : Set ℕ) ⊆ S → F.card ≤ D) : S.encard ≤ D := by
   by_contra hcon
   push Not at hcon
   obtain ⟨t, hts, htc⟩ := Set.exists_subset_encard_eq (Order.add_one_le_of_lt hcon)
@@ -102,7 +102,6 @@ theorem sepColoring_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ �
     (hRN : ∀ i, ν (R i) = N) (hN : 1 ≤ N) (hL : 0 ≤ L) (hA : 0 ≤ A)
     (hsymm : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y = d y x)
     (htri : ∀ x ∈ Ω, ∀ y ∈ Ω, ∀ z ∈ Ω, d x z ≤ d x y + d y z)
-    (hρ : ∀ x ∈ Ω, 0 < ρ x)
     (hcl : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y ≤ (2 * L) * max (ρ x) (ρ y) → ρ x ≤ CL * ρ y)
     (hRΩ : ∀ i, R i ⊆ Ω) (hcR : ∀ i, c i ∈ R i) (hsub : ∀ i, ∀ w ∈ R i, d (c i) w ≤ A * ρ (c i))
     (hmass : ∀ i, ν {w | w ∈ Ω ∧ d (c i) w < (L + (L + A) * CL) * ρ (c i)} ≤ Cm) :
@@ -123,8 +122,6 @@ theorem sepColoring_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ �
       simp only [mem_iUnion] at hw
       obtain ⟨j, hjF, hwj⟩ := hw
       obtain ⟨-, hij⟩ := hF hjF
-      have hρi := hρ _ (hcΩ i)
-      have hρj := hρ _ (hcΩ j)
       have hji : ρ (c j) ≤ CL * ρ (c i) := by
         apply hcl _ (hcΩ j) _ (hcΩ i)
         rw [hsymm _ (hcΩ j) _ (hcΩ i)]
@@ -203,7 +200,7 @@ theorem exists_separated_coloring_plane (Cd : ℝ≥0) (R₀ η A L : ℝ) :
     (L := L') (A := A') (CL := CL) Cm hC.measurableSet hC.pairwise_disjoint hC.measure_eq
     (Prop2.one_le_N_plane hν hC) (le_max_right _ _) (le_max_right _ _)
     (fun x _ y _ ↦ dist_comm x y) (fun x _ y _ z _ ↦ dist_triangle x y z)
-    (fun x _ ↦ hρ x) (fun x _ y _ ↦ (hcl ν hν x y).2.2) (fun _ ↦ subset_univ _) hC.center_mem
+    (fun x _ y _ ↦ (hcl ν hν x y).2.2) (fun _ ↦ subset_univ _) hC.center_mem
     (fun i w hw ↦ (hC.subset i w hw).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (hρ _).le))
     (fun i ↦ by
@@ -231,7 +228,7 @@ theorem exists_separated_coloring_disc (Cd : ℝ≥0) (R₀ η A L : ℝ) :
     (ρ := massRadiusDisc ν) (L := L') (A := A') (CL := CL) Cm hC.measurableSet
     hC.pairwise_disjoint hC.measure_eq (Prop2.one_le_N_disc hν hC) (le_max_right _ _)
     (le_max_right _ _) (fun x _ y _ ↦ hypDist_comm x y)
-    (fun x hx y hy z hz ↦ hypDist_triangle hx hy hz) hρ
+    (fun x hx y hy z hz ↦ hypDist_triangle hx hy hz)
     (fun x hx y hy ↦ (hcl ν hν x hx y hy).2.2) hRΩ hC.center_mem
     (fun i w hw ↦ (hC.subset i w hw).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (hρ _ (hcD i)).le))
@@ -246,6 +243,132 @@ def colorSel (d : ℂ → ℂ → ℝ) (ρ : ℂ → ℝ) (R : ℕ → Set ℂ) 
   ∃ k, col k = l ∧ (j = k ∨ ∃ z ∈ R k, d z (c j) < K * ρ (c j))
 
 namespace Prop2
+
+/-- The constant `P = C1 (Bl+2) C2 CA` of `nodesFar_generic` dominates each of its factors. -/
+theorem nodesFar_const_bounds {Bl C1 C2 CA : ℝ} (hBl : 0 ≤ Bl) (hC1 : 1 ≤ C1) (hCA : 1 ≤ CA)
+    (hC2 : 1 ≤ C2) :
+    0 < C1 * (Bl + 2) * C2 * CA ∧ C1 ≤ C1 * (Bl + 2) * C2 * CA ∧
+      Bl + 2 ≤ C1 * (Bl + 2) * C2 * CA ∧ C2 * CA ≤ C1 * (Bl + 2) * C2 * CA ∧
+      CA ≤ C1 * (Bl + 2) * C2 * CA := by
+  set P := C1 * (Bl + 2) * C2 * CA with hP
+  have hC2CA : 1 ≤ C2 * CA := one_le_mul_of_one_le_of_one_le hC2 hCA
+  have hP0 : 0 < P := by positivity
+  have hPC1 : C1 ≤ P := by
+    have : 1 ≤ (Bl + 2) * C2 * CA := by nlinarith
+    calc C1 = C1 * 1 := (mul_one _).symm
+      _ ≤ C1 * ((Bl + 2) * C2 * CA) := mul_le_mul_of_nonneg_left this (by linarith)
+      _ = P := by rw [hP]; ring
+  have hPBl : Bl + 2 ≤ P := by
+    have : 1 ≤ C1 * C2 * CA := by nlinarith
+    calc Bl + 2 = (Bl + 2) * 1 := (mul_one _).symm
+      _ ≤ (Bl + 2) * (C1 * C2 * CA) := mul_le_mul_of_nonneg_left this (by linarith)
+      _ = P := by rw [hP]; ring
+  have hPC : C2 * CA ≤ P := by
+    have : 1 ≤ C1 * (Bl + 2) := by nlinarith
+    calc C2 * CA = 1 * (C2 * CA) := (one_mul _).symm
+      _ ≤ (C1 * (Bl + 2)) * (C2 * CA) := mul_le_mul_of_nonneg_right this (by linarith)
+      _ = P := by rw [hP]; ring
+  exact ⟨hP0, hPC1, hPBl, hPC, le_trans (by nlinarith) hPC⟩
+
+/-- Separation when the cell `j` is not selected: `ρ z ≤ P d(z, w)`. -/
+theorem nodesFar_unselected {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {z y w : ℂ}
+    {Bl C1 P : ℝ} (hBl : 0 ≤ Bl) (hC1 : 1 ≤ C1) (hPC1 : C1 ≤ P) (hPBl : Bl + 2 ≤ P)
+    (hsymm : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y = d y x)
+    (htri : ∀ x ∈ Ω, ∀ y ∈ Ω, ∀ z ∈ Ω, d x z ≤ d x y + d y z)
+    (hcl1 : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y ≤ 1 * max (ρ x) (ρ y) → ρ x ≤ C1 * ρ y)
+    (hzΩ : z ∈ Ω) (hyΩ : y ∈ Ω) (hwΩ : w ∈ Ω) (hρz : 0 < ρ z) (hρy : 0 < ρ y)
+    (hzy : (Bl + 2) * ρ y ≤ d z y) (hyw : d y w ≤ Bl * ρ y) : ρ z ≤ P * d z w := by
+  have htr' := htri z hzΩ w hwΩ y hyΩ
+  rw [hsymm w hwΩ y hyΩ] at htr'
+  have hdzw : 2 * ρ y ≤ d z w := by linarith
+  have h0 : 0 ≤ d z w := le_trans (by linarith : (0 : ℝ) ≤ 2 * ρ y) hdzw
+  by_cases hcase : d z y ≤ 1 * max (ρ z) (ρ y)
+  · have := hcl1 z hzΩ y hyΩ hcase
+    calc ρ z ≤ C1 * ρ y := this
+      _ ≤ C1 * d z w := mul_le_mul_of_nonneg_left (by linarith) (by linarith)
+      _ ≤ P * d z w := mul_le_mul_of_nonneg_right hPC1 h0
+  · push Not at hcase
+    have hlt : ρ z < d z y := lt_of_le_of_lt (by simp) hcase
+    have h1 : Bl * ((Bl + 2) * ρ y) ≤ Bl * d z y := mul_le_mul_of_nonneg_left hzy hBl
+    have h3 : (Bl + 2) * (d z y - Bl * ρ y) ≤ (Bl + 2) * d z w :=
+      mul_le_mul_of_nonneg_left (by linarith only [htr', hyw]) (by linarith only [hBl])
+    have h2 : 2 * ρ z ≤ (Bl + 2) * d z w := by linarith only [h1, h3, hlt]
+    calc ρ z ≤ (Bl + 2) * d z w := by linarith only [h2, hρz]
+      _ ≤ P * d z w := mul_le_mul_of_nonneg_right hPBl h0
+
+/-- Separation when `j` is a neighbour of the cell `k` containing `z`. -/
+theorem nodesFar_neighbour {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {z z' ck cj w : ℂ}
+    {A Bl Bk C2 CA P : ℝ} (hA : 0 ≤ A) (hBl : 0 ≤ Bl) (hBk2 : 2 * A * C2 + Bl + 3 ≤ Bk)
+    (hC2 : 1 ≤ C2) (hCA : 1 ≤ CA) (hPC : C2 * CA ≤ P)
+    (hsymm : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y = d y x)
+    (htri : ∀ x ∈ Ω, ∀ y ∈ Ω, ∀ z ∈ Ω, d x z ≤ d x y + d y z)
+    (hzΩ : z ∈ Ω) (hz'Ω : z' ∈ Ω) (hckΩ : ck ∈ Ω) (hcjΩ : cj ∈ Ω) (hwΩ : w ∈ Ω)
+    (hρj : 0 < ρ cj)
+    (hcl2 : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y ≤ (A + Bl + 2) * max (ρ x) (ρ y) → ρ x ≤ C2 * ρ y)
+    (hdzk : d z ck ≤ A * ρ ck) (hdz'k : d ck z' ≤ A * ρ ck) (hzi : ρ z ≤ CA * ρ ck)
+    (hz'j : d z' cj < (Bl + 2) * ρ cj) (hwlo : Bk * ρ cj ≤ d cj w) : ρ z ≤ P * d z w := by
+  have hC2CA : 1 ≤ C2 * CA := one_le_mul_of_one_le_of_one_le hC2 hCA
+  have hdij : d ck cj ≤ (A + Bl + 2) * max (ρ ck) (ρ cj) := by
+    have h1 := htri ck hckΩ z' hz'Ω cj hcjΩ
+    have h3 : A * ρ ck ≤ A * max (ρ ck) (ρ cj) :=
+      mul_le_mul_of_nonneg_left (le_max_left _ _) hA
+    have h4 : (Bl + 2) * ρ cj ≤ (Bl + 2) * max (ρ ck) (ρ cj) :=
+      mul_le_mul_of_nonneg_left (le_max_right _ _) (by linarith)
+    linarith
+  have hkj : ρ ck ≤ C2 * ρ cj := hcl2 _ hckΩ _ hcjΩ hdij
+  have hdzj : d z cj ≤ (2 * A * C2 + Bl + 2) * ρ cj := by
+    have h1 := htri z hzΩ ck hckΩ cj hcjΩ
+    have h1' := htri ck hckΩ z' hz'Ω cj hcjΩ
+    have h3 : A * ρ ck ≤ A * (C2 * ρ cj) := mul_le_mul_of_nonneg_left hkj hA
+    linarith
+  have hjw : ρ cj ≤ d z w := by
+    have h1 := htri cj hcjΩ z hzΩ w hwΩ
+    rw [hsymm _ hcjΩ _ hzΩ] at h1
+    have h2 : (2 * A * C2 + Bl + 3) * ρ cj ≤ Bk * ρ cj :=
+      mul_le_mul_of_nonneg_right hBk2 hρj.le
+    linarith
+  have h0 : 0 ≤ d z w := hρj.le.trans hjw
+  calc ρ z ≤ CA * ρ ck := hzi
+    _ ≤ CA * (C2 * ρ cj) := mul_le_mul_of_nonneg_left hkj (by linarith)
+    _ = (C2 * CA) * ρ cj := by ring
+    _ ≤ (C2 * CA) * d z w := mul_le_mul_of_nonneg_left hjw (by linarith)
+    _ ≤ P * d z w := mul_le_mul_of_nonneg_right hPC h0
+
+/-- A node of a selected cell `j` lies within `L' ρ(c k)` of the centre `c k` of the cell
+through which `j` was selected. -/
+theorem nodesFar_kw {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {ck cj w : ℂ}
+    {A Bl Bk' C2 : ℝ} (hA : 0 ≤ A) (hBl : 0 ≤ Bl) (hC2 : 1 ≤ C2)
+    (hsymm : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y = d y x)
+    (htri : ∀ x ∈ Ω, ∀ y ∈ Ω, ∀ z ∈ Ω, d x z ≤ d x y + d y z)
+    (hcl2 : ∀ x ∈ Ω, ∀ y ∈ Ω, d x y ≤ (A + Bl + 2) * max (ρ x) (ρ y) → ρ x ≤ C2 * ρ y)
+    (hckΩ : ck ∈ Ω) (hcjΩ : cj ∈ Ω) (hwΩ : w ∈ Ω) (hρj : 0 < ρ cj)
+    (hjk : cj = ck ∨ ∃ z' ∈ Ω, d ck z' ≤ A * ρ ck ∧ d z' cj < (Bl + 2) * ρ cj)
+    (hwhi : d cj w ≤ Bk' * ρ cj) :
+    d ck w ≤ (A + (Bl + 2 + max Bk' 0) * C2) * ρ ck := by
+  have hBk'0 : 0 ≤ max Bk' 0 := le_max_right _ _
+  rcases hjk with rfl | ⟨z', hz'Ω, hz', hz'j⟩
+  · have h1 : Bk' * ρ cj ≤ max Bk' 0 * ρ cj :=
+      mul_le_mul_of_nonneg_right (le_max_left _ _) hρj.le
+    have h2 : max Bk' 0 ≤ A + (Bl + 2 + max Bk' 0) * C2 := by
+      have : max Bk' 0 ≤ max Bk' 0 * C2 := le_mul_of_one_le_right hBk'0 hC2
+      nlinarith
+    nlinarith
+  · have hdkj : d cj ck ≤ (A + Bl + 2) * max (ρ cj) (ρ ck) := by
+      rw [hsymm _ hcjΩ _ hckΩ]
+      have h1 := htri ck hckΩ z' hz'Ω cj hcjΩ
+      have h3 : A * ρ ck ≤ A * max (ρ cj) (ρ ck) :=
+        mul_le_mul_of_nonneg_left (le_max_right _ _) hA
+      have h4 : (Bl + 2) * ρ cj ≤ (Bl + 2) * max (ρ cj) (ρ ck) :=
+        mul_le_mul_of_nonneg_left (le_max_left _ _) (by linarith)
+      linarith
+    have hjk' : ρ cj ≤ C2 * ρ ck := hcl2 _ hcjΩ _ hckΩ hdkj
+    have h1 := htri ck hckΩ cj hcjΩ w hwΩ
+    have h1' := htri ck hckΩ z' hz'Ω cj hcjΩ
+    have h3 : Bk' * ρ cj ≤ max Bk' 0 * ρ cj :=
+      mul_le_mul_of_nonneg_right (le_max_left _ _) hρj.le
+    have h4 : (Bl + 2 + max Bk' 0) * ρ cj ≤ (Bl + 2 + max Bk' 0) * (C2 * ρ ck) :=
+      mul_le_mul_of_nonneg_left hjk' (by linarith)
+    linarith
 
 theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → ℝ} {R : ℕ → Set ℂ} {c : ℕ → ℂ}
     {n : ℕ} {col : ℕ → Fin n} {l : Fin n} {Λ : ℕ → Multiset ℂ}
@@ -271,28 +394,11 @@ theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → 
   have hcΩ : ∀ k, c k ∈ Ω := fun k ↦ hRΩ k (hcR k)
   have hzΩ : z ∈ Ω := hRΩ i hz
   have hwΩ : w ∈ Ω := hΛΩ j w hw
-  set P := C1 * (Bl + 2) * C2 * CA with hP
+  obtain ⟨hP0, hPC1, hPBl, hPC, hPA⟩ := nodesFar_const_bounds hBl hC1 hCA hC2
+  set P := C1 * (Bl + 2) * C2 * CA
   have hρz := hρ z hzΩ
   have hρi := hρ (c i) (hcΩ i)
   have hρj := hρ (c j) (hcΩ j)
-  have hC2CA : 1 ≤ C2 * CA := one_le_mul_of_one_le_of_one_le hC2 hCA
-  have hP0 : 0 < P := by positivity
-  have hPC1 : C1 ≤ P := by
-    have : 1 ≤ (Bl + 2) * C2 * CA := by nlinarith
-    calc C1 = C1 * 1 := (mul_one _).symm
-      _ ≤ C1 * ((Bl + 2) * C2 * CA) := mul_le_mul_of_nonneg_left this (by linarith)
-      _ = P := by rw [hP]; ring
-  have hPBl : Bl + 2 ≤ P := by
-    have : 1 ≤ C1 * C2 * CA := by nlinarith
-    calc Bl + 2 = (Bl + 2) * 1 := (mul_one _).symm
-      _ ≤ (Bl + 2) * (C1 * C2 * CA) := mul_le_mul_of_nonneg_left this (by linarith)
-      _ = P := by rw [hP]; ring
-  have hPC : C2 * CA ≤ P := by
-    have : 1 ≤ C1 * (Bl + 2) := by nlinarith
-    calc C2 * CA = 1 * (C2 * CA) := (one_mul _).symm
-      _ ≤ (C1 * (Bl + 2)) * (C2 * CA) := mul_le_mul_of_nonneg_right this (by linarith)
-      _ = P := by rw [hP]; ring
-  have hPA : CA ≤ P := le_trans (by nlinarith) hPC
   -- it suffices to show `ρ z ≤ P * d z w`
   suffices hsuff : ρ z ≤ P * d z w by
     rw [inv_mul_le_iff₀ hP0]; exact hsuff
@@ -319,98 +425,31 @@ theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → 
         have h2 := hsub j z hz
         nlinarith
       · -- Case 3: `j` is a neighbour of `i`
-        have hz'Ω := hRΩ k hz'
-        have hdij : d (c k) (c j) ≤ (A + Bl + 2) * max (ρ (c k)) (ρ (c j)) := by
-          have h1 := htri (c k) (hcΩ k) z' hz'Ω (c j) (hcΩ j)
-          have h2 := hsub k z' hz'
-          have h3 : A * ρ (c k) ≤ A * max (ρ (c k)) (ρ (c j)) :=
-            mul_le_mul_of_nonneg_left (le_max_left _ _) hA
-          have h4 : (Bl + 2) * ρ (c j) ≤ (Bl + 2) * max (ρ (c k)) (ρ (c j)) :=
-            mul_le_mul_of_nonneg_left (le_max_right _ _) (by linarith)
-          linarith
-        have hkj : ρ (c k) ≤ C2 * ρ (c j) := hcl2 _ (hcΩ k) _ (hcΩ j) hdij
-        have hdzj : d z (c j) ≤ (2 * A * C2 + Bl + 2) * ρ (c j) := by
-          have h1 := htri z hzΩ (c k) (hcΩ k) (c j) (hcΩ j)
-          have h1' := htri (c k) (hcΩ k) z' hz'Ω (c j) (hcΩ j)
-          have h2 := hsub k z' hz'
-          have h3 : A * ρ (c k) ≤ A * (C2 * ρ (c j)) := mul_le_mul_of_nonneg_left hkj hA
-          linarith
-        have hjw : ρ (c j) ≤ d z w := by
-          have h1 := htri (c j) (hcΩ j) z hzΩ w hwΩ
-          rw [hsymm _ (hcΩ j) _ hzΩ] at h1
-          have h2 : (2 * A * C2 + Bl + 3) * ρ (c j) ≤ Bk * ρ (c j) :=
-            mul_le_mul_of_nonneg_right hBk2 hρj.le
-          linarith
-        have h0 : 0 ≤ d z w := hρj.le.trans hjw
-        calc ρ z ≤ CA * ρ (c k) := hzi
-          _ ≤ CA * (C2 * ρ (c j)) := mul_le_mul_of_nonneg_left hkj (by linarith)
-          _ = (C2 * CA) * ρ (c j) := by ring
-          _ ≤ (C2 * CA) * d z w := mul_le_mul_of_nonneg_left hjw (by linarith)
-          _ ≤ P * d z w := mul_le_mul_of_nonneg_right hPC h0
+        exact nodesFar_neighbour hA hBl hBk2 hC2 hCA hPC hsymm htri hzΩ (hRΩ k hz') (hcΩ k)
+          (hcΩ j) hwΩ hρj hcl2 hdzi (hsub k z' hz') hzi hz'j hwlo
     · -- Case 4: `j` selected through another cell `k` of colour `l`
       apply hfromi
       have hρk := hρ (c k) (hcΩ k)
       have hsepik := hsep i k (Ne.symm hki) (hi.trans hk.symm)
-      set L' := A + (Bl + 2 + max Bk' 0) * C2
-      have hBk'0 : 0 ≤ max Bk' 0 := le_max_right _ _
-      have hkw : d (c k) w ≤ L' * ρ (c k) := by
-        rcases hjk with rfl | ⟨z', hz', hz'j⟩
-        · have h1 : Bk' * ρ (c j) ≤ max Bk' 0 * ρ (c j) :=
-            mul_le_mul_of_nonneg_right (le_max_left _ _) hρj.le
-          have h2 : max Bk' 0 ≤ L' := by
-            have : max Bk' 0 ≤ max Bk' 0 * C2 := le_mul_of_one_le_right hBk'0 hC2
-            nlinarith
-          nlinarith
-        · have hz'Ω := hRΩ k hz'
-          have hdkj : d (c j) (c k) ≤ (A + Bl + 2) * max (ρ (c j)) (ρ (c k)) := by
-            rw [hsymm _ (hcΩ j) _ (hcΩ k)]
-            have h1 := htri (c k) (hcΩ k) z' hz'Ω (c j) (hcΩ j)
-            have h2 := hsub k z' hz'
-            have h3 : A * ρ (c k) ≤ A * max (ρ (c j)) (ρ (c k)) :=
-              mul_le_mul_of_nonneg_left (le_max_right _ _) hA
-            have h4 : (Bl + 2) * ρ (c j) ≤ (Bl + 2) * max (ρ (c j)) (ρ (c k)) :=
-              mul_le_mul_of_nonneg_left (le_max_left _ _) (by linarith)
-            linarith
-          have hjk' : ρ (c j) ≤ C2 * ρ (c k) := hcl2 _ (hcΩ j) _ (hcΩ k) hdkj
-          have h1 := htri (c k) (hcΩ k) (c j) (hcΩ j) w hwΩ
-          have h1' := htri (c k) (hcΩ k) z' hz'Ω (c j) (hcΩ j)
-          have h2 := hsub k z' hz'
-          have h3 : Bk' * ρ (c j) ≤ max Bk' 0 * ρ (c j) :=
-            mul_le_mul_of_nonneg_right (le_max_left _ _) hρj.le
-          have h4 : (Bl + 2 + max Bk' 0) * ρ (c j) ≤ (Bl + 2 + max Bk' 0) * (C2 * ρ (c k)) :=
-            mul_le_mul_of_nonneg_left hjk' (by linarith)
-          linarith
+      have hkw := nodesFar_kw hA hBl hC2 hsymm htri hcl2 (hcΩ k) (hcΩ j) hwΩ hρj
+        (by
+          rcases hjk with rfl | ⟨z', hz', hz'j⟩
+          · exact Or.inl rfl
+          · exact Or.inr ⟨z', hRΩ k hz', hsub k z' hz', hz'j⟩) hwhi
       have h1 := htri (c i) (hcΩ i) z hzΩ (c k) (hcΩ k)
       have h2 := htri z hzΩ w hwΩ (c k) (hcΩ k)
       rw [hsymm w hwΩ (c k) (hcΩ k)] at h2
       have h3 := hsub i z hz
       have h4 : (A + 1) * ρ (c i) ≤ L * ρ (c i) := mul_le_mul_of_nonneg_right hL1 hρi.le
-      have h5 : L' * ρ (c k) ≤ L * ρ (c k) := mul_le_mul_of_nonneg_right hL2 hρk.le
+      have h5 : (A + (Bl + 2 + max Bk' 0) * C2) * ρ (c k) ≤ L * ρ (c k) :=
+        mul_le_mul_of_nonneg_right hL2 hρk.le
       linarith
   · -- Case 1: `j` not selected
     have hnot : ¬ (j = i ∨ ∃ z' ∈ R i, d z' (c j) < (Bl + 2) * ρ (c j)) :=
       fun h ↦ hsel ⟨i, hi, h⟩
     push Not at hnot
-    have hzj : (Bl + 2) * ρ (c j) ≤ d z (c j) := hnot.2 z hz
-    have hwj := hns j hsel w hw
-    have htr := htri z hzΩ (c j) (hcΩ j) w hwΩ
-    have htr' := htri z hzΩ w hwΩ (c j) (hcΩ j)
-    rw [hsymm w hwΩ (c j) (hcΩ j)] at htr'
-    have hdzw : 2 * ρ (c j) ≤ d z w := by linarith
-    have h0 : 0 ≤ d z w := le_trans (by linarith : (0 : ℝ) ≤ 2 * ρ (c j)) hdzw
-    by_cases hcase : d z (c j) ≤ 1 * max (ρ z) (ρ (c j))
-    · have := hcl1 z hzΩ (c j) (hcΩ j) hcase
-      calc ρ z ≤ C1 * ρ (c j) := this
-        _ ≤ C1 * d z w := mul_le_mul_of_nonneg_left (by linarith) (by linarith)
-        _ ≤ P * d z w := mul_le_mul_of_nonneg_right hPC1 h0
-    · push Not at hcase
-      have hlt : ρ z < d z (c j) := lt_of_le_of_lt (by simp) hcase
-      have h1 : Bl * ((Bl + 2) * ρ (c j)) ≤ Bl * d z (c j) := mul_le_mul_of_nonneg_left hzj hBl
-      have h3 : (Bl + 2) * (d z (c j) - Bl * ρ (c j)) ≤ (Bl + 2) * d z w :=
-        mul_le_mul_of_nonneg_left (by linarith only [htr', hwj]) (by linarith only [hBl])
-      have h2 : 2 * ρ z ≤ (Bl + 2) * d z w := by linarith only [h1, h3, hlt]
-      calc ρ z ≤ (Bl + 2) * d z w := by linarith only [h2, hρz]
-        _ ≤ P * d z w := mul_le_mul_of_nonneg_right hPBl h0
+    exact nodesFar_unselected hBl hC1 hPC1 hPBl hsymm htri hcl1 hzΩ (hcΩ j) hwΩ hρz hρj
+      (hnot.2 z hz) (hns j hsel w hw)
 
 end Prop2
 
@@ -434,7 +473,6 @@ theorem nodes_far_of_color_plane (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hA : 0 < A
   obtain ⟨C1, hC1, hcl1⟩ := claim1_plane_quant Cd R₀ 1
   obtain ⟨CA, hCA, hclA⟩ := claim1_plane_quant Cd R₀ A
   obtain ⟨C2, hC2, hcl2⟩ := claim1_plane_quant Cd R₀ (A + Bl + 2)
-  have hBl2 : 0 < Bl + 2 := by linarith
   refine ⟨max (A + 1) (2 * A * C2 + Bl + 3), fun Bk Bk' hBk ↦
     ⟨max (A + 1) (A + (Bl + 2 + max Bk' 0) * C2), fun L hL ↦
       ⟨(C1 * (Bl + 2) * C2 * CA)⁻¹, by positivity, ?_⟩⟩⟩
@@ -465,7 +503,6 @@ theorem nodes_far_of_color_disc (Cd : ℝ≥0) (R₀ η A Bl : ℝ) (hA : 0 < A)
   obtain ⟨C1, hC1, hcl1⟩ := claim1_disc_quant Cd R₀ 1
   obtain ⟨CA, hCA, hclA⟩ := claim1_disc_quant Cd R₀ A
   obtain ⟨C2, hC2, hcl2⟩ := claim1_disc_quant Cd R₀ (A + Bl + 2)
-  have hBl2 : 0 < Bl + 2 := by linarith
   refine ⟨max (A + 1) (2 * A * C2 + Bl + 3), fun Bk Bk' hBk ↦
     ⟨max (A + 1) (A + (Bl + 2 + max Bk' 0) * C2), fun L hL ↦
       ⟨(C1 * (Bl + 2) * C2 * CA)⁻¹, by positivity, ?_⟩⟩⟩
@@ -550,7 +587,7 @@ theorem constP_spec {C : ℝ≥0} (hC : 1 ≤ C) {c₆ : ℝ} (M : ℕ) (hc₆ :
   have hC1 : (1 : ℝ) ≤ C := by exact_mod_cast hC
   have hCP : ((Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M)) : ℝ)) =
       max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M) := Real.coe_toNNReal _ (le_max_of_le_left (sq_nonneg _))
-  have hCC2 : (C : ℝ) ≤ C ^ 2 := by nlinarith
+  have hCC2 : (C : ℝ) ≤ C ^ 2 := by nlinarith [hC1]
   refine ⟨?_, ?_, ?_⟩
   · rw [← NNReal.coe_le_coe, hCP]; exact le_max_of_le_left hCC2
   · rw [hCP]; exact le_max_left _ _
@@ -561,6 +598,38 @@ theorem constP_spec {C : ℝ≥0} (hC : 1 ≤ C) {c₆ : ℝ} (M : ℕ) (hc₆ :
           rw [mul_inv, inv_inv, ← inv_pow]
           exact le_max_right _ _
       _ = (C : ℝ)⁻¹ * c₆ ^ M := inv_inv _
+
+/-- Radii compare off the nodes of a colour: from `c₅ ρ(z) ≤ D` and the comparability of radii
+of nearby points, `ρ(w) ≤ max (C1 / c₅) 1 · D`. -/
+theorem radius_le_mul_dist {a b D C1 c₅ : ℝ} (hc₅ : 0 < c₅) (hC1 : 0 ≤ C1) (hD0 : 0 ≤ D)
+    (h5 : c₅ * b ≤ D) (hcl : D ≤ 1 * max a b → a ≤ C1 * b) : a ≤ max (C1 / c₅) 1 * D := by
+  by_cases hcase : D ≤ 1 * max a b
+  · have h6 := hcl hcase
+    have h7 : C1 * b ≤ C1 / c₅ * D := by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hc₅]
+      nlinarith
+    calc a ≤ C1 / c₅ * D := h6.trans h7
+      _ ≤ max (C1 / c₅) 1 * D := mul_le_mul_of_nonneg_right (le_max_left _ _) hD0
+  · push Not at hcase
+    calc a ≤ D := (le_max_left _ _).trans (by simpa using hcase.le)
+      _ ≤ max (C1 / c₅) 1 * D := le_mul_of_one_le_left hD0 (le_max_right _ _)
+
+/-- Good points keep a definite distance from the zeros: `ε ρ(a) ≤ D` and comparability of radii
+give `min (ε / C1) 1 · ρ(b) ≤ D`. -/
+theorem const_mul_radius_le {a b D ε C1 : ℝ} (hb : 0 < b) (hε : 0 < ε) (hC1 : 1 ≤ C1)
+    (hεa : ε * a ≤ D) (hcl : D ≤ 1 * max b a → b ≤ C1 * a) : min (ε / C1) 1 * b ≤ D := by
+  by_cases hcase : D ≤ 1 * max b a
+  · have h6 := hcl hcase
+    have h7 : ε * b ≤ C1 * D := by
+      nlinarith [mul_le_mul_of_nonneg_left h6 hε.le,
+        mul_le_mul_of_nonneg_left hεa (by linarith : 0 ≤ C1)]
+    calc min (ε / C1) 1 * b ≤ ε / C1 * b := mul_le_mul_of_nonneg_right (min_le_left _ _) hb.le
+      _ ≤ D := by
+          rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]; linarith
+  · push Not at hcase
+    calc min (ε / C1) 1 * b ≤ 1 * b := mul_le_mul_of_nonneg_right (min_le_right _ _) hb.le
+      _ ≤ D := by
+          rw [one_mul]; exact (le_max_left _ _).trans (by simpa using hcase.le)
 
 end Prop2
 
@@ -591,18 +660,18 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
   obtain ⟨C1, hC1, hcl1⟩ := claim1_plane_quant Cd (15 * R₀) 1
   obtain ⟨C1', hC1', hcl1'⟩ := claim1_plane_quant Cd R₀ 1
   obtain ⟨Cρ, -, hρν⟩ := massRadius_lapNorm_quant Cd R₀
-  set K := max (C1 / c₅) 1 with hK_def
+  set K := max (C1 / c₅) 1
   have hK0 : 0 < K := lt_of_lt_of_le one_pos (le_max_right _ _)
   set ε := K⁻¹ with hε_def
   have hε : 0 < ε := inv_pos.2 hK0
-  set c₆ := min (ε / C1') 1 with hc₆_def
+  set c₆ := min (ε / C1') 1
   have hc₆ : 0 < c₆ := lt_min (div_pos hε (by linarith)) one_pos
   have hC0 : 0 < C := lt_of_lt_of_le one_pos hC
   obtain ⟨hCCP, hC2CP, hCPinv⟩ := Prop2.constP_spec hC M hc₆
   set CP : ℝ≥0 := Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M))
   refine ⟨n, M, CP, ε, hM, hC.trans hCCP, hε, fun ψ μ hw ↦ ?_⟩
   -- the cells of `ν = Δψ/2π`, their colouring, and the multipliers
-  set ν := lapNorm μ with hν_def
+  set ν := lapNorm μ
   have hν : MeasClassPlane ν Cd (15 * R₀) := hw.meas.lapNorm
   obtain ⟨R, hR⟩ := hpart ν hν
   obtain ⟨c, hc⟩ := hR.exists_cells
@@ -635,19 +704,9 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     have h5 := hhfar (col k) k rfl z hk w hw0
     have hd0 : 0 ≤ dist z w := dist_nonneg
     have hρw : massRadius μ w ≤ massRadius ν w := (hρν μ hw.meas w).1
-    have hKd : massRadius ν w ≤ K * dist z w := by
-      by_cases hcase : dist w z ≤ 1 * max (massRadius ν w) (massRadius ν z)
-      · have h6 := (hcl1 ν hν w z).2.2 hcase
-        have h7 : C1 * massRadius ν z ≤ C1 / c₅ * dist z w := by
-          rw [div_mul_eq_mul_div, le_div_iff₀ hc₅]
-          nlinarith
-        calc massRadius ν w ≤ C1 / c₅ * dist z w := h6.trans h7
-          _ ≤ K * dist z w := mul_le_mul_of_nonneg_right (le_max_left _ _) hd0
-      · push Not at hcase
-        rw [dist_comm] at hcase
-        calc massRadius ν w ≤ dist z w :=
-              (le_max_left _ _).trans (by simpa using hcase.le)
-          _ ≤ K * dist z w := le_mul_of_one_le_left hd0 (le_max_right _ _)
+    have hKd : massRadius ν w ≤ K * dist z w :=
+      Prop2.radius_le_mul_dist hc₅ (by linarith) hd0 h5 fun h ↦
+        (hcl1 ν hν w z).2.2 (by rwa [dist_comm])
     calc ε * massRadius μ w ≤ ε * (K * dist z w) :=
           mul_le_mul_of_nonneg_left (hρw.trans hKd) hε.le
       _ = dist z w := by rw [hε_def, ← mul_assoc, inv_mul_cancel₀ hK0.ne', one_mul]
@@ -657,20 +716,8 @@ theorem prop2_plane_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     have hD : ENNReal.ofReal (c₆ * massRadius μ z) ≤ edistSet z {w | h l w = 0} := by
       refine le_iInf₂ fun w hw0 ↦ ?_
       rw [edist_dist]
-      refine ENNReal.ofReal_le_ofReal ?_
-      have hεw := hgood w hw0
-      by_cases hcase : dist z w ≤ 1 * max (massRadius μ z) (massRadius μ w)
-      · have h6 := (hcl1' μ hw.meas z w).2.2 hcase
-        have h7 : ε * massRadius μ z ≤ C1' * dist z w := by nlinarith
-        calc c₆ * massRadius μ z ≤ ε / C1' * massRadius μ z :=
-              mul_le_mul_of_nonneg_right (min_le_left _ _) hρz.le
-          _ ≤ dist z w := by
-              rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]; linarith
-      · push Not at hcase
-        calc c₆ * massRadius μ z ≤ 1 * massRadius μ z :=
-              mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
-          _ ≤ dist z w := by
-              rw [one_mul]; exact (le_max_left _ _).trans (by simpa using hcase.le)
+      exact ENNReal.ofReal_le_ofReal (Prop2.const_mul_radius_le hρz hε (by linarith)
+        (hgood w hw0) fun h ↦ (hcl1' μ hw.meas z w).2.2 h)
     have hlow := Prop2.lower_of_bounds hρz hc₆.le hC0 (norm_nonneg _) hD (hhb l z).1
     refine ⟨le_trans ?_ hlow, (hupper l z).trans ?_⟩
     · exact mul_le_mul_of_nonneg_right hCPinv (Real.exp_pos _).le
@@ -706,18 +753,18 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
   obtain ⟨C1, hC1, hcl1⟩ := claim1_disc_quant Cd (15 * R₀) 1
   obtain ⟨C1', hC1', hcl1'⟩ := claim1_disc_quant Cd R₀ 1
   obtain ⟨Cρ, -, hρν⟩ := massRadiusDisc_lapNorm_quant Cd R₀
-  set K := max (C1 / c₅) 1 with hK_def
+  set K := max (C1 / c₅) 1
   have hK0 : 0 < K := lt_of_lt_of_le one_pos (le_max_right _ _)
   set ε := K⁻¹ with hε_def
   have hε : 0 < ε := inv_pos.2 hK0
-  set c₆ := min (ε / C1') 1 with hc₆_def
+  set c₆ := min (ε / C1') 1
   have hc₆ : 0 < c₆ := lt_min (div_pos hε (by linarith)) one_pos
   have hC0 : 0 < C := lt_of_lt_of_le one_pos hC
   obtain ⟨hCCP, hC2CP, hCPinv⟩ := Prop2.constP_spec hC M hc₆
   set CP : ℝ≥0 := Real.toNNReal (max ((C : ℝ) ^ 2) (C * c₆⁻¹ ^ M))
   refine ⟨n, M, CP, ε, hM, hC.trans hCCP, hε, fun ψ μ hw ↦ ?_⟩
   -- the cells of `ν = Δψ/2π`, their colouring, and the multipliers
-  set ν := lapNorm μ with hν_def
+  set ν := lapNorm μ
   have hν : MeasClassDisc ν Cd (15 * R₀) := hw.meas.lapNorm
   obtain ⟨R, hR⟩ := hpart ν hν
   obtain ⟨c, hc⟩ := hR.exists_cells
@@ -754,19 +801,9 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
     have h5 := hhfar (col k) k rfl z hk w hwD hw0
     have hd0 : 0 ≤ hypDist z w := hypDist_nonneg z w
     have hρw : massRadiusDisc μ w ≤ massRadiusDisc ν w := (hρν μ hw.meas w hwD).1
-    have hKd : massRadiusDisc ν w ≤ K * hypDist z w := by
-      by_cases hcase : hypDist w z ≤ 1 * max (massRadiusDisc ν w) (massRadiusDisc ν z)
-      · have h6 := (hcl1 ν hν w hwD z hzD).2.2 hcase
-        have h7 : C1 * massRadiusDisc ν z ≤ C1 / c₅ * hypDist z w := by
-          rw [div_mul_eq_mul_div, le_div_iff₀ hc₅]
-          nlinarith
-        calc massRadiusDisc ν w ≤ C1 / c₅ * hypDist z w := h6.trans h7
-          _ ≤ K * hypDist z w := mul_le_mul_of_nonneg_right (le_max_left _ _) hd0
-      · push Not at hcase
-        rw [hypDist_comm] at hcase
-        calc massRadiusDisc ν w ≤ hypDist z w :=
-              (le_max_left _ _).trans (by simpa using hcase.le)
-          _ ≤ K * hypDist z w := le_mul_of_one_le_left hd0 (le_max_right _ _)
+    have hKd : massRadiusDisc ν w ≤ K * hypDist z w :=
+      Prop2.radius_le_mul_dist hc₅ (by linarith) hd0 h5 fun h ↦
+        (hcl1 ν hν w hwD z hzD).2.2 (by rwa [hypDist_comm])
     calc ε * massRadiusDisc μ w ≤ ε * (K * hypDist z w) :=
           mul_le_mul_of_nonneg_left (hρw.trans hKd) hε.le
       _ = hypDist z w := by rw [hε_def, ← mul_assoc, inv_mul_cancel₀ hK0.ne', one_mul]
@@ -777,19 +814,8 @@ theorem prop2_disc_quant (Cd : ℝ≥0) (R₀ : ℝ) :
         hypDistSet z {w | w ∈ 𝔻 ∧ h l w = 0} := by
       refine le_iInf₂ fun w hw ↦ ENNReal.ofReal_le_ofReal ?_
       obtain ⟨hwD, hw0⟩ := hw
-      have hεw := hgood w hwD hw0
-      by_cases hcase : hypDist z w ≤ 1 * max (massRadiusDisc μ z) (massRadiusDisc μ w)
-      · have h6 := (hcl1' μ hw.meas z hz w hwD).2.2 hcase
-        have h7 : ε * massRadiusDisc μ z ≤ C1' * hypDist z w := by nlinarith
-        calc c₆ * massRadiusDisc μ z ≤ ε / C1' * massRadiusDisc μ z :=
-              mul_le_mul_of_nonneg_right (min_le_left _ _) hρz.le
-          _ ≤ hypDist z w := by
-              rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]; linarith
-      · push Not at hcase
-        calc c₆ * massRadiusDisc μ z ≤ 1 * massRadiusDisc μ z :=
-              mul_le_mul_of_nonneg_right (min_le_right _ _) hρz.le
-          _ ≤ hypDist z w := by
-              rw [one_mul]; exact (le_max_left _ _).trans (by simpa using hcase.le)
+      exact Prop2.const_mul_radius_le hρz hε (by linarith) (hgood w hwD hw0) fun h ↦
+        (hcl1' μ hw.meas z hz w hwD).2.2 h
     have hlow := Prop2.lower_of_bounds hρz hc₆.le hC0 (norm_nonneg _) hD (hhb l z hz).1
     refine ⟨le_trans ?_ hlow, (hupper l z hz).trans ?_⟩
     · exact mul_le_mul_of_nonneg_right hCPinv (Real.exp_pos _).le
@@ -813,7 +839,7 @@ theorem prop2_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWei
       (∀ z ∈ 𝔻, ∃ i, ∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) ∧
       ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
         (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
@@ -834,7 +860,7 @@ theorem prop2_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonicWe
       (∀ z : ℂ, ∃ i, ∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) ∧
       ∀ i, ∀ z : ℂ, (∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) →
         (C : ℝ)⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ ∧ ‖h i z‖ ≤ C * Real.exp (ψ z) := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
@@ -853,7 +879,7 @@ theorem prop2_disc_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmon
       (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
       ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
         C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
@@ -873,7 +899,7 @@ theorem prop2_plane_full (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmo
       (∀ i, ∀ z, ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
       ∀ i, ∀ z : ℂ, (∀ w, h i w = 0 → ε * massRadius μ w ≤ dist z w) →
         C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
@@ -898,7 +924,7 @@ theorem exists_measurable_partition {X : Type*} [MeasurableSpace X] {n : ℕ} {S
   · intro z hz
     obtain ⟨i₀, hi₀⟩ := hcov z hz
     have hne : (Finset.univ.filter fun i ↦ z ∈ G i).Nonempty := ⟨i₀, by simp [hi₀]⟩
-    set i := (Finset.univ.filter fun i ↦ z ∈ G i).min' hne with hi_def
+    set i := (Finset.univ.filter fun i ↦ z ∈ G i).min' hne
     have hiG : z ∈ G i := by
       have := Finset.min'_mem _ hne
       simpa using this
@@ -1024,12 +1050,11 @@ theorem hypArea_lt_top_of_isCompact {K : Set ℂ} (hK : K ⊆ 𝔻) (hKc : IsCom
     _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
         ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top)
 
-/-- `measClassDisc_of_hypArea` (stated here so that `prop2_disc_unif` can use it). -/
-theorem measClassDisc_of_hypArea_aux {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+/-- Class membership of hyperbolic-area-comparable measures (used for `prop2_disc_unif`). -/
+theorem measClassDisc_of_hypArea {a b : ℝ} (ha : 0 < a) :
     ∃ (Cd : ℝ≥0) (R₀ : ℝ), 0 < R₀ ∧ ∀ μ : Measure ℂ, μ 𝔻ᶜ = 0 →
       ENNReal.ofReal a • hypArea ≤ μ → μ ≤ ENNReal.ofReal b • hypArea →
       MeasClassDisc μ Cd R₀ := by
-  have hb : 0 < b := ha.trans_le hab
   have hapi : 0 < a * Real.pi := mul_pos ha Real.pi_pos
   set R₀ := 1 + (a * Real.pi)⁻¹ with hR₀_def
   have hR₀1 : 1 ≤ R₀ := by have := inv_pos.2 hapi; linarith
@@ -1068,11 +1093,11 @@ theorem prop2_disc_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubh
       Pairwise (Function.onFun Disjoint Ω) ∧ (⋃ i, Ω i) = 𝔻 ∧
       (∀ i, ∀ z ∈ Ω i, h i z ≠ 0 ∧ C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖) ∧
       (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R
+  obtain ⟨n, M, C, ε, -, hC, -, hall⟩ := prop2_disc_quant Cd R
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   obtain ⟨Ω, hΩm, hΩG, hdisj, hU⟩ := Prop2.partition_of_cover measurableSet_ball
@@ -1096,12 +1121,12 @@ theorem prop2_plane_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSub
       Pairwise (Function.onFun Disjoint Ω) ∧ (⋃ i, Ω i) = univ ∧
       (∀ i, ∀ z ∈ Ω i, h i z ≠ 0 ∧ C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖) ∧
       (∀ i z, ‖h i z‖ ≤ C * Real.exp (ψ z)) := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,
       fun K hKc ↦ hψ.finite_of_compact K (subset_univ K) hKc⟩⟩
-  obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_plane_quant Cd R
+  obtain ⟨n, M, C, ε, -, hC, -, hall⟩ := prop2_plane_quant Cd R
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ hw
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   obtain ⟨Ω, hΩm, hΩG, hdisj, hU⟩ := Prop2.partition_of_cover MeasurableSet.univ
@@ -1118,7 +1143,7 @@ theorem prop2_plane_partition (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSub
   linarith
 
 /-- Uniform version for BOC (M11 §8.3): constants depend only on `a ≤ b`. -/
-theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) :
     ∃ (n : ℕ) (ε C : ℝ), 0 < ε ∧ 0 < C ∧ ∀ (ψ : ℂ → ℝ) (μ : Measure ℂ),
       IsSubharmonicWeight 𝔻 ψ μ → ENNReal.ofReal a • hypArea ≤ μ →
       μ ≤ ENNReal.ofReal b • hypArea →
@@ -1127,18 +1152,11 @@ theorem prop2_disc_unif {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
         (∀ i, ∀ z ∈ 𝔻, ‖h i z‖ ≤ C * Real.exp (ψ z)) ∧
         ∀ i, ∀ z ∈ 𝔻, (∀ w ∈ 𝔻, h i w = 0 → ε * massRadiusDisc μ w ≤ hypDist z w) →
           C⁻¹ * Real.exp (ψ z) ≤ ‖h i z‖ := by
-  obtain ⟨Cd, R₀, hR₀, hcl⟩ := Prop2.measClassDisc_of_hypArea_aux ha hab
+  obtain ⟨Cd, R₀, -, hcl⟩ := Prop2.measClassDisc_of_hypArea ha
   obtain ⟨n, M, C, ε, -, hC, hε, hall⟩ := prop2_disc_quant Cd R₀
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le one_pos (by exact_mod_cast hC)
   refine ⟨n, ε, C, hε, hC0, fun ψ μ hψ h₁ h₂ ↦ ?_⟩
   obtain ⟨h, hh, -, -, hcov, hgood, hup⟩ := hall ψ μ ⟨hψ, hcl μ hψ.carried h₁ h₂⟩
   exact ⟨h, hh, hcov, hup, fun i z hz hg ↦ (hgood i z hz hg).1⟩
-
-/-- Class membership of hyperbolic-area-comparable measures (used for `prop2_disc_unif`). -/
-theorem measClassDisc_of_hypArea {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
-    ∃ (Cd : ℝ≥0) (R₀ : ℝ), 0 < R₀ ∧ ∀ μ : Measure ℂ, μ 𝔻ᶜ = 0 →
-      ENNReal.ofReal a • hypArea ≤ μ → μ ≤ ENNReal.ofReal b • hypArea →
-      MeasClassDisc μ Cd R₀ :=
-  Prop2.measClassDisc_of_hypArea_aux ha hab
 
 end OC

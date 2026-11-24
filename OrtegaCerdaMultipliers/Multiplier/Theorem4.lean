@@ -26,16 +26,12 @@ namespace OC
 /-! ### Helpers: ENNReal bookkeeping and the distance to the node set -/
 
 /-- The three `ENNReal` inequalities of `Thm4Bounds*` from their real counterparts. -/
-theorem ennreal_thm4_bounds {C : ℝ≥0} (hC : 1 ≤ C) {M : ℕ} {d ρ x : ℝ} (hd : 0 ≤ d)
+theorem ennreal_thm4_bounds {C : ℝ≥0} {M : ℕ} {d ρ x : ℝ} (hd : 0 ≤ d)
     (hρ : 0 < ρ) (h1 : (C : ℝ)⁻¹ * (d / ρ) ^ M ≤ x) (h2 : x ≤ C * (d / ρ))
     (h3 : d ≤ C * ρ) :
     C⁻¹ * (ENNReal.ofReal d / ENNReal.ofReal ρ) ^ M ≤ ENNReal.ofReal x ∧
       ENNReal.ofReal x ≤ C * (ENNReal.ofReal d / ENNReal.ofReal ρ) ∧
       ENNReal.ofReal d ≤ C * ENNReal.ofReal ρ := by
-  have hC0 : (C : ℝ) ≠ 0 := by
-    have : (1 : ℝ) ≤ C := by exact_mod_cast hC
-    linarith
-  have hCnn : C ≠ 0 := by exact_mod_cast hC0
   have hcoe : ∀ y : ℝ≥0, (y : ℝ≥0∞) = ENNReal.ofReal (y : ℝ) := fun y ↦ by simp
   rw [← ENNReal.ofReal_div_of_pos hρ]
   refine ⟨?_, ?_, ?_⟩
@@ -132,9 +128,9 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
   obtain ⟨M, C₁, hM, hC₁, hbd⟩ := multPot_bounds_plane Cd R₀ η A B N hη hA hB hN
   obtain ⟨Cρ, hCρ, hρcomp⟩ := massRadius_lapNorm_quant Cd R₀
   obtain ⟨C0, -, hcl⟩ := claim1_plane_quant Cd R₀ 0
-  set Cr : ℝ := max (max (Real.exp C₁ * Cρ ^ M) (Real.exp C₁)) (max (C₁ * Cρ) 1) with hCr
+  set Cr : ℝ := max (max (Real.exp C₁ * Cρ ^ M) (Real.exp C₁)) (max (C₁ * Cρ) 1)
   have hCr1 : 1 ≤ Cr := le_max_of_le_right (le_max_right _ _)
-  set C : ℝ≥0 := ⟨Cr, by linarith⟩ with hCdef
+  set C : ℝ≥0 := ⟨Cr, by linarith⟩
   have hCC : (C : ℝ) = Cr := rfl
   refine ⟨M, C, hM, by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1,
     fun ψ μ hw R c m Λ hC hNd hm ↦ ?_⟩
@@ -173,7 +169,7 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
   obtain ⟨d, hdle, hdex⟩ := exists_min_dist hfinZ z hw₀
   rw [edistSet_eq_ofReal hdle hdex]
   have hd0 : 0 ≤ d := by
-    obtain ⟨w, hw, hwd⟩ := hdex; exact dist_nonneg.trans hwd
+    obtain ⟨w, -, hwd⟩ := hdex; exact dist_nonneg.trans hwd
   have hdC : d ≤ C * massRadius μ z := by
     rw [hCC]
     calc d ≤ dist z w₀ := hdle w₀ hw₀
@@ -186,7 +182,7 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
   · have hd : d = 0 := le_antisymm (by simpa using hdle z hzN) hd0
     have hh0 : h z = 0 := (hzero z).2 hzN
     subst hd
-    refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
+    refine ennreal_thm4_bounds (C := C)
       le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) ?_ ?_ hdC
     · rw [hh0, norm_zero, zero_mul, zero_div, zero_pow (by omega), mul_zero]
     · rw [hh0, norm_zero, zero_mul, zero_div, mul_zero]
@@ -202,8 +198,7 @@ theorem multiplier_of_nodes_plane (Cd : ℝ≥0) (R₀ η A B : ℝ) (N : ℕ) (
       have : 0 < dist z w := dist_pos.2 (Ne.symm hwz)
       linarith [hdle w hw]
     obtain ⟨e1, e2⟩ := exp_bounds_of_log hdpos hρpos hρρ' hρ'ρ hlo hhi
-    have hCpos : 0 < Real.exp C₁ * Cρ ^ M := by positivity
-    refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
+    refine ennreal_thm4_bounds (C := C)
       hd0 hρpos ?_ ?_ hdC
     · rw [hx, hCC]
       refine le_trans ?_ e1
@@ -229,9 +224,9 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
   obtain ⟨M, C₁, hM, hC₁, hbd⟩ := multPot_bounds_disc Cd R₀ η A B ρ₀ N hη hA hB hρ₀ hN
   obtain ⟨Cρ, hCρ, hρcomp⟩ := massRadiusDisc_lapNorm_quant Cd R₀
   obtain ⟨C0, -, hcl⟩ := claim1_disc_quant Cd R₀ 0
-  set Cr : ℝ := max (max (Real.exp C₁ * Cρ ^ M) (Real.exp C₁)) (max (C₁ * Cρ) 1) with hCr
+  set Cr : ℝ := max (max (Real.exp C₁ * Cρ ^ M) (Real.exp C₁)) (max (C₁ * Cρ) 1)
   have hCr1 : 1 ≤ Cr := le_max_of_le_right (le_max_right _ _)
-  set C : ℝ≥0 := ⟨Cr, by linarith⟩ with hCdef
+  set C : ℝ≥0 := ⟨Cr, by linarith⟩
   have hCC : (C : ℝ) = Cr := rfl
   refine ⟨M, C, hM, by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1,
     fun ψ μ hw R c m Λ hC hNd hm2 hm3 ↦ ?_⟩
@@ -275,7 +270,7 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
   obtain ⟨d, hdle, hdex⟩ := exists_min_hypDist hsub hfinZ hz hw₀
   rw [hypDistSet_eq_ofReal hdle hdex]
   have hd0 : 0 ≤ d := by
-    obtain ⟨w, hw, hwd⟩ := hdex; exact (hypDist_nonneg _ _).trans hwd
+    obtain ⟨w, -, hwd⟩ := hdex; exact (hypDist_nonneg _ _).trans hwd
   have hdC : d ≤ C * massRadiusDisc μ z := by
     rw [hCC]
     calc d ≤ hypDist z w₀ := hdle w₀ hw₀
@@ -288,7 +283,7 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
   · have hd : d = 0 := le_antisymm (by simpa using hdle z hzN) hd0
     have hh0 : h z = 0 := (hzero z hz).2 hzN
     subst hd
-    refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
+    refine ennreal_thm4_bounds (C := C)
       le_rfl hρpos (x := ‖h z‖ * Real.exp (-ψ z)) ?_ ?_ hdC
     · rw [hh0, norm_zero, zero_mul, zero_div, zero_pow (by omega), mul_zero]
     · rw [hh0, norm_zero, zero_mul, zero_div, mul_zero]
@@ -305,8 +300,7 @@ theorem multiplier_of_nodes_disc (Cd : ℝ≥0) (R₀ η A B ρ₀ : ℝ) (N : �
         hwz ((hypDist_eq_zero_iff hz (hsub hw)).1 e.symm).symm
       linarith [hdle w hw]
     obtain ⟨e1, e2⟩ := exp_bounds_of_log hdpos hρpos hρρ' hρ'ρ hlo hhi
-    have hCpos : 0 < Real.exp C₁ * Cρ ^ M := by positivity
-    refine ennreal_thm4_bounds (C := C) (by rw [← NNReal.coe_le_coe, hCC]; simpa using hCr1)
+    refine ennreal_thm4_bounds (C := C)
       hd0 hρpos ?_ ?_ hdC
     · rw [hx, hCC]
       refine le_trans ?_ e1
@@ -379,7 +373,7 @@ theorem theorem4_disc (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmonic
           ENNReal.ofReal (‖h z‖ * Real.exp (-ψ z)) ∧
         ENNReal.ofReal (‖h z‖ * Real.exp (-ψ z)) ≤
           C * (hypDistSet z {w | w ∈ 𝔻 ∧ h w = 0} / ENNReal.ofReal (massRadiusDisc μ z)) := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassDisc ψ μ Cd R :=
     ⟨hψ, ⟨fun z hz r hr h2 ↦ hCd z hz r hr h2, hmR, fun K hK hKc ↦ hψ.finite_of_compact K hK hKc⟩⟩
@@ -396,7 +390,7 @@ theorem theorem4_plane (ψ : ℂ → ℝ) (μ : Measure ℂ) (hψ : IsSubharmoni
           ENNReal.ofReal (‖h z‖ * Real.exp (-ψ z)) ∧
         ENNReal.ofReal (‖h z‖ * Real.exp (-ψ z)) ≤
           C * (edistSet z {w | h w = 0} / ENNReal.ofReal (massRadius μ z)) := by
-  obtain ⟨R, hR, hmR⟩ := hm
+  obtain ⟨R, -, hmR⟩ := hm
   obtain ⟨Cd, hCd⟩ := hd
   have hw : WeightClassPlane ψ μ Cd R :=
     ⟨hψ, ⟨fun z r hr h2 ↦ hCd z r hr h2, hmR,

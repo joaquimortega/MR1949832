@@ -172,7 +172,7 @@ theorem exists_tangent_pair {b : ℂ} (hb : b ∈ 𝔻) {d : ℝ} (hd : 0 ≤ d)
   set T := Real.tanh d with hT
   have hT0 : 0 ≤ T := tanh_nonneg_of_nonneg hd
   have hT1 : T < 1 := Real.tanh_lt_one d
-  set q := ‖b‖ with hq
+  set q := ‖b‖
   have hq1 : q < 1 := norm_lt_one_of_mem_disc hb
   have hq0 : 0 ≤ q := norm_nonneg b
   set a := 1 - q ^ 2 with ha
@@ -180,7 +180,6 @@ theorem exists_tangent_pair {b : ℂ} (hb : b ∈ 𝔻) {d : ℝ} (hd : 0 ≤ d)
   have hden : 0 < 1 - T ^ 2 * q ^ 2 := by nlinarith
   set τ := T * a / Real.sqrt (1 - T ^ 2 * q ^ 2) with hτ
   have hsq := Real.sq_sqrt hden.le
-  have hspos := Real.sqrt_pos.2 hden
   have hτ0 : 0 ≤ τ := by positivity
   have hτ2 : τ ^ 2 = T ^ 2 * a ^ 2 / (1 - T ^ 2 * q ^ 2) := by
     rw [hτ, div_pow, hsq]; ring
@@ -285,6 +284,197 @@ theorem barycentre_mem {ν : Measure ℂ} {R : Set ℂ} {c : ℂ} (hc : c ∈ �
   exact hmem
 
 
+/-- The node data required on one cell in `exists_nodes_disc`. -/
+private def DiscCellNodes (ν : Measure ℂ) (Ri : Set ℂ) (ci : ℂ) (A B ρ₀ B' : ℝ) (s : Bool) :
+    Prop :=
+  ∃ (mi : ℕ) (L : Multiset ℂ), Multiset.card L = 12 ∧ 2 ≤ mi ∧
+    (massRadiusDisc ν ci ≤ ρ₀ → 3 ≤ mi) ∧
+    (∀ j < mi, ∫ ζ in Ri, ζ ^ j ∂ν = (L.map (· ^ j)).sum) ∧ (∀ w ∈ L, w ∈ 𝔻) ∧
+    (∀ w ∈ L, hypDist ci w ≤ B' * massRadiusDisc ν ci) ∧
+    (s = false → ∀ w ∈ L, hypDist ci w ≤ 72 * A * massRadiusDisc ν ci) ∧
+    (s = true → ∀ w ∈ L, B * A * massRadiusDisc ν ci ≤ hypDist ci w)
+
+/-- Numerical bounds for a small cell (`sr ≤ 1 / (100 (B + 6))`). -/
+private theorem small_cell_bounds {B sr : ℝ} (hB : 0 ≤ B) (hsr0 : 0 < sr)
+    (hsr : sr ≤ 1 / (100 * (B + 6))) :
+    Real.exp (2 * sr) ≤ 4 / 3 ∧ 1 ≤ Real.exp (2 * sr) ∧ 6 * sr * Real.exp (2 * sr) ≤ 1 / 6 ∧
+      (2 * B + 12) * sr * Real.exp (2 * sr) ≤ 1 / 6 := by
+  have hsr600 : sr ≤ 1 / 600 := hsr.trans (by
+    rw [div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith)
+  have hexp : Real.exp (2 * sr) ≤ 4 / 3 :=
+    (Real.exp_le_exp.2 (by linarith)).trans exp_quarter_le
+  have hexp1 : 1 ≤ Real.exp (2 * sr) := Real.one_le_exp (by positivity)
+  refine ⟨hexp, hexp1, ?_, ?_⟩
+  · nlinarith
+  · have hτk1 : (2 * B + 12) * sr * Real.exp (2 * sr) ≤ 16 * (B + 6) * sr := by
+      have := mul_le_mul_of_nonneg_left hexp (by positivity : 0 ≤ (2 * B + 12) * sr)
+      nlinarith [mul_pos (by linarith : (0 : ℝ) < B + 6) hsr0]
+    refine hτk1.trans ?_
+    have : (B + 6) * sr ≤ 1 / 100 := by
+      rw [le_div_iff₀ (by norm_num)]
+      have := hsr; rw [le_div_iff₀ (by positivity)] at this; nlinarith
+    nlinarith
+
+/-- A node of the first set of a small cell lies in the disc, near the centre. -/
+private theorem small_L_mem {c w : ℂ} {sr : ℝ} (hc : c ∈ 𝔻) (hsr0 : 0 < sr)
+    (hexp : Real.exp (2 * sr) ≤ 4 / 3) (hτ : 6 * sr * Real.exp (2 * sr) ≤ 1 / 6)
+    (hw : ‖w - c‖ ≤ 6 * (sr * Real.exp (2 * sr) * (1 - ‖c‖ ^ 2))) :
+    w ∈ 𝔻 ∧ hypDist c w ≤ 48 * sr := by
+  have hτ0 : 0 ≤ 6 * sr * Real.exp (2 * sr) := by positivity
+  obtain ⟨hw𝔻, hd⟩ := mem_disc_and_hypDist_le hc hτ0 hτ (by linarith)
+  exact ⟨hw𝔻, hd.trans (by nlinarith)⟩
+
+/-- A node of the second set of a small cell lies in the disc, at controlled distance. -/
+private theorem small_K_mem {c w : ℂ} {B sr : ℝ} (hc : c ∈ 𝔻) (hB : 0 ≤ B) (hsr0 : 0 < sr)
+    (hexp : Real.exp (2 * sr) ≤ 4 / 3) (hexp1 : 1 ≤ Real.exp (2 * sr))
+    (hτ : (2 * B + 12) * sr * Real.exp (2 * sr) ≤ 1 / 6)
+    (hk : 2 * B * (sr * Real.exp (2 * sr) * (1 - ‖c‖ ^ 2)) ≤ ‖w - c‖ ∧
+      ‖w - c‖ ≤ (2 * B + 12) * (sr * Real.exp (2 * sr) * (1 - ‖c‖ ^ 2))) :
+    w ∈ 𝔻 ∧ hypDist c w ≤ 24 * (B + 6) * sr ∧ B * sr ≤ hypDist c w := by
+  have hcpos := one_sub_normSq_pos hc
+  have hτ0 : 0 ≤ (2 * B + 12) * sr * Real.exp (2 * sr) := by positivity
+  have h1 : ‖w - c‖ ≤ (2 * B + 12) * sr * Real.exp (2 * sr) * (1 - ‖c‖ ^ 2) := by
+    linarith [hk.2]
+  obtain ⟨hw𝔻, hd⟩ := mem_disc_and_hypDist_le hc hτ0 hτ h1
+  have h24 := mul_le_mul_of_nonneg_left hexp (by positivity : 0 ≤ (2 * B + 12) * sr)
+  have h24' := mul_pos (by linarith : (0 : ℝ) < B + 6) hsr0
+  refine ⟨hw𝔻, hd.trans (by nlinarith [h24, h24']), ?_⟩
+  refine le_trans ?_ (le_hypDist_of_norm hc hw𝔻 h1)
+  rw [le_div_iff₀ (by positivity)]
+  have : B * sr * ((1 + (2 * B + 12) * sr * Real.exp (2 * sr)) * (1 - ‖c‖ ^ 2)) ≤
+      2 * B * (sr * Real.exp (2 * sr) * (1 - ‖c‖ ^ 2)) := by
+    have h3 : 1 + (2 * B + 12) * sr * Real.exp (2 * sr) ≤ 2 * Real.exp (2 * sr) := by linarith
+    have := mul_le_mul_of_nonneg_left h3 (mul_nonneg (mul_nonneg hB hsr0.le) hcpos.le)
+    nlinarith
+  linarith [hk.1]
+
+/-- Node data on a small cell (`ρ(c) ≤ ρ₀`): Lemma 5 with order 3. -/
+private theorem disc_cell_nodes_small {ν : Measure ℂ} {Ri : Set ℂ} {ci : ℂ} {A B ρ₀ B' : ℝ}
+    {s : Bool} (hA : 0 < A) (hB : 0 ≤ B) (hρ₀ : ρ₀ = 1 / (100 * (B + 6) * (A + 1)))
+    (hB'1 : 72 * A ≤ B') (hB'2 : 24 * (B + 6) * A ≤ B') (hc : ci ∈ 𝔻) (hR𝔻 : Ri ⊆ 𝔻)
+    (hρi0 : 0 < massRadiusDisc ν ci) (hmass : ν Ri = ((12 : ℕ) : ℝ≥0∞))
+    (hRs : ∀ w ∈ Ri, hypDist ci w ≤ A * massRadiusDisc ν ci)
+    (hsmall : massRadiusDisc ν ci ≤ ρ₀) : DiscCellNodes ν Ri ci A B ρ₀ B' s := by
+  unfold DiscCellNodes
+  set ρi := massRadiusDisc ν ci
+  obtain ⟨sr, hsr⟩ : ∃ sr, sr = A * ρi := ⟨_, rfl⟩
+  have hsr0 : 0 < sr := by rw [hsr]; positivity
+  have hRs' : ∀ w ∈ Ri, hypDist ci w ≤ sr := by rw [hsr]; exact hRs
+  have hcpos := one_sub_normSq_pos hc
+  set re := sr * Real.exp (2 * sr) * (1 - ‖ci‖ ^ 2) with hre
+  have hre0 : 0 ≤ re := by positivity
+  have hsupp : ν.restrict (Ri) (closedBall ci re)ᶜ = 0 := by
+    rw [Measure.restrict_apply isClosed_closedBall.isOpen_compl.measurableSet]
+    convert measure_empty (μ := ν)
+    ext w
+    simp only [mem_inter_iff, mem_compl_iff, mem_closedBall, mem_empty_iff_false, iff_false,
+      not_and]
+    intro h1 h2
+    exact h1 (by rw [dist_eq_norm]; exact norm_sub_le_mul_exp hc (hR𝔻 h2) (hRs' w h2))
+  have hmass' : ν.restrict (Ri) univ = ((3 * 4 : ℕ) : ℝ≥0∞) := by
+    rw [Measure.restrict_apply MeasurableSet.univ, univ_inter, hmass]
+  obtain ⟨L, K, hL, hK, hLn, hKn, hmom⟩ :=
+    lemma5_moments 3 4 (by norm_num) (by norm_num) (ν.restrict (Ri)) ci re hre0 hsupp
+      hmass' (2 * B) (by positivity)
+  have hsr_small : sr ≤ 1 / (100 * (B + 6)) := by
+    rw [hsr]
+    calc A * ρi ≤ A * ρ₀ := by gcongr
+      _ = A / (A + 1) * (1 / (100 * (B + 6))) := by rw [hρ₀]; field_simp
+      _ ≤ 1 * (1 / (100 * (B + 6))) := by
+          gcongr; rw [div_le_one (by positivity)]; linarith
+      _ = 1 / (100 * (B + 6)) := one_mul _
+  obtain ⟨hexp, hexp1, hτo, hτk⟩ := small_cell_bounds hB hsr0 hsr_small
+  have hLd : ∀ w ∈ L, w ∈ 𝔻 ∧ hypDist ci w ≤ 72 * A * ρi := by
+    intro w hw
+    have h1 := hLn w hw
+    push_cast at h1
+    rw [hre] at h1
+    replace h1 : ‖w - ci‖ ≤ 6 * (sr * Real.exp (2 * sr) * (1 - ‖ci‖ ^ 2)) := by linarith
+    obtain ⟨hw𝔻, hd⟩ := small_L_mem hc hsr0 hexp hτo h1
+    exact ⟨hw𝔻, hd.trans (by rw [hsr]; nlinarith)⟩
+  have hKd : ∀ w ∈ K, w ∈ 𝔻 ∧ hypDist ci w ≤ 24 * (B + 6) * sr ∧
+      B * sr ≤ hypDist ci w := by
+    intro w hw
+    have hk := hKn w hw
+    push_cast at hk
+    rw [hre] at hk
+    exact small_K_mem hc hB hsr0 hexp hexp1 hτk ⟨by linarith [hk.1], by linarith [hk.2]⟩
+  have hmomL : ∀ j < 3, ∫ ζ in Ri, ζ ^ j ∂ν = (L.map (· ^ j)).sum := fun j hj ↦ (hmom j hj).1
+  have hmomK : ∀ j < 3, ∫ ζ in Ri, ζ ^ j ∂ν = (K.map (· ^ j)).sum := fun j hj ↦ (hmom j hj).2
+  cases hsel : s
+  · refine ⟨3, L, by rw [hL], by norm_num, fun _ ↦ le_rfl, hmomL, fun w hw ↦ (hLd w hw).1,
+      fun w hw ↦ ?_, fun _ w hw ↦ (hLd w hw).2, fun h ↦ by simp at h⟩
+    exact (hLd w hw).2.trans (by nlinarith)
+  · refine ⟨3, K, by rw [hK], by norm_num, fun _ ↦ le_rfl, hmomK, fun w hw ↦ (hKd w hw).1,
+      fun w hw ↦ ?_, fun h ↦ by simp at h, fun _ w hw ↦ ?_⟩
+    · exact (hKd w hw).2.1.trans (by rw [hsr]; nlinarith)
+    · rw [show B * A * ρi = B * sr by rw [hsr]; ring]
+      exact (hKd w hw).2.2
+
+/-- Node data on a large cell (`ρ(c) > ρ₀`): the barycentre (order 2), or, if selected, copies of
+`b ± v` with `v` tangential. -/
+private theorem disc_cell_nodes_large {ν : Measure ℂ} {Ri : Set ℂ} {ci : ℂ} {A B ρ₀ B' : ℝ}
+    {s : Bool} (hA : 0 < A) (hB : 0 ≤ B) (hB'3 : (B + 2) * A ≤ B') (hc : ci ∈ 𝔻)
+    (hRm : MeasurableSet Ri) (hR𝔻 : Ri ⊆ 𝔻) (hρi0 : 0 < massRadiusDisc ν ci)
+    (hmass : ν Ri = ((12 : ℕ) : ℝ≥0∞))
+    (hRs : ∀ w ∈ Ri, hypDist ci w ≤ A * massRadiusDisc ν ci)
+    (hsmall : ¬ massRadiusDisc ν ci ≤ ρ₀) : DiscCellNodes ν Ri ci A B ρ₀ B' s := by
+  unfold DiscCellNodes
+  set ρi := massRadiusDisc ν ci
+  set sr := A * ρi with hsr
+  obtain ⟨hb𝔻, hbd⟩ := barycentre_mem hc hRm hR𝔻 hRs (by rw [hmass]; norm_num)
+  set b := (12 : ℂ)⁻¹ * ∫ ζ in Ri, ζ ∂ν with hb
+  have hint1 : ∫ ζ in Ri, ζ ∂ν = 12 * b := by rw [hb]; ring
+  have hreal : ν.real (Ri) = 12 := by simp [Measure.real, hmass]
+  have hint0 : ∫ ζ in Ri, ζ ^ 0 ∂ν = 12 := by
+    simp only [pow_zero, setIntegral_const, hreal]; norm_num
+  cases hsel : s
+  · refine ⟨2, Multiset.replicate 12 b, by simp, le_rfl, fun h ↦ absurd h hsmall, ?_,
+      fun w hw ↦ by rw [Multiset.eq_of_mem_replicate hw]; exact hb𝔻, fun w hw ↦ ?_,
+      fun _ w hw ↦ ?_, fun h ↦ by simp at h⟩
+    · intro j hj
+      interval_cases j
+      · rw [hint0]; simp; norm_num
+      · simp only [pow_one, Multiset.map_replicate, Multiset.sum_replicate, hint1]
+        norm_num
+    · rw [Multiset.eq_of_mem_replicate hw]
+      refine hbd.trans ?_
+      rw [hsr]
+      nlinarith [mul_le_mul_of_nonneg_right hB'3 hρi0.le, mul_pos hA hρi0,
+        mul_nonneg (mul_nonneg hB hA.le) hρi0.le]
+    · rw [Multiset.eq_of_mem_replicate hw]
+      refine hbd.trans ?_
+      rw [hsr]
+      nlinarith [mul_le_mul_of_nonneg_right hB'3 hρi0.le, mul_pos hA hρi0,
+        mul_nonneg (mul_nonneg hB hA.le) hρi0.le]
+  · obtain ⟨v, hv1, hv2, hd1, hd2⟩ := exists_tangent_pair hb𝔻 (d := (B + 1) * sr)
+      (by positivity)
+    have hdist : ∀ w ∈ Multiset.replicate 6 (b + v) + Multiset.replicate 6 (b - v),
+        w ∈ 𝔻 ∧ hypDist b w = (B + 1) * sr := by
+      intro w hw
+      rcases Multiset.mem_add.1 hw with h | h
+      · rw [Multiset.eq_of_mem_replicate h]; exact ⟨hv1, hd1⟩
+      · rw [Multiset.eq_of_mem_replicate h]; exact ⟨hv2, hd2⟩
+    refine ⟨2, Multiset.replicate 6 (b + v) + Multiset.replicate 6 (b - v), by simp,
+      le_rfl, fun h ↦ absurd h hsmall, ?_, fun w hw ↦ (hdist w hw).1, fun w hw ↦ ?_,
+      fun h ↦ by simp at h, fun _ w hw ↦ ?_⟩
+    · intro j hj
+      interval_cases j
+      · rw [hint0]; simp; norm_num
+      · simp only [pow_one, Multiset.map_add, Multiset.map_replicate, Multiset.sum_add,
+          Multiset.sum_replicate, hint1, nsmul_eq_mul]
+        push_cast; ring
+    · obtain ⟨hw𝔻, hdw⟩ := hdist w hw
+      have := hypDist_triangle hc hb𝔻 hw𝔻
+      calc hypDist ci w ≤ sr + (B + 1) * sr := by linarith
+        _ = (B + 2) * A * ρi := by rw [hsr]; ring
+        _ ≤ B' * ρi := by gcongr
+    · obtain ⟨hw𝔻, hdw⟩ := hdist w hw
+      have := hypDist_triangle hb𝔻 hc hw𝔻
+      have h3 : hypDist b ci = hypDist ci b := hypDist_comm _ _
+      calc B * A * ρi = (B + 1) * sr - sr := by rw [hsr]; ring
+        _ ≤ hypDist ci w := by linarith
+
 /-- Disc: small cells (`ρ(c i) ≤ ρ₀`) use Lemma 5 (order 3); large cells use `N` copies of the
 barycentre (order 2), or, if selected, `6` copies each of `b ± v` (`v` tangential). -/
 theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
@@ -298,158 +488,19 @@ theorem exists_nodes_disc (A : ℝ) (hA : 0 < A) :
         ∀ i, sel i = true → ∀ w ∈ Λ i, B * A * massRadiusDisc ν (c i) ≤ hypDist (c i) w := by
   refine ⟨72 * A, by positivity, fun B hB ↦ ?_⟩
   set ρ₀ := 1 / (100 * (B + 6) * (A + 1)) with hρ₀
-  set B' := max (72 * A) (max (24 * (B + 6) * A) ((B + 2) * A)) with hB'
+  set B' := max (72 * A) (max (24 * (B + 6) * A) ((B + 2) * A))
   have hB'1 : 72 * A ≤ B' := le_max_left _ _
   have hB'2 : 24 * (B + 6) * A ≤ B' := (le_max_left _ _).trans (le_max_right _ _)
   have hB'3 : (B + 2) * A ≤ B' := (le_max_right _ _).trans (le_max_right _ _)
   refine ⟨ρ₀, B', by positivity, le_trans (by positivity) hB'1, fun ν η R c hC hρ sel ↦ ?_⟩
   have hci := hC.center_mem'
-  have hex : ∀ i, ∃ (mi : ℕ) (L : Multiset ℂ), Multiset.card L = 12 ∧ 2 ≤ mi ∧
-      (massRadiusDisc ν (c i) ≤ ρ₀ → 3 ≤ mi) ∧
-      (∀ j < mi, ∫ ζ in R i, ζ ^ j ∂ν = (L.map (· ^ j)).sum) ∧ (∀ w ∈ L, w ∈ 𝔻) ∧
-      (∀ w ∈ L, hypDist (c i) w ≤ B' * massRadiusDisc ν (c i)) ∧
-      (sel i = false → ∀ w ∈ L, hypDist (c i) w ≤ 72 * A * massRadiusDisc ν (c i)) ∧
-      (sel i = true → ∀ w ∈ L, B * A * massRadiusDisc ν (c i) ≤ hypDist (c i) w) := by
-    intro i
-    set ρi := massRadiusDisc ν (c i) with hρi
-    have hρi0 := hρ i
-    set sr := A * ρi with hsr
-    have hsr0 : 0 < sr := by positivity
-    have hc := hci i
-    have hcpos := one_sub_normSq_pos hc
-    have hRs : ∀ w ∈ R i, hypDist (c i) w ≤ sr := fun w hw ↦ hC.subset i w hw
-    have hR𝔻 : R i ⊆ 𝔻 := hC.subset_univ i
-    by_cases hsmall : ρi ≤ ρ₀
-    · -- small cell: Lemma 5 with order 3
-      set re := sr * Real.exp (2 * sr) * (1 - ‖c i‖ ^ 2) with hre
-      have hre0 : 0 ≤ re := by positivity
-      have hsupp : ν.restrict (R i) (closedBall (c i) re)ᶜ = 0 := by
-        rw [Measure.restrict_apply isClosed_closedBall.isOpen_compl.measurableSet]
-        convert measure_empty (μ := ν)
-        ext w
-        simp only [mem_inter_iff, mem_compl_iff, mem_closedBall, mem_empty_iff_false, iff_false,
-          not_and]
-        intro h1 h2
-        exact h1 (by rw [dist_eq_norm]; exact norm_sub_le_mul_exp hc (hR𝔻 h2) (hRs w h2))
-      have hmass : ν.restrict (R i) univ = ((3 * 4 : ℕ) : ℝ≥0∞) := by
-        rw [Measure.restrict_apply MeasurableSet.univ, univ_inter, hC.measure_eq i]
-      obtain ⟨L, K, hL, hK, hLn, hKn, hmom⟩ :=
-        lemma5_moments 3 4 (by norm_num) (by norm_num) (ν.restrict (R i)) (c i) re hre0 hsupp
-          hmass (2 * B) (by positivity)
-      -- size of `sr`
-      have hsr_small : sr ≤ 1 / (100 * (B + 6)) := by
-        rw [hsr]
-        calc A * ρi ≤ A * ρ₀ := by gcongr
-          _ = A / (A + 1) * (1 / (100 * (B + 6))) := by rw [hρ₀]; field_simp
-          _ ≤ 1 * (1 / (100 * (B + 6))) := by
-              gcongr; rw [div_le_one (by positivity)]; linarith
-          _ = 1 / (100 * (B + 6)) := one_mul _
-      have hB6 : 6 ≤ B + 6 := by linarith
-      have hsr600 : sr ≤ 1 / 600 := hsr_small.trans (by
-        rw [div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith)
-      have hexp : Real.exp (2 * sr) ≤ 4 / 3 :=
-        (Real.exp_le_exp.2 (by linarith)).trans exp_quarter_le
-      have hexp1 : 1 ≤ Real.exp (2 * sr) := Real.one_le_exp (by positivity)
-      set τo := 6 * sr * Real.exp (2 * sr) with hτo
-      set τk := (2 * B + 12) * sr * Real.exp (2 * sr) with hτk
-      have hτo0 : 0 ≤ τo := by positivity
-      have hτk0 : 0 ≤ τk := by positivity
-      have hτo1 : τo ≤ 8 * sr := by rw [hτo]; nlinarith
-      have hτk1 : τk ≤ 16 * (B + 6) * sr := by rw [hτk]; nlinarith
-      have hτk6 : τk ≤ 1 / 6 := by
-        refine hτk1.trans ?_
-        have : (B + 6) * sr ≤ 1 / 100 := by
-          rw [le_div_iff₀ (by norm_num)]
-          have := hsr_small; rw [le_div_iff₀ (by positivity)] at this; nlinarith
-        nlinarith
-      have hτo6 : τo ≤ 1 / 6 := by linarith
-      have hLd : ∀ w ∈ L, w ∈ 𝔻 ∧ hypDist (c i) w ≤ 72 * A * ρi := by
-        intro w hw
-        have h1 : ‖w - c i‖ ≤ τo * (1 - ‖c i‖ ^ 2) := by
-          have := hLn w hw; push_cast at this; rw [hτo]; rw [hre] at this; linarith
-        obtain ⟨hw𝔻, hd⟩ := mem_disc_and_hypDist_le hc hτo0 hτo6 h1
-        exact ⟨hw𝔻, hd.trans (by nlinarith)⟩
-      have hKd : ∀ w ∈ K, w ∈ 𝔻 ∧ hypDist (c i) w ≤ 24 * (B + 6) * A * ρi ∧
-          B * A * ρi ≤ hypDist (c i) w := by
-        intro w hw
-        have hk := hKn w hw
-        push_cast at hk
-        have h1 : ‖w - c i‖ ≤ τk * (1 - ‖c i‖ ^ 2) := by
-          rw [hτk]; rw [hre] at hk; nlinarith [hk.2]
-        obtain ⟨hw𝔻, hd⟩ := mem_disc_and_hypDist_le hc hτk0 hτk6 h1
-        refine ⟨hw𝔻, hd.trans (by nlinarith), ?_⟩
-        have hlow := le_hypDist_of_norm hc hw𝔻 h1
-        refine le_trans ?_ hlow
-        rw [le_div_iff₀ (by positivity)]
-        have h2 : 2 * B * re ≤ ‖w - c i‖ := hk.1
-        rw [hre] at h2
-        have : B * sr * ((1 + τk) * (1 - ‖c i‖ ^ 2)) ≤ 2 * B * (sr * Real.exp (2 * sr) *
-            (1 - ‖c i‖ ^ 2)) := by
-          have h3 : (1 + τk) ≤ 2 * Real.exp (2 * sr) := by linarith
-          have := mul_le_mul_of_nonneg_left h3 (mul_nonneg (mul_nonneg hB hsr0.le) hcpos.le)
-          nlinarith
-        have e : B * A * ρi = B * sr := by rw [hsr]; ring
-        rw [e]
-        linarith
-      have hmomL : ∀ j < 3, ∫ ζ in R i, ζ ^ j ∂ν = (L.map (· ^ j)).sum := fun j hj ↦ (hmom j hj).1
-      have hmomK : ∀ j < 3, ∫ ζ in R i, ζ ^ j ∂ν = (K.map (· ^ j)).sum := fun j hj ↦ (hmom j hj).2
-      cases hsel : sel i
-      · refine ⟨3, L, by rw [hL], by norm_num, fun _ ↦ le_rfl, hmomL, fun w hw ↦ (hLd w hw).1,
-          fun w hw ↦ ?_, fun _ w hw ↦ (hLd w hw).2, fun h ↦ by simp at h⟩
-        exact (hLd w hw).2.trans (by nlinarith)
-      · refine ⟨3, K, by rw [hK], by norm_num, fun _ ↦ le_rfl, hmomK, fun w hw ↦ (hKd w hw).1,
-          fun w hw ↦ ?_, fun h ↦ by simp at h, fun _ w hw ↦ (hKd w hw).2.2⟩
-        exact (hKd w hw).2.1.trans (by nlinarith)
-    · -- large cell: barycentre, order 2
-      obtain ⟨hb𝔻, hbd⟩ := barycentre_mem hc (hC.measurableSet i) hR𝔻 hRs
-        (by rw [hC.measure_eq i]; norm_num)
-      set b := (12 : ℂ)⁻¹ * ∫ ζ in R i, ζ ∂ν with hb
-      have hint1 : ∫ ζ in R i, ζ ∂ν = 12 * b := by rw [hb]; ring
-      have hreal : ν.real (R i) = 12 := by simp [Measure.real, hC.measure_eq i]
-      have hint0 : ∫ ζ in R i, ζ ^ 0 ∂ν = 12 := by
-        simp only [pow_zero, setIntegral_const, hreal]; norm_num
-      cases hsel : sel i
-      · refine ⟨2, Multiset.replicate 12 b, by simp, le_rfl, fun h ↦ absurd h hsmall, ?_,
-          fun w hw ↦ by rw [Multiset.eq_of_mem_replicate hw]; exact hb𝔻, fun w hw ↦ ?_,
-          fun _ w hw ↦ ?_, fun h ↦ by simp at h⟩
-        · intro j hj
-          interval_cases j
-          · rw [hint0]; simp; norm_num
-          · simp only [pow_one, Multiset.map_replicate, Multiset.sum_replicate, hint1]
-            norm_num
-        · rw [Multiset.eq_of_mem_replicate hw]
-          refine hbd.trans ?_
-          rw [hsr]; nlinarith
-        · rw [Multiset.eq_of_mem_replicate hw]
-          refine hbd.trans ?_
-          rw [hsr]; nlinarith
-      · obtain ⟨v, hv1, hv2, hd1, hd2⟩ := exists_tangent_pair hb𝔻 (d := (B + 1) * sr)
-          (by positivity)
-        have hdist : ∀ w ∈ Multiset.replicate 6 (b + v) + Multiset.replicate 6 (b - v),
-            w ∈ 𝔻 ∧ hypDist b w = (B + 1) * sr := by
-          intro w hw
-          rcases Multiset.mem_add.1 hw with h | h
-          · rw [Multiset.eq_of_mem_replicate h]; exact ⟨hv1, hd1⟩
-          · rw [Multiset.eq_of_mem_replicate h]; exact ⟨hv2, hd2⟩
-        refine ⟨2, Multiset.replicate 6 (b + v) + Multiset.replicate 6 (b - v), by simp,
-          le_rfl, fun h ↦ absurd h hsmall, ?_, fun w hw ↦ (hdist w hw).1, fun w hw ↦ ?_,
-          fun h ↦ by simp at h, fun _ w hw ↦ ?_⟩
-        · intro j hj
-          interval_cases j
-          · rw [hint0]; simp; norm_num
-          · simp only [pow_one, Multiset.map_add, Multiset.map_replicate, Multiset.sum_add,
-              Multiset.sum_replicate, hint1, nsmul_eq_mul]
-            push_cast; ring
-        · obtain ⟨hw𝔻, hdw⟩ := hdist w hw
-          have := hypDist_triangle hc hb𝔻 hw𝔻
-          calc hypDist (c i) w ≤ sr + (B + 1) * sr := by linarith
-            _ = (B + 2) * A * ρi := by rw [hsr]; ring
-            _ ≤ B' * ρi := by gcongr
-        · obtain ⟨hw𝔻, hdw⟩ := hdist w hw
-          have := hypDist_triangle hb𝔻 hc hw𝔻
-          have h3 : hypDist b (c i) = hypDist (c i) b := hypDist_comm _ _
-          calc B * A * ρi = (B + 1) * sr - sr := by rw [hsr]; ring
-            _ ≤ hypDist (c i) w := by linarith
+  have hex : ∀ i, DiscCellNodes ν (R i) (c i) A B ρ₀ B' (sel i) := fun i ↦ by
+    by_cases hsmall : massRadiusDisc ν (c i) ≤ ρ₀
+    · exact disc_cell_nodes_small hA hB hρ₀ hB'1 hB'2 (hci i) (hC.subset_univ i) (hρ i)
+        (hC.measure_eq i) (fun w hw ↦ hC.subset i w hw) hsmall
+    · exact disc_cell_nodes_large hA hB hB'3 (hci i) (hC.measurableSet i) (hC.subset_univ i)
+        (hρ i) (hC.measure_eq i) (fun w hw ↦ hC.subset i w hw) hsmall
+  unfold DiscCellNodes at hex
   choose m Λ hcard hm2 hm3 hmom hmem hnear hfalse htrue using hex
   exact ⟨m, Λ, ⟨hcard, hmem, hnear, hmom⟩, hm2, hm3, hfalse, htrue⟩
 
