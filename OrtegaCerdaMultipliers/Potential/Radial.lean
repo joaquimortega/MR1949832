@@ -52,11 +52,15 @@ structure IsProfile (p : ℝ → ℝ) (b : ℝ) : Prop where
 def cutProfile (a b t : ℝ) : ℝ := 1 - Real.smoothTransition ((t - a) / (b - a))
 /-- `∫₀ᵇ σ ∈ [a, b]`. -/
 def profMass (a b : ℝ) : ℝ := ∫ t in (0 : ℝ)..b, cutProfile a b t
+/-- The normalised profile `σ / ∫σ`. -/
 def planeProfile (a b : ℝ) (t : ℝ) : ℝ := cutProfile a b t / profMass a b
 /-- The smooth radial kernel `ρ(z) = σ(|z|²)/(π ∫σ)`, of total mass 1. -/
 def kernel (a b : ℝ) (z : ℂ) : ℝ := planeProfile a b (‖z‖ ^ 2) / Real.pi
+/-- `g` of the normalised profile. -/
 def gFun (a b : ℝ) : ℝ → ℝ := gFn (planeProfile a b)
+/-- `s` of the normalised profile. -/
 def sFun (a b : ℝ) : ℝ → ℝ := sFn (planeProfile a b) b
+/-- `w` of the normalised profile. -/
 def wFun (a b : ℝ) : ℂ → ℝ := wFn (planeProfile a b) b
 
 /-! ## Statements -/

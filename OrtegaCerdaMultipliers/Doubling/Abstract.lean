@@ -458,7 +458,7 @@ theorem IsLocDoublingM.lemma3_fine [BallGeometry X] {μ : Measure X} (hd : IsLoc
         ring
 
 /-- **Lemma 3**, truncated form (contains the paper's statement on `δρ(w) ≤ d < R₁`). -/
-theorem IsLocDoublingM.lemma3 [BallGeometry X] [TopologicalSpace.SeparableSpace X]
+theorem IsLocDoublingM.lemma3 [BallGeometry X]
     {μ : Measure X} (hd : IsLocDoublingM μ) (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R)) :
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0, ∀ w : X,
@@ -551,7 +551,7 @@ theorem IsLocDoublingM.lemma3 [BallGeometry X] [TopologicalSpace.SeparableSpace 
     _ ≤ CF + K * CF' := by gcongr
 
 /-- **Lemma 3** as printed (region `δρ(w) ≤ d(z,w) < R₁`). -/
-theorem IsLocDoublingM.lemma3_paper [BallGeometry X] [TopologicalSpace.SeparableSpace X]
+theorem IsLocDoublingM.lemma3_paper [BallGeometry X]
     {μ : Measure X} (hd : IsLocDoublingM μ) (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞)
     (hm : ∃ R : ℝ, 0 < R ∧ ∀ x : X, 1 ≤ μ (ball x R)) :
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0, ∀ w : X,

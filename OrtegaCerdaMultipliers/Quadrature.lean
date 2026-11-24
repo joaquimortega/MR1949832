@@ -28,6 +28,7 @@ claim is false for general measures (see the blueprint, §0), and the relaxed fo
 open Finset Polynomial MeasureTheory Metric
 namespace OC
 
+/-- The Newton-type polynomial sequence `E_k` attached to the nodes `q`. -/
 noncomputable def newtonE (q : ℕ → ℂ) : ℕ → ℂ
   | 0 => 1
   | n + 1 => (-1) ^ n / (n + 1) * ∑ i : Fin (n + 1), (-1) ^ (i : ℕ) * newtonE q i * q (n + 1 - i)

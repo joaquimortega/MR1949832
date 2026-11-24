@@ -785,6 +785,7 @@ theorem lemma7_sup {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
 def planeKernel (α : ℝ) (z ζ : ℂ) : ℂ :=
   Complex.exp (2 * α * (conj ζ * z - ((‖ζ‖ ^ 2 : ℝ) : ℂ))) / ((Real.pi : ℂ) * (z - ζ))
 
+/-- The operator `f ↦ ∫ K_α(z, ζ) f(ζ)` of Lemma 8, with kernel `planeKernel`. -/
 def lemma8Op (α : ℝ) (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   ∫ ζ, planeKernel α z ζ * f ζ
 

@@ -708,7 +708,7 @@ theorem M03b.lemma3_fine [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) {m : ℕ}
         rw [ENNReal.ofReal_mul hK₁, ENNReal.ofReal_pow hq0]
 
 /-- **Lemma 3**, truncated form, uniform. -/
-theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : ℝ≥0) (R₀ : ℝ) :
+theorem lemma3_quant [BallGeometry X] (Cd : ℝ≥0) (R₀ : ℝ) :
     ∃ m₀ : ℕ, ∀ m : ℕ, m₀ ≤ m → ∀ δ R₁ : ℝ, 0 < δ → ∃ C : ℝ≥0,
       ∀ μ : Measure X, MeasClassM μ Cd R₀ → ∀ w : X,
         ∫⁻ z in ball w R₁,
