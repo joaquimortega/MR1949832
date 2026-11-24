@@ -600,28 +600,33 @@ theorem exists_hypBall_subset_discBox_row {R : ℝ} (hR : 0 < R) {y₁ : ℝ} (h
   rw [hk] at hre
   have hvim1 : v.im * (1 - t) < yc * (1 + t) := by linarith
   have hvim2 : yc * (1 - t) < v.im * (1 + t) := by linarith
-  rw [htu] at hvim1 hvim2
   have hu0 : 0 < u + 1 := by linarith
   have hv1 : v.im < u * yc := by
+    have e1 : v.im * (1 - t) * (u + 1) = v.im * 2 := by rw [htu]; field_simp; ring
+    have e2 : yc * (1 + t) * (u + 1) = yc * (2 * u) := by rw [htu]; field_simp; ring
     have : v.im * 2 < yc * (2 * u) := by
-      have := hvim1; field_simp at this; nlinarith
-    nlinarith
+      rw [← e1, ← e2]; exact mul_lt_mul_of_pos_right hvim1 hu0
+    linarith
   have hv2 : yc < u * v.im := by
+    have e1 : yc * (1 - t) * (u + 1) = yc * 2 := by rw [htu]; field_simp; ring
+    have e2 : v.im * (1 + t) * (u + 1) = v.im * (2 * u) := by rw [htu]; field_simp; ring
     have : yc * 2 < v.im * (2 * u) := by
-      have := hvim2; field_simp at this; nlinarith
-    nlinarith
+      rw [← e1, ← e2]; exact mul_lt_mul_of_pos_right hvim2 hu0
+    linarith
+  have hu2 : 1 < u ^ 2 := one_lt_pow₀ hu1 two_ne_zero
+  have hA := mul_lt_mul_of_pos_right hu2 hy
+  have hB := mul_lt_mul_of_pos_right hu1 hy
   have hy₁yc : y₁ ≤ v.im := by
     by_contra hcon
     push Not at hcon
-    have : u * v.im < u * y₁ := by nlinarith
-    rw [hyc] at hv2
-    nlinarith
+    have h3 : u * v.im < u * y₁ := mul_lt_mul_of_pos_left hcon (by linarith)
+    linarith
   refine ⟨⟨?_, ?_⟩, ⟨hy₁yc, ?_⟩⟩
-  · have : (u - 1) * yc < h / 2 := by rw [hh, hyc]; nlinarith
+  · have : (u - 1) * yc < h / 2 := by rw [hh, hyc]; linarith
     linarith
-  · have : (u - 1) * yc < h / 2 := by rw [hh, hyc]; nlinarith
+  · have : (u - 1) * yc < h / 2 := by rw [hh, hyc]; linarith
     linarith
-  · rw [hyc] at hv1; nlinarith
+  · rw [hyc] at hv1; linarith
 
 /-- A horocyclic box with `0 < y₁` lies in a compact subset of `𝔻`. -/
 theorem exists_isCompact_discBox_subset (x₁ x₂ : ℝ) {y₁ : ℝ} (hy : 0 < y₁) (y₂ : ℝ) :
@@ -644,9 +649,11 @@ theorem exists_isCompact_discBox_subset (x₁ x₂ : ℝ) {y₁ : ℝ} (hy : 0 <
       linarith
   have hcont : ContinuousOn cayleyInv K₀ := by
     unfold cayleyInv
-    exact (continuous_id.sub continuous_const).continuousOn.div
+    have hn : ContinuousOn (fun w : ℂ ↦ w - I) K₀ :=
+      (continuous_id.sub continuous_const).continuousOn
+    have hd : ContinuousOn (fun w : ℂ ↦ w + I) K₀ :=
       (continuous_id.add continuous_const).continuousOn
-      fun w hw ↦ cay_add_I_ne_zero (by linarith [hw.2.1])
+    exact hn.div hd fun w hw ↦ cay_add_I_ne_zero (by linarith [hw.2.1])
   refine ⟨cayleyInv '' K₀, hK₀c.image_of_continuousOn hcont, ?_, ?_⟩
   · rintro _ ⟨w, hw, rfl⟩
     exact cayleyInv_mem (by linarith [hw.2.1])
