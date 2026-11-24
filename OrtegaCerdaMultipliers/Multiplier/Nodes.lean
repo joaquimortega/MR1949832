@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Joaquim Ortega-Cerdà. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joaquim Ortega-Cerdà
+-/
 import OrtegaCerdaMultipliers.Multiplier.Basic
 import OrtegaCerdaMultipliers.Multiplier.Cells
 import OrtegaCerdaMultipliers.Quadrature
