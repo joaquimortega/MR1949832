@@ -43,9 +43,9 @@ theorem lintegral_Ioc_periodic {h : ℝ → ℝ≥0∞} {T : ℝ} (hT : 0 < T)
     ∫⁻ x in Ioc t (t + T), h x = ∫⁻ x in Ioc s (s + T), h x := by
   have : VAddInvariantMeasure (AddSubgroup.zmultiples T) ℝ volume :=
     ⟨fun c s _ => measure_preimage_add _ _ _⟩
-  exact IsAddFundamentalDomain.setLIntegral_eq (G := AddSubgroup.zmultiples T)
-    (isAddFundamentalDomain_Ioc hT t) (isAddFundamentalDomain_Ioc hT s) h
-    hh.map_vadd_zmultiples
+  have ht := isAddFundamentalDomain_Ioc hT t
+  have hs := isAddFundamentalDomain_Ioc hT s
+  exact ht.setLIntegral_eq hs h hh.map_vadd_zmultiples
 
 theorem polarCoord_symm_add_eq_circleMap (c : ℂ) (p : ℝ × ℝ) :
     Complex.polarCoord.symm p + c = circleMap c p.1 p.2 := by
@@ -241,7 +241,7 @@ theorem map_normSq_sub_volume (a : ℂ) :
       ENNReal.ofReal Real.pi • volume.restrict (Ioi (0 : ℝ)) := by
   have hφ : Measurable (fun z : ℂ ↦ ‖z - a‖ ^ 2) := by fun_prop
   ext s hs
-  rw [Measure.map_apply hφ hs, Measure.smul_apply, Measure.restrict_apply hs, smul_eq_mul]
+  rw [Measure.map_apply hφ hs, smul_apply, Measure.restrict_apply hs, smul_eq_mul]
   have := lintegral_comp_normSq_sub a (measurable_one.indicator hs)
   rw [lintegral_indicator_one hs, Measure.restrict_apply' measurableSet_Ioi] at this
   rw [← this, ← lintegral_indicator_one (hφ hs)]

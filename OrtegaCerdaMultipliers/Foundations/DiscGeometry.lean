@@ -350,7 +350,9 @@ theorem lap_comp_holomorphic {u : ℂ → ℝ} {F : ℂ → ℂ} {z : ℂ}
     (hFz.continuousAt.eventually hUev).and hF
   have hdbar : dbar (cplx (u ∘ F)) =ᶠ[𝓝 z]
       fun w ↦ dbar (cplx u) (F w) * conj (deriv F w) :=
-    hev.mono fun w hw ↦ dbar_comp_holomorphic hw.1 hw.2
+    hev.mono fun w hw ↦ by
+      have h := dbar_comp_holomorphic hw.1 hw.2
+      exact h
   have hA : DifferentiableAt ℝ (dbar (cplx u)) (F z) :=
     differentiableAt_dbar (differentiableAt_fderiv_of_contDiffAt (contDiffAt_cplx hu))
   have hB : DifferentiableAt ℝ (fun w ↦ dbar (cplx u) (F w)) z :=
@@ -639,7 +641,7 @@ theorem IsDiskSeparated.exists_tsum_lintegral_le {Γ : Set ℂ} (hΓ : IsDiskSep
   refine lintegral_mono fun z ↦ ?_
   by_cases hz : z ∈ 𝔻
   · rw [indicator_of_mem hz]
-    refine ENNReal.summable.tsum_le_of_sum_le fun t ↦ ?_
+    refine CompleteLattice.summable.tsum_le_of_sum_le fun t ↦ ?_
     classical
     simp only [Set.indicator_apply]
     rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul]
@@ -656,7 +658,7 @@ theorem IsDiskSeparated.exists_tsum_lintegral_le {Γ : Set ℂ} (hΓ : IsDiskSep
           exact ⟨a.2, by rw [pseudoHyp_comm]; exact ha⟩
       _ ≤ N := hN z hz
   · have h0 : ∀ w : Γ, {z ∈ 𝔻 | pseudoHyp (w : ℂ) z < s}.indicator F z = 0 :=
-      fun w ↦ indicator_of_notMem (fun h ↦ hz h.1) _
+      fun w ↦ indicator_of_notMem (by intro h; exact hz h.1) _
     rw [indicator_of_notMem hz, mul_zero]
     simp only [h0, tsum_zero, le_refl]
 

@@ -413,7 +413,7 @@ theorem hasCompactSupport_dbar {f : ℂ → ℂ} (hf : HasCompactSupport f) :
   refine (hf.fderiv (𝕜 := ℝ)).mono ?_
   intro z hz
   rw [Function.mem_support] at hz ⊢
-  contrapose! hz
+  contrapose hz
   simp [dbar, hz]
 
 theorem hasCompactSupport_dz {f : ℂ → ℂ} (hf : HasCompactSupport f) :
@@ -421,7 +421,7 @@ theorem hasCompactSupport_dz {f : ℂ → ℂ} (hf : HasCompactSupport f) :
   refine (hf.fderiv (𝕜 := ℝ)).mono ?_
   intro z hz
   rw [Function.mem_support] at hz ⊢
-  contrapose! hz
+  contrapose hz
   simp [dz, hz]
 
 theorem contDiff_cplx {n : WithTop ℕ∞} {φ : ℂ → ℝ} (hφ : ContDiff ℝ n φ) :

@@ -418,7 +418,7 @@ theorem IsProfile.exists_wFn_ge {p : ℝ → ℝ} {b : ℝ} (hp : IsProfile p b)
     ∃ C : ℝ, ∀ z : ℂ, η ≤ ‖z‖ → -C ≤ wFn p b z := by
   have hη2 : 0 < η ^ 2 := by positivity
   have hcont : ContinuousOn (fun t ↦ Real.log t + sFn p b t) (Icc (η ^ 2) b) :=
-    (Real.continuousOn_log.mono (fun t ht ↦ (hη2.trans_le ht.1).ne')).add
+    (Real.continuousOn_log.mono (fun t (ht : t ∈ Icc (η ^ 2) b) ↦ (hη2.trans_le ht.1).ne')).add
       hp.contDiff_sFn.continuous.continuousOn
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hcont
   refine ⟨max C 0, fun z hz ↦ ?_⟩

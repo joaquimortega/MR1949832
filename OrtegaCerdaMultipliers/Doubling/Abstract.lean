@@ -576,7 +576,7 @@ theorem measure_le_of_isPorous_scale [TopologicalSpace.SeparableSpace X] {μ : M
       constructor <;> linarith
   calc μ E ≤ μ (⋃ b ∈ u, ball b (4 * s)) := measure_mono hEcov
     _ ≤ ∑' b : u, μ (ball b (4 * s)) := measure_biUnion_le μ hucount _
-    _ ≤ ∑' b : u, (D : ℝ≥0∞) ^ k * μ (hole b) := ENNReal.tsum_le_tsum fun b ↦ hball b b.2
+    _ ≤ ∑' b : u, (D : ℝ≥0∞) ^ k * μ (hole b) := tsum_le_tsum fun b ↦ hball b b.2
     _ = (D : ℝ≥0∞) ^ k * ∑' b : u, μ (hole b) := ENNReal.tsum_mul_left
     _ = (D : ℝ≥0∞) ^ k * μ (⋃ b ∈ u, hole b) := by
         rw [measure_biUnion hucount hholedisj (fun _ _ ↦ measurableSet_ball)]
@@ -1177,7 +1177,7 @@ theorem IsLocDoublingM.lemma3_fine [BallGeometry X] {μ : Measure X} (hd : IsLoc
             rw [mul_pow, ← pow_mul, mul_comm n m, pow_mul, ENNReal.ofReal_mul (by positivity),
               ENNReal.ofReal_pow (pow_nonneg hθ.le m) n]
         _ = g n z := by simp only [hgdef, indicator_of_mem hz']
-        _ ≤ ∑' k, g k z := ENNReal.le_tsum (f := fun k ↦ g k z) n
+        _ ≤ ∑' k, g k z := le_tsum (f := fun k ↦ g k z) n
         _ ≤ g₀ z + ∑' k, g k z := le_add_self
   have hmass : ∀ n : ℕ, μ (ball w (r n)) ≤ (D : ℝ≥0∞) ^ (n + 2) := by
     intro n
@@ -1375,7 +1375,7 @@ theorem ofReal_log_le_tsum_indicator (x y : X) {R : ℝ} (hR : 0 < R) :
           Finset.sum_const, Finset.card_range, nsmul_eq_mul,
           ENNReal.ofReal_mul (Nat.cast_nonneg _), ENNReal.ofReal_natCast]
     _ ≤ ∑' k : ℕ, (ball x (R / 2 ^ k)).indicator (fun _ ↦ ENNReal.ofReal (Real.log 2)) y :=
-        ENNReal.sum_le_tsum _
+        sum_le_tsum _
 
 /-- **[Chr91, Lemma 2.3]**. -/
 theorem IsLocDoublingM.christ_lemma23 [BallGeometry X] {μ : Measure X}
@@ -1416,8 +1416,8 @@ theorem IsLocDoublingM.christ_lemma23 [BallGeometry X] {μ : Measure X}
     _ = ∑' k : ℕ, ∫⁻ y, (ball x (R / 2 ^ k)).indicator (fun _ ↦ c) y ∂μ :=
         lintegral_tsum fun k ↦ (measurable_const.indicator measurableSet_ball).aemeasurable
     _ ≤ ∑' k : ℕ, c * μ (ball x (R / 2 ^ k)) :=
-        ENNReal.tsum_le_tsum fun k ↦ lintegral_indicator_const_le _ _
-    _ ≤ ∑' k : ℕ, c * (q ^ k * μ (ball x R)) := ENNReal.tsum_le_tsum fun k ↦ by
+        tsum_le_tsum fun k ↦ lintegral_indicator_const_le _ _
+    _ ≤ ∑' k : ℕ, c * (q ^ k * μ (ball x R)) := tsum_le_tsum fun k ↦ by
         gcongr
         exact hstep k
     _ = c * (1 - q)⁻¹ * μ (ball x R) := by
@@ -1441,11 +1441,11 @@ theorem IsLocDoublingM.integrableOn_log_dist [BallGeometry X] {μ : Measure X}
     intro y hy
     rw [mem_ball, dist_comm] at hy
     by_cases hd0 : dist x y = 0
-    · rw [hd0, Real.log_zero, enorm_zero]
+    · rw [hd0, Real.log_zero, eNorm_zero]
       exact zero_le
     have hdpos : 0 < dist x y := lt_of_le_of_ne dist_nonneg (Ne.symm hd0)
     have hlogq : 0 ≤ Real.log (R / dist x y) := Real.log_nonneg ((one_le_div hdpos).2 hy.le)
-    rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_add hlogq (abs_nonneg _)]
+    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_add hlogq (abs_nonneg _)]
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Real.log_div hR.ne' hdpos.ne'] at hlogq ⊢
     rw [abs_le]
@@ -1516,7 +1516,7 @@ theorem IsLocDoublingM.smul {μ : Measure X} (hd : IsLocDoublingM μ) (c : ℝ�
     IsLocDoublingM (c • μ) := by
   obtain ⟨C, hC⟩ := hd
   refine ⟨C, fun x r hr h2r ↦ ?_⟩
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [smul_apply, smul_eq_mul]
   calc c * μ (ball x (2 * r)) ≤ c * (C * μ (ball x r)) := by gcongr; exact hC x r hr h2r
     _ = C * (c * μ (ball x r)) := by ring
 
@@ -1536,7 +1536,7 @@ theorem IsLocDoublingM.massRadiusM_inv_smul [BallGeometry X] {μ : Measure X}
   have hNt : (N : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top N
   have hiff : ∀ s : Set X, 1 ≤ ((N : ℝ≥0∞)⁻¹ • μ) s ↔ (N : ℝ≥0∞) ≤ μ s := by
     intro s
-    rw [Measure.smul_apply, smul_eq_mul, ← ENNReal.mul_le_iff_le_inv hN0 hNt, mul_one]
+    rw [smul_apply, smul_eq_mul, ← ENNReal.mul_le_iff_le_inv hN0 hNt, mul_one]
   have hNnn : ((N : ℝ≥0) : ℝ≥0∞) = (N : ℝ≥0∞) := by simp
   have hSν : ∃ r, 0 < r ∧ 1 ≤ ((N : ℝ≥0∞)⁻¹ • μ) (ball x r) :=
     ⟨rN, hrN, (hiff _).2 (by rw [← hNnn]; exact (hrNm x).le)⟩

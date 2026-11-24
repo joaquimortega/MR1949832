@@ -310,7 +310,7 @@ lemma integrable_cauchyKernel_prod {f g : ℂ → ℂ} (hf : Integrable f) (hg :
       calc ∫⁻ w, ‖f z * g w / (w - z)‖ₑ
           ≤ ∫⁻ w, ‖f z‖ₑ * K.indicator (fun w ↦ ENNReal.ofReal M * ENNReal.ofReal ‖w - z‖⁻¹) w := by
             refine lintegral_mono fun w ↦ ?_
-            rw [div_eq_mul_inv, enorm_mul, enorm_mul, mul_assoc]
+            rw [div_eq_mul_inv, eNorm_mul, eNorm_mul, mul_assoc]
             gcongr
             by_cases hw : w ∈ K
             · rw [indicator_of_mem hw, ← ofReal_norm, ← ofReal_norm,
@@ -318,10 +318,10 @@ lemma integrable_cauchyKernel_prod {f g : ℂ → ℂ} (hf : Integrable f) (hg :
                 ← ENNReal.ofReal_mul (le_trans (norm_nonneg _) (hM w))]
               exact ENNReal.ofReal_le_ofReal
                 (mul_le_mul_of_nonneg_right (hM w) (inv_nonneg.2 (norm_nonneg _)))
-            · rw [indicator_of_notMem hw, image_eq_zero_of_notMem_tsupport hw, enorm_zero,
+            · rw [indicator_of_notMem hw, image_eq_zero_of_notMem_tsupport hw, eNorm_zero,
                 zero_mul]
         _ = ‖f z‖ₑ * (ENNReal.ofReal M * ∫⁻ w in K, ENNReal.ofReal ‖w - z‖⁻¹) := by
-            rw [lintegral_const_mul' _ _ enorm_ne_top,
+            rw [lintegral_const_mul' _ _ eNorm_ne_top,
               lintegral_indicator (isClosed_tsupport g).measurableSet,
               lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
         _ ≤ _ := by gcongr; exact lintegral_inv_norm_sub_le_of_set K z

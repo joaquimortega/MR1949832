@@ -120,7 +120,7 @@ has at most `N` elements, then `∑_{a ∈ Γ} 1_{ball a R}(z) F(z) ≤ N F(z)`.
 theorem tsum_indicator_ball_le {R : ℝ} {N : ℕ} {z : ℂ}
     (hN : ∀ t : Finset ℂ, ↑t ⊆ Γ ∩ Metric.ball z R → t.card ≤ N) (F : ℂ → ℝ≥0∞) :
     ∑' a : Γ, (Metric.ball (a : ℂ) R).indicator F z ≤ (N : ℝ≥0∞) * F z := by
-  refine ENNReal.summable.tsum_le_of_sum_le fun s ↦ ?_
+  refine CompleteLattice.summable.tsum_le_of_sum_le fun s ↦ ?_
   classical
   simp only [Set.indicator_apply]
   rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul]
