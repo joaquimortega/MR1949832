@@ -21,10 +21,11 @@ explicit sum of poles, and Bernstein's inequality is replaced by Phragmén–Lin
 
 `theorem3_weighted_of_theoremOCS` is the corrected Theorem 3 proved from the hypothesis
 `TheoremOCS` ([OCS99], as the paper uses it), with the weighted integral
-`∫_{|z-x|<1} e^{-φ(z)} d|μ|(z) / |x − z|` in the conclusion.  `TheoremOCS` is proved in the companion
-project MR1682065 (`theoremOCS_holds`, `TheoremOCSProof.lean`), so `theorem3_weighted` (main
-statement) and `theorem3_of_lowerBound` are unconditional.  The printed `theorem3` is false
-(`not_theorem3_printed`, `theorem3_printed_false`); it is kept below only as a comment.
+`∫_{|z-x|<1} e^{-φ(z)} d|μ|(z) / |x − z|` in the conclusion.  `TheoremOCS` is proved in the
+companion project MR1682065 (`theoremOCS_holds`, `TheoremOCSProof.lean`), so
+`theorem3_weighted` (main statement) and `theorem3_of_lowerBound` are unconditional.  The printed
+`theorem3` is false (`not_theorem3_printed`, `theorem3_printed_false`); it is kept below only as
+a comment.
 -/
 
 open MeasureTheory Metric Set Complex
@@ -105,14 +106,12 @@ theorem isFiniteMeasure_divMeasure {ν : Measure ℂ} [IsFiniteMeasure ν] {L Ω
     _ < ∞ := by rw [lintegral_const]; exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top
                   (measure_lt_top ν univ)
 theorem divMeasure_withDensity_le {ν : Measure ℂ} {Ω : Set ℂ} (hΩ : MeasurableSet Ω)
-    {f : ℂ → ℂ} {φ : ℂ → ℝ} {α c : ℝ} (hf : Continuous f) (hφ : Continuous φ) (hc : 0 < c)
+    {f : ℂ → ℂ} {φ : ℂ → ℝ} {α c : ℝ} (hf : Continuous f) (hc : 0 < c)
     (hlow : ∀ z ∈ Ω, c * Real.exp (φ z - α * |z.im|) ≤ ‖f z‖) (s : Set ℂ) (hs : MeasurableSet s) :
     ((divMeasure ν Ω f).withDensity fun z ↦ ENNReal.ofReal (Real.exp (-α * |z.im|))) s ≤
       ENNReal.ofReal c⁻¹ * (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) s := by
   have hm1 := measurable_ofReal_one_div_norm hf
   have hm2 : Measurable fun z : ℂ ↦ ENNReal.ofReal (Real.exp (-α * |z.im|)) := by fun_prop
-  have hm3 : Measurable fun z : ℂ ↦ ENNReal.ofReal (Real.exp (-φ z)) :=
-    (hφ.measurable.neg.exp).ennreal_ofReal
   rw [divMeasure, ← withDensity_mul _ hm1 hm2, withDensity_apply _ hs,
     Measure.restrict_restrict hs, withDensity_apply _ hs, ← lintegral_const_mul' _ _
       ENNReal.ofReal_ne_top]
@@ -276,6 +275,22 @@ theorem one_add_mul_le_mul_one_add (M J : ℝ≥0∞) : 1 + M * J ≤ (1 + M) * 
   calc 1 + M * J ≤ 1 + M * J + (J + M) := le_self_add
     _ = (1 + M) * (1 + J) := by ring
 
+/-- A pointwise lower bound `c e^{ψ} ≤ ‖f z‖` with `c > 0` forces `f z ≠ 0`. -/
+theorem ne_zero_of_lowerBound {f : ℂ → ℂ} {z : ℂ} {c ψ : ℝ} (hc : 0 < c)
+    (h : c * Real.exp ψ ≤ ‖f z‖) : f z ≠ 0 := fun h0 ↦ by
+  rw [h0, norm_zero] at h
+  exact absurd h (not_le.2 (by positivity))
+
+/-- Converting the upper bound `‖f i z‖ ≤ C e^{φ - α|Im z|}` into the weight `e^{-φ}`. -/
+theorem norm_mul_exp_neg_le {ι : Type*} {f : ι → ℂ → ℂ} {φ : ℂ → ℝ} {α Cu : ℝ}
+    (hup : ∀ i z, ‖f i z‖ ≤ Cu * Real.exp (φ z - α * |z.im|)) :
+    ∀ i z, ‖f i z‖ * Real.exp (-φ z) ≤ Cu * Real.exp (-α * |z.im|) := by
+  intro i z
+  calc ‖f i z‖ * Real.exp (-φ z) ≤ Cu * Real.exp (φ z - α * |z.im|) * Real.exp (-φ z) :=
+        mul_le_mul_of_nonneg_right (hup i z) (Real.exp_pos _).le
+    _ = Cu * Real.exp (-α * |z.im|) := by
+        rw [mul_assoc, ← Real.exp_add]; ring_nf
+
 /-! 14.3 Theorem 3, corrected (weight inside the integral) -/
 /-- **Theorem 3, corrected**, from the Ortega-Cerdà–Seip theorem `TheoremOCS` (the paper's route:
 [OCS99] is used as a black box).  See `theorem3_weighted` for the unconditional form. -/
@@ -299,8 +314,8 @@ theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (
   obtain ⟨c, hc, hlow⟩ := hlowall ε hε
   have hφc : Continuous φ := continuousOn_univ.1 hφ.continuousOn
   -- the partition `ℂ = G ⊔ Gᶜ`, with `f i` bounded below on the `i`-th piece
-  set G : Set ℂ := {z | ∀ x : ℝ, f 0 x = 0 → ε * massRadiusLine μ x ≤ ‖z - x‖} with hG
-  set Ω : Fin 2 → Set ℂ := ![G, Gᶜ] with hΩ
+  set G : Set ℂ := {z | ∀ x : ℝ, f 0 x = 0 → ε * massRadiusLine μ x ≤ ‖z - x‖}
+  set Ω : Fin 2 → Set ℂ := ![G, Gᶜ]
   have hGm : MeasurableSet G := (isClosed_setOf_forall_zero_le (f 0) μ ε).measurableSet
   have hΩm : ∀ i, MeasurableSet (Ω i) := measurableSet_fin_two_partition hGm
   have hΩlow : ∀ i, ∀ z ∈ Ω i, c * Real.exp (φ z - α * |z.im|) ≤ ‖f i z‖ := by
@@ -311,19 +326,11 @@ theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (
       fin_cases j
       · exact absurd hj hz
       · exact hlow 1 z hj
-  have hf0 : ∀ i, ∀ z ∈ Ω i, f i z ≠ 0 := fun i z hz h ↦ by
-    have h1 := hΩlow i z hz
-    rw [h, norm_zero] at h1
-    exact absurd h1 (not_le.2 (by positivity))
-  have hfu : ∀ i z, ‖f i z‖ * Real.exp (-φ z) ≤ Cu * Real.exp (-α * |z.im|) := by
-    intro i z
-    calc ‖f i z‖ * Real.exp (-φ z) ≤ Cu * Real.exp (φ z - α * |z.im|) * Real.exp (-φ z) :=
-          mul_le_mul_of_nonneg_right (hup i z) (Real.exp_pos _).le
-      _ = Cu * Real.exp (-α * |z.im|) := by
-          rw [mul_assoc, ← Real.exp_add]; ring_nf
+  have hf0 : ∀ i, ∀ z ∈ Ω i, f i z ≠ 0 := fun i z hz ↦ ne_zero_of_lowerBound hc (hΩlow i z hz)
+  have hfu := norm_mul_exp_neg_le hup
   -- the Ortega-Cerdà–Seip constant for the weight `α|Im z|` and Carleson constant `c⁻¹ K`
   obtain ⟨CO, hCO⟩ := hOCS α hα ((c⁻¹).toNNReal * K)
-  set m : ℝ := c⁻¹ * Real.exp α with hm_def
+  set m : ℝ := c⁻¹ * Real.exp α
   refine ⟨2 * Cu.toNNReal * CO * (1 + m.toNNReal), fun ν σ L hν hL hνL hσ hσ1 hcar ↦ ?_⟩
   have := hν
   have hfin : ∀ i, IsFiniteMeasure (divMeasure ν (Ω i) (f i)) := fun i ↦
@@ -345,7 +352,7 @@ theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (
     · intro x r hr
       calc _ ≤ ENNReal.ofReal c⁻¹ *
               (ν.withDensity fun z ↦ ENNReal.ofReal (Real.exp (-φ z))) (ball (x : ℂ) r) :=
-            divMeasure_withDensity_le (hΩm i) (hfd i).continuous hφc hc (hΩlow i) _
+            divMeasure_withDensity_le (hΩm i) (hfd i).continuous hc (hΩlow i) _
               measurableSet_ball
         _ ≤ ENNReal.ofReal c⁻¹ * (K * ENNReal.ofReal r) := by gcongr; exact hcar x r hr
         _ = ((c⁻¹.toNNReal * K : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal r := by
@@ -387,7 +394,8 @@ theorem theorem3_weighted_of_theoremOCS (hOCS : TheoremOCS) (φ : ℂ → ℝ) (
           push_cast; rw [ENNReal.ofReal, ENNReal.ofReal]; ring
 
 /-- **Theorem 3, corrected** (paper, p. 358): `∂̄u = σν` has a solution, holomorphic off `L`, with
-`|u| e^{-φ} → 0` at `∞` and `|u(x)| e^{-φ(x)} ≤ C (1 + ∫_{|z-x|<1} e^{-φ(z)} d|ν|(z) / |x − z|)` on `ℝ`.
+`|u| e^{-φ} → 0` at `∞` and
+`|u(x)| e^{-φ(x)} ≤ C (1 + ∫_{|z-x|<1} e^{-φ(z)} d|ν|(z) / |x − z|)` on `ℝ`.
 Unconditional: `TheoremOCS` is proved in MR1682065 (`theoremOCS_holds`). -/
 theorem theorem3_weighted (φ : ℂ → ℝ) (μ : Measure ℂ)
     (hφ : IsSubharmonicWeight univ φ μ) (hd : IsLocallyDoublingLine μ)
@@ -476,11 +484,8 @@ def cexWeight (z : ℂ) : ℝ := |z.im| + z.re * z.im
 /-- `μ₀ = 2 · (Lebesgue measure on ℝ)`. -/
 def cexMeasure : Measure ℂ := (2 : ℝ≥0∞) • (volume : Measure ℝ).map (fun t : ℝ ↦ (t : ℂ))
 
-theorem measurableEmbedding_ofReal_complex : MeasurableEmbedding ((↑) : ℝ → ℂ) :=
-  Complex.isometry_ofReal.isClosedEmbedding.measurableEmbedding
-
 theorem cexMeasure_apply (s : Set ℂ) : cexMeasure s = 2 * volume (((↑) : ℝ → ℂ) ⁻¹' s) := by
-  rw [cexMeasure, smul_apply, measurableEmbedding_ofReal_complex.map_apply, smul_eq_mul]
+  rw [cexMeasure, smul_apply, measurableEmbedding_ofReal'.map_apply, smul_eq_mul]
 
 theorem cexMeasure_lineInterval (x r : ℝ) :
     cexMeasure (lineInterval x r) = 2 * ENNReal.ofReal (2 * r) := by
@@ -497,7 +502,7 @@ theorem isSubharmonicWeight_abs_im : IsSubharmonicWeight univ (fun z : ℂ ↦ |
     exact ENNReal.mul_lt_top (by simp)
       (Complex.isometry_ofReal.isClosedEmbedding.isCompact_preimage hK).measure_lt_top
   · rw [integral_abs_im_mul_laplacian χ hχ hc, cexMeasure, integral_smul_measure,
-      measurableEmbedding_ofReal_complex.integral_map]
+      measurableEmbedding_ofReal'.integral_map]
     simp
 
 /-- `Re z · Im z = Im (z²/2)` is harmonic. -/
@@ -516,7 +521,7 @@ theorem cex_isSubharmonicWeight : IsSubharmonicWeight univ cexWeight cexMeasure 
   isSubharmonicWeight_abs_im.add_harmonic isOpen_univ harmonicOnNhd_re_mul_im
 
 theorem cex_doubling : IsLocallyDoublingLine cexMeasure := by
-  refine ⟨?_, 2, fun x r hr _ ↦ ?_⟩
+  refine ⟨?_, 2, fun x r _ _ ↦ ?_⟩
   · have : ((↑) : ℝ → ℂ) ⁻¹' {z : ℂ | z.im ≠ 0} = ∅ := by ext t; simp
     rw [cexMeasure_apply, this, measure_empty, mul_zero]
   · rw [cexMeasure_lineInterval, cexMeasure_lineInterval,
@@ -548,7 +553,8 @@ theorem norm_mul_exp_neg_le_of_entire {G : ℂ → ℂ} (hG : Differentiable ℂ
     (hG.comp (differentiable_const _ |>.mul differentiable_id)).mul
       (Complex.differentiable_exp.comp differentiable_neg)
   -- `w ↦ ζ w` maps `cobounded` to `cobounded`
-  have hζc : Filter.Tendsto (fun w : ℂ ↦ ζ * w) (Bornology.cobounded ℂ) (Bornology.cobounded ℂ) := by
+  have hζc : Filter.Tendsto (fun w : ℂ ↦ ζ * w) (Bornology.cobounded ℂ)
+      (Bornology.cobounded ℂ) := by
     rw [← tendsto_norm_atTop_iff_cobounded]
     simpa [norm_mul, hζn] using tendsto_norm_cobounded_atTop (E := ℂ)
   have hlim : Filter.Tendsto F (Bornology.cobounded ℂ ⊓ Filter.principal {z | 0 < z.re})
@@ -575,12 +581,12 @@ theorem norm_mul_exp_neg_le_of_entire {G : ℂ → ℂ} (hG : Differentiable ℂ
       · have : (-I : ℂ) ≠ I := by
           intro h; have := congrArg Complex.im h; simp at this; norm_num at this
         simp only [this, ite_false]; ring_nf; simp
-    show ‖G (ζ * (x * I)) * Complex.exp (-(x * I))‖ ≤ M
+    change ‖G (ζ * (x * I)) * Complex.exp (-(x * I))‖ ≤ M
     rw [hr, norm_mul, Complex.norm_exp]
     simp only [neg_re, mul_re, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
       neg_zero, Real.exp_zero]
     exact hM _
-  show ‖F w‖ ≤ M
+  change ‖F w‖ ≤ M
   refine PhragmenLindelof.right_half_plane_of_tendsto_zero_on_real hFd.diffContOnCl
     ⟨0, by norm_num, 0, ?_⟩ hreal him hw
   simp only [zero_mul, Real.exp_zero]
@@ -599,7 +605,6 @@ theorem norm_le_mul_exp_abs_im_of_entire {G : ℂ → ℂ} (hG : Differentiable 
     rw [e, norm_mul, Complex.norm_exp] at this
     simp only [mul_re, I_re, I_im, zero_mul, zero_sub, neg_mul, one_mul, neg_neg] at this
     rw [abs_of_nonneg h]
-    have hpos := Real.exp_pos z.im
     calc ‖G z‖ = ‖G z‖ * Real.exp (-z.im) * Real.exp z.im := by
           rw [mul_assoc, ← Real.exp_add]; simp
       _ ≤ M * Real.exp z.im := by gcongr
@@ -737,7 +742,7 @@ theorem exists_entire_eqOn_compl {g : ℂ → ℂ} {L : Set ℂ} (hL : IsClosed 
 /-- A dyadic tail bound: `Σ_{k ∈ S, a 2^{-k} < r} a 2^{-k} ≤ 2r`. -/
 theorem sum_filter_geom_le (S : Finset ℕ) {a r : ℝ} (ha : 0 ≤ a) (hr : 0 < r) :
     ∑ k ∈ S.filter (fun k ↦ a * (1 / 2 : ℝ) ^ k < r), a * (1 / 2 : ℝ) ^ k ≤ 2 * r := by
-  set T := S.filter (fun k ↦ a * (1 / 2 : ℝ) ^ k < r) with hTdef
+  set T := S.filter (fun k ↦ a * (1 / 2 : ℝ) ^ k < r) 
   rcases T.eq_empty_or_nonempty with hT | hT
   · rw [hT, Finset.sum_empty]; positivity
   set k₀ := T.min' hT
@@ -911,7 +916,6 @@ theorem lintegral_cexNu_le_one (N : ℕ) (x : ℝ) :
         _ = Real.exp (cexWeight (cexW N k)) := by rw [cexM]; field_simp
     refine h2.trans ?_
     -- `s_k (x₀ - 1) ≥ N`, and `e^{-N} ≤ 1/N`
-    have hkN : (k : ℕ) ≤ N := k.isLt.le
     have h3 : (N : ℝ) ≤ cexS k * (cexX0 N - 1) := by
       rw [cexX0, cexS, add_sub_cancel_left]
       have h4 : (1 : ℝ) ≤ (1 / 2 : ℝ) ^ 6 * (1 / 2 : ℝ) ^ (k : ℕ) * 2 ^ (N + 6) := by
@@ -955,13 +959,62 @@ theorem im_cexPole_sub (x₀ s τ : ℝ) (hs : 0 < s) (hτ : 0 < τ) :
   field_simp
   ring
 
+/-- Real points are never poles. -/
+theorem ofReal_notMem_cexL (N : ℕ) (x : ℝ) : (x : ℂ) ∉ cexL N := by
+  rintro ⟨k, hk⟩
+  have h := congrArg Complex.im hk
+  rw [cexW_im, Complex.ofReal_im] at h
+  linarith [cexS_pos k]
+
+/-- The right-hand side of the Carleson-type bound on `ℝ`, for the point masses. -/
+theorem mul_lintegral_cexNu_le (C : ℝ≥0) (N : ℕ) (x : ℝ) :
+    (C : ℝ≥0∞) * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖)
+      ∂cexNu N) ≤ ENNReal.ofReal (2 * C) := by
+  calc _ ≤ (C : ℝ≥0∞) * (1 + 1) := by gcongr; exact lintegral_cexNu_le_one N x
+    _ = ENNReal.ofReal (2 * C) := by
+        rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_ofNat,
+          one_add_one_eq_two, mul_comm]
+
+/-- `|𝒞₀| ≤ N` on the real axis. -/
+theorem norm_cexP_real_le (N : ℕ) : ∀ x : ℝ, ‖cexP N x‖ ≤ N := by
+  intro x
+  unfold cexP
+  refine (norm_sum_le _ _).trans ?_
+  calc ∑ k : Fin N, ‖((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * cexPole (cexW N k) x‖
+      ≤ ∑ _k : Fin N, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ ?_
+    _ = N := by simp
+  have hs := cexS_pos k
+  have h1 : cexS k ≤ ‖(x : ℂ) - cexW N k‖ := by
+    have := abs_im_le_norm ((x : ℂ) - cexW N k)
+    rwa [sub_im, Complex.ofReal_im, zero_sub, cexW_im, neg_neg, abs_of_pos hs] at this
+  rw [norm_mul, cexPole, norm_mul, norm_inv, norm_inv, Complex.norm_real, Complex.norm_real,
+    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg Real.pi_pos.le]
+  have hexp : Real.exp (cexS k) ≤ Real.pi :=
+    (Real.exp_le_exp.2 (by linarith [cexS_le k])).trans
+      (Real.exp_one_lt_three.le.trans Real.pi_gt_three.le)
+  calc cexS k * Real.exp (cexS k) * (Real.pi⁻¹ * ‖(x : ℂ) - cexW N k‖⁻¹)
+      ≤ cexS k * Real.exp (cexS k) * (Real.pi⁻¹ * (cexS k)⁻¹) := by gcongr
+    _ = Real.exp (cexS k) * Real.pi⁻¹ := by field_simp
+    _ ≤ 1 := by rw [mul_inv_le_iff₀ Real.pi_pos]; linarith
+
+/-- `𝒞₀` decays at infinity. -/
+theorem tendsto_cexP_cocompact (N : ℕ) :
+    Filter.Tendsto (cexP N) (Filter.cocompact ℂ) (nhds 0) := by
+  rw [← Metric.cobounded_eq_cocompact]
+  have h := tendsto_finsetSum (Finset.univ : Finset (Fin N)) fun k _ ↦
+    ((Filter.tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded (cexW N k))).const_mul
+      (((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * (Real.pi : ℂ)⁻¹))
+  simp only [mul_zero, Finset.sum_const_zero] at h
+  refine h.congr fun z ↦ ?_
+  simp only [cexP, cexPole, Function.comp]
+  exact Finset.sum_congr rfl fun k _ ↦ by ring
+
 /-- **Oscillation of `𝒞₀`**: `|𝒞₀(x₀) - 𝒞₀(x₀ + 1/64)| ≥ N/(2π)`, because each pole
 contributes `≥ 1/(2π)` to the imaginary part, all with the same sign. -/
 theorem cexP_oscillation (N : ℕ) :
     (N : ℝ) / (2 * Real.pi) ≤ ‖cexP N (cexX0 N) - cexP N ((cexX0 N + 1 / 64 : ℝ) : ℂ)‖ := by
   set τ : ℝ := 1 / 64
   have hτ : (0 : ℝ) < τ := by norm_num
-  have hπ := Real.pi_pos
   have hterm : ∀ k : Fin N, 1 / (2 * Real.pi) ≤
       -(((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * (cexPole (cexW N k) (cexX0 N) -
         cexPole (cexW N k) ((cexX0 N + τ : ℝ) : ℂ))).im := by
@@ -1025,11 +1078,7 @@ theorem not_theorem3_printed :
     (isCompact_cexL N) (cexNu_compl_cexL N) continuous_cexSigma.measurable norm_cexSigma
     (cexNu_carleson N)
   -- real points are off `L`
-  have hreal : ∀ x : ℝ, (x : ℂ) ∉ cexL N := by
-    rintro x ⟨k, hk⟩
-    have h := congrArg Complex.im hk
-    rw [cexW_im, Complex.ofReal_im] at h
-    linarith [cexS_pos k]
+  have hreal := ofReal_notMem_cexL N
   have hEx : ∀ x : ℝ, ‖cexE x‖ = 1 := fun x ↦ by rw [norm_cexE]; simp
   -- `|u| ≤ 2C` on `ℝ`
   have hub : ∀ x : ℝ, ‖u x‖ ≤ 2 * C := by
@@ -1037,13 +1086,7 @@ theorem not_theorem3_printed :
     have h := hu4 x (hreal x)
     have hφ : cexWeight (x : ℂ) = 0 := by simp [cexWeight]
     rw [hφ, neg_zero, Real.exp_zero, mul_one] at h
-    have h2 : (C : ℝ≥0∞) * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖)
-        ∂cexNu N) ≤ ENNReal.ofReal (2 * C) := by
-      calc _ ≤ (C : ℝ≥0∞) * (1 + 1) := by gcongr; exact lintegral_cexNu_le_one N x
-        _ = ENNReal.ofReal (2 * C) := by
-            rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_ofNat,
-              one_add_one_eq_two, mul_comm]
-    exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (h.trans h2)
+    exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (h.trans (mul_lintegral_cexNu_le C N x))
   -- `g = e^{-H} u - 𝒞₀` is weakly holomorphic; its entire representative `G`
   have hg := isWeakDbarSol_mul_sub_poles (fun k : Fin N ↦ cexW N k) (fun k ↦ cexM N k)
     (fun k ↦ (cexM_pos N k).le) differentiable_cexE (σ := cexSigma) hu1
@@ -1058,27 +1101,7 @@ theorem not_theorem3_printed :
     exact sub_ne_zero.2 fun h ↦ hz ⟨k, h.symm⟩
   obtain ⟨G, hGd, hGeq⟩ := exists_entire_eqOn_compl (isCompact_cexL N).isClosed hg' hgc
   have hGx : ∀ z ∉ cexL N, G z = cexE z * u z - cexP N z := fun z hz ↦ (hGeq hz).symm
-  -- `|𝒞₀| ≤ N` on `ℝ`
-  have hPb : ∀ x : ℝ, ‖cexP N x‖ ≤ N := by
-    intro x
-    unfold cexP
-    refine (norm_sum_le _ _).trans ?_
-    calc ∑ k : Fin N, ‖((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * cexPole (cexW N k) x‖
-        ≤ ∑ _k : Fin N, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ ?_
-      _ = N := by simp
-    have hs := cexS_pos k
-    have h1 : cexS k ≤ ‖(x : ℂ) - cexW N k‖ := by
-      have := abs_im_le_norm ((x : ℂ) - cexW N k)
-      rwa [sub_im, Complex.ofReal_im, zero_sub, cexW_im, neg_neg, abs_of_pos hs] at this
-    rw [norm_mul, cexPole, norm_mul, norm_inv, norm_inv, Complex.norm_real, Complex.norm_real,
-      Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg Real.pi_pos.le]
-    have hexp : Real.exp (cexS k) ≤ Real.pi :=
-      (Real.exp_le_exp.2 (by linarith [cexS_le k])).trans
-        (Real.exp_one_lt_three.le.trans Real.pi_gt_three.le)
-    calc cexS k * Real.exp (cexS k) * (Real.pi⁻¹ * ‖(x : ℂ) - cexW N k‖⁻¹)
-        ≤ cexS k * Real.exp (cexS k) * (Real.pi⁻¹ * (cexS k)⁻¹) := by gcongr
-      _ = Real.exp (cexS k) * Real.pi⁻¹ := by field_simp
-      _ ≤ 1 := by rw [mul_inv_le_iff₀ Real.pi_pos]; linarith
+  have hPb := norm_cexP_real_le N
   -- `|G| ≤ 2C + N` on `ℝ`
   have hGb : ∀ x : ℝ, ‖G x‖ ≤ 2 * C + N := by
     intro x
@@ -1086,15 +1109,7 @@ theorem not_theorem3_printed :
     calc ‖cexE x * u x - cexP N x‖ ≤ ‖cexE x * u x‖ + ‖cexP N x‖ := norm_sub_le _ _
       _ ≤ 2 * C + N := by rw [norm_mul, hEx, one_mul]; linarith [hub x, hPb x]
   -- decay of `G`
-  have hP0 : Filter.Tendsto (cexP N) (Filter.cocompact ℂ) (nhds 0) := by
-    rw [← Metric.cobounded_eq_cocompact]
-    have h := tendsto_finsetSum (Finset.univ : Finset (Fin N)) fun k _ ↦
-      ((Filter.tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded (cexW N k))).const_mul
-        (((cexS k * Real.exp (cexS k) : ℝ) : ℂ) * (Real.pi : ℂ)⁻¹))
-    simp only [mul_zero, Finset.sum_const_zero] at h
-    refine h.congr fun z ↦ ?_
-    simp only [cexP, cexPole, Function.comp]
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
+  have hP0 := tendsto_cexP_cocompact N
   have hGdec : Filter.Tendsto (fun z ↦ ‖G z‖ * Real.exp (-|z.im|)) (Filter.cocompact ℂ)
       (nhds 0) := by
     have hlim : Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-cexWeight z) + ‖cexP N z‖)
@@ -1138,10 +1153,7 @@ theorem not_theorem3_printed :
   -- arithmetic: `N/8 ≤ N/(2π) ≤ 4C + (2C + N) e/64` contradicts `N ≥ 53 C + 1`
   have h1 : (N : ℝ) / 8 ≤ (N : ℝ) / (2 * Real.pi) :=
     div_le_div_of_nonneg_left (by positivity) (by positivity) (by linarith [Real.pi_le_four])
-  have h2 := h1.trans (hosc.trans hupper)
   have he := Real.exp_one_lt_three
-  have hC0 : (0 : ℝ) ≤ C := C.coe_nonneg
-  have hN0 : (0 : ℝ) ≤ N := N.cast_nonneg
   nlinarith
 
 /-! ### The printed Theorem 3 (comparator statement `theorem3`): FALSE, kept out of the build
@@ -1149,9 +1161,9 @@ theorem not_theorem3_printed :
 The printed statement (paper, p. 358) is false: for the weight `cexWeight` and `cexMeasure`
 (§4 of `blueprint/M14_Theorem3.md`) its conclusion fails (`not_theorem3_printed`,
 `theorem3_printed_false`).  With the hypothesis `TheoremOCS` below it was equivalent to
-`¬ TheoremOCS`; since `TheoremOCS` is proved (`theoremOCS_holds`), it is simply false.  The corrected
-statement is `theorem3_weighted` above (weight `e^{-φ}` inside the integral).  The printed form
-is recorded here as a comment only, so that no known-false `sorry` theorem is in the build:
+`¬ TheoremOCS`; since `TheoremOCS` is proved (`theoremOCS_holds`), it is simply false.  The
+corrected statement is `theorem3_weighted` above (weight `e^{-φ}` inside the integral).  The
+printed form is recorded here as a comment only, so that no known-false theorem is in the build:
 
 ```
 /-- **Theorem 3** (paper, p. 358), conditional on the Ortega-Cerdà–Seip theorem [OCS99]
@@ -1168,7 +1180,8 @@ theorem theorem3 (hOCS : TheoremOCS) (φ : ℂ → ℝ) (μ : Measure ℂ)
         Filter.Tendsto (fun z ↦ ‖u z‖ * Real.exp (-φ z)) (Filter.cocompact ℂ) (nhds 0) ∧
         ∀ x : ℝ, (x : ℂ) ∉ L →
           ENNReal.ofReal (‖u x‖ * Real.exp (-φ x)) ≤
-            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := sorry
+            C * (1 + ∫⁻ z in ball (x : ℂ) 1, ENNReal.ofReal (1 / ‖(x : ℂ) - z‖) ∂ν) := ...
+-- no proof exists: the statement is false
 ```
 -/
 
