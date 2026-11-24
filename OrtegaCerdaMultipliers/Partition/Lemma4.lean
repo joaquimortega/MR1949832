@@ -154,9 +154,11 @@ theorem l4_rect_subset_ball (x₁ x₂ y₁ y₂ : ℝ) :
   rw [mem_ball_zero_iff]
   have h0 := Complex.norm_le_abs_re_add_abs_im z
   have : |z.re| ≤ |x₁| + |x₂| := by
-    rw [abs_le]; constructor <;> linarith [neg_abs_le x₁, le_abs_self x₂, abs_nonneg x₁, abs_nonneg x₂]
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le x₁, le_abs_self x₂, abs_nonneg x₁, abs_nonneg x₂]
   have : |z.im| ≤ |y₁| + |y₂| := by
-    rw [abs_le]; constructor <;> linarith [neg_abs_le y₁, le_abs_self y₂, abs_nonneg y₁, abs_nonneg y₂]
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le y₁, le_abs_self y₂, abs_nonneg y₁, abs_nonneg y₂]
   linarith
 
 /-- The mass radius is at most `r` once the ball of radius `r` has mass `≥ 1`. -/
@@ -188,24 +190,24 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     rw [ball_eq_empty.2 (not_lt.1 hR₀), measure_empty] at h
     exact absurd h (not_lt.2 zero_le)
   -- constants, chosen before the measure
-  set R' : ℝ := ((N : ℝ) + 1) * R₀ with hR'
+  set R' : ℝ := ((N : ℝ) + 1) * R₀
   have hR'0 : 0 < R' := by positivity
-  set S : ℝ := 2 * R' with hS
+  set S : ℝ := 2 * R'
   have hS0 : 0 < S := by positivity
   obtain ⟨C₁, hC₁1, hC₁⟩ := doubling_upTo_quant (X := ℂ) Cd (16 * S)
-  set C₀ : ℕ := ⌈(C₁ : ℝ) ^ 5⌉₊ with hC₀
+  set C₀ : ℕ := ⌈(C₁ : ℝ) ^ 5⌉₊
   set C_E : ℝ := (C₁ : ℝ) ^ 3 with hCE
-  set L : ℝ := rectRatioBound C₀ C_E 1 with hL
+  set L : ℝ := rectRatioBound C₀ C_E 1
   have hL1 : 1 ≤ L := one_le_rectRatioBound _ _ _
   obtain ⟨c, Cb, δ, sb, hc, -, hδ, -, hb⟩ :=
     measure_ball_massRadiusM_bounds_quant (X := ℂ) Cd R' (12 * S)
   obtain ⟨CN, hCN1, hCN⟩ := massRadiusM_inv_smul_quant (X := ℂ) Cd R₀ N hN
   set M : ℝ := (C₁ : ℝ) ^ 6 * C₀ with hM
   have hM0 : 0 ≤ M := by positivity
-  set A' : ℝ := max 1 ((M / c) ^ (1 / δ)) with hA'
+  set A' : ℝ := max 1 ((M / c) ^ (1 / δ))
   have hA'1 : 1 ≤ A' := le_max_left _ _
-  have hL0 : 0 < L := by linarith
-  have hCN0 : 0 < CN := by linarith
+  have : 0 < L := by linarith
+  have : 0 < CN := by linarith
   refine ⟨1 / (6 * L), A' * CN, L, by positivity, by positivity, hL1, fun ν hν ↦ ?_⟩
   -- the measure `μ' = ν / N` and its properties
   set μ' : Measure ℂ := (N : ℝ≥0∞)⁻¹ • ν with hμ'
@@ -277,7 +279,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   choose X hXmono hXgap hXcov hXn using hrow
   choose n hn1 hnμ using hXn
   -- admissibility, the threshold `C₀` and the doubling scale
-  set P : ℝ → ℝ → ℝ → ℝ → Prop := fun x₁ x₂ y₁ y₂ ↦ x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S with hPdef
+  set P : ℝ → ℝ → ℝ → ℝ → Prop := fun x₁ x₂ y₁ y₂ ↦ x₂ - x₁ ≤ 2 * S ∧ y₂ - y₁ ≤ 2 * S
   have hPher : ∀ x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ, P x₁ x₂ y₁ y₂ → x₁ ≤ x₁' → x₂' ≤ x₂ →
       y₁ ≤ y₁' → y₂' ≤ y₂ → P x₁' x₂' y₁' y₂' := by
     intro x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' h h1 h2 h3 h4
@@ -316,7 +318,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   have hpart := exists_rect_partition hre' him' P hPher C₀ hC₀'
     (fun x₁ x₂ y₁ y₂ ↦ max (x₂ - x₁) (y₂ - y₁)) C_E 1 one_pos hσ'
   -- the blocks
-  set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2 with hnn
+  set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2
   set B : ℤ × ℤ → Set ℂ := fun jk ↦
     rect (X jk.1 jk.2) (X jk.1 (jk.2 + 1)) (jk.1 * S) ((jk.1 + 1) * S) with hB
   have hblock : ∀ jk : ℤ × ℤ, ∃ q : Fin (nn jk) → ℝ × ℝ × ℝ × ℝ,
@@ -358,7 +360,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     obtain ⟨k, hk⟩ := hXcov j z.re
     exact ⟨(j, k), hk, ⟨hj1, hj2⟩⟩
   set f : (Σ jk : ℤ × ℤ, Fin (nn jk)) → Set ℂ := fun p ↦
-    rect (q p.1 p.2).1 (q p.1 p.2).2.1 (q p.1 p.2).2.2.1 (q p.1 p.2).2.2.2 with hf
+    rect (q p.1 p.2).1 (q p.1 p.2).2.1 (q p.1 p.2).2.2.1 (q p.1 p.2).2.2.2
   obtain ⟨e, hedisj, heunion⟩ := l4_sigma_partition (fun jk ↦ hn1 jk.1 jk.2) B hBdisj f
     (fun jk ↦ hqdisj jk) (fun jk ↦ hqunion jk)
   refine ⟨fun i ↦ f (e i), ⟨fun i ↦ measurableSet_rect _ _ _ _, hedisj,
@@ -371,7 +373,7 @@ theorem l4_plane_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     have hrS : r ≤ S / 3 := by
       have := max_le hPb.1 hPb.2; linarith
     have hgx := hg.1
-    have hgy := hg.2.1
+    have := hg.2.1
     intro z hz w hw
     have hzp : dist z p < 18 * r := by
       have := hout (hsub hz); rw [mem_ball] at this; linarith
@@ -483,7 +485,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     rw [he, measure_empty] at h
     exact absurd h (not_lt.2 zero_le)
   -- constants, chosen before the measure
-  set R' : ℝ := (2 * ⌈(N : ℝ) / 1⌉₊ + 1) * R₀ with hR'
+  set R' : ℝ := (2 * ⌈(N : ℝ) / 1⌉₊ + 1) * R₀
   have hR'0 : 0 < R' := by positivity
   set Λ : ℝ := 64 * Real.exp (4 * R') with hΛ
   have hΛ1 : 1 < Λ := by
@@ -491,26 +493,26 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     rw [hΛ]; linarith
   have hΛ0 : 0 < Λ := by linarith
   obtain ⟨A₃, D₃, hA₃, hD₃, hio₃⟩ := discBox_inner_outer Λ 3 hΛ0 (by norm_num)
-  set k₃ : ℕ := ⌈A₃⌉₊ with hk₃
+  set k₃ : ℕ := ⌈A₃⌉₊
   have hk₃A : A₃ ≤ 2 ^ k₃ := (Nat.le_ceil A₃).trans (by exact_mod_cast (Nat.lt_two_pow_self).le)
   set R₁ : ℝ := 2 ^ (k₃ + 2) * D₃ with hR₁
   obtain ⟨C₁, hC₁1, hC₁⟩ := doubling_upTo_quant (X := HDisc) Cd R₁
-  set C₀ : ℕ := ⌈(C₁ : ℝ) ^ k₃⌉₊ with hC₀
-  obtain ⟨C_E, hC_E, hCE⟩ := euclid_doubling_cayley_quant Cd
+  set C₀ : ℕ := ⌈(C₁ : ℝ) ^ k₃⌉₊
+  obtain ⟨C_E, -, hCE⟩ := euclid_doubling_cayley_quant Cd
   set κ : ℝ := 1 / (48 * Λ) with hκ
   have hκ0 : 0 < κ := by positivity
-  set L : ℝ := rectRatioBound C₀ C_E κ with hL
+  set L : ℝ := rectRatioBound C₀ C_E κ
   have hL1 : 1 ≤ L := one_le_rectRatioBound _ _ _
-  obtain ⟨A_L, D_L, hA_L, hD_L, hioL⟩ := discBox_inner_outer Λ L hΛ0 hL1
+  obtain ⟨A_L, D_L, hA_L, -, hioL⟩ := discBox_inner_outer Λ L hΛ0 hL1
   obtain ⟨c, Cb, δ, sb, hc, -, hδ, -, hb⟩ :=
     measure_ball_massRadiusM_bounds_quant (X := HDisc) Cd R' (2 * D₃)
   obtain ⟨CN, hCN1, hCN⟩ := massRadiusM_inv_smul_quant (X := HDisc) Cd R₀ N hN
   set M : ℝ := (C₁ : ℝ) ^ (k₃ + 2) * C₀ with hM
   have hM0 : 0 ≤ M := by positivity
-  set A' : ℝ := max 1 ((M / c) ^ (1 / δ)) with hA'
+  set A' : ℝ := max 1 ((M / c) ^ (1 / δ))
   have hA'1 : 1 ≤ A' := le_max_left _ _
-  have hCN0 : 0 < CN := by linarith
-  have hA_L0 : 0 < A_L := by linarith
+  have : 0 < CN := by linarith
+  have : 0 < A_L := by linarith
   refine ⟨1 / A_L, A' * CN, L, Λ, by positivity, by positivity, hL1, hΛ0, fun ν hν ↦ ?_⟩
   -- the measure `μ' = ν / N`
   set μ' : Measure ℂ := (N : ℝ≥0∞)⁻¹ • ν with hμ'
@@ -553,7 +555,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
       μ' (hypBall p (2 ^ k * r)) ≤ (C₁ : ℝ≥0∞) ^ k * μ' (hypBall p r) := fun p hp ↦
     l4_iter (f := fun r ↦ μ' (hypBall p r)) (hdC p hp)
   -- the model measure `ν' = cayley_* (μ'|𝔻)` in the upper half-plane
-  set ν' : Measure ℂ := (μ'.restrict 𝔻).map cayley with hν'
+  set ν' : Measure ℂ := (μ'.restrict 𝔻).map cayley
   have hν'apply : ∀ S, MeasurableSet S → ν' S = μ' (cayleyPre S) := fun S hS ↦
     map_restrict_cayley_apply μ' hS
   have hν'rect : ∀ x₁ x₂ y₁ y₂, ν' (rect x₁ x₂ y₁ y₂) = μ' (discBox x₁ x₂ y₁ y₂) :=
@@ -590,7 +592,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   choose n hn1 hnμ using hXn
   -- admissibility, the threshold `C₀` and the Euclidean doubling scale
   set P : ℝ → ℝ → ℝ → ℝ → Prop := fun x₁ x₂ y₁ y₂ ↦
-    0 < y₁ ∧ y₂ - y₁ ≤ Λ * y₁ ∧ x₂ - x₁ ≤ 2 * Λ * y₁ with hPdef
+    0 < y₁ ∧ y₂ - y₁ ≤ Λ * y₁ ∧ x₂ - x₁ ≤ 2 * Λ * y₁
   have hPher : ∀ x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' : ℝ, P x₁ x₂ y₁ y₂ → x₁ ≤ x₁' → x₂' ≤ x₂ →
       y₁ ≤ y₁' → y₂' ≤ y₂ → P x₁' x₂' y₁' y₂' := by
     intro x₁ x₂ y₁ y₂ x₁' x₂' y₁' y₂' h h1 h2 h3 h4
@@ -602,7 +604,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     exact ENNReal.ofReal_le_ofReal (by push_cast; exact Nat.le_ceil _)
   have hβle : ∀ β : ℝ, 0 < β → A₃ * β ≤ D₃ → β ≤ D₃ := fun β hβ h ↦
     (le_mul_of_one_le_left hβ.le hA₃).trans h
-  have hk₃pos : (0 : ℝ) < 2 ^ k₃ := by positivity
+  have : (0 : ℝ) < 2 ^ k₃ := by positivity
   have hpow_ok : ∀ β : ℝ, 0 < β → β ≤ D₃ → ∀ i ≤ k₃ + 2, (2 : ℝ) ^ i * β ≤ 2 * R₁ := by
     intro β hβ hβD i hi
     have h1 : (2 : ℝ) ^ i ≤ 2 ^ (k₃ + 2) := pow_le_pow_right₀ (by norm_num) hi
@@ -646,7 +648,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
   have hpart := exists_rect_partition hre' him' P hPher
     C₀ hC₀' (fun _ _ y₁ _ ↦ y₁ / 16) C_E κ hκ0 hσ'
   -- the blocks
-  set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2 with hnn
+  set nn : ℤ × ℤ → ℕ := fun jk ↦ n jk.1 jk.2
   set B : ℤ × ℤ → Set ℂ := fun jk ↦
     rect (X jk.1 jk.2) (X jk.1 (jk.2 + 1)) (Λ ^ jk.1) (Λ * Λ ^ jk.1) with hB
   have hblock : ∀ jk : ℤ × ℤ, ∃ q : Fin (nn jk) → ℝ × ℝ × ℝ × ℝ,
@@ -662,7 +664,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     have hpj : 0 < Λ ^ j := zpow_pos hΛ0 j
     have hl : Λ * Λ ^ j - Λ ^ j = (Λ - 1) * Λ ^ j := by ring
     have hh : 0 < (Λ - 1) * Λ ^ j := mul_pos (by linarith) hpj
-    have e1 : (Λ - 1) * Λ ^ j = Λ * Λ ^ j - Λ ^ j := by ring
+    have : (Λ - 1) * Λ ^ j = Λ * Λ ^ j - Λ ^ j := by ring
     have e2 : 2 * Λ * Λ ^ j = 2 * (Λ * Λ ^ j) := by ring
     have hlt : Λ ^ j < Λ * Λ ^ j := (lt_mul_iff_one_lt_left hpj).2 hΛ1
     exact hpart (n j k) _ _ _ _ (hn1 j k)
@@ -696,7 +698,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
       rw [zpow_add_one₀ hΛ0.ne', mul_comm] at hj2
       exact hj2
   set f : (Σ jk : ℤ × ℤ, Fin (nn jk)) → Set ℂ := fun p ↦
-    rect (q p.1 p.2).1 (q p.1 p.2).2.1 (q p.1 p.2).2.2.1 (q p.1 p.2).2.2.2 with hf
+    rect (q p.1 p.2).1 (q p.1 p.2).2.1 (q p.1 p.2).2.2.1 (q p.1 p.2).2.2.2
   obtain ⟨e, hedisj, heunion⟩ := l4_sigma_partition (fun jk ↦ hn1 jk.1 jk.2) B hBdisj f
     (fun jk ↦ hqdisj jk) (fun jk ↦ hqunion jk)
   -- the pieces are the Cayley preimages
@@ -712,7 +714,7 @@ theorem l4_disc_strong (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 ≤ N) :
     exact (measurable_cayley (measurableSet_rect _ _ _ _)).inter measurableSet_ball |>.congr
       (by ext z; simp only [cayleyPre, mem_inter_iff, mem_preimage, mem_ofPred_eq]; exact and_comm)
   · -- disjointness
-    show Disjoint (cayleyPre (f (e i))) (cayleyPre (f (e j)))
+    change Disjoint (cayleyPre (f (e i))) (cayleyPre (f (e j)))
     exact Set.disjoint_left.2 fun z hz1 hz2 ↦ Set.disjoint_left.1 (hedisj hij) hz1.2 hz2.2
   · -- covering
     apply Subset.antisymm
