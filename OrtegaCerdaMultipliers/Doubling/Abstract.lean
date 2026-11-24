@@ -311,6 +311,80 @@ theorem IsLocDoublingM.decay_aux [BallGeometry X] {μ : Measure X}
       congr 1
       ring
 
+omit [OpensMeasurableSpace X] in
+/-- Pointwise bound for the fine part of Lemma 3: the integrand is dominated by a constant on
+`ball w ρ(w)` plus a geometric series of indicators of the balls `ball w (min (2^(n+1) ρ(w)) 1)`. -/
+private theorem lemma3_fine_pointwise {μ : Measure X}
+    (hne : ∀ x : X, ∃ r, 0 < r ∧ 1 ≤ μ (ball x r)) {C θ : ℝ} (hC : 0 < C) (hθ : 0 < θ)
+    (hdecay : ∀ (z ζ : X) (n : ℕ), 2 ^ n * massRadiusM μ z ≤ dist z ζ → dist z ζ ≤ 1 →
+      massRadiusM μ ζ / dist z ζ ≤ C * θ ^ n)
+    (m : ℕ) {δ : ℝ} (hδ : 0 < δ) (w z : X) (hρw : 0 < massRadiusM μ w) (hz : z ∈ ball w 1) :
+    ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * massRadiusM μ w)) ^ m) ≤
+      (ball w (massRadiusM μ w)).indicator (fun _ ↦ ENNReal.ofReal ((2 / δ) ^ m)) z +
+        ∑' n : ℕ, (ball w (min (2 ^ (n + 1) * massRadiusM μ w) 1)).indicator
+          (fun _ ↦ ENNReal.ofReal (C ^ m) * ENNReal.ofReal (θ ^ m) ^ n) z := by
+  set a : ℝ≥0∞ := ENNReal.ofReal ((2 / δ) ^ m)
+  set ρw := massRadiusM μ w
+  set r : ℕ → ℝ := fun n ↦ min (2 ^ (n + 1) * ρw) 1
+  set g₀ : X → ℝ≥0∞ := (ball w ρw).indicator (fun _ ↦ a) with hg₀def
+  set g : ℕ → X → ℝ≥0∞ := fun n ↦
+    (ball w (r n)).indicator (fun _ ↦ ENNReal.ofReal (C ^ m) * ENNReal.ofReal (θ ^ m) ^ n)
+    with hgdef
+  rw [mem_ball] at hz
+  have hρz : 0 ≤ massRadiusM μ z := massRadiusM_nonneg μ z
+  have hmaxpos : 0 < max (dist z w) (δ * ρw) := lt_max_of_lt_right (by positivity)
+  by_cases hdw : dist z w < ρw
+  · have hz' : z ∈ ball w ρw := hdw
+    have hlip : massRadiusM μ z ≤ ρw + dist z w := by
+      have := massRadiusM_le_add_dist hne w z
+      rwa [dist_comm] at this
+    have hratio : massRadiusM μ z / max (dist z w) (δ * ρw) ≤ 2 / δ := by
+      rw [div_le_div_iff₀ hmaxpos hδ]
+      have := le_max_right (dist z w) (δ * ρw)
+      nlinarith
+    calc ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * ρw)) ^ m) ≤ a :=
+          ENNReal.ofReal_le_ofReal (pow_le_pow_left₀ (by positivity) hratio m)
+      _ = g₀ z := by simp only [hg₀def, indicator_of_mem hz']
+      _ ≤ g₀ z + ∑' n, g n z := le_self_add
+  · rw [not_lt] at hdw
+    have hdpos : 0 < dist z w := hρw.trans_le hdw
+    have hq1 : 1 ≤ dist z w / ρw := (one_le_div hρw).2 hdw
+    set L := Real.logb 2 (dist z w / ρw)
+    have hL0 : 0 ≤ L := Real.logb_nonneg one_lt_two hq1
+    set n := ⌊L⌋₊
+    have h2L : (2 : ℝ) ^ L = dist z w / ρw := Real.rpow_logb (by norm_num) (by norm_num)
+      (by positivity)
+    have hn1 : 2 ^ n * ρw ≤ dist z w := by
+      have : (2 : ℝ) ^ n ≤ dist z w / ρw := by
+        calc (2 : ℝ) ^ n = 2 ^ (n : ℝ) := (Real.rpow_natCast 2 n).symm
+          _ ≤ 2 ^ L := Real.rpow_le_rpow_of_exponent_le (by norm_num) (Nat.floor_le hL0)
+          _ = _ := h2L
+      rwa [le_div_iff₀ hρw] at this
+    have hn2 : dist z w < 2 ^ (n + 1) * ρw := by
+      have : dist z w / ρw < 2 ^ (n + 1) := by
+        calc dist z w / ρw = 2 ^ L := h2L.symm
+          _ < 2 ^ ((n + 1 : ℕ) : ℝ) := Real.rpow_lt_rpow_of_exponent_lt one_lt_two (by
+              push_cast
+              exact Nat.lt_floor_add_one L)
+          _ = 2 ^ (n + 1) := Real.rpow_natCast 2 (n + 1)
+      rwa [div_lt_iff₀ hρw] at this
+    have hdec := hdecay w z n (by rw [dist_comm]; exact hn1) (by rw [dist_comm]; exact hz.le)
+    rw [dist_comm] at hdec
+    have hratio : massRadiusM μ z / max (dist z w) (δ * ρw) ≤ C * θ ^ n :=
+      (div_le_div_of_nonneg_left hρz hdpos (le_max_left _ _)).trans hdec
+    have hz' : z ∈ ball w (r n) := by
+      rw [mem_ball]
+      exact lt_min hn2 hz
+    calc ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * ρw)) ^ m)
+        ≤ ENNReal.ofReal ((C * θ ^ n) ^ m) :=
+          ENNReal.ofReal_le_ofReal (pow_le_pow_left₀ (by positivity) hratio m)
+      _ = ENNReal.ofReal (C ^ m) * ENNReal.ofReal (θ ^ m) ^ n := by
+          rw [mul_pow, ← pow_mul, mul_comm n m, pow_mul, ENNReal.ofReal_mul (by positivity),
+            ENNReal.ofReal_pow (pow_nonneg hθ.le m) n]
+      _ = g n z := by simp only [hgdef, indicator_of_mem hz']
+      _ ≤ ∑' k, g k z := le_tsum (f := fun k ↦ g k z) n
+      _ ≤ g₀ z + ∑' k, g k z := le_add_self
+
 /-- Fine part of Lemma 3: integration over `ball w 1`, uniformly in `w`. -/
 theorem IsLocDoublingM.lemma3_fine [BallGeometry X] {μ : Measure X} (hd : IsLocDoublingM μ)
     (hfin : ∀ x : X, ∀ r : ℝ, μ (ball x r) < ∞)
@@ -343,68 +417,13 @@ theorem IsLocDoublingM.lemma3_fine [BallGeometry X] {μ : Measure X} (hd : IsLoc
   set ρw := massRadiusM μ w
   have hρw : 0 < ρw := hd.massRadiusM_pos hfin (hne w)
   set r : ℕ → ℝ := fun n ↦ min (2 ^ (n + 1) * ρw) 1
-  set g₀ : X → ℝ≥0∞ := (ball w ρw).indicator (fun _ ↦ a) with hg₀def
+  set g₀ : X → ℝ≥0∞ := (ball w ρw).indicator (fun _ ↦ a)
   set g : ℕ → X → ℝ≥0∞ := fun n ↦
     (ball w (r n)).indicator (fun _ ↦ ENNReal.ofReal (C ^ m) * ENNReal.ofReal (θ ^ m) ^ n)
-    with hgdef
   have hpt : ∀ z ∈ ball w 1,
       ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * ρw)) ^ m) ≤
-        g₀ z + ∑' n, g n z := by
-    intro z hz
-    rw [mem_ball] at hz
-    have hρz : 0 ≤ massRadiusM μ z := massRadiusM_nonneg μ z
-    have hmaxpos : 0 < max (dist z w) (δ * ρw) := lt_max_of_lt_right (by positivity)
-    by_cases hdw : dist z w < ρw
-    · have hz' : z ∈ ball w ρw := hdw
-      have hlip : massRadiusM μ z ≤ ρw + dist z w := by
-        have := massRadiusM_le_add_dist hne w z
-        rwa [dist_comm] at this
-      have hratio : massRadiusM μ z / max (dist z w) (δ * ρw) ≤ 2 / δ := by
-        rw [div_le_div_iff₀ hmaxpos hδ]
-        have := le_max_right (dist z w) (δ * ρw)
-        nlinarith
-      calc ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * ρw)) ^ m) ≤ a :=
-            ENNReal.ofReal_le_ofReal (pow_le_pow_left₀ (by positivity) hratio m)
-        _ = g₀ z := by simp only [hg₀def, indicator_of_mem hz']
-        _ ≤ g₀ z + ∑' n, g n z := le_self_add
-    · rw [not_lt] at hdw
-      have hdpos : 0 < dist z w := hρw.trans_le hdw
-      have hq1 : 1 ≤ dist z w / ρw := (one_le_div hρw).2 hdw
-      set L := Real.logb 2 (dist z w / ρw)
-      have hL0 : 0 ≤ L := Real.logb_nonneg one_lt_two hq1
-      set n := ⌊L⌋₊
-      have h2L : (2 : ℝ) ^ L = dist z w / ρw := Real.rpow_logb (by norm_num) (by norm_num)
-        (by positivity)
-      have hn1 : 2 ^ n * ρw ≤ dist z w := by
-        have : (2 : ℝ) ^ n ≤ dist z w / ρw := by
-          calc (2 : ℝ) ^ n = 2 ^ (n : ℝ) := (Real.rpow_natCast 2 n).symm
-            _ ≤ 2 ^ L := Real.rpow_le_rpow_of_exponent_le (by norm_num) (Nat.floor_le hL0)
-            _ = _ := h2L
-        rwa [le_div_iff₀ hρw] at this
-      have hn2 : dist z w < 2 ^ (n + 1) * ρw := by
-        have : dist z w / ρw < 2 ^ (n + 1) := by
-          calc dist z w / ρw = 2 ^ L := h2L.symm
-            _ < 2 ^ ((n + 1 : ℕ) : ℝ) := Real.rpow_lt_rpow_of_exponent_lt one_lt_two (by
-                push_cast
-                exact Nat.lt_floor_add_one L)
-            _ = 2 ^ (n + 1) := Real.rpow_natCast 2 (n + 1)
-        rwa [div_lt_iff₀ hρw] at this
-      have hdec := hdecay w z n (by rw [dist_comm]; exact hn1) (by rw [dist_comm]; exact hz.le)
-      rw [dist_comm] at hdec
-      have hratio : massRadiusM μ z / max (dist z w) (δ * ρw) ≤ C * θ ^ n :=
-        (div_le_div_of_nonneg_left hρz hdpos (le_max_left _ _)).trans hdec
-      have hz' : z ∈ ball w (r n) := by
-        rw [mem_ball]
-        exact lt_min hn2 hz
-      calc ENNReal.ofReal ((massRadiusM μ z / max (dist z w) (δ * ρw)) ^ m)
-          ≤ ENNReal.ofReal ((C * θ ^ n) ^ m) :=
-            ENNReal.ofReal_le_ofReal (pow_le_pow_left₀ (by positivity) hratio m)
-        _ = ENNReal.ofReal (C ^ m) * ENNReal.ofReal (θ ^ m) ^ n := by
-            rw [mul_pow, ← pow_mul, mul_comm n m, pow_mul, ENNReal.ofReal_mul (by positivity),
-              ENNReal.ofReal_pow (pow_nonneg hθ.le m) n]
-        _ = g n z := by simp only [hgdef, indicator_of_mem hz']
-        _ ≤ ∑' k, g k z := le_tsum (f := fun k ↦ g k z) n
-        _ ≤ g₀ z + ∑' k, g k z := le_add_self
+        g₀ z + ∑' n, g n z := fun z hz ↦
+    lemma3_fine_pointwise hne hC hθ hdecay m hδ w z hρw hz
   have hmass : ∀ n : ℕ, μ (ball w (r n)) ≤ (D : ℝ≥0∞) ^ (n + 2) := by
     intro n
     have h := hD w w (r n) ρw (n + 1) hρw (min_le_right _ _)
