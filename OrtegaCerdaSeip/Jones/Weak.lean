@@ -92,11 +92,11 @@ theorem locallyIntegrableOn_jonesSol (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {θ : �
   have hQm : MeasurableSet Q := hQ.isClosed.measurableSet
   have hQ0 : ∀ z ∈ Q, 0 ≤ z.im := fun z hz ↦ (hQs hz).le
   have hmeas : Measurable fun p : ℂ × ℂ ↦ ‖jonesKernel ρ p.1 p.2 * θ p.2‖ₑ :=
-    (measurable_jonesKernel_mul ρ hθ).enorm
+    (measurable_jonesKernel_mul ρ hθ).eNorm
   refine ⟨(stronglyMeasurable_jonesSol ρ hθ).aestronglyMeasurable, ?_⟩
   calc ∫⁻ z in Q, ‖jonesSol ρ θ z‖ₑ
       ≤ ∫⁻ z in Q, ∫⁻ ζ, ‖jonesKernel ρ z ζ * θ ζ‖ₑ ∂ρ :=
-        lintegral_mono fun z ↦ enorm_integral_le_lintegral_enorm _
+        lintegral_mono fun z ↦ eNorm_integral_le_lintegral_eNorm _
     _ = ∫⁻ ζ, (∫⁻ z in Q, ‖jonesKernel ρ z ζ * θ ζ‖ₑ) ∂ρ :=
         lintegral_lintegral_swap hmeas.aemeasurable
     _ ≤ ENNReal.ofReal (jonesConst ρ) * (ENNReal.ofReal (2 * Real.pi) + volume Q) * ρ univ :=
@@ -125,15 +125,15 @@ theorem integrable_jonesKernel_mul_dbar (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {θ 
       Q.indicator (fun z ↦ ENNReal.ofReal M * ‖jonesKernel ρ z ζ * θ ζ‖ₑ) z := by
     intro z ζ
     by_cases hz : z ∈ Q
-    · rw [indicator_of_mem hz, enorm_mul, mul_comm, ← ofReal_norm (dbar β z)]
+    · rw [indicator_of_mem hz, eNorm_mul, mul_comm, ← ofReal_norm (dbar β z)]
       gcongr
       exact hM z
     · rw [indicator_of_notMem hz,
         image_eq_zero_of_notMem_tsupport (fun h ↦ hz (tsupport_dbar_subset β h)), mul_zero,
-        enorm_zero]
+        eNorm_zero]
   calc ∫⁻ p, ‖jonesKernel ρ p.1 p.2 * θ p.2 * dbar β p.1‖ₑ ∂(volume.prod ρ)
       = ∫⁻ ζ, ∫⁻ z, ‖jonesKernel ρ z ζ * θ ζ * dbar β z‖ₑ ∂volume ∂ρ :=
-        lintegral_prod_symm _ hmeas.enorm.aemeasurable
+        lintegral_prod_symm _ hmeas.eNorm.aemeasurable
     _ ≤ ∫⁻ ζ, ENNReal.ofReal M * (∫⁻ z in Q, ‖jonesKernel ρ z ζ * θ ζ‖ₑ) ∂ρ := by
         refine lintegral_mono fun ζ ↦ ?_
         calc ∫⁻ z, ‖jonesKernel ρ z ζ * θ ζ * dbar β z‖ₑ
@@ -191,8 +191,9 @@ theorem continuousAt_jonesKernel (h0 : ∀ᵐ w ∂ρ, 0 ≤ w.im) {ζ z₀ : �
     linarith
   have hden : (z₀ - ζ) * (z₀ - conj ζ) ≠ 0 := mul_ne_zero (sub_ne_zero.2 hne) hne2
   have h1 : ContinuousAt (fun z : ℂ ↦ (z - ζ) * (z - conj ζ)) z₀ := by fun_prop
-  have h2 : ContinuousAt (fun z : ℂ ↦ (ζ.im : ℂ) / ((z - ζ) * (z - conj ζ))) z₀ :=
-    continuousAt_const.div h1 hden
+  have h2 : ContinuousAt (fun z : ℂ ↦ (ζ.im : ℂ) / ((z - ζ) * (z - conj ζ))) z₀ := by
+    fun_prop (disch := exact hden)
+  unfold jonesKernel
   exact (continuousAt_const.mul h2).mul hE.cexp
 
 /-- Jones' solution is continuous in `ℂ⁺` off a closed set carrying `ρ`. -/

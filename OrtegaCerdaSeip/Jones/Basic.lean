@@ -332,8 +332,9 @@ theorem differentiableOn_jonesExponent {ρ : Measure ℂ} [IsFiniteMeasure ρ]
 theorem differentiableOn_jonesH {ρ : Measure ℂ} [IsFiniteMeasure ρ] (h0 : ∀ᵐ w ∂ρ, 0 ≤ w.im)
     {ζ : ℂ} (hζ : 0 < ζ.im) : DifferentiableOn ℂ (fun z ↦ jonesH ρ z ζ) {z | 0 < z.im} := by
   unfold jonesH
-  refine DifferentiableOn.div ?_ (by fun_prop) fun z hz h ↦ ?_
-  · exact (differentiableOn_jonesExponent h0 hζ).cexp.const_mul _
+  have hnum := (differentiableOn_jonesExponent h0 hζ).cexp.const_mul (2 * I * (ζ.im : ℂ))
+  have hden : DifferentiableOn ℂ (fun z : ℂ ↦ z - conj ζ) {z | 0 < z.im} := by fun_prop
+  refine hnum.div hden fun z hz h ↦ ?_
   · have := add_im_le_norm_sub_conj z ζ
     rw [h, norm_zero] at this
     have hz' : 0 < z.im := hz

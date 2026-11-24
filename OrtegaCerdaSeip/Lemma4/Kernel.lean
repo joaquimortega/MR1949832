@@ -197,15 +197,15 @@ theorem lintegral_lintegral_sinKernel_le {ε : ℝ} (hε : 0 < ε) {ν : Measure
     ∫⁻ z in Q, ∫⁻ ζ, ‖sinKernel ε (z - ζ) * θ ζ‖ₑ ∂ν ≤
       ENNReal.ofReal (Real.exp (ε * (R + b)) / Real.pi) *
         (ENNReal.ofReal (2 * Real.pi) + volume Q) * ∫⁻ ζ, ‖θ ζ‖ₑ ∂ν := by
-  rw [lintegral_lintegral_swap (aestronglyMeasurable_sinKernel_prod ε hθ).enorm]
+  rw [lintegral_lintegral_swap (aestronglyMeasurable_sinKernel_prod ε hθ).eNorm]
   rw [← lintegral_const_mul' _ _ (by
     exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by
       -- `volume Q` may be infinite only if `Q` is unbounded
       exact ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top,
         (measure_mono hQ |>.trans_lt (isCompact_closedBall 0 R).measure_lt_top).ne⟩))]
   refine lintegral_mono_ae (hb.mono fun ζ hζ ↦ ?_)
-  simp_rw [enorm_mul]
-  rw [lintegral_mul_const' _ _ enorm_ne_top]
+  simp_rw [eNorm_mul]
+  rw [lintegral_mul_const' _ _ eNorm_ne_top]
   by_cases h0 : θ ζ = 0
   · simp [h0]
   · gcongr ?_ * _
@@ -226,12 +226,12 @@ theorem kerSol_isWeakDbarSolMeasure {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ}
     exact ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
       (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, hQ.measure_lt_top⟩)) hθ.2
   have hupt : ∀ z, ‖kerSol ε ν θ z‖ₑ ≤ ∫⁻ ζ, ‖sinKernel ε (z - ζ) * θ ζ‖ₑ ∂ν :=
-    fun z ↦ enorm_integral_le_lintegral_enorm _
+    fun z ↦ eNorm_integral_le_lintegral_eNorm _
   refine ⟨?_, fun α hα hαc ↦ ?_⟩
   · rw [locallyIntegrable_iff]
     intro Q hQ
     refine ⟨hum.restrict, ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
+    rw [hasFiniteIntegral_iff_eNorm]
     exact (lintegral_mono hupt).trans_lt (hloc Q hQ)
   -- the identity (Fubini and `∂̄k = δ₀`)
   have hα1 : ContDiff ℝ 1 α := contDiff_one_of_top hα
@@ -242,7 +242,7 @@ theorem kerSol_isWeakDbarSolMeasure {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ}
   set F : ℂ → ℂ → ℂ := fun z ζ ↦ dbar α z * (sinKernel ε (z - ζ) * θ ζ) with hF
   have hint : Integrable (Function.uncurry F) (volume.prod ν) := by
     refine ⟨(continuous_dbar hα1).aestronglyMeasurable.comp_fst.mul hmeas, ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
+    rw [hasFiniteIntegral_iff_eNorm]
     calc ∫⁻ p, ‖Function.uncurry F p‖ₑ ∂(volume.prod ν)
         ≤ ∫⁻ z, ∫⁻ ζ, ‖F z ζ‖ₑ ∂ν := lintegral_prod_le _
       _ ≤ ∫⁻ z, K.indicator (fun z ↦ ENNReal.ofReal C *
@@ -252,7 +252,7 @@ theorem kerSol_isWeakDbarSolMeasure {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ}
           · rw [indicator_of_mem hz, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
             refine lintegral_mono fun ζ ↦ ?_
             simp only [hF]
-            rw [enorm_mul]
+            rw [eNorm_mul]
             gcongr
             rw [← ofReal_norm]
             exact ENNReal.ofReal_le_ofReal (hC z)
@@ -282,10 +282,10 @@ theorem kerSol_isWeakDbarSolMeasure {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ}
 theorem ofReal_inv_norm_le (v : ℂ) : ENNReal.ofReal ‖v‖⁻¹ ≤ (‖v‖₊ : ℝ≥0∞)⁻¹ := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  · rw [ENNReal.ofReal_inv_of_pos (norm_pos_iff.2 hv), ofReal_norm, enorm_eq_nnnorm]
+  · rw [ENNReal.ofReal_inv_of_pos (norm_pos_iff.2 hv), ofReal_norm, eNorm_eq_nnNorm]
 
 theorem enorm_le_coe_of_norm_le {v : ℂ} {M : ℝ≥0} (h : ‖v‖ ≤ M) : ‖v‖ₑ ≤ M := by
-  rw [enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm]
+  rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
   exact h
 
 /-- **The estimate on the real line** (p. 409, "it is plain that `u₁` has the properties"):
@@ -305,7 +305,7 @@ theorem enorm_kerSol_real_le {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ} {θ : 
         (ball (x : ℂ) 1)ᶜ.indicator (fun ζ ↦ ENNReal.ofReal (Real.exp (ε * b) / (Real.pi * ε)) *
           ENNReal.ofReal (1 / ‖(x : ℂ) - ζ‖ ^ 2)) ζ) := by
     filter_upwards [hb] with ζ hζ
-    rw [enorm_mul, mul_comm]
+    rw [eNorm_mul, mul_comm]
     by_cases h0 : θ ζ = 0
     · simp [h0]
     have hθζ : ‖θ ζ‖ₑ ≤ M := enorm_le_coe_of_norm_le (hθ ζ)
@@ -335,7 +335,7 @@ theorem enorm_kerSol_real_le {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ} {θ : 
           congr 2
           ring
   calc ‖kerSol ε ν θ x‖ₑ ≤ ∫⁻ ζ, ‖sinKernel ε ((x : ℂ) - ζ) * θ ζ‖ₑ ∂ν :=
-        enorm_integral_le_lintegral_enorm _
+        eNorm_integral_le_lintegral_eNorm _
     _ ≤ _ := lintegral_mono_ae hpt
     _ = M * (∫⁻ ζ in ball (x : ℂ) 1, ENNReal.ofReal (Real.exp (ε * b) / Real.pi) *
             (‖(x : ℂ) - ζ‖₊ : ℝ≥0∞)⁻¹ ∂ν +
@@ -351,8 +351,9 @@ theorem continuousAt_sinKernel {ε : ℝ} (hε : ε ≠ 0) {w : ℂ} (hw : w ≠
     ContinuousAt (sinKernel ε) w := by
   have hε' : (ε : ℂ) ≠ 0 := by exact_mod_cast hε
   have hpi : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
-  unfold sinKernel
-  exact ContinuousAt.div (by fun_prop) (by fun_prop) (by simp [hw, hε', hpi])
+  have hnum : ContinuousAt (fun w : ℂ ↦ Complex.sin (ε * w)) w := by fun_prop
+  have hden : ContinuousAt (fun w : ℂ ↦ (Real.pi : ℂ) * ε * w ^ 2) w := by fun_prop
+  exact hnum.div hden (by simp [hw, hε', hpi])
 
 /-- Continuity off the (compact) support. -/
 theorem continuousOn_kerSol {ε : ℝ} (hε : 0 < ε) {ν : Measure ℂ} [IsFiniteMeasure ν]
@@ -577,7 +578,7 @@ theorem lintegral_enorm_sinKernel_sub_mul_le {ε : ℝ} (hε : 0 < ε) {θ : ℂ
     intro ζ
     by_cases h0 : θ ζ = 0
     · simp [h0]
-    rw [indicator_of_mem (show ζ ∈ {ζ : ℂ | |ζ.im| ≤ b} from hθb ζ h0), enorm_mul, mul_comm]
+    rw [indicator_of_mem (show ζ ∈ {ζ : ℂ | |ζ.im| ≤ b} from hθb ζ h0), eNorm_mul, mul_comm]
     gcongr
     rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hθM ζ)
@@ -598,7 +599,7 @@ theorem integrable_sinKernel_sub_mul {ε : ℝ} (hε : 0 < ε) {θ : ℂ → ℂ
     Integrable (fun ζ ↦ sinKernel ε (z - ζ) * θ ζ) := by
   refine ⟨((measurable_sinKernel ε).comp
     (measurable_const.sub measurable_id)).aestronglyMeasurable.mul hθ, ?_⟩
-  rw [hasFiniteIntegral_iff_enorm]
+  rw [hasFiniteIntegral_iff_eNorm]
   exact (lintegral_enorm_sinKernel_sub_mul_le hε hb hθM hθb z).trans_lt ENNReal.ofReal_lt_top
 
 theorem norm_kerSol_volume_le {ε : ℝ} (hε : 0 < ε) {θ : ℂ → ℂ} {b M : ℝ}
@@ -607,7 +608,7 @@ theorem norm_kerSol_volume_le {ε : ℝ} (hε : 0 < ε) {θ : ℂ → ℂ} {b M 
       M * (Real.exp (ε * (|z.im| + b)) * (2 + 24 * b / (Real.pi * ε))) := by
   have hM : 0 ≤ M := (norm_nonneg _).trans (hθM 0)
   rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ofReal_norm]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_enorm_sinKernel_sub_mul_le hε hb hθM hθb z)
 
 /-- `k * g` is continuous for `g` continuous, bounded and supported in a horizontal strip. -/
@@ -628,7 +629,7 @@ theorem continuous_kerSol_volume {ε : ℝ} (hε : 0 < ε) {g : ℂ → ℂ} (hg
   have hkS : IntegrableOn (sinKernel ε) {w : ℂ | -B ≤ w.im ∧ w.im ≤ B} := by
     by_cases hB : 0 ≤ B
     · refine ⟨(measurable_sinKernel ε).aestronglyMeasurable, ?_⟩
-      rw [hasFiniteIntegral_iff_enorm]
+      rw [hasFiniteIntegral_iff_eNorm]
       exact (lintegral_sinKernel_strip_le hε (by linarith)
         (fun w h1 h2 ↦ abs_le.2 ⟨h1, h2⟩)).trans_lt ENNReal.ofReal_lt_top
     · have : {w : ℂ | -B ≤ w.im ∧ w.im ≤ B} = ∅ := by

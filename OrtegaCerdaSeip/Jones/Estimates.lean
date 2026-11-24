@@ -98,7 +98,7 @@ theorem norm_jonesSol_le_strip (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {K : ℝ≥0}
   have hpt : ∀ᵐ ζ ∂ρ, ‖jonesKernel ρ z ζ * θ ζ‖ₑ ≤ ENNReal.ofReal C *
       (ENNReal.ofReal (jonesWeight z ζ) * ENNReal.ofReal (Real.exp (-jonesPot ρ z ζ.im))) := by
     filter_upwards [h10] with ζ hζ
-    rw [enorm_mul, ← ENNReal.ofReal_mul (jonesWeight_nonneg hz0 (by linarith)),
+    rw [eNorm_mul, ← ENNReal.ofReal_mul (jonesWeight_nonneg hz0 (by linarith)),
       ← ENNReal.ofReal_mul hC0, ← ofReal_norm, ← ofReal_norm]
     calc ENNReal.ofReal ‖jonesKernel ρ z ζ‖ * ENNReal.ofReal ‖θ ζ‖
         ≤ ENNReal.ofReal ‖jonesKernel ρ z ζ‖ * ENNReal.ofReal 1 := by gcongr; exact hθ ζ
@@ -112,7 +112,7 @@ theorem norm_jonesSol_le_strip (h10 : ∀ᵐ w ∂ρ, 10 ≤ w.im) {K : ℝ≥0}
     (measurable_jonesWeight z).ennreal_ofReal
   have key : ‖jonesSol ρ θ z‖ₑ ≤ ENNReal.ofReal C :=
     calc ‖jonesSol ρ θ z‖ₑ ≤ ∫⁻ ζ, ‖jonesKernel ρ z ζ * θ ζ‖ₑ ∂ρ :=
-          enorm_integral_le_lintegral_enorm _
+          eNorm_integral_le_lintegral_eNorm _
       _ ≤ ∫⁻ ζ, ENNReal.ofReal C * (ENNReal.ofReal (jonesWeight z ζ) *
             ENNReal.ofReal (Real.exp (-jonesPot ρ z ζ.im))) ∂ρ := lintegral_mono_ae hpt
       _ = ENNReal.ofReal C * ∫⁻ ζ, ENNReal.ofReal (Real.exp (-jonesPot ρ z ζ.im))

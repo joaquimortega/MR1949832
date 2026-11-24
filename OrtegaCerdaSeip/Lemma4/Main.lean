@@ -100,7 +100,7 @@ theorem ten_le_im_of_mem_lowerSet {L : Set ℂ} {w : ℂ}
 theorem restrict_upper_compl_eq_zero {ν : Measure ℂ} {L : Set ℂ} (hνL : ν Lᶜ = 0) :
     ν.restrict {w | 10 ≤ w.im} (L ∩ {w | 10 ≤ w.im})ᶜ = 0 := by
   rw [Measure.restrict_apply' measurableSet_ten_le_im]
-  exact measure_mono_null (fun z hz hzL ↦ hz.1 ⟨hzL, hz.2⟩) hνL
+  exact measure_mono_null (t := Lᶜ) (fun z hz hzL ↦ hz.1 ⟨hzL, hz.2⟩) hνL
 
 theorem map_lower_compl_eq_zero {ν : Measure ℂ} {L : Set ℂ} (hL : IsCompact L) (hνL : ν Lᶜ = 0) :
     (ν.restrict {w | w.im ≤ -10}).map (starRingEnd ℂ)
@@ -325,6 +325,6 @@ theorem theoremOCS : TheoremOCS := by
   refine lintegral_mono_ae ?_
   filter_upwards [ae_restrict_of_ae hx0] with z hz
   have hpos : 0 < ‖(x : ℂ) - z‖ := norm_pos_iff.2 (sub_ne_zero.2 hz.symm)
-  rw [one_div, ENNReal.ofReal_inv_of_pos hpos, ofReal_norm, enorm_eq_nnnorm]
+  rw [one_div, ENNReal.ofReal_inv_of_pos hpos, ofReal_norm, eNorm_eq_nnNorm]
 
 end OCS

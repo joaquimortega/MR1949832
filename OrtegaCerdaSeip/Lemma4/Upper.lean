@@ -52,7 +52,7 @@ theorem dbar_cutoff_eq_zero {z : ℂ} (hz : z.im < 1 ∨ 2 < z.im) :
     rw [dbar_congr h]
     simp [dbar]
   · have h : (fun z ↦ (cutoff z : ℂ)) =ᶠ[𝓝 z] fun _ ↦ (1 : ℂ) := by
-      filter_upwards [(isOpen_lt continuous_const continuous_im).mem_nhds hz] with w hw
+      filter_upwards [continuous_im.continuousAt.eventually (lt_mem_nhds hz)] with w hw
       simp [cutoff_eq_one (le_of_lt hw)]
     rw [dbar_congr h]
     simp [dbar]
@@ -293,7 +293,7 @@ theorem continuous_upperG (hε : 0 < ε) (hL : IsCompact L) (hνL : ν Lᶜ = 0)
       rcases hz with hz | hz
       · filter_upwards [(isOpen_lt continuous_im continuous_const).mem_nhds hz] with w hw
         exact (upperG_eq_zero ε ν σ (Or.inl hw)).symm
-      · filter_upwards [(isOpen_lt continuous_const continuous_im).mem_nhds hz] with w hw
+      · filter_upwards [continuous_im.continuousAt.eventually (lt_mem_nhds hz)] with w hw
         exact (upperG_eq_zero ε ν σ (Or.inr hw)).symm
     exact continuousAt_const.congr h0
   · simp only [not_or, not_lt] at hz
@@ -351,8 +351,9 @@ theorem upperG_bounded (hε : 0 < ε) (hνL : ν Lᶜ = 0) (hL10 : ∀ w ∈ L, 
 /-- `∫_{1 ≤ Im ≤ 2} dm/(1 + |z|²) < ∞` (Poisson bound for the Carleson measure `m|_S`). -/
 theorem integrableOn_strip_inv_one_add_sq (A : ℝ) :
     IntegrableOn (fun z : ℂ ↦ A / (1 + ‖z‖ ^ 2)) {z : ℂ | 1 ≤ z.im ∧ z.im ≤ 2} := by
+  have hden : Continuous fun z : ℂ ↦ 1 + ‖z‖ ^ 2 := by fun_prop
   have hc : Continuous fun z : ℂ ↦ A / (1 + ‖z‖ ^ 2) :=
-    continuous_const.div (by fun_prop) fun z ↦ by positivity
+    continuous_const.div hden fun z ↦ (by positivity : (0 : ℝ) < 1 + ‖z‖ ^ 2).ne'
   refine ⟨hc.aestronglyMeasurable, ?_⟩
   have hP := (isCarlesonWith_volume_strip (a := 1) (b := 2) (by norm_num)).isCarlesonLarge.lintegral_poisson_le 0 le_rfl
   simp only [Complex.ofReal_zero, sub_zero, one_pow] at hP
@@ -367,7 +368,7 @@ theorem integrableOn_strip_inv_one_add_sq (A : ℝ) :
   rw [HasFiniteIntegral]
   simp_rw [heq]
   rw [lintegral_const_mul _ (by fun_prop)]
-  exact ENNReal.mul_lt_top enorm_lt_top (hP.trans_lt (by simp [ENNReal.mul_lt_top]))
+  exact ENNReal.mul_lt_top eNorm_lt_top (hP.trans_lt (by simp [ENNReal.mul_lt_top]))
 
 theorem integrable_upperG (hε : 0 < ε) (hL : IsCompact L) (hνL : ν Lᶜ = 0)
     (hL10 : ∀ w ∈ L, 10 ≤ w.im) (hσ : Measurable σ) (hσ1 : ∀ z, ‖σ z‖ ≤ 1) :

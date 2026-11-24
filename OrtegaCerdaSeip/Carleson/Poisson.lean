@@ -79,9 +79,8 @@ theorem IsCarlesonLarge.lintegral_poisson_le {ν : Measure ℂ} {K : ℝ≥0} (h
   set f : ℂ → ℝ := fun w ↦ t / (‖w - s‖ ^ 2 + t ^ 2) with hf
   have hf_nn : 0 ≤ᵐ[ν] f := ae_of_all _ fun w ↦ by positivity
   have hf_meas : AEMeasurable f ν := by
-    have : Continuous f := by
-      refine continuous_const.div (by fun_prop) fun w ↦ by positivity
-    exact this.aemeasurable
+    have hden : Continuous fun w : ℂ ↦ ‖w - s‖ ^ 2 + t ^ 2 := by fun_prop
+    exact (continuous_const.div hden fun w ↦ by positivity).aemeasurable
   have hf_le : ∀ w, f w ≤ 1 / t := by
     intro w
     calc f w ≤ t / t ^ 2 :=
@@ -89,7 +88,7 @@ theorem IsCarlesonLarge.lintegral_poisson_le {ν : Measure ℂ} {K : ℝ≥0} (h
       _ = 1 / t := by field_simp
   rw [lintegral_eq_lintegral_meas_lt ν hf_nn hf_meas,
     ← Ioo_union_Ici_eq_Ioi (one_div_pos.2 ht0), lintegral_union measurableSet_Ici
-      (disjoint_left.2 fun _ hx hx' ↦ absurd hx' (not_le.2 hx.2))]
+      ((Iio_disjoint_Ici le_rfl).mono_left Ioo_subset_Iio_self)]
   have h2 : ∫⁻ lam in Ici (1 / t), ν {w | lam < f w} = 0 := by
     rw [setLIntegral_congr_fun measurableSet_Ici (g := fun _ ↦ 0), lintegral_zero]
     intro lam hlam
