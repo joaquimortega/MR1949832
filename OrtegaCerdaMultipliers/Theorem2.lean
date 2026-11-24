@@ -260,7 +260,7 @@ theorem IsLocallyDoublingDisc.of_le_of_le {μ ν : Measure ℂ} (hμ : IsLocally
   have h₁' : (a' : ℝ≥0∞) • μ ≤ ν := by
     refine le_trans ?_ h₁
     intro s
-    simp only [Measure.smul_apply, smul_eq_mul]
+    simp only [smul_apply, smul_eq_mul]
     gcongr
     rw [ha'c]; exact min_le_left _ _
   have hbc : ((b.toNNReal : ℝ≥0) : ℝ≥0∞) = b := ENNReal.coe_toNNReal hb
@@ -278,7 +278,7 @@ theorem isSubharmonicWeight_add_log {φ' : ℂ → ℝ} {ν : Measure ℂ} {ε c
   have hε0 : 0 ≤ ε := by linarith
   have hle : ν + ENNReal.ofReal (ε - 4 * c) • hypArea ≤ ν + ENNReal.ofReal ε • hypArea := by
     intro s
-    simp only [Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    simp only [add_apply, smul_apply, smul_eq_mul]
     gcongr
     linarith
   have hνfin : ∀ K ⊆ 𝔻, IsCompact K → ν K < ∞ := fun K hK hKc ↦
@@ -367,13 +367,13 @@ theorem exists_aux_weight_disc_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) :
   have hup : μψ ≤ μ' := by
     rw [← hν]
     intro s
-    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    simp only [hμψ, add_apply, smul_apply, smul_eq_mul]
     gcongr
     linarith
   have hlow : μ' ≤ (2 : ℝ≥0∞) • μψ := by
     rw [← hν]
     intro s
-    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul, mul_add, ← mul_assoc]
+    simp only [hμψ, add_apply, smul_apply, smul_eq_mul, mul_add, ← mul_assoc]
     gcongr
     · exact le_mul_of_one_le_left' one_le_two
     · rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num)]
@@ -462,10 +462,13 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
   · -- holomorphy in `z`
     intro ζ hζ
     obtain ⟨i, -, hfor⟩ := hform ζ hζ
+    have hden : DifferentiableOn ℂ (fun z : ℂ ↦ 1 - conj ζ * z) 𝔻 :=
+      (differentiableOn_const _).sub ((differentiableOn_const _).mul differentiableOn_id)
+    have hnum : DifferentiableOn ℂ (fun _ : ℂ ↦ ((1 - ‖ζ‖ ^ 2 : ℝ) : ℂ)) 𝔻 :=
+      differentiableOn_const _
     have hd : DifferentiableOn ℂ (fun z ↦ h i z / h i ζ *
         (((1 - ‖ζ‖ ^ 2 : ℝ) : ℂ) / (1 - conj ζ * z))) 𝔻 :=
-      ((hh i).div_const _).mul ((differentiableOn_const _).div
-        ((differentiableOn_const _).sub ((differentiableOn_const _).mul differentiableOn_id))
+      ((hh i).div_const _).mul (hnum.div hden
         fun z hz ↦ one_sub_conj_mul_ne_zero_of_mem hζ hz)
     refine hd.congr fun z hz ↦ ?_
     rw [hfor, hh'eq i z hz, hh'eq i ζ hζ]
@@ -498,7 +501,7 @@ theorem exists_disc_solution_kernel_quant (Cd : ℝ≥0) (r : ℝ) (hr : 0 < r) 
       apply Real.exp_le_exp.2
       have h1 := abs_le.1 (hψφ z hz)
       have h2 := abs_le.1 (hψφ ζ hζ)
-      nlinarith
+      linarith
     have hK : 0 ≤ (1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖ := by positivity
     calc ‖h i z‖ / ‖h i ζ‖ * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖)
         ≤ (C : ℝ) ^ 2 * Real.exp (ψ z - ψ ζ) * ((1 - ‖ζ‖ ^ 2) / ‖1 - conj ζ * z‖) := by
@@ -579,9 +582,9 @@ theorem IsSubharmonicWeight.div_const {Ω : Set ℂ} {φ : ℂ → ℝ} {μ : Me
     (hφ : IsSubharmonicWeight Ω φ μ) {p : ℝ} (hp : 0 < p) :
     IsSubharmonicWeight Ω (fun z ↦ φ z / p) (ENNReal.ofReal p⁻¹ • μ) := by
   refine ⟨hφ.continuousOn.div_const p, fun K hK hKc ↦ ?_, ?_, fun χ hχ hχc hχs ↦ ?_⟩
-  · rw [Measure.smul_apply, smul_eq_mul]
+  · rw [smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hφ.finite_of_compact K hK hKc)
-  · rw [Measure.smul_apply, hφ.carried, smul_zero]
+  · rw [smul_apply, hφ.carried, smul_zero]
   · rw [integral_smul_measure, ← hφ.laplacian_eq χ hχ hχc hχs,
       ENNReal.toReal_ofReal (inv_nonneg.2 hp.le), smul_eq_mul, ← integral_const_mul]
     congr 1
@@ -592,7 +595,7 @@ theorem IsLocallyDoublingDisc.smul {μ : Measure ℂ} (h : IsLocallyDoublingDisc
     IsLocallyDoublingDisc (a • μ) := by
   obtain ⟨Cd, hCd⟩ := h
   refine ⟨Cd, fun z hz s hs h2s ↦ ?_⟩
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [smul_apply, smul_eq_mul]
   calc a * μ (hypBall z (2 * s)) ≤ a * (Cd * μ (hypBall z s)) := by gcongr; exact hCd z hz s hs h2s
     _ = Cd * (a * μ (hypBall z s)) := mul_left_comm _ _ _
 
@@ -616,7 +619,7 @@ theorem theorem2_printed (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmo
     obtain ⟨R, hR, hR'⟩ := exists_hypBall_measure_gt hr one_pos
       (fun z hz ↦ by rw [ENNReal.ofReal_one]; exact (hmr z hz).le) p
     refine ⟨R, hR, fun z hz ↦ ?_⟩
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [smul_apply, smul_eq_mul]
     calc (1 : ℝ≥0∞) = ENNReal.ofReal p⁻¹ * ENNReal.ofReal p := by
           rw [← ENNReal.ofReal_mul (inv_nonneg.2 hp0.le), inv_mul_cancel₀ hp0.ne',
             ENNReal.ofReal_one]
@@ -654,7 +657,7 @@ theorem theorem2_printed (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmo
   have hGnorm : eLpNorm G (ENNReal.ofReal p) discMeasure =
       (∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z)) ∂discMeasure) ^
         (1 / p) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hpne hptop hGm, ENNReal.toReal_ofReal hp0.le]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hpne hptop hGm, ENNReal.toReal_ofReal hp0.le]
     simp_rw [hGeq]
   have hGfin : eLpNorm G (ENNReal.ofReal p) discMeasure < ∞ := by
     rw [hGnorm]
@@ -668,7 +671,7 @@ theorem theorem2_printed (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsSubharmo
   have hUm := aestronglyMeasurable_of_eLpNorm_ne_top hUfin
   have hUnorm : eLpNorm U (ENNReal.ofReal p) discMeasure =
       (∫⁻ z, ENNReal.ofReal (‖u z‖ ^ p * Real.exp (-φ z)) ∂discMeasure) ^ (1 / p) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hpne hptop hUm, ENNReal.toReal_ofReal hp0.le]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hpne hptop hUm, ENNReal.toReal_ofReal hp0.le]
     simp_rw [hU, key]
   have hle : (∫⁻ z, ENNReal.ofReal (‖u z‖ ^ p * Real.exp (-φ z)) ∂discMeasure) ^ (1 / p) ≤
       C₀ * (∫⁻ z, ENNReal.ofReal (‖f z * (1 - ‖z‖ ^ 2)‖ ^ p * Real.exp (-φ z))
@@ -774,7 +777,7 @@ theorem measClassDisc_of_le_hypArea {a b : ℝ} (ha : 0 < a) {μ : Measure ℂ}
     MeasClassDisc μ (b.toNNReal * 16 / a.toNNReal) ((2 * ⌈1 / (a * Real.pi)⌉₊ + 1) * 1) := by
   refine ⟨isLocallyDoublingDiscWith_hypArea.of_le_of_le (by simpa using ha) h₁ h₂,
     fun z hz ↦ one_lt_measure_hypBall_of_le ha h₁ hz, fun K hK hKc ↦ (h₂ K).trans_lt ?_⟩
-  rw [Measure.smul_apply, smul_eq_mul]
+  rw [smul_apply, smul_eq_mul]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hypArea_lt_top_of_isCompact hK hKc)
 
 theorem bridge_isLocallyDoublingDisc {ψ₀ : ℂ → ℝ} {δ M : ℝ} (hδ : 0 < δ)

@@ -79,7 +79,7 @@ theorem isSubharmonicWeight_sub_normSq {φ' : ℂ → ℝ} {ν : Measure ℂ} {�
   have hε0 : 0 ≤ ε := by linarith
   have hle : ν + ENNReal.ofReal (ε - 4 * c) • volume ≤ ν + ENNReal.ofReal ε • volume := by
     intro s
-    simp only [Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    simp only [add_apply, smul_apply, smul_eq_mul]
     gcongr
     linarith
   refine ⟨hφ'.continuousOn.sub (continuousOn_const.mul (continuous_norm.pow 2).continuousOn),
@@ -142,13 +142,13 @@ theorem exists_aux_weight_plane (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsS
   have hup : μψ ≤ μ' := by
     rw [← hν]
     intro s
-    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+    simp only [hμψ, add_apply, smul_apply, smul_eq_mul]
     gcongr
     linarith
   have hlow : μ' ≤ (2 : ℝ≥0∞) • μψ := by
     rw [← hν]
     intro s
-    simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul, mul_add, ← mul_assoc]
+    simp only [hμψ, add_apply, smul_apply, smul_eq_mul, mul_add, ← mul_assoc]
     gcongr
     · exact le_mul_of_one_le_left' one_le_two
     · rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num)]
@@ -173,7 +173,7 @@ theorem exists_aux_weight_plane (φ : ℂ → ℝ) (μ : Measure ℂ) (hφ : IsS
               rw [hc]; field_simp; ring]
           simp
       _ ≤ μψ (ball z (Real.sqrt (4 / (ε * Real.pi)))) := by
-          simp only [hμψ, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+          simp only [hμψ, add_apply, smul_apply, smul_eq_mul]
           exact le_add_self
   · intro z
     rw [show φ' z - c * ‖z‖ ^ 2 - (φ z - c * ‖z‖ ^ 2) = φ' z - φ z by ring, abs_sub_comm]
