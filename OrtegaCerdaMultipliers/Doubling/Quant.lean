@@ -793,6 +793,33 @@ theorem lemma3_quant [BallGeometry X] [TopologicalSpace.SeparableSpace X] (Cd : 
         rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul]
     _ ≤ B₁ + K * B₂ := by gcongr
 
+omit [MeasurableSpace X] [OpensMeasurableSpace X] in
+/-- Dyadic annuli cover the punctured ball `B(x, R) ∖ {x}`. -/
+private theorem christ_cover (R : ℝ) (x : X) :
+    ball x R ⊆ {x} ∪ ⋃ k : ℕ, ball x (R / 2 ^ k) \ ball x (R / 2 ^ (k + 1)) := by
+  intro y hy
+  by_cases hyx : y = x
+  · left; exact hyx
+  right
+  have hd : 0 < dist y x := dist_pos.2 hyx
+  rw [mem_ball] at hy
+  have hex : ∃ k : ℕ, R / 2 ^ (k + 1) ≤ dist y x := by
+    obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (R / dist y x) (by norm_num : (1 : ℝ) < 2)
+    refine ⟨k, ?_⟩
+    rw [div_le_iff₀ (by positivity)]
+    rw [div_lt_iff₀ hd] at hk
+    have : (2 : ℝ) ^ k ≤ 2 ^ (k + 1) := pow_le_pow_right₀ (by norm_num) (Nat.le_succ k)
+    nlinarith
+  classical
+  have hk1 : R / 2 ^ (Nat.find hex + 1) ≤ dist y x := Nat.find_spec hex
+  have hk2 : dist y x < R / 2 ^ (Nat.find hex) := by
+    rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
+    · rw [h0, pow_zero, div_one]; exact hy
+    · have := Nat.find_min hex (Nat.sub_lt hpos one_pos)
+      rw [not_le, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
+      exact this
+  exact mem_iUnion.2 ⟨Nat.find hex, mem_ball.2 hk2, fun h ↦ not_lt.2 hk1 (mem_ball.1 h)⟩
+
 /-- **[Chr91, Lemma 2.3]**, uniform form. -/
 theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     ∃ C : ℝ≥0, ∀ μ : Measure X, IsLocDoublingMWith μ Cd → ∀ (x : X) (R : ℝ), 0 < R → R ≤ R₁ →
@@ -817,29 +844,7 @@ theorem christ_lemma23_quant [BallGeometry X] (Cd : ℝ≥0) (R₁ : ℝ) :
     fun μ hμ x R hR hR1 ↦ ?_⟩
   have hD := hup μ hμ
   set A : ℕ → Set X := fun k ↦ ball x (R / 2 ^ k) \ ball x (R / 2 ^ (k + 1))
-  have hcover : ball x R ⊆ {x} ∪ ⋃ k, A k := by
-    intro y hy
-    by_cases hyx : y = x
-    · left; exact hyx
-    right
-    have hd : 0 < dist y x := dist_pos.2 hyx
-    rw [mem_ball] at hy
-    have hex : ∃ k : ℕ, R / 2 ^ (k + 1) ≤ dist y x := by
-      obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (R / dist y x) (by norm_num : (1 : ℝ) < 2)
-      refine ⟨k, ?_⟩
-      rw [div_le_iff₀ (by positivity)]
-      rw [div_lt_iff₀ hd] at hk
-      have : (2 : ℝ) ^ k ≤ 2 ^ (k + 1) := pow_le_pow_right₀ (by norm_num) (Nat.le_succ k)
-      nlinarith
-    classical
-    have hk1 : R / 2 ^ (Nat.find hex + 1) ≤ dist y x := Nat.find_spec hex
-    have hk2 : dist y x < R / 2 ^ (Nat.find hex) := by
-      rcases Nat.eq_zero_or_pos (Nat.find hex) with h0 | hpos
-      · rw [h0, pow_zero, div_one]; exact hy
-      · have := Nat.find_min hex (Nat.sub_lt hpos one_pos)
-        rw [not_le, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hpos.ne')] at this
-        exact this
-    exact mem_iUnion.2 ⟨Nat.find hex, mem_ball.2 hk2, fun h ↦ not_lt.2 hk1 (mem_ball.1 h)⟩
+  have hcover : ball x R ⊆ {x} ∪ ⋃ k, A k := christ_cover R x
   have hsing : ∫⁻ y in {x}, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ = 0 := by simp
   have hAk : ∀ k : ℕ, ∫⁻ y in A k, ENNReal.ofReal (Real.log (R / dist x y)) ∂μ ≤
       ENNReal.ofReal (Real.log 2 * (((k : ℝ) + 1) * q ^ k)) * μ (ball x R) := by
