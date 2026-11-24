@@ -322,20 +322,20 @@ theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → 
             mul_le_mul_of_nonneg_left (le_max_left _ _) hA
           have h4 : (Bl + 2) * ρ (c j) ≤ (Bl + 2) * max (ρ (c k)) (ρ (c j)) :=
             mul_le_mul_of_nonneg_left (le_max_right _ _) (by linarith)
-          nlinarith
+          linarith
         have hkj : ρ (c k) ≤ C2 * ρ (c j) := hcl2 _ (hcΩ k) _ (hcΩ j) hdij
         have hdzj : d z (c j) ≤ (2 * A * C2 + Bl + 2) * ρ (c j) := by
           have h1 := htri z hzΩ (c k) (hcΩ k) (c j) (hcΩ j)
           have h1' := htri (c k) (hcΩ k) z' hz'Ω (c j) (hcΩ j)
           have h2 := hsub k z' hz'
           have h3 : A * ρ (c k) ≤ A * (C2 * ρ (c j)) := mul_le_mul_of_nonneg_left hkj hA
-          nlinarith
+          linarith
         have hjw : ρ (c j) ≤ d z w := by
           have h1 := htri (c j) (hcΩ j) z hzΩ w hwΩ
           rw [hsymm _ (hcΩ j) _ hzΩ] at h1
           have h2 : (2 * A * C2 + Bl + 3) * ρ (c j) ≤ Bk * ρ (c j) :=
             mul_le_mul_of_nonneg_right hBk2 hρj.le
-          nlinarith
+          linarith
         have h0 : 0 ≤ d z w := hρj.le.trans hjw
         calc ρ z ≤ CA * ρ (c k) := hzi
           _ ≤ CA * (C2 * ρ (c j)) := mul_le_mul_of_nonneg_left hkj (by linarith)
@@ -365,7 +365,7 @@ theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → 
               mul_le_mul_of_nonneg_left (le_max_right _ _) hA
             have h4 : (Bl + 2) * ρ (c j) ≤ (Bl + 2) * max (ρ (c j)) (ρ (c k)) :=
               mul_le_mul_of_nonneg_left (le_max_left _ _) (by linarith)
-            nlinarith
+            linarith
           have hjk' : ρ (c j) ≤ C2 * ρ (c k) := hcl2 _ (hcΩ j) _ (hcΩ k) hdkj
           have h1 := htri (c k) (hcΩ k) (c j) (hcΩ j) w hwΩ
           have h1' := htri (c k) (hcΩ k) z' hz'Ω (c j) (hcΩ j)
@@ -374,14 +374,14 @@ theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → 
             mul_le_mul_of_nonneg_right (le_max_left _ _) hρj.le
           have h4 : (Bl + 2 + max Bk' 0) * ρ (c j) ≤ (Bl + 2 + max Bk' 0) * (C2 * ρ (c k)) :=
             mul_le_mul_of_nonneg_left hjk' (by linarith)
-          nlinarith
+          linarith
       have h1 := htri (c i) (hcΩ i) z hzΩ (c k) (hcΩ k)
       have h2 := htri z hzΩ w hwΩ (c k) (hcΩ k)
       rw [hsymm w hwΩ (c k) (hcΩ k)] at h2
       have h3 := hsub i z hz
       have h4 : (A + 1) * ρ (c i) ≤ L * ρ (c i) := mul_le_mul_of_nonneg_right hL1 hρi.le
       have h5 : L' * ρ (c k) ≤ L * ρ (c k) := mul_le_mul_of_nonneg_right hL2 hρk.le
-      nlinarith
+      linarith
   · -- Case 1: `j` not selected
     have hnot : ¬ (j = i ∨ ∃ z' ∈ R i, d z' (c j) < (Bl + 2) * ρ (c j)) :=
       fun h ↦ hsel ⟨i, hi, h⟩
@@ -391,8 +391,8 @@ theorem nodesFar_generic {Ω : Set ℂ} {d : ℂ → ℂ → ℝ} {ρ : ℂ → 
     have htr := htri z hzΩ (c j) (hcΩ j) w hwΩ
     have htr' := htri z hzΩ w hwΩ (c j) (hcΩ j)
     rw [hsymm w hwΩ (c j) (hcΩ j)] at htr'
-    have hdzw : 2 * ρ (c j) ≤ d z w := by nlinarith
-    have h0 : 0 ≤ d z w := le_trans (by linarith) hdzw
+    have hdzw : 2 * ρ (c j) ≤ d z w := by linarith
+    have h0 : 0 ≤ d z w := le_trans (by linarith : (0 : ℝ) ≤ 2 * ρ (c j)) hdzw
     by_cases hcase : d z (c j) ≤ 1 * max (ρ z) (ρ (c j))
     · have := hcl1 z hzΩ (c j) (hcΩ j) hcase
       calc ρ z ≤ C1 * ρ (c j) := this
@@ -1045,12 +1045,12 @@ theorem measClassDisc_of_hypArea_aux {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
           rw [← ENNReal.ofReal_one]
           exact (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 hkey
       _ = (ENNReal.ofReal a • hypArea) (hypBall z R₀) := by
-          rw [Measure.smul_apply, hypArea_hypBall hz (by linarith), smul_eq_mul,
+          rw [smul_apply, hypArea_hypBall hz (by linarith), smul_eq_mul,
             ENNReal.ofReal_mul ha.le]
       _ ≤ μ (hypBall z R₀) := h₁ _
   · intro K hK hKc
     calc μ K ≤ (ENNReal.ofReal b • hypArea) K := h₂ K
-      _ = ENNReal.ofReal b * hypArea K := by rw [Measure.smul_apply, smul_eq_mul]
+      _ = ENNReal.ofReal b * hypArea K := by rw [smul_apply, smul_eq_mul]
       _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hypArea_lt_top_of_isCompact hK hKc)
 
 end Prop2

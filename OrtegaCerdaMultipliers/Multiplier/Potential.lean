@@ -986,7 +986,7 @@ theorem multPot_props_plane {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0}
       intro i
       by_cases hi : i ∈ G
       · simp only [hw', hi, ite_true]
-        rw [ofReal_integral_norm_eq_lintegral_enorm (hcellΔ i).1]
+        rw [ofReal_integral_norm_eq_lintegral_eNorm (hcellΔ i).1]
       · simp only [hw', hi, ite_false]
         rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hΔint.const_mul (u i))
           (Eventually.of_forall fun z ↦ mul_nonneg (hu0 i) (abs_nonneg _))]
@@ -994,7 +994,7 @@ theorem multPot_props_plane {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0}
         rw [← ofReal_norm]
         exact ENNReal.ofReal_le_ofReal (hbound i hi z)
     have htsum_ne : ∑' i, ∫⁻ z, ‖cellPot kerPlane ν R Λ i z * Laplacian.laplacian χ z‖ₑ ≠ ∞ := by
-      refine ne_top_of_le_ne_top ?_ (ENNReal.tsum_le_tsum hlint)
+      refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hlint)
       rw [← ENNReal.ofReal_tsum_of_nonneg hw0 hws]
       exact ENNReal.ofReal_ne_top
     have hint_tsum := integral_tsum (fun i ↦ (hcellΔ i).1.aestronglyMeasurable) htsum_ne
@@ -1202,7 +1202,7 @@ theorem multPot_props_disc {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} 
       intro i
       by_cases hi : i ∈ G
       · simp only [hw', hi, ite_true]
-        rw [ofReal_integral_norm_eq_lintegral_enorm (hcellΔ i).1]
+        rw [ofReal_integral_norm_eq_lintegral_eNorm (hcellΔ i).1]
       · simp only [hw', hi, ite_false]
         rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hΔint.const_mul (u i))
           (Eventually.of_forall fun z ↦ mul_nonneg (hu0 i) (abs_nonneg _))]
@@ -1210,7 +1210,7 @@ theorem multPot_props_disc {ψ : ℂ → ℝ} {μ : Measure ℂ} {Cd : ℝ≥0} 
         rw [← ofReal_norm]
         exact ENNReal.ofReal_le_ofReal (hbound i hi z)
     have htsum_ne : ∑' i, ∫⁻ z, ‖cellPot kerDisc ν R Λ i z * Laplacian.laplacian χ z‖ₑ ≠ ∞ := by
-      refine ne_top_of_le_ne_top ?_ (ENNReal.tsum_le_tsum hlint)
+      refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hlint)
       rw [← ENNReal.ofReal_tsum_of_nonneg hw0 hws]
       exact ENNReal.ofReal_ne_top
     have hint_tsum := integral_tsum (fun i ↦ (hcellΔ i).1.aestronglyMeasurable) htsum_ne
