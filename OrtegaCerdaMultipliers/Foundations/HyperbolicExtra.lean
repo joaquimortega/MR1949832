@@ -91,8 +91,8 @@ theorem lintegral_ball_zero_hypDensity {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t < 1) :
     rw [hF, lintegral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio,
       show Iio T ∩ Ioi 0 = Ioo 0 T from by ext u; simp [and_comm]]
     have hcont : ContinuousOn (fun u : ℝ ↦ (1 - u)⁻¹ ^ 2) (Icc 0 T) :=
-      ((continuousOn_const.sub continuousOn_id).inv₀ fun u hu ↦ by
-        have := hu.2; simp only [Pi.sub_apply, id]; intro h; linarith).pow 2
+      ((continuousOn_const.sub continuousOn_id).inv₀ fun u (hu : u ∈ Icc 0 T) ↦
+        (by linarith [hu.2] : (0 : ℝ) < 1 - u).ne').pow 2
     have hint : IntegrableOn (fun u : ℝ ↦ (1 - u)⁻¹ ^ 2) (Ioo 0 T) :=
       (hcont.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
     rw [← ofReal_integral_eq_lintegral_ofReal hint
@@ -178,7 +178,9 @@ theorem hypBall_zero (r : ℝ) : hypBall 0 r = ball 0 (Real.tanh r) := by
 /-- `artanh` is continuous on `(-1, 1)`. -/
 theorem continuousOn_artanh : ContinuousOn Real.artanh (Ioo (-1 : ℝ) 1) := by
   have h : ContinuousOn (fun x : ℝ ↦ (1 + x) / (1 - x)) (Ioo (-1 : ℝ) 1) :=
-    ContinuousOn.div (by fun_prop) (by fun_prop) fun x hx ↦ by linarith [hx.2]
+    have hn : ContinuousOn (fun x : ℝ ↦ 1 + x) (Ioo (-1 : ℝ) 1) := by fun_prop
+    have hd : ContinuousOn (fun x : ℝ ↦ 1 - x) (Ioo (-1 : ℝ) 1) := by fun_prop
+    hn.div hd fun x hx ↦ by linarith [hx.2]
   have h2 : ContinuousOn (fun x : ℝ ↦ Real.sqrt ((1 + x) / (1 - x))) (Ioo (-1 : ℝ) 1) :=
     h.sqrt
   refine h2.log fun x hx ↦ ?_
@@ -280,10 +282,10 @@ theorem norm_one_sub_conj_mul_comparable {z c ξ : ℂ} (hz : z ∈ 𝔻) (hc : 
 theorem convex_closedHypBall {c : ℂ} (hc : c ∈ 𝔻) (s : ℝ) :
     Convex ℝ {w | w ∈ 𝔻 ∧ hypDist c w ≤ s} := by
   rcases lt_or_ge s 0 with hs | hs
-  · convert convex_empty (𝕜 := ℝ) (E := ℂ)
-    ext w
-    simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false, not_and, not_le]
-    exact fun _ ↦ hs.trans_le (hypDist_nonneg c w)
+  · rw [show {w | w ∈ 𝔻 ∧ hypDist c w ≤ s} = ∅ from
+      Set.eq_empty_of_forall_notMem fun w hw ↦
+        absurd hw.2 (not_le.2 (hs.trans_le (hypDist_nonneg c w)))]
+    exact convex_empty
   have ht0 : 0 ≤ Real.tanh s := tanh_nonneg_of_nonneg hs
   have ht1 := Real.tanh_lt_one s
   set t := Real.tanh s
