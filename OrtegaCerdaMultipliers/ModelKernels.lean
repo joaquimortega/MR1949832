@@ -561,10 +561,6 @@ theorem lemma7_isWeakDbarSol {f : ℂ → ℂ} (hf : AEStronglyMeasurable f (vol
       _ < ∞ := ENNReal.mul_lt_top hfi (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
             (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, hK.measure_lt_top⟩))
 
-theorem mk_exp_mul_log_eq_rpow {P : ℝ} (hP : 0 < P) (α : ℝ) :
-    Real.exp (α * Real.log P) = P ^ α := by
-  rw [Real.rpow_def_of_pos hP, mul_comm]
-
 theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
     (hf : AEStronglyMeasurable f (volume.restrict 𝔻))
     (hadm : ∃ p : ℝ≥0∞, 1 ≤ p ∧ eLpNorm (fun z ↦ f z * ((1 - ‖z‖ ^ 2) ^ (1 + α) : ℝ)) p
@@ -580,7 +576,7 @@ theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
   have hexp : ∀ z ∈ 𝔻, Real.exp (-φ z) = (1 - ‖z‖ ^ 2) ^ α := by
     intro z hz
     simp only [hφ, neg_mul, neg_neg]
-    exact mk_exp_mul_log_eq_rpow (one_sub_normSq_pos hz) α
+    rw [Real.rpow_def_of_pos (one_sub_normSq_pos hz), mul_comm]
   have hW : ∀ z ∈ 𝔻, (1 - ‖z‖ ^ 2) * Real.exp (-φ z) = (1 - ‖z‖ ^ 2) ^ (1 + α) := by
     intro z hz
     rw [hexp z hz, Real.rpow_add (one_sub_normSq_pos hz), Real.rpow_one]
@@ -596,8 +592,8 @@ theorem lemma7 {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1) (f : ℂ → ℂ)
     have hζ0 := one_sub_normSq_pos hζ
     rw [norm_lemma7H hζ, Real.exp_sub]
     simp only [hφ]
-    rw [mk_exp_mul_log_eq_rpow hz0, mk_exp_mul_log_eq_rpow hζ0, Real.div_rpow hz0.le hζ0.le,
-      Real.rpow_neg hz0.le, Real.rpow_neg hζ0.le]
+    rw [mul_comm (-α), ← Real.rpow_def_of_pos hz0, mul_comm (-α), ← Real.rpow_def_of_pos hζ0,
+      Real.div_rpow hz0.le hζ0.le, Real.rpow_neg hz0.le, Real.rpow_neg hζ0.le]
     have := Real.rpow_pos_of_pos hz0 α
     have := Real.rpow_pos_of_pos hζ0 α
     apply le_of_eq
