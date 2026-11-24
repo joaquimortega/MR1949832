@@ -139,19 +139,6 @@ theorem l4_growth_plane {ν : Measure ℂ} {R₀ : ℝ} (hR₀ : 0 < R₀)
         (measure_biUnion_finset hdisj fun k _ ↦ measurableSet_ball).symm
     _ ≤ _ := measure_mono hsub
 
-theorem l4_rect_subset_ball (x₁ x₂ y₁ y₂ : ℝ) :
-    rect x₁ x₂ y₁ y₂ ⊆ ball 0 (|x₁| + |x₂| + |y₁| + |y₂| + 1) := by
-  rintro z ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
-  rw [mem_ball_zero_iff]
-  have h0 := Complex.norm_le_abs_re_add_abs_im z
-  have : |z.re| ≤ |x₁| + |x₂| := by
-    rw [abs_le]
-    constructor <;> linarith [neg_abs_le x₁, le_abs_self x₂, abs_nonneg x₁, abs_nonneg x₂]
-  have : |z.im| ≤ |y₁| + |y₂| := by
-    rw [abs_le]
-    constructor <;> linarith [neg_abs_le y₁, le_abs_self y₂, abs_nonneg y₁, abs_nonneg y₂]
-  linarith
-
 /-- The mass radius is at most `r` once the ball of radius `r` has mass `≥ 1`. -/
 theorem l4_massRadius_le {ν : Measure ℂ} {z : ℂ} {r : ℝ} (hr : 0 < r) (h : 1 ≤ ν (ball z r)) :
     massRadius ν z ≤ r :=
@@ -411,7 +398,7 @@ theorem l4_plane_pieces {μ : Measure ℂ} {Cd : ℝ≥0} {R' S C_E : ℝ} {C₁
   obtain ⟨hre, him⟩ := l4_plane_null ⟨Cd, hclass.doubling⟩
     (fun z r ↦ hfinB _ Metric.isBounded_ball)
   have hfinR : ∀ x₁ x₂ y₁ y₂ : ℝ, μ (rect x₁ x₂ y₁ y₂) < ∞ := fun x₁ x₂ y₁ y₂ ↦
-    hfinB _ (Metric.isBounded_ball.subset (l4_rect_subset_ball x₁ x₂ y₁ y₂))
+    hfinB _ (Metric.isBounded_ball.subset (rect_subset_ball_zero x₁ x₂ y₁ y₂))
   choose X hXmono hXgap hXcov hXn using fun j ↦ l4_plane_rows hS hS0 hre hclass.mass hfinR j
   choose n hn1 hnμ using hXn
   have hpow : ∀ z (k : ℕ) r, 0 < r → 2 ^ k * r ≤ 2 * (16 * S) →

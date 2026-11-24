@@ -781,6 +781,17 @@ theorem rectCore_growth {A B : ℕ → ℝ} {C : ℝ} (hC : 1 ≤ C) (k : ℕ) (
       _ = A k + A k / (2 * C) := by ring
       _ ≤ A k + B k := by linarith
 
+/-- Euclidean doubling on a rectangle restricts to sub-rectangles (with a larger constant). -/
+theorem rect_ED_sub {ν : Measure ℂ} {C_E C κ x₁ x₂ y₁ y₂ : ℝ} (hCE : C_E ≤ C)
+    (hED : ∀ w ∈ rect x₁ x₂ y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ κ * (x₂ - x₁) →
+      ν (ball w (4 * r)) ≤ ENNReal.ofReal C_E * ν (ball w (r / 2)))
+    (c d : ℝ) (hc : x₁ ≤ c) (hd : d ≤ x₂) :
+    ∀ w ∈ rect c d y₁ y₂, ∀ r : ℝ, 0 < r → r ≤ κ * (x₂ - x₁) →
+      ν (ball w (4 * r)) ≤ ENNReal.ofReal C * ν (ball w (r / 2)) := by
+  intro w hw r hr hrκ
+  exact (hED w (rect_subset_rect hc hd le_rfl le_rfl hw) r hr hrκ).trans
+    (by gcongr)
+
 /-- The final slices are not thin (M05 §3.5, Case B, via slab reverse doubling). -/
 theorem rectCore_slice_wide {ν : Measure ℂ} {C₀ : ℕ} {C_E κ x₁ x₂ y₁ y₂ t t' : ℝ}
     (hlw : y₂ - y₁ ≤ x₂ - x₁) (hw3 : x₂ - x₁ ≤ 3 * (y₂ - y₁)) (hx : x₁ ≤ t) (htt' : t < t')
@@ -805,11 +816,7 @@ theorem rectCore_slice_wide {ν : Measure ℂ} {C₀ : ℕ} {C_E κ x₁ x₂ y�
   have hQf : ν (rect x₁ x₂ y₁ y₂) < ∞ := hQ.trans_lt (ENNReal.natCast_lt_top _)
   have hfin_sub : ∀ c d, x₁ ≤ c → d ≤ x₂ → ν (rect c d y₁ y₂) < ∞ := fun c d hc hd ↦
     (measure_mono (rect_subset_rect hc hd le_rfl le_rfl)).trans_lt hQf
-  have hED' : ∀ c d, x₁ ≤ c → d ≤ x₂ → ∀ w ∈ rect c d y₁ y₂, ∀ r : ℝ, 0 < r →
-      r ≤ κ * (x₂ - x₁) → ν (ball w (4 * r)) ≤ ENNReal.ofReal C * ν (ball w (r / 2)) := by
-    intro c d hc hd w hw r hr hrκ
-    exact (hED w (rect_subset_rect hc hd le_rfl le_rfl hw) r hr hrκ).trans
-      (by gcongr; exact le_max_left _ _)
+  have hED' := fun c d hc hd ↦ rect_ED_sub (le_max_left C_E 1) hED c d hc hd
   have hpow := rectCore_pow_ge C₀ C_E
   have hQr : (ν (rect x₁ x₂ y₁ y₂)).toReal ≤ C₀ := by
     have := ENNReal.toReal_mono (ENNReal.natCast_ne_top C₀) hQ
@@ -990,6 +997,20 @@ theorem rectCore_combine {G : ℝ × ℝ × ℝ × ℝ → Prop} {n₁ n₂ : �
     induction i using Fin.addCases with
     | left a => simpa only [Fin.append_left] using hg₁ a
     | right a => simpa only [Fin.append_right] using hg₂ a
+
+/-- A rectangle lies in a ball around the origin. -/
+theorem rect_subset_ball_zero (x₁ x₂ y₁ y₂ : ℝ) :
+    rect x₁ x₂ y₁ y₂ ⊆ ball 0 (|x₁| + |x₂| + |y₁| + |y₂| + 1) := by
+  rintro z ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
+  rw [mem_ball_zero_iff]
+  have h0 := Complex.norm_le_abs_re_add_abs_im z
+  have : |z.re| ≤ |x₁| + |x₂| := by
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le x₁, le_abs_self x₂, abs_nonneg x₁, abs_nonneg x₂]
+  have : |z.im| ≤ |y₁| + |y₂| := by
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le y₁, le_abs_self y₂, abs_nonneg y₁, abs_nonneg y₂]
+  linarith
 
 /-- The conclusion of `exists_rect_partition` for one piece `g = (x₁, x₂, y₁, y₂)`. -/
 def RectGood (ν : Measure ℂ) (P : ℝ → ℝ → ℝ → ℝ → Prop) (C₀ : ℕ) (L : ℝ)

@@ -141,16 +141,17 @@ theorem lineCut_exists_Ico {x : ℤ → ℝ} (hmono : StrictMono x) (hup : ∀ T
 
 /-- Rectangles across the axis have finite mass for a locally finite measure. -/
 theorem lineCut_finite_rect {μ : Measure ℂ} (hfin : ∀ K : Set ℂ, IsCompact K → μ K < ∞)
-    (a b : ℝ) : μ (rect a b (-1) 1) < ∞ := by
-  refine (measure_mono ?_).trans_lt (hfin _ (isCompact_closedBall (0 : ℂ) (|a| + |b| + 1)))
-  rintro z ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
-  rw [mem_closedBall_zero_iff]
-  refine (Complex.norm_le_abs_re_add_abs_im z).trans ?_
-  have : |z.re| ≤ |a| + |b| := by
-    rw [abs_le]
-    constructor <;> linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
-  have : |z.im| ≤ 1 := by rw [abs_le]; constructor <;> linarith
-  linarith
+    (a b : ℝ) : μ (rect a b (-1) 1) < ∞ :=
+  (measure_mono ((rect_subset_ball_zero a b (-1) 1).trans ball_subset_closedBall)).trans_lt
+    (hfin _ (isCompact_closedBall _ _))
+
+/-- From growth of intervals to growth of rectangles of width `2 rN`. -/
+theorem lineCut_big {μ : Measure ℂ} {N : ℕ} {rN : ℝ}
+    (hgrow : ∀ x : ℝ, (N : ℝ≥0∞) < μ (lineInterval x rN)) (s : ℝ) :
+    (N : ℝ≥0∞) < μ (rect s (s + 2 * rN) (-1) 1) := by
+  refine (hgrow (s + rN)).trans_le (measure_mono ?_)
+  rintro z ⟨u, hu, rfl⟩
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;> simp <;> linarith [hu.1, hu.2]
 
 /-- A measure carried by `ℝ` and without atoms on the axis does not charge vertical lines. -/
 theorem lineCut_measure_re_eq_zero {μ : Measure ℂ} (hd : IsLocallyDoublingLine μ)
@@ -408,11 +409,7 @@ theorem lineCut_partition_quant (Cd : ℝ≥0) (R₀ : ℝ) (N : ℕ) (hN : 1 �
   have hre : ∀ x : ℝ, μ {w : ℂ | w.re = x} = 0 := lineCut_measure_re_eq_zero hd hfinI
   have hfinR := lineCut_finite_rect hμ.finite
   have hgrow : ∀ x : ℝ, (N : ℝ≥0∞) < μ (lineInterval x rN) := lineCut_growth hR₀ hμ.mass N
-  have hbig : ∀ s : ℝ, (N : ℝ≥0∞) < μ (rect s (s + R₁) (-1) 1) := by
-    intro s
-    refine (hgrow (s + rN)).trans_le (measure_mono ?_)
-    rintro z ⟨u, hu, rfl⟩
-    refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;> simp <;> linarith [hu.1, hu.2]
+  have hbig : ∀ s : ℝ, (N : ℝ≥0∞) < μ (rect s (s + R₁) (-1) 1) := lineCut_big hgrow
   choose fR hfR using lineCut_step_right hN (by positivity) hre hfinR hbig
   choose fL hfL using lineCut_step_left hN (by positivity) hre hfinR hbig
   obtain ⟨x, hblock⟩ := rect_glue_steps

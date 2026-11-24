@@ -23,23 +23,11 @@ variable {μ : Measure ℂ} {N : ℕ} {a A : ℝ} {R : ℕ → Set ℂ}
 
 /-! #### Helpers -/
 
-theorem prop_massRadius_le {ν : Measure ℂ} {z : ℂ} {r : ℝ} (hr : 0 < r) (h : 1 ≤ ν (ball z r)) :
-    massRadius ν z ≤ r :=
-  csInf_le ⟨0, fun _ hx ↦ hx.1.le⟩ ⟨hr, h⟩
-
 theorem prop_massRadius_nonneg (ν : Measure ℂ) (z : ℂ) : 0 ≤ massRadius ν z :=
   Real.sInf_nonneg fun _ hx ↦ hx.1.le
 
-theorem prop_massRadiusDisc_le {ν : Measure ℂ} {z : ℂ} {r : ℝ} (hr : 0 < r)
-    (h : 1 ≤ ν (hypBall z r)) : massRadiusDisc ν z ≤ r :=
-  csInf_le ⟨0, fun _ hx ↦ hx.1.le⟩ ⟨hr, h⟩
-
 theorem prop_massRadiusDisc_nonneg (ν : Measure ℂ) (z : ℂ) : 0 ≤ massRadiusDisc ν z :=
   Real.sInf_nonneg fun _ hx ↦ hx.1.le
-
-theorem prop_massRadiusLine_le {ν : Measure ℂ} {x r : ℝ} (hr : 0 < r)
-    (h : 1 ≤ ν (lineInterval x r)) : massRadiusLine ν x ≤ r :=
-  csInf_le ⟨0, fun _ hx ↦ hx.1.le⟩ ⟨hr, h⟩
 
 theorem prop_massRadiusLine_nonneg (ν : Measure ℂ) (x : ℝ) : 0 ≤ massRadiusLine ν x :=
   Real.sInf_nonneg fun _ hx ↦ hx.1.le
@@ -98,9 +86,6 @@ theorem prop_ofReal_le_ceil (x : ℝ) : ENNReal.ofReal x ≤ ((⌈x⌉₊ : ℕ)
   rw [← ENNReal.ofReal_natCast]
   exact ENNReal.ofReal_le_ofReal (Nat.le_ceil x)
 
-theorem prop_dist_ofReal (x t : ℝ) : dist (x : ℂ) (t : ℂ) = |x - t| := by
-  rw [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
-
 theorem prop_eq_ofReal_re {w : ℂ} (hw : w ∈ range fun t : ℝ ↦ (t : ℂ)) : w = (w.re : ℂ) := by
   obtain ⟨t, rfl⟩ := hw
   simp
@@ -110,7 +95,7 @@ theorem claim2_lower_plane (hP : IsMassPartition μ univ dist (massRadius μ) N 
     (hN : 1 ≤ N) (i : ℕ) {z : ℂ} (hz : z ∈ R i) {r : ℝ} (hr : R i ⊆ closedBall z r) :
     massRadius μ z ≤ r := by
   have hr0 : 0 ≤ r := by simpa using hr hz
-  refine prop_le_of_forall_gt fun r' hr' ↦ prop_massRadius_le (by linarith) ?_
+  refine prop_le_of_forall_gt fun r' hr' ↦ l4_massRadius_le (by linarith) ?_
   exact (hP.one_le_measure hN i).trans
     (measure_mono (hr.trans (closedBall_subset_ball hr')))
 
@@ -303,7 +288,7 @@ theorem claim2_lower_disc (hP : IsMassPartition μ 𝔻 hypDist (massRadiusDisc 
   have hr0 : 0 ≤ r := by
     have := (hr hz).2
     rwa [hypDist_self] at this
-  refine prop_le_of_forall_gt fun r' hr' ↦ prop_massRadiusDisc_le (by linarith) ?_
+  refine prop_le_of_forall_gt fun r' hr' ↦ l4_massRadiusDisc_le (by linarith) ?_
   refine (hP.one_le_measure hN i).trans (measure_mono fun w hw ↦ ?_)
   exact ⟨(hr hw).1, (hr hw).2.trans_lt hr'⟩
 
@@ -348,11 +333,11 @@ theorem claim2_lower_line
     massRadiusLine μ z.re ≤ r := by
   have hr0 : 0 ≤ r := by simpa using hr hz
   have hzR := prop_eq_ofReal_re (hP.subset_of_mem i hz)
-  refine prop_le_of_forall_gt fun r' hr' ↦ prop_massRadiusLine_le (by linarith) ?_
+  refine prop_le_of_forall_gt fun r' hr' ↦ prop_massRadiusLine_le_line (by linarith) ?_
   refine (hP.one_le_measure hN i).trans (measure_mono fun w hw ↦ ?_)
   have hwR := prop_eq_ofReal_re (hP.subset_of_mem i hw)
   have hd := hr hw
-  rw [mem_closedBall, hwR, hzR, prop_dist_ofReal] at hd
+  rw [mem_closedBall, hwR, hzR, prop_dist_ofReal_line] at hd
   refine ⟨w.re, ⟨?_, ?_⟩, hwR.symm⟩ <;> linarith [abs_le.1 hd]
 
 theorem finite_near_line (hd : IsLocallyDoublingLine μ)
@@ -387,7 +372,7 @@ theorem finite_near_line (hd : IsLocallyDoublingLine μ)
     have h2 : massRadiusLine μ w.re ≤ massRadiusLine μ x + dist (x : ℂ) w := by
       have := hlip.dist_le_mul w.re x
       rw [Real.dist_eq, Real.dist_eq, NNReal.coe_one, one_mul] at this
-      rw [hwR, prop_dist_ofReal, ← hwR]
+      rw [hwR, prop_dist_ofReal_line, ← hwR]
       linarith [le_abs_self (massRadiusLine μ w.re - massRadiusLine μ x), abs_sub_comm w.re x]
     have h3 : dist (x : ℂ) w ≤ K' * massRadiusLine μ x :=
       hzw.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hρ.le)
@@ -398,7 +383,7 @@ theorem finite_near_line (hd : IsLocallyDoublingLine μ)
             gcongr
             · exact h1.trans (by gcongr; linarith)
         _ < K₂ * massRadiusLine μ x := by rw [hK₂]; nlinarith
-    rw [hw'R, prop_dist_ofReal] at hlt
+    rw [hw'R, prop_dist_ofReal_line] at hlt
     refine ⟨w'.re, ⟨?_, ?_⟩, hw'R.symm⟩ <;> linarith [abs_lt.1 hlt]
   · refine (hb x _ (by nlinarith) (by nlinarith)).2.trans ?_
     rw [mul_div_assoc, div_self hρ.ne', mul_one]
@@ -421,7 +406,7 @@ theorem far_comparable_line (hm : ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ x : ℝ, 1 �
   have h2 : massRadiusLine μ w.re ≤ massRadiusLine μ x + dist (x : ℂ) w := by
     have := hlip.dist_le_mul w.re x
     rw [Real.dist_eq, Real.dist_eq, NNReal.coe_one, one_mul] at this
-    rw [hwR, prop_dist_ofReal, ← hwR]
+    rw [hwR, prop_dist_ofReal_line, ← hwR]
     linarith [le_abs_self (massRadiusLine μ w.re - massRadiusLine μ x), abs_sub_comm w.re x]
   have h3 : massRadiusLine μ x ≤ dist (x : ℂ) w / η := by
     rw [le_div_iff₀ hη, mul_comm]; exact hfar w hw
