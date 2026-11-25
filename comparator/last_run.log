@@ -1,25 +1,26 @@
 Resolving dependencies
 Building OCChallenge
-⚠ [9047/9048] Replayed OCChallenge
-warning: OCChallenge.lean:173:8: declaration uses `sorry`
-warning: OCChallenge.lean:183:8: declaration uses `sorry`
-warning: OCChallenge.lean:196:8: declaration uses `sorry`
-warning: OCChallenge.lean:210:8: declaration uses `sorry`
-warning: OCChallenge.lean:226:8: declaration uses `sorry`
-warning: OCChallenge.lean:238:8: declaration uses `sorry`
-warning: OCChallenge.lean:252:8: declaration uses `sorry`
-warning: OCChallenge.lean:265:8: declaration uses `sorry`
-warning: OCChallenge.lean:274:8: declaration uses `sorry`
-warning: OCChallenge.lean:285:8: declaration uses `sorry`
-warning: OCChallenge.lean:297:8: declaration uses `sorry`
-warning: OCChallenge.lean:308:8: declaration uses `sorry`
-warning: OCChallenge.lean:325:8: declaration uses `sorry`
-warning: OCChallenge.lean:344:8: declaration uses `sorry`
-Build completed successfully (9048 jobs).
+⚠ [18250/18252] Replayed OCChallenge
+warning: OCChallenge.lean:178:8: declaration uses `sorry`
+warning: OCChallenge.lean:188:8: declaration uses `sorry`
+warning: OCChallenge.lean:201:8: declaration uses `sorry`
+warning: OCChallenge.lean:215:8: declaration uses `sorry`
+warning: OCChallenge.lean:231:8: declaration uses `sorry`
+warning: OCChallenge.lean:243:8: declaration uses `sorry`
+warning: OCChallenge.lean:257:8: declaration uses `sorry`
+warning: OCChallenge.lean:270:8: declaration uses `sorry`
+warning: OCChallenge.lean:279:8: declaration uses `sorry`
+warning: OCChallenge.lean:290:8: declaration uses `sorry`
+warning: OCChallenge.lean:302:8: declaration uses `sorry`
+warning: OCChallenge.lean:313:8: declaration uses `sorry`
+warning: OCChallenge.lean:330:8: declaration uses `sorry`
+warning: OCChallenge.lean:349:8: declaration uses `sorry`
+Build completed successfully (18252 jobs).
 Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_weighted_of_theoremOCS, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCChallenge
 Building OCSolution
-Build completed successfully (9121 jobs).
+Build completed successfully (18404 jobs).
 Exporting #[Quot, Quot.mk, Quot.lift, Quot.ind, OC.theorem4_disc, OC.theorem4_plane, OC.prop2_disc, OC.prop2_plane, OC.theorem2, OC.theorem2_uniform, OC.theorem2_printed, OC.theorem1, OC.theorem1_christ, OC.prop1, OC.theorem5, OC.theorem3_weighted, OC.theorem3_weighted_of_theoremOCS, OC.theorem3_printed_false, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList, Char.ofNat, List, eagerReduce, Nat, String, String.mk, Char, optParam, autoParam, semiOutParam, outParam] from OCSolution
 Running Lean default kernel on solution
 Lean default kernel accepts the solution
 Your solution is okay!
+exit=0

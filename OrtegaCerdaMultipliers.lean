@@ -59,3 +59,12 @@ import OrtegaCerdaMultipliers.Theorem5
 import OrtegaCerdaMultipliers.TheoremOCSProof
 import OrtegaCerdaMultipliers.Theorem3
 import OrtegaCerdaMultipliers.Main
+
+/-!
+# Ortega-Cerdà (2002): root module
+
+Imports every module of the formalization of J. Ortega-Cerdà, *Multipliers and weighted
+∂̄-estimates*, Rev. Mat. Iberoamericana 18 (2002), 355–377.
+The main results and their Lean names are listed in `README.md`; their statements are collected
+in `comparator/statements.lean`.
+-/

@@ -70,4 +70,4 @@ Lean default kernel accepts the solution
 Your solution is okay!
 ```
 
-This was obtained on 2026-11-02 with Lean v4.35.0 and Mathlib v4.35.0, for all fourteen theorems, with `lake comparator` and the wrapper above (log: `comparator/last_run.log`). The earlier run (2026-11-01, thirteen theorems, `theorem3_weighted` still conditional) used the standalone comparator with `landrun` and `lean4export`.
+This was obtained on 2026-11-02 with Lean v4.35.0 and Mathlib v4.35.0, for all fourteen theorems, with `lake comparator` and the wrapper above, and again on 2026-11-25 with Lean/Mathlib v4.36.0 after the final quality pass (log: `comparator/last_run.log`). The earlier run (2026-11-01, thirteen theorems, `theorem3_weighted` still conditional) used the standalone comparator with `landrun` and `lean4export`.

@@ -66,7 +66,8 @@ sources:
       limsup |u|e^{-α|Im z|} = 0; the published lemma states only limsup < ∞, and "= 0" follows
       from its proof. It is proved, with "= 0" (its NOTEBOOK N-08), in the companion formalization
       https://github.com/joaquimortega/MR1682065 as OCS.theoremOCS. The 18 files it needs are
-      vendored in OrtegaCerdaSeip/ (commit 05e3ac2ca83f8862636e1dd002467ad9add83396), and
+      vendored in OrtegaCerdaSeip/ (commit 05e3ac2ca83f8862636e1dd002467ad9add83396, with the
+      Lean/Mathlib v4.36.0 port of commit 9b7af15), and
       OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS makes OC.theorem3_weighted
       unconditional. OC.theorem3_weighted_of_theoremOCS keeps the article's conditional form. See
       NOTEBOOK N-07.

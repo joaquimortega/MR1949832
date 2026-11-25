@@ -5,7 +5,7 @@
 - arXiv version: `literature/arXiv-math-9912139.pdf`.
 - Page references `[p. 363]` are to the journal pagination.
 
-**Lean project.** Library `OrtegaCerdaMultipliers`, namespace `OC`, Lean/Mathlib v4.35.0.
+**Lean project.** Library `OrtegaCerdaMultipliers`, namespace `OC`, Lean/Mathlib v4.36.0 (the blueprint was written for v4.35.0; the final quality pass split long proofs, factored plane/disc near-copies and dropped unused hypotheses of auxiliary lemmas, so some quoted auxiliary statements are out of date; the code is authoritative).
 
 ## 0. Plan and status
 

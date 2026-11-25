@@ -45,7 +45,7 @@ The statements are in `comparator/statements.lean` and the definitions they use 
 
 **Weights.** A weight is a pair `(φ, μ)`: `φ` is continuous and `Δφ = μ` in the sense of distributions. Mathlib has no Riesz-measure theory. For the paper's weights (subharmonic, with locally doubling Laplacian) this class coincides with the paper's.
 
-**Corrections to the paper.** Theorem 3 as printed is false. The formalized version puts the weight `e^{-φ}` inside the integral. The [OCS99] theorem it relies on (`OC.TheoremOCS`, as quoted on p. 375, with `limsup = 0`) is proved in the companion project MR1682065, so Theorem 3 is unconditional (`OC.theoremOCS_holds`). All errata, gaps and simplifications are in `NOTEBOOK.md`.
+**Corrections to the paper.** Theorem 3 as printed is false. The formalized version puts the weight `e^{-φ}` inside the integral. The [OCS99] theorem it relies on (`OC.TheoremOCS`, as quoted on p. 375, with `limsup = 0`) is proved in the companion project MR1682065, so Theorem 3 is unconditional (`OC.theoremOCS_holds`). All errata, gaps and simplifications are in `NOTEBOOK.md`. A corrected version of the paper, with these corrections incorporated, is in [`fixed/dbar_fixed.pdf`](fixed/dbar_fixed.pdf) (TeX source `fixed/dbar_fixed.tex`, list of changes `fixed/CHANGES.md`).
 
 ## Layout
 
@@ -56,13 +56,14 @@ The statements are in `comparator/statements.lean` and the definitions they use 
 | `OrtegaCerdaMultipliers/` | The Lean formalization. |
 | `OrtegaCerdaSeip/` | Vendored, do not edit: the part of the MR1682065 library that proves [OCS99] Lemma 4 (`OCS.theoremOCS`); see `OrtegaCerdaSeip/VENDORED.md`. Only `OrtegaCerdaMultipliers/TheoremOCSProof.lean` imports it. |
 | `NOTEBOOK.md` | Errata (N-xx) and implementation notes (I-xx). |
+| `fixed/` | The corrected paper (`dbar_fixed.pdf`, `dbar_fixed.tex`), the original source it starts from, and the list of changes (`CHANGES.md`). |
 | `formalization.yaml` | Metadata in the [formalization.yaml](https://github.com/mathlib-initiative/formalization.yaml) format. |
 | `scripts/` | `make_challenge.py`, `check_statements.py` (the statement freeze-check), `new_worktree.sh`. |
 
 ## Companion projects
 
 - **BOC.** The companion formalization of Berndtsson–Ortega-Cerdà (1995), [joaquimortega/MR1340337](https://github.com/joaquimortega/MR1340337), uses `OC.theorem2_uniform` to prove its Theorem 6 without the external Theorem G. This project does not depend on BOC. Its foundation files (∂̄ calculus, Cauchy transform, Weyl's lemma, disc geometry) are copied from BOC under namespace `OC`.
-- **[OCS99].** The theorem used in Theorem 3 (`TheoremOCS`) is Lemma 4 of Ortega-Cerdà–Seip (1999), with the decay `limsup = 0` that the quotation on p. 375 states and the proof gives. It is proved in the companion formalization [joaquimortega/MR1682065](https://github.com/joaquimortega/MR1682065) as `OCS.theoremOCS`. A sorry-free subset of that library (the 18 files that `OCS.theoremOCS` needs, commit `05e3ac2`) is vendored here in `OrtegaCerdaSeip/`, so this repository still depends only on Mathlib; `OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS` makes Theorem 3 unconditional.
+- **[OCS99].** The theorem used in Theorem 3 (`TheoremOCS`) is Lemma 4 of Ortega-Cerdà–Seip (1999), with the decay `limsup = 0` that the quotation on p. 375 states and the proof gives. It is proved in the companion formalization [joaquimortega/MR1682065](https://github.com/joaquimortega/MR1682065) as `OCS.theoremOCS`. A sorry-free subset of that library (the 18 files that `OCS.theoremOCS` needs, commit `05e3ac2` with the Lean/Mathlib v4.36.0 port of commit `9b7af15`) is vendored here in `OrtegaCerdaSeip/`, so this repository still depends only on Mathlib; `OC.theoremOCS_holds : OC.TheoremOCS := OCS.theoremOCS` makes Theorem 3 unconditional.
 
 ## Building
 
@@ -74,7 +75,53 @@ lake build OrtegaCerdaMultipliers OrtegaCerdaSeip OCChallenge OCSolution   # eve
 
 Two libraries: `OrtegaCerdaMultipliers` (this project) and `OrtegaCerdaSeip` (vendored from MR1682065, see above); `OCChallenge` and `OCSolution` are the comparator files.
 
-Toolchain: Lean v4.35.0, Mathlib v4.35.0.
+Toolchain: Lean v4.36.0, Mathlib v4.36.0.
+
+## Quality pass (Tau Ceti filters)
+
+Final pass (November 2026, after the port to Lean/Mathlib v4.36.0) on the project's own library
+`OrtegaCerdaMultipliers`; the vendored `OrtegaCerdaSeip/` was outside it (a port-only copy of the
+upstream library, which had its own pass). Mechanical filters, all passing on the final tree:
+
+- no `sorry`, `admit`, `axiom`, `native_decide`, `set_option`, `nolint` or `have _ := h` workarounds
+  anywhere in `OrtegaCerdaMultipliers/` (`grep`, comments included); axioms of all 14 main results
+  of `comparator/config.json`: `propext`, `Classical.choice`, `Quot.sound`;
+- `lake build OrtegaCerdaSeip OrtegaCerdaMultipliers OCChallenge OCSolution` with the Mathlib
+  standard linter set on `OrtegaCerdaMultipliers` (`weak.linter.mathlibStandardSet`,
+  `unusedVariables.analyzeTactics`, `longFile = 1500`): **0 errors, 0 warnings, 0 infos** (only the
+  `sorry` warnings of `OCChallenge.lean`); every file has the copyright header and a module
+  docstring; longest file 1359 lines (the two files over 1500 lines were split);
+- Mathlib environment linters (`#lint in OrtegaCerdaMultipliers`, 15 linters incl. `docBlame`,
+  `unusedArguments`): **0 errors in 1821 declarations**;
+- no declaration is longer than 100 lines (135 of 51–100 lines remain).
+
+Not applied (or only partly):
+
+- Tau Ceti requires every file to be a `module`; here only `Defs.lean` and `LogModulus.lean` are.
+- No hypothesis of a main theorem was dropped (the frozen statements are kept for fidelity).
+- Some near-duplicates were left: `l4_massRadius_le`/`l4_massRadiusDisc_le` against
+  `massRadiusM_le` (different instance setting), `mk_norm_one_sub_conj_mul_comm` against
+  `norm_one_sub_conj_mul_comm` (no common import), `prop_ofReal_le_ceil`/`l4_coe_pow_le_ceil`.
+
+```
+Quality pass:
+- Q1 Mathlib duplicates: changed — `mk_exp_mul_log_eq_rpow` replaced by `Real.rpow_def_of_pos`,
+  `M03b.dist_ofReal_ofReal` by `Complex.isometry_ofReal.dist_eq`, local disc-area computations by
+  `volume_ball_complex`.
+- Q2 project duplicates: changed — copies of the `Prop2` helpers and of
+  `integrable_mul_of_tsupport_subset_real`/`hasCompactSupport_laplacian` removed from `Theorem2`,
+  `Reg.laplacian_testFunction` removed, `measurableEmbedding_ofReal` copies and others merged;
+  the plane/disc near-copies factored: `multPot_bounds_*` (`multPot_bounds_core`),
+  `multPot_props_*` (`MultPotData.props`), `l4_*_strong` (`l4_assemble`),
+  `disc_/plane_kernel_operator`, `nearField_sum_le_*`, `prop2_*_quant`.
+- Q3 hypotheses: changed — unused hypotheses dropped from non-main lemmas (`dyadic_sum_le`,
+  `ennreal_thm4_bounds`, `sepColoring_generic`, `prop2_disc_unif`, `divMeasure_withDensity_le`,
+  `[SeparableSpace X]` of `IsLocDoublingM.lemma3`, `lemma3_paper`, `lemma3_quant`); hypotheses of
+  the main theorems are frozen.
+- Q4 section variables: checked — no declaration picks up an unused `variable`.
+- Q5 proofs: changed — the 37 declarations over 100 lines (up to 343) were split into stage
+  lemmas; no declaration now exceeds 100 lines.
+```
 
 ## License
 

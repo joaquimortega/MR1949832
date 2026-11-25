@@ -21,3 +21,10 @@ The root file `OrtegaCerdaSeip.lean` is not the upstream one: it imports only `O
 It is vendored so that this repository builds with Mathlib as its only dependency. Do not edit it here.
 To update it, copy the files again from that repository.
 Only `OrtegaCerdaMultipliers/TheoremOCSProof.lean` imports it.
+
+## Compatibility update for Lean/Mathlib v4.36.0 (2026-11-25)
+
+The files were brought to Lean/Mathlib v4.36.0 by copying their ported versions from the upstream
+project (MR1682065, commit `9b7af15`, the port commit, before that project's final quality pass);
+all vendored files were identical to `05e3ac2` before. The changes are mechanical (deprecation
+renames, elaboration-order and timeout fixes); no statement changed.
